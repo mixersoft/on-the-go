@@ -1,0 +1,151 @@
+<ion-view title="Checkout">
+  
+  <ion-nav-view name="checkoutContent" animation='slide-left-right'></ion-nav-view>
+
+  <!-- footer  -->
+  <div class="bar bar-footer bar-royal"
+  ng-hide="on.currentState()=='app.checkout.complete'">
+    <button class="button button-outline button-light" 
+      ng-click="on.back()"
+      >
+      <i class="icon ion-chevron-left"></i> Back
+    </button>
+
+    
+    <button class="button button-outline button-light pull-right" 
+      ng-click="on.next()"
+      ng-hide="on.currentState()=='app.checkout.submit'"
+      >
+      Next <i class="icon ion-chevron-right"></i>
+    </button>
+  </div> 
+
+</ion-view>
+
+<script type="text/ng-template" id="partials/checkout/header-card">
+  <div class="card header-card">
+    <div class="item item-divider item-royal">
+      {{headerCard.header}}
+    </div>
+    <div class="item item-text-wrap">
+      {{headerCard.body}}
+      <div class="row">
+        <div class="col col-33 text-right">From:</div>
+        <div class="col">{{checkout.dateRange.from}}</div>
+      </div>
+      <div class="row">
+        <div class="col col-33 text-right">To:</div>
+        <div class="col">{{checkout.dateRange.to}}</div>
+      </div>
+      <div class="row">
+        <div class="col col-67 text-right">Consecutive Days:</div>
+        <div class="col">{{checkout.count.days}}</div>
+      </div>
+      <div class="row" ng-show="on.getOrderType()=='camera-roll'">
+          <div class="col col-67 text-right">Photos:</div>
+          <div class="col">{{checkout.count.photos}}</div>
+        </div>
+      <hr>
+      <div class="row">
+        <div class="col col-67 text-right">Total:</div>
+        <div class="col">{{watch.servicePlan.total | currency:'$'}}</div>
+      </div>
+      <div class="row">
+        <div class="assertive service-plans"
+        ng-if="watch.servicePlan.plans.length==1">
+          Based on: {{watch.servicePlan.plans[0]}}</div>
+          <div class="assertive" ng-if="watch.servicePlan.plans.length>1">
+          Based on:
+          <ul class="padding-left" ng-repeat="plan in watch.servicePlan.plans">
+            <li class="assertive" ng-bind="plan"></li>
+          </ul>
+        </div>
+      </div>
+      <div class="row" ng-show="on.getOrderType()=='calendar' && watch.servicePlan.total>1">
+        Note: No matter how many days you are On-the-Go, it is only $1 for your first 100 photos.
+      </div>
+    </div> 
+
+    <div class="item item-divider item-royal">
+       {{headerCard.footer}}
+    </div>   
+  </div>
+</script>
+
+
+
+<script type="text/ng-template" id="partials/checkout/payment">
+  <ion-view title="Payment"  hide-back-button="true"><ion-content>
+    <div class="card">
+      <ion-item class="item-divider item-balanced">
+        Special Promo Codes
+      </ion-item>
+      <ion-item class="item-text-wrap">
+        It&rsquo;s your lucky day! For a limited time, all the cool kids can get a special promo code!
+        <button class="button button-full button-balanced"
+        ng-click="on.getPromoCode()">
+          I&rsquo;m Cool, Gimme a Code
+        </button>
+        <div class="list list-inset hide">
+        <label class="item item-input">
+          <input type="text" class="text-center" placeholder="Promo Code" ng-value="watch.promoCode">
+        </label>
+      </div>
+      </ion-item>
+    </div>
+    <ng-include src="'partials/checkout/header-card'"></ng-include>
+  </ion-content></ion-view>
+</script>
+
+<script type="text/ng-template" id="partials/checkout/submit">
+  <ion-view title="Submit Order"  hide-back-button="true"><ion-content>
+    <ng-include src="'partials/checkout/header-card'"></ng-include>
+    <div class="row"><div class="col">
+    <button class="button button-block button-balanced"
+    ng-click="on.next()"
+    >Submit Order</button>
+    </div></div>
+  </ion-content></ion-view>
+</script>
+
+<script type="text/ng-template" id="partials/checkout/complete">
+  <ion-view title="Thank You"  hide-back-button="true"><ion-content>
+  <div class="card header-card">
+    <div class="item item-divider item-royal">
+      {{headerCard.header}}
+    </div>
+    <div class="item item-text-wrap">
+      <div ng-if="checkout.count.photos">
+        <h2 class="text-center">Thank You For Your Order!</h2>
+        <div>
+        You have {{checkout.count.photos}} photos to upload.
+        Be sure to activate the Uploader to begin uploading.
+        </div>
+      </div>
+      <div ng-if="!checkout.count.photos">
+        <h2 class="text-center"> Bon Voyage! Happy Trails! </h2>
+        <div>
+        Don&rsquo;t forget to take lots of photos while you are gone.
+        We&rsquo;ll send you a notification when we find photos from your order. 
+        <br /><br />
+        And be sure to activate the Uploader when you are ready to upload. 
+        </div>
+      </div>
+      <div class="padding-top">
+        Here are some places to go next:
+        <button class="button button-block button-dark icon-left ion-ios7-cloud-upload"
+        ui-sref="app.uploader">
+          Uploader
+        </button>
+
+        <button class="button button-block button-assertive icon-left ion-archive"
+        ui-sref="app.orders">
+          Orders
+        </button>
+      </div>
+    </div> 
+    <div class="item item-divider item-royal">
+       {{headerCard.footer}}
+    </div>   
+  </ion-content></ion-view>
+</script>

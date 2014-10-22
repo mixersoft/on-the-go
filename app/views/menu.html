@@ -1,0 +1,63 @@
+<ion-side-menus>
+
+  <ion-pane ion-side-menu-content>
+    <ion-nav-bar align-title="center" class="bar-positive nav-title-slide-ios7">
+      <ion-nav-back-button class="button-clear"><i class="icon ion-ios7-arrow-back"></i> Back</ion-nav-back-button>
+    </ion-nav-bar>
+    <ion-nav-view name="menuContent" animation="slide-left-right"></ion-nav-view>
+  </ion-pane>
+
+  <ion-side-menu side="left">
+    <header class="bar bar-header bar-positive">
+      <h1 class="title">Menu</h1>
+    </header>
+    <ion-content class="has-header">
+      <ion-list>
+        <ion-item class="item-icon-left item-icon-right" nav-clear menu-close href="#/app/top-picks">
+        <i class="icon ion-images icon-positive"></i>
+          Top Picks
+          <span class="badge badge-balanced">{{menu.top_picks.count}}</span>
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close ui-sref="app.choose.calendar">
+          <i class="icon ion-calendar icon-positive"></i>
+          Choose Your Days
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close href="#/app/orders">
+          <i class="icon ion-archive icon-positive"></i>
+          My Orders
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close href="#/app/uploader">
+          <i class="icon ion-ios7-cloud-upload icon-positive"></i>
+          Uploader
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close href="#/app/settings">
+          <i class="icon ion-gear-b icon-positive"></i>
+          Settings
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close href="#/app/help">
+          <i class="icon ion-help-circled icon-positive"></i>
+          Help
+        </ion-item>
+
+<!-- 
+        <ion-item class="item-divider">
+          from template
+        </ion-item>
+        <ion-item nav-clear menu-close ng-click="login()">
+          Login
+        </ion-item>
+        <ion-item nav-clear menu-close href="#/app/search">
+          Search
+        </ion-item>
+        <ion-item nav-clear menu-close href="#/app/browse">
+          Browse
+        </ion-item>
+        <ion-item nav-clear menu-close href="#/app/playlists">
+          Playlists
+        </ion-item>
+ -->
+
+      </ion-list>
+    </ion-content>
+  </ion-side-menu>
+</ion-side-menus>

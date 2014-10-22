@@ -1,0 +1,55 @@
+ <!-- div.thumb thumbnail template  -->
+<div id="{{photo.id}}" 
+class="thumb {{photo.orientationLabel}}" 
+ng-class="{remove: isMarkedForRemoval($index, photo.id)}"
+ng-dblclick="markPhotoForRemoval(card, $event, $index, 'remove')"
+ng-longtap="markPhotoForRemoval(card, $event, $index, 'toggle')"
+ng-click="false"
+ondragstart="_preventDefault(event)"
+>
+  <div class="crop-wrap" >
+    <div class="crop">
+      <img class=""  
+        orig-width="{{photo.Exif && photo.Exif.PixelXDimension}}"
+        orig-height="{{photo.Exif && photo.Exif.PixelYDimension}}"
+        photo="photo"
+        ng-src="{{photo.src}}"
+      >
+    </div>
+  </div>
+  <div class="meta">
+    <div ng-show="!!photo.c
+    aption" class="title truncate">
+      {{photo.caption}} 
+    </div>
+    <div class='bottom-row edit'> 
+      <span class="inline-icons">
+        <i ng-click="markPhotoForRemoval(card, $event, $index, 'undo')"
+        class='btn-icon fa fa-times-circle fa-lg'  title='cancel'></i>
+      </span>
+      <span class="inline-icons right">
+        <i ng-click="removeMarkedPhotoNow($event)"
+          class='btn-icon fa fa-trash-o fa-lg'  title='remove'></i>
+      </span>
+    </div>
+    <div class='bottom-row'
+    ng-click="glowOnClick($event)"> 
+      <span class="inline-icons">
+        <rating class="rating" rating-type="photo"
+        ng-click="persistRating($event,$index)" value="photo.rating" state-on="'fa fa-star'" state-off="'fa fa-star-o'"></rating>
+      </span>
+      <span class="inline-icons right">
+        <i class='btn-icon fa {{photo.favorite && 'fa-heart' || 'fa-heart-o'}} ' title='favorite'> {{photo.favorite}}</i>
+        <i class='btn-icon fa fa-info-circle'  title='show info'
+        ng-click="showImgSrc($event)"></i>
+        <i class='btn-icon fa fa-cloud-upload' title='share'
+        ng-click="serverShare($event, $index)"
+        ></i>
+        <i class='btn-icon fa fa-arrow-right' title='go to Moment'
+        ng-click="goToMoment($event, $index)"
+        ></i>
+
+      </span>
+    </div>
+  </div>
+</div>  <!-- /div.thumb -->

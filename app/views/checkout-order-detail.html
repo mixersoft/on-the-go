@@ -1,0 +1,61 @@
+<ion-view title="Checkout">
+  <ion-nav-buttons side="right">
+    <button class="button button-icon icon ion-information-circled"
+    ng-click="pricelist.show()"></button>
+  </ion-nav-buttons>
+<ion-content class="has-header">
+  <!-- header card  -->
+  <div class="card header-card">
+    <div class="item item-divider item-royal">
+      {{headerCard.header}}
+    </div>
+    <div class="item item-text-wrap">
+      {{headerCard.body}}
+      <div class="row">
+        <div class="col col-33 text-right">From:</div>
+        <div class="col">{{checkout.dateRange.from}}</div>
+      </div>
+      <div class="row">
+        <div class="col col-33 text-right">To:</div>
+        <div class="col">{{checkout.dateRange.to}}</div>
+      </div>
+      <div class="row">
+        <div class="col col-67 text-right">Consecutive Days:</div>
+        <div class="col">{{checkout.count.days}}</div>
+      </div>
+      <div class="row" ng-show="on.getOrderType()=='camera-roll'">
+          <div class="col col-67 text-right">Photos:</div>
+          <div class="col">{{checkout.count.photos}}</div>
+        </div>
+      <hr>
+      <div class="row">
+        <div class="col col-67 text-right">Total:</div>
+        <div class="col">{{watch.servicePlan.total | currency:'$'}}</div>
+      </div>
+      <div class="row">
+        <div class="assertive service-plans"
+        ng-if="watch.servicePlan.plans.length==1">
+          Based on: {{watch.servicePlan.plans[0]}}</div>
+          <div class="assertive" ng-if="watch.servicePlan.plans.length>1">
+          Based on:
+          <ul class="padding-left" ng-repeat="plan in watch.servicePlan.plans">
+            <li class="assertive" ng-bind="plan"></li>
+          </ul>
+        </div>
+      </div>
+      <div class="row" ng-show="on.getOrderType()=='calendar' && watch.servicePlan.total>1">
+        Note: No matter how many days you are On-the-Go, it's only $1 for your first 100 photos.
+      </div>
+    </div> 
+
+    <div class="item item-divider item-royal">
+       {{headerCard.footer}}
+    </div>   
+  </div>
+
+  <otg-moment otg-model="checkout.selectedMoments"></otg-moment>
+
+</ion-content>
+</ion-view>
+
+

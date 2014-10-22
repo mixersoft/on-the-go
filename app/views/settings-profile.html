@@ -1,0 +1,151 @@
+<ion-view title="Profile" id="profile">
+  <ion-nav-buttons>
+  </ion-nav-buttons>
+  <ion-content class="has-header">
+
+<div ng-if="isAnonymous"> 
+    <div ng-include="'partials/anonymous-signup'"></div> 
+
+    <!-- header card : guest -->
+    <div class="list card header-card">
+      <div class="item item-divider item-energized">
+        <i class="icon ion-person"> Sign-up</i>
+      </div>
+        <label class="item item-input">
+          <span class="input-label">Username</span>
+          <input type="text" ng-model="user.username" placeholder="HappiGuy">
+        </label>
+
+
+        <div class="item item-input item-icon-right">
+          <span class="input-label">Password</span>
+          <input type="password" ng-model="user.password" placeholder="Required"
+          ng-blur="password.isValid($event)"
+          >
+          <i class="icon" tabindex=-1>
+          </i>
+        </div>
+        <label class="item item-input item-icon-right">
+          <span class="input-label">Password</span>
+          <input type="password" placeholder="(again)"
+          ng-model="password.passwordAgain" 
+          ng-blur="password.commit($event)">
+          <i class="icon" 
+          ng-class="{'ion-ios7-checkmark balanced':password.isConfirmed(), 'ion-ios7-close assertive':!password.isConfirmed()}" 
+          ng-show="password.passwordAgain && password.passwordAgain.length"></i>
+        </label>
+
+
+        <div class="item item-input item-icon-right" >
+          <span class="input-label">Email</span>
+          <input type="text" ng-model="user.email" placeholder="me@gmail.com" 
+          ng-readonly="!email.changing"
+          ng-click="email.change($event)" 
+          ng-blur="email.commit($event)">
+        </div>
+
+        <button class="button button-block button-energized padding-horizontal" 
+          ui-sref="app.settings.main"
+          >Submit</button>
+    </div>
+</div>    
+
+<div ng-if="!isAnonymous">
+    <div class="padding">
+      <p class="text-center"><span class="username badge badge-positive capitalize padding"><i class="icon ion-person"> {{user.username}}</i></span></p>
+      <p>Hello <span class="capitalize">{{user.username}}</span>. You can manage your account information below.</p>
+    </div>
+    <!-- header card : named user  -->
+    <div class="list card header-card" >
+      <div class="item item-divider item-energized">
+        <i class="icon ion-person"> Profile</i>
+      </div>
+      <label class="item item-input">
+        <span class="input-label">Username</span>
+        <input type="text" ng-model="user.username" placeholder="HappiGuy" readonly>
+      </label>
+
+
+      <div class="item item-input item-icon-right">
+        <span class="input-label">Password</span>
+        <input type="password" ng-model="user.password" placeholder="Required" ng-readonly="!password.changing">
+<!--         <button class="button button-assertive" 
+        ng-click="password.change($event)" >
+          <i class="icon ion-edit" 
+          ng-show="!password.changing"></i>
+          <span ng-show="password.changing">
+            Cancel
+          </span>
+        </button> -->
+        <i class="icon" tabindex=-1>
+          <button class="button button-small button-assertive" ng-click="password.change($event)">
+            <i class="icon ion-edit" 
+            ng-show="!password.changing"></i>
+            <span ng-show="password.changing">Cancel
+            </span>
+          </button>
+        </i>
+      </div>
+
+      <label class="item item-input item-icon-right" ng-show="password.changing">
+        <span class="input-label">Password</span>
+        <input type="password" placeholder="(again)"
+        ng-model="password.passwordAgain" 
+        ng-blur="password.commit($event)">
+        <i class="icon" ng-class="{'ion-ios7-checkmark balanced':password.isConfirmed(), 'ion-ios7-close assertive':!password.isConfirmed()}"></i>
+      </label>
+
+
+      <div class="item item-input item-icon-right" >
+        <span class="input-label">Email</span>
+        <input type="text" ng-model="user.email" placeholder="me@gmail.com" 
+        ng-readonly="!email.changing"
+        ng-click="email.change($event)" 
+        ng-blur="email.commit($event)">
+        <i class="icon"  ng-class="{'ion-ios7-checkmark balanced':user.emailVerified, 'ion-ios7-close assertive':!user.emailVerified}"></i>
+      </div>
+
+      <button class="button button-block button-assertive padding-horizontal" 
+      ng-show="!email.changing && !user.emailVerified"
+      ui-sref="app.settings.main">
+      Resend Email Verification
+      </button>
+
+      <button class="button button-block button-energized padding-horizontal" 
+        ng-show="email.changing || password.changing"
+        ui-sref="app.settings.main"
+        >Submit
+      </button> 
+
+    </div>
+</div>
+
+<div ng-if="on.currentState()=='app.settings.terms-of-service'">
+    <div class="card header-card">
+      <div class="item item-divider item-energized">
+        {{headerCard.header}}
+      </div>
+      <div class="item item-text-wrap">
+        <div>
+          <h2>Terms of Service</h2>
+          <p>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+          </p>
+        </div>
+        <div>
+          <ion-checkbox ng-model="user.tos">I agree to the Terms of Service</ion-checkbox>
+        </div>
+      </div> 
+
+      <div class="item item-divider item-energized">
+         {{headerCard.footer}}
+      </div>   
+    </div>
+</div>
+
+  </ion-content>
+</ion-view>
+
+
+
+

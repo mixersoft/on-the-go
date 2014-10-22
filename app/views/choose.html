@@ -1,0 +1,64 @@
+<ion-view title="{{label.title}}" hide-back-button="true" >
+  <ion-nav-buttons side="left">
+    <button menu-toggle="left" class="button button-icon icon ion-navicon"></button>
+  </ion-nav-buttons>
+  <ion-nav-buttons side="right">
+    <button class="button button-icon icon ion-information-circled"
+    ng-click="pricelist.show()"></button>
+  </ion-nav-buttons>
+  
+  <!-- ion-tabs -->
+  <ion-tabs class="tabs-balanced tabs-top tabs-icon-only">
+
+
+    <!-- ion-tab: camera-roll -->
+    <ion-tab title="Camera Roll" 
+    icon="ion-camera"  
+    ui-sref='app.choose.camera-roll'>
+      <ion-nav-view name="chooseCameraRoll" animation='slide-left-right'></ion-nav-view>
+    </ion-tab>
+
+    <!-- ion-tabs: calendar -->
+    <ion-tab title="Calendar" 
+    icon="ion-calendar" 
+    ui-sref='app.choose.calendar'>
+      <ion-nav-view name="chooseCalendar" animation='slide-left-right'></ion-nav-view>
+    </ion-tab>
+
+
+
+
+    
+  </ion-tabs>
+
+
+  <!-- footer  -->
+  <div class="bar bar-footer bar-royal">
+    <button class="button button-outline button-light" 
+      ng-class="{disabled: !otgWorkOrder.isSelected()}"
+      ng-click="otgWorkOrder.on.clearSelected($event)">
+      Reset <i class="icon ion-close-circled"></i>
+    </button>
+    <div ng-show="$state.current.name=='app.choose.calendar'">
+      <div class="title" ng-show="otgWorkOrder.isSelected()">{{otgWorkOrder.countContiguousDays()}} Days</div>
+      <button class="order-from-camera-roll button button-outline button-light pull-right" 
+        ng-class="{disabled: !otgWorkOrder.isSelected()}"
+        ui-sref="app.checkout.order-detail({from: 'app.choose.calendar'})"
+        >
+        Next <i class="icon ion-chevron-right"></i>
+      </button>
+    </div>
+    
+    <div ng-show="$state.current.name=='app.choose.camera-roll'">
+      <div class="title" ng-show="otgWorkOrder.isSelected()">{{otgWorkOrder.countContiguousPhotos()}} Photos</div>
+      <button class="order-from-camera-roll button button-outline button-light pull-right" 
+        ng-class="{disabled: !otgWorkOrder.isSelected()}"
+        ui-sref="app.checkout.order-detail({from: 'app.choose.camera-roll'})"
+        >
+        Next <i class="icon ion-chevron-right"></i>
+      </button>
+    </div>
+  </div> 
+</ion-view>
+
+

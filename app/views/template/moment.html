@@ -1,0 +1,52 @@
+ <!-- template for directives/moment.js  -->
+
+
+    <ion-list class="otg-moment"
+                show-delete="false"
+                show-reorder="false"
+                can-swipe="controllerScope.localstate.canSwipe">
+      <div class="item"
+        collection-repeat="moment in moments | limitTo:20"
+        collection-item-width="'100%'"
+        collection-item-height="controllerScope.getItemHeight(moment, $index)"
+        >
+          <ion-item>
+            <div class="list-group-item camera-roll-date"
+              ng-repeat="day in moment.value"> 
+
+              <!-- dates -->
+              <ul class="list-inline">
+                <button class="btn {{options.btnSize}} date" 
+                  ng-class="{selected: otgWorkOrder.isDaySelected(day)}"
+                  ng-click="otgWorkOrder.on.selectByCameraRollDate($event)"
+                  >
+                  <div>{{day.key | date:'dd MMM'}}</div>
+                  <div class="day">{{day.key | date:'EEE'}}</div>
+                </button>
+                <li ng-repeat="photo in photos = getAsPhotos(day.value) | limitTo:options.thumbnailLimit ">
+                  <img lazy-src="{{photo.id}}" title="taken: {{photo.date}}" 
+                    width="{{options.thumbnailSize}}" 
+                    height="{{options.thumbnailSize}}">
+                </li>
+                <li ng-show="{{day.value.length > options.thumbnailLimit}}">
+                  <span class="badge badge-positive" ng-click="controllerScope.hScrollable($event)">{{day.value.length}}</span>
+                </li>
+              </ul>
+
+              <!-- options -->
+              <!-- 
+              <ion-option-button class="button-positive"
+                                 ng-click="share(item)">
+                Share
+              </ion-option-button>
+              <ion-option-button class="button-energized"
+                                 ng-click="edit(item)">
+                Edit
+              </ion-option-button> 
+              -->
+            </div>
+
+
+          </ion-item>
+      </div>
+    </ion-list>

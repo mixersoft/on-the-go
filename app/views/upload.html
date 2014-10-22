@@ -1,0 +1,33 @@
+<ion-view title="{{label.title}}" hide-back-button="true" >
+  <ion-nav-buttons side="left">
+    <button menu-toggle="left"class="button button-icon icon ion-navicon"></button>
+  </ion-nav-buttons>
+  <ion-content id="upload" class="inverse has-header">
+    <div class="big-red-button"
+      on-touch="redButton.press($event)"
+      on-release="redButton.release($event)"
+      on-hold="redButton.demo($event)"
+    >
+      <div class="button-icon-wrap text-center">
+        <i class="icon "
+        ng-class="{'enabled ion-ios7-cloud-upload': otgUploader.enable(), 
+        'ion-spin':otgUploader.isActive(),
+        'ion-pause': (otgUploader.queueLength() && !otgUploader.enable()),
+        'ion-ios7-cloud-upload': (!otgUploader.queueLength() && !otgUploader.enable())
+         }"></i>
+        <div class="fine">{{otgUploader.queueLength()}} Photos</div>
+      </div>
+    </div>
+        
+
+
+    <div class="row"><div class="col col-offset-10 col-80 text-center">
+      <h3 class="inverse ">The Big Red Button <span class="nowrap">is {{otgUploader.enable() ? 'ON' : 'OFF'}}</span></h3>
+      <div>This button controls the upload of photos to our servers. 
+        <span ng-show="!otgUploader.enable()">Go ahead, press it when you are ready to upload.</span>
+        <span ng-show="otgUploader.enable()">Photos from your orders will automatically be uploaded.</span>
+      </div>
+    </div></div>
+
+  </ion-content>
+</ion-view>

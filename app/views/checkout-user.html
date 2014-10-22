@@ -1,0 +1,48 @@
+<ion-view  hide-back-button="true" title="Account">
+<ion-content class="has-header has-footer">
+
+<div ng-if="on.currentState()=='app.checkout.sign-up'">
+  <div ng-include="'partials/anonymous-signup'"></div> 
+  <div class="list card header-card" >
+    <div class="item item-divider item-royal">
+      {{headerCard.header}}
+    </div>
+
+    <label class="item item-input item-stacked-label">
+      <span class="input-label">Username</span>
+      <input type="text" ng-model="user.username" placeholder="HappiGuy">
+    </label>
+    <label class="item item-input item-stacked-label">
+      <span class="input-label">Password</span>
+      <input type="password" ng-model="user.password" placeholder="Required">
+    </label>
+    <label class="item item-input item-stacked-label">
+      <span class="input-label">Email</span>
+      <input type="text" ng-model="user.email" placeholder="example@gmail.com">
+    </label>
+
+    <div class="item item-divider item-royal">
+       {{headerCard.footer}}
+    </div>   
+  </div>
+</div>
+
+
+<div ng-if="on.currentState()=='app.checkout.terms-of-service'">
+  <div class="card header-card has-footer" >
+    <div class="item item-divider item-royal">
+      {{headerCard.header}}
+    </div>
+    <div class="item item-text-wrap">
+      <div ng-include="'views/template/terms-of-service.html'"></div>
+      
+    </div> 
+    <ion-checkbox class="item-royal checkbox-balanced" ng-model="user.tos">I agree to the Terms of Service</ion-checkbox>
+
+  </div>
+</div>
+
+</ion-content>
+</ion-view>
+
+

@@ -1,0 +1,22 @@
+<!-- ion-tabs: calendar -->
+<ion-content id="choose-tab-calendar" class="has-header has-footer">
+  <!-- header card  -->
+  <div class="card header-card"
+  on-swipe-left="dontShowHint($event)"
+  ng-hide="dontShowHint()"  
+  >
+    <div class="item item-divider">
+      {{label.header_card[$state.current.name].header}}
+      <!-- <span class="badge badge-positive">{{filteredPhotos.length}} Photos</span> -->
+    </div>
+    <div class="item item-text-wrap">
+      {{label.header_card[$state.current.name].body}}
+    </div>
+    <div class="item item-divider">
+      <p class="fine" ng-click="dontShowHint($event)"><i class="icon ion-close-circled"> Don't Show Me Again</i></p>
+    </div>
+  </div>
+  <!-- calendar widget  -->
+  <p class="fine text-center">(NOTE: this is hard-coded.)</p>
+  <img class="calendar-placeholder" src="img/calendar-placeholder.png">
+</ion-content>

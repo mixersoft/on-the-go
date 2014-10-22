@@ -1,0 +1,34 @@
+    <!-- collection-repeat  -->
+    <ion-list class="otg-preview-list"
+                show-delete="state.showDelete"
+                show-reorder="state.showReorder"
+                can-swipe="state.canSwipe">
+      <div class="item"
+        collection-repeat="item in filteredPhotos"
+        collection-item-width="'100%'"
+        collection-item-height="getItemHeight(item, $index)"
+        >
+          <!-- {{$index}}:{{item.id}} -->
+          
+            <ion-item>
+
+              <img ng-src="{{item.src}}" height="{{item.height}}">
+              <ion-option-button class="button-positive"
+                                 ng-click="share(item)">
+                Share
+              </ion-option-button>
+              <ion-option-button class="button-energized"
+                                 ng-click="edit(item)">
+                Edit
+              </ion-option-button>
+              <ion-delete-button class="ion-minus-circled"
+                                 ng-click="photos.splice($index, 1)">
+              </ion-delete-button>
+              <ion-reorder-button class="ion-navicon"
+                                  on-reorder="reorderItem(photos, item, $fromIndex, $toIndex)">
+              </ion-reorder-button>
+
+            </ion-item>
+          
+      </div>
+    </ion-list>

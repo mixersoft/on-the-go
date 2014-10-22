@@ -1,0 +1,50 @@
+<ion-view  title="{{label.title}}" hide-back-button="true" >
+  <ion-nav-buttons side="left">
+    <button menu-toggle="left"class="button button-icon icon ion-navicon"></button>
+  </ion-nav-buttons>
+  <ion-nav-buttons side="right">
+      <div class="buttons">
+        <button class="button button-icon icon ion-ios7-minus-outline" 
+          ng-click="state.showDelete = !state.showDelete; state.showReorder = false"></button>
+        <button class="button hide"
+          ng-click="state.showDelete = false; state.showReorder = !state.showReorder">
+            Reorder
+        </button>
+      </div>
+  </ion-nav-buttons>
+
+<!--   <ion-header-bar class="bar-subheader">
+  </ion-header-bar>
+ -->
+
+
+  <ion-content>
+    <div class="button-bar bar-royal">
+      <a class="button icon ion-checkmark-circled" ui-sref="app.top-picks" ui-sref-active="active"></a>
+      <a class="button icon ion-heart" ui-sref=".favorites"  ui-sref-active="active"></a>
+      <a class="button icon ion-ios7-upload-outline" ui-sref=".shared"  ui-sref-active="active"></a>
+    </div>
+    <!-- header card  -->
+    <div class="card header-card card-animate" 
+    on-swipe-left="dontShowHint($event)"
+    ng-hide="dontShowHint()"
+    animation="slide-out-left-XXX"
+    >
+      <div class="item item-divider">
+        {{label.header_card[$state.current.name].header}}
+        <span class="badge badge-positive">{{filteredPhotos.length}} Photos</span>
+      </div>
+      <div class="item item-text-wrap">
+        {{label.header_card[$state.current.name].body}}
+      </div>
+      <div class="item item-divider">
+        <p class="fine" ng-click="dontShowHint($event)"><i class="icon ion-close-circled"> Don't Show Me Again</i></p>
+      </div>
+    </div>
+
+    <div ng-include="'views/template/gallery.html'"></div>
+
+  </ion-content>
+</ion-view>
+
+

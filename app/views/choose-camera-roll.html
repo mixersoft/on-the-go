@@ -1,0 +1,23 @@
+
+<ion-content id="choose-tab-camera-roll" class="has-header has-footer">
+  <!-- header card  -->
+  <div class="card header-card"
+  on-swipe-left="dontShowHint($event)"
+  ng-hide="dontShowHint()"
+  >
+    <div class="item item-divider">
+      {{label.header_card[$state.current.name].header}}
+      <!-- <span class="badge badge-positive">{{filteredPhotos.length}} Photos</span> -->
+    </div>
+    <div class="item item-text-wrap"
+    >
+      {{label.header_card[$state.current.name].body}}
+    </div>
+    <div class="item item-divider">
+      <p class="fine" ng-click="dontShowHint($event)"><i class="icon ion-close-circled"> Don't Show Me Again</i></p>
+    </div>
+  </div>
+  <!-- collection-repeat of moments -->
+  <!-- <div ng-include="'views/template/moment.html'"></div> -->
+  <otg-moment otg-model="cameraRoll_DATA.moments"></otg-moment>
+</ion-content> 

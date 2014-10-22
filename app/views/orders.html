@@ -1,0 +1,178 @@
+<ion-tabs class="tabs-assertive tabs-icon-top">
+
+
+  <ion-tab ui-sref='app.orders'
+  icon="ion-gear-b"
+  title="Open"
+  >
+    
+    <ion-view title="{{label.title}}" hide-back-button="true" >
+    <ion-nav-buttons side="left">
+      <button menu-toggle="left"class="button button-icon icon ion-navicon"></button>
+    </ion-nav-buttons>
+    <ion-content class="has-header">
+      <!-- <h2 class="text-center">Open Orders</h2> -->
+
+
+
+
+
+      <div ng-repeat="order in filteredOrders = (orders | filter:filterStatusNotComplete )">
+        <div ng-include="'partials/order-card'"></div>
+      </div>
+      <div class="empty-list" ng-if="!filteredOrders.length"> 
+        <div class="card empty-list" >
+          <div class="item item-text-wrap">
+            <div class="text-center">
+              <h2>You have no open orders.</h2>
+                <div class="text-left">
+                  <div><span ng-show="orders.length">And we miss you.</span> Why don't you send us some old vacation photos?</div>
+                </div>
+                <br />
+                <div>
+                  <button class="button button-balanced button-large" style="white-space: nowrap;"
+                  ui-sref="app.choose.camera-roll">Choose Your Days</button> 
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+
+
+
+    </ion-content></ion-view>
+  </ion-tab>
+
+
+
+
+  <ion-tab ui-sref="app.orders.complete"
+  icon="ion-checkmark-circled"
+  title="Complete"
+  >
+    <!-- <ion-nav-view name="orderContent" animation='slide-left-right'></ion-nav-view> -->
+    <ion-view title="{{label.title}}" hide-back-button="true" >
+    <ion-nav-buttons side="left">
+      <button menu-toggle="left"class="button button-icon icon ion-navicon"></button>
+    </ion-nav-buttons>
+    <ion-content class="has-header ">
+
+      <div ng-repeat="order in filteredOrders = (orders | filter:{status:'complete'} )">
+        <div ng-include="'partials/order-card'"></div>
+      </div>
+      <div class="empty-list" ng-if="!filteredOrders.length"> 
+        <div class="card empty-list" >
+          <div class="item item-text-wrap">
+            <div class="text-center">
+              <h2>You have no complete orders.</h2>
+              <div ng-show="orders.length">
+                <div class="text-left">
+                  But there is something on the stove...
+                </div>
+                <br />
+                <div>
+                  <button class="button button-assertive button-large" style="white-space: nowrap;"
+                  ng-click="gotoTab('open')">Show Me What's Cooking</button> 
+                </div>
+              </div>
+              <div ng-show="!orders.length">
+                <div class="text-left">
+                  Why don't you start with some old vacation photos?
+                </div>
+                <br />
+                <div>
+                  <button class="button button-balanced button-large" style="white-space: nowrap;"
+                  ui-sref="app.choose.camera-roll">Choose Your Days</button> 
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </ion-content></ion-view>
+  </ion-tab>
+
+</ion-tabs>
+
+
+
+<script type="text/ng-template" id="partials/order-card">
+  <div class="list card workorder-card" >
+    <div class="item item-divider item-assertive">
+    <i class="icon ion-gear-b"> {{order.checkout.dateRange.from | date}} - {{order.checkout.dateRange.to | date}}</i>
+    </div>
+
+    <div class="item item-text-wrap item-icon-left">
+      <i class="icon ion-clipboard"></i>
+      <div>Order Date: {{order.datetime | date }}</div>
+      <div>Plan: <span ng-if="order.checkout.count.photos">{{order.checkout.count.photos}} Photos in </span>{{order.checkout.count.days}} Days
+      </div>
+      <div>Total: {{order.servicePlan.total | currency:$}}
+        <div class="assertive service-plans"
+        ng-if="order.servicePlan.plans.length==1">
+          Based on: {{order.servicePlan.plans[0]}}</div>
+          <div class="assertive" ng-if="order.servicePlan.plans.length>1">
+          Based on:
+          <ul class="padding-left" ng-repeat="plan in order.servicePlan.plans">
+            <li class="assertive" ng-bind="plan"></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="item item-text-wrap item-icon-left">
+      <i class="icon ion-clock"></i>
+      <div>Status: {{order.status}}</div>
+      <div>Photos Received: {{ order.received || order.checkout.count.photos}}</div>
+    </div>
+    <div class="item item-complex" 
+    style="height:150px;" 
+    ng-if="order.checkout.count.photos">
+      <otg-order-moment otg-model="order.checkout.selectedMoments"></otg-order-moment>
+    </div>
+    <div class="item item-divider item-assertive">
+    <!-- footer  -->
+    </div>
+  </div><!--  end workorder-card  -->
+</script>  
+
+
+<script type="text/ng-template" id="partials/otg-summary-moment">
+  <ion-list class="otg-summary-moment">
+        <ion-item>
+          <div class="list-group-item camera-roll-date"> 
+            <!-- dates -->
+            <ul class="list-inline">
+              <button class="btn btn-from {{options.btnSize}} date selected" >
+                <div>{{from.key | date:'dd MMM'}}</div>
+                <div class="day">{{from.key | date:'EEE'}}</div>
+              </button>
+              <li ng-repeat="photo in from.value | limitTo:options.thumbnailLimit">
+                <img lazy-src="{{photo.id}}" title="Photo {{photo.date}}" 
+                  width="{{options.thumbnailSize}}" 
+                  height="{{options.thumbnailSize}}">
+              </li>
+            </ul>
+            <!-- dates -->
+            <ul class="list-inline text-right">
+              <li ng-repeat="photo in to.value | limitTo:options.thumbnailLimit">
+                <img lazy-src="{{photo.id}}" title="taken: {{photo.date}}" 
+                  width="{{options.thumbnailSize}}" 
+                  height="{{options.thumbnailSize}}">
+              </li>
+              <button class="btn btn-to {{options.btnSize}} date selected" >
+                <div>{{to.key | date:'dd MMM'}}</div>
+                <div class="day">{{to.key | date:'EEE'}}</div>
+              </button>
+            </ul>
+          </div>
+        </ion-item>
+  </ion-list>
+</script>
+
+
+

@@ -1,0 +1,144 @@
+<ion-view title="Settings">
+  <ion-nav-buttons side="left">
+    <button menu-toggle="left" class="button button-icon icon ion-navicon"></button>
+  </ion-nav-buttons>
+  <ion-nav-buttons side="right"> 
+    <button  class="button button-icon icon ion-help-circled" ng-click="toggleHelp()"></button>
+  </ion-nav-buttons>
+  <ion-content id="settings" class="has-header" ng-class="{help: config.help}">
+    <ul class="list">
+
+
+      <li class="item item-divider item-icon-right">Account
+      </li>
+      <li class="item item-icon-left item-icon-right" ui-sref="app.settings.profile">Profile
+        <i class="icon ion-person"></i>
+        <i class="icon ion-chevron-right"></i>
+      </li>
+      <li class="item item-icon-right" ui-sref="app.settings.terms-of-service">Terms of Service
+        <i class="icon ion-chevron-right"></i>
+      </li>
+      <li class="item item-icon-left item-icon-right hide">Payment
+        <i class="icon ion-card"></i>
+        <i class="icon ion-chevron-right"></i>
+      </li>
+
+
+      <li class="item item-divider">Service > Privacy</li>
+      <li class="item item-toggle">Use Verified Mothers
+        <label class="toggle toggle-balanced">
+          <input type="checkbox" ng-model="config.privacy['only-mothers']">
+          <div class="track">
+            <div class="handle"></div>
+          </div>
+        </label>
+        <p class='fine text-stable' ng-show="config.privacy['only-mothers']">Use only verified mothers to curate my photos. May increase service time.
+        </p>
+        <p class='fine text-stable' ng-show="config.privacy['only-mothers']==false">Use any qualified Editor to curate my photos.
+        </p>
+      </li>
+
+      <li class="item item-divider">Service > Uploads</li>
+      <li class="item item-toggle">
+        <i class="icon ion-ios7-cloud-upload"></i>
+        Automatic Uploads
+        <label class="toggle toggle-balanced">
+          <input type="checkbox" ng-model="config.upload['auto-upload']">
+          <div class="track">
+            <div class="handle"></div>
+          </div>
+        </label>
+        <p class='fine text-stable' ng-show="config.upload['auto-upload']">Upload service plan photos automatically in background. May decrease battery life.
+        </p>
+        <p class='fine text-stable' ng-show="config.upload['auto-upload']==false">Manually start upload for service plan photos. 
+        </p>
+      </li>
+      <li class="item item-toggle">
+        <i class="icon ion-connection-bars" ng-show="config.upload['use-cellular-data']"></i> 
+        <i class="icon ion-wifi" ng-show="config.upload['use-cellular-data']==false"></i>
+        Use Cellular Data
+        <label class="toggle toggle-balanced">
+          <input type="checkbox" ng-model="config.upload['use-cellular-data']">
+          <div class="track">
+            <div class="handle"></div>
+          </div>
+        </label>
+        <p class='fine text-stable' ng-show="config.upload['use-cellular-data']">Use cellular network for uploading photos in service plan. May incur additional charges from your cellular carrier.
+        </p>
+        <p class='fine text-stable' ng-show="config.upload['use-cellular-data']==false">Only use Wi-Fi network for uploading photos.
+        </p>
+      </li>
+      <li class="item item-toggle">
+        <i class="icon ion-arrow-shrink"></i>
+        Use 720p
+        <label class="toggle toggle-balanced">
+          <input type="checkbox" ng-model="config.upload['use-720p-service']">
+          <div class="track">
+            <div class="handle"></div>
+          </div>
+        </label>
+        <p class='fine text-stable' ng-show="config.upload['auto-upload']">Resize photos to 720 pixels for faster service uploads without affecting quality. 
+        </p>
+      </li>
+      <li class="item hide">
+      <i class="icon ion-ios7-speedometer"></i>
+        Upload Rate Control
+        <p class="fine">Adjust the speed of background uploads.</p>
+        <div class="range range-positive">
+          <i class="icon ion-ios7-paperplane"></i>
+          <input type="range" name="rate_control" min="0" max="100" value="{{config.upload['rate-control']}}">
+          <i class="icon ion-jet"></i>
+        </div>
+      </li>
+
+      <li class="item item-divider">Archiving</li>
+      <li class="item item-toggle"><i class="icon ion-checkmark-circled"></i> Save Top Picks
+        <label class="toggle toggle-balanced">
+          <input type="checkbox" ng-model="config.archive['copy-top-picks']">
+          <div class="track">
+            <div class="handle"></div>
+          </div>
+        </label>
+        <p class='fine text-stable' ng-show="config.archive['copy-top-picks']">Copy Top Picks from service plan to App so you can safely delete the photo from your Camera Roll.
+        </p>
+        <p class='fine text-stable' ng-show="config.archive['copy-top-picks']==false">Use photos directly from Camera Roll. Saves space on your phone but your Top Picks are lost if you delete from your Camera Roll.
+        </p>
+      <li>
+      <li class="item item-toggle"><i class="icon ion-heart"></i> Save Favorites
+        <label class="toggle toggle-balanced">
+          <input type="checkbox" ng-model="config.archive['copy-favorites']">
+          <div class="track">
+            <div class="handle"></div>
+          </div>
+        </label>
+        <p class='fine text-stable' ng-show="config.archive['copy-favorites']">Copy photos marked as Favorite to App so you can safely delete the photo from your Camera Roll.
+        </p>
+        <p class='fine text-stable' ng-show="config.archive['copy-favorites']==false">Use photos directly from Camera Roll. Saves space on your phone but your Favorites are lost if you delete from your Camera Roll.
+        </p>
+      </li>  
+      <li class="item">
+      Storage: <span>{{menu.archived.count}}</span> Photos, <span>{{menu.archived.count}}</span>MB
+      <button class="button button-assertive button-full" ng-class="{disabled:!menu.archived.count}">
+        <i class="icon ion-ios7-trash"></i> 
+        Remove Saved Photos
+      </button>
+      </li>
+
+      <li class="item item-divider">Sharing</li>
+      <li class="item item-toggle">
+        <i class="icon ion-arrow-shrink"></i>
+        Use 720p
+        <label class="toggle toggle-balanced">
+          <input type="checkbox" ng-model="config.sharing['use-720p-sharing']">
+          <div class="track">
+            <div class="handle"></div>
+          </div>
+        </label>
+        <p class='fine text-stable' ng-show="config.sharing['use-720p-sharing']">Resize photos to 720 pixels for faster sharing.
+        </p>
+        <p class='fine text-stable' ng-show="config.sharing['use-720p-sharing']==false">Share full-resolution photo for best image quality.
+        </p>
+      </li>
+    </ul>
+  </ion-content>
+</ion-view>
