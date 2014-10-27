@@ -127,7 +127,7 @@ angular.module('ionBlankApp')
           return
       }
 ]
-# fake filter for selecting 'favorites' & 'shared' photos from $scope.photos
+# fake filter for selecting 'favorites' & 'shared' photos from $scope.cameraRoll_DATA.photos
 .filter 'fake', ()->
   return (input, type='none')->
     switch type
@@ -180,7 +180,7 @@ angular.module('ionBlankApp')
 
 
     $scope.getItemHeight = (item, index)->
-      # console.log "index="+index+", item.h="+item.height+" === index.h="+$scope.photos[index].height+", index.id="+$scope.photos[index].id
+      # console.log "index="+index+", item.h="+item.height+" === index.h="+$scope.cameraRoll_DATA.photos[index].height+", index.id="+$scope.cameraRoll_DATA.photos[index].id
       h = $scope.filteredPhotos[index].height
       h += 90 if $scope.on.showInfo()
       return h
@@ -190,11 +190,11 @@ angular.module('ionBlankApp')
     setFilter = (toState)->
       switch toState.name
         when 'app.top-picks'
-          $scope.filteredPhotos = fakeFilter($scope.photos,'none')
+          $scope.filteredPhotos = fakeFilter($scope.cameraRoll_DATA.photos,'none')
         when 'app.top-picks.favorites'
-          $scope.filteredPhotos = fakeFilter($scope.photos,'favorites')
+          $scope.filteredPhotos = fakeFilter($scope.cameraRoll_DATA.photos,'favorites')
         when 'app.top-picks.shared'
-          $scope.filteredPhotos = fakeFilter($scope.photos,'shared')
+          $scope.filteredPhotos = fakeFilter($scope.cameraRoll_DATA.photos,'shared')
       return    
 
     # use dot notation for prototypal inheritance in child scopes
@@ -216,15 +216,20 @@ angular.module('ionBlankApp')
         #   , 0
         return $scope.on._info   
       addFavorite: (event, item)->
-        item.favorite = true
+        event.preventDefault();
+        item.favorite = !item.favorite
+        if item.favorite == false && $state.current.name == 'app.top-picks.favorites'
+          # ???: how do we remove from/refresh collection repeat??
+          setFilter( $state.current )
         return item
       addShare: (event, item)->
+        event.preventDefault();
         confirmPopup = $ionicPopup.confirm {
           title: "Share Photo"
           template: "Are you sure you want to share this photo?"
         }
         confirmPopup.then (res)->
-          item.shared = !!res
+          item.shared = true if res
         return item  
       dontShowHint : (hide)->
         # check config['dont-show-again'] to see if we should hide hint card
@@ -246,33 +251,13 @@ angular.module('ionBlankApp')
       setFilter(toState)   
 
 
-
-      
-       
-
     init = ()->
-      $scope.photos_ByDate = TEST_DATA.cameraRoll_byDate
-      $scope.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate($scope.photos_ByDate), 2
-      $scope.photos = otgData.parsePhotosFromMoments $scope.moments
       setFilter( $state.current )
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info
 
-      # add some test data
-      TEST_DATA.addSomeFavorites($scope.photos)
-      TEST_DATA.addSomeShared($scope.photos)
-
-
-
-
       # update menu banner
-      $scope.menu.top_picks.count = $scope.photos.length
+      $scope.menu.top_picks.count = $scope.cameraRoll_DATA.photos.length
 
-      # add item.height for collection-repeat
-      _.each $scope.photos, (e,i,l)->
-        e.height = if e.id[-5...-4]<'4' then 400 else 240
-        # e.height = 240
-        e.src = "http://lorempixel.com/"+(320)+"/"+(e.height)+"?"+e.id
-        return
 
       return
 

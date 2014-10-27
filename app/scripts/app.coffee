@@ -469,6 +469,17 @@ angular
       cameraRoll_DATA.photos_ByDate = TEST_DATA.cameraRoll_byDate
       cameraRoll_DATA.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( cameraRoll_DATA.photos_ByDate ), 2
       cameraRoll_DATA.photos = otgData.parsePhotosFromMoments cameraRoll_DATA.moments
+
+      # add some test data for favorite and shared
+      TEST_DATA.addSomeFavorites( cameraRoll_DATA.photos)
+      TEST_DATA.addSomeShared( cameraRoll_DATA.photos)
+      # add item.height for collection-repeat
+      _.each $scope.cameraRoll_DATA.photos, (e,i,l)->
+        e.height = if e.id[-5...-4]<'4' then 400 else 240
+        # e.height = 240
+        e.src = "http://lorempixel.com/"+(320)+"/"+(e.height)+"?"+e.id
+        return
+
       # otgWorkOrder methods need access to library of moments
       otgWorkOrder.setMoments(cameraRoll_DATA.moments)
       $scope.orders = TEST_DATA.orders
