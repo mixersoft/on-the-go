@@ -123,21 +123,31 @@ ion-nav-view {
 
 /* directive:otg-preview */
 .otg-preview-list {
-  .card {
-    width: 340px;
+  .photo-card {
+    width: 100%;
     .caption {
       overflow: hidden;
       text-overflow: ellipsis;
-      font-weight: normal
+      font-weight: normal;
     }
-    .item-header {
-      
+    
+
+    .item {
+      &.item-header {
+
+      }
+      &.item-divider {
+
+      }
+      &.item-image {
+
+      }
+
     }
+    
   }
 
-  .item, .item-content {
-    xxxpadding: 0;
-  }
+  
 
   .item-options {
     top: 50%;

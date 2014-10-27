@@ -231,6 +231,17 @@ angular.module('ionBlankApp')
         confirmPopup.then (res)->
           item.shared = true if res
         return item  
+      addCaption: (event, item)->
+        event.preventDefault();
+        captionPopup = $ionicPopup.prompt {
+          title: "Add a Caption"
+          subTitle: "Something to capture the momeent"
+          inputPlaceholder: " Enter caption"
+        }
+        captionPopup.then (res)->
+          item.caption = res if res
+        return item  
+
       dontShowHint : (hide)->
         # check config['dont-show-again'] to see if we should hide hint card
         current = $scope.$state.current.name.split('.').pop()
@@ -245,7 +256,14 @@ angular.module('ionBlankApp')
             , 500
            
         return $scope.config['dont-show-again']['top-picks']?[current]
-    }  
+    }
+
+    $scope.data = {
+      cardStyle : {
+        width: '100%'
+      }
+    }
+
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
       setFilter(toState)   
@@ -257,6 +275,9 @@ angular.module('ionBlankApp')
 
       # update menu banner
       $scope.menu.top_picks.count = $scope.cameraRoll_DATA.photos.length
+
+      # ???: should be able to set width as %, but it doesn't work
+      $scope.data.cardStyle.width = $window.innerWidth - 20 + 'px';
 
 
       return

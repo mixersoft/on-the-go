@@ -12,8 +12,9 @@
         xxx-ng-style="{height: getItemHeight(item, $index)}"
         >
           <!-- {{$index}}:{{item.id}} -->
-          <div class="card photo-card">
-            <div class="item item-divider item-stable"
+          <div class="card photo-card"
+          ng-style="data.cardStyle">
+            <div class="item item-divider item-stable padding-horizontal"
             ng-if="on.showInfo()">
               <div class="caption">{{item.caption || item.id}}</div>
             </div>
@@ -23,21 +24,22 @@
             <div class="item item-stable tabs tabs-secondary tabs-icon-left"
             ng-if="on.showInfo()">
               <a class="tab-item" href="#"
+              ng-click="on.addCaption($event, item)">
+                <i class="icon ion-ios7-compose-outline"></i>
+              </a>
+              <a class="tab-item" href="#"
+              ng-class="{'activated tab-item-royal':item.shared}"
+              ng-click="on.addShare($event, item)">
+                <i class="icon"
+                ng-class="{'ion-ios7-upload-outline':!item.shared, 
+                'ion-ios7-upload':item.shared}"></i>
+              </a>
+              <a class="tab-item" href="#"
               ng-class="{'activated tab-item-royal':item.favorite}"
               ng-click="on.addFavorite($event, item)">
                 <i class="icon"
                 ng-class="{'ion-ios7-heart-outline':!item.favorite,
                 'ion-ios7-heart':item.favorite}"></i>
-              </a>
-              <a class="tab-item" href="#">
-                <i class="icon ion-ios7-compose-outline"></i>
-              </a>
-              <a class="tab-item" href="#"
-              ng-class="{'activated tab-item-royal':item.shared}"
-              ng-click="on.addShare($event, item);">
-                <i class="icon"
-                ng-class="{'ion-ios7-upload-outline':!item.shared, 
-                'ion-ios7-upload':item.shared}"></i>
               </a>
             </div>
           </div>
