@@ -123,9 +123,22 @@ ion-nav-view {
 
 /* directive:otg-preview */
 .otg-preview-list {
-  .item, .item-content {
-    padding: 0;
+  .card {
+    width: 340px;
+    .caption {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: normal
+    }
+    .item-header {
+      
+    }
   }
+
+  .item, .item-content {
+    xxxpadding: 0;
+  }
+
   .item-options {
     top: 50%;
     margin-top: -24px;

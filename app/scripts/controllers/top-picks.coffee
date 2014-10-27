@@ -108,32 +108,25 @@ angular.module('ionBlankApp')
           return
       }
   ]
-.directive 'anim-slide-out-left-then-hide', [
-    '$ionicAnimation'
-    ($ionicAnimation)->
-
+.directive 'collectionRepeatScrollWrap', [ '$timeout'
+    ($timeout)->
       return {
-        # templateUrl: 'views/template/otg-preview.html'
         restrict: 'A'
-        scope : false
-          # photo: "=photo"
-        link: (scope, element, attrs) ->
-          animation = $ionicAnimation {
-            name: 'animSlideOutLeftThenHide'
-            duration: 0.5
-            delay: 0
-            autoReverse: false
-            repeat: 0
-            curve: 'linear'
-            onStart: ()->
-              element.addClass('slide-out-left')
-            onEnd: ()->
-              element.removeClass('slide-out-left')
-          }
-
+        scope: 
+          resize : '&'
+        link: (scope, element, attrs)->
+          className = attrs.collectionRepeatScrollWrap   
+          scope.$watch ()->
+              return scope.resize()
+            , (newV, oldV)->
+              # wrap = ionic.DomUtil.getParentOrSelfWithClass(element[0], className)
+              wrap = document.getElementsByClassName(className)
+              return $timeout ()-> 
+                  return angular.element(wrap).triggerHandler('scroll.resize')
+                , 0
+          return
       }
-  ]
-
+]
 # fake filter for selecting 'favorites' & 'shared' photos from $scope.photos
 .filter 'fake', ()->
   return (input, type='none')->
@@ -141,17 +134,25 @@ angular.module('ionBlankApp')
       when 'none' 
         return input
       when 'favorites' 
-        match = '2468ACE'   # match last CHAR of UUID
-      when 'shared'
-        match = '2ACE'
-    return _.reduce input, (result, e, i)->
-            result.push(e) if match.indexOf(e.id[-5...-4]) > 0 
+        # match = '2468ACE'   # match last CHAR of UUID
+        return _.reduce input, (result, e, i)->
+            result.push(e) if e.favorite == true 
             return result
           , [] 
+      when 'shared'
+        return _.reduce input, (result, e, i)->
+            result.push(e) if e.shared == true 
+            return result
+          , [] 
+        # match = '2ACE'
+    # return _.reduce input, (result, e, i)->
+    #         result.push(e) if match.indexOf(e.id[-5...-4]) > 0 
+    #         return result
+    #       , [] 
       
 .controller 'TopPicksCtrl', [
-  '$scope', '$rootScope', '$state', 'otgData', '$timeout', 'TEST_DATA', 'fakeFilter'
-  ($scope, $rootScope, $state, otgData, $timeout, TEST_DATA, fakeFilter) ->
+  '$scope', '$rootScope', '$state', 'otgData', '$timeout', '$window', '$ionicPopup', 'TEST_DATA', 'fakeFilter'
+  ($scope, $rootScope, $state, otgData, $timeout, $window, $ionicPopup, TEST_DATA, fakeFilter) ->
     $scope.label = {
       title: "Top Picks"
       header_card: 
@@ -180,31 +181,9 @@ angular.module('ionBlankApp')
 
     $scope.getItemHeight = (item, index)->
       # console.log "index="+index+", item.h="+item.height+" === index.h="+$scope.photos[index].height+", index.id="+$scope.photos[index].id
-      return $scope.filteredPhotos[index].height
-
-
-    $scope.edit = (item)-> 
-      alert('Edit Item: ' + item.id);
-
-    $scope.share = (item)->
-      alert('Share Item: ' + item.id);
-
-    $scope.dontShowHint = (hide)->
-      current = $scope.$state.current.name.split('.').pop()
-      if hide
-        target = ionic.DomUtil.getParentOrSelfWithClass(hide.currentTarget, 'card')
-        target = angular.element(target).addClass('card-animate').addClass('slide-out-left-hide')
-        property = $scope.config['dont-show-again']['top-picks']
-        $timeout ()->
-            property[current] = true
-            target.removeClass('card-animate').removeClass('slide-out-left-hide')
-          , 500
-         
-      return $scope.config['dont-show-again']['top-picks']?[current]
-    
-    $scope.reorderItem = (items, item, fromIndex, toIndex)->
-      items.splice(fromIndex, 1);
-      items.splice(toIndex, 0, item);
+      h = $scope.filteredPhotos[index].height
+      h += 90 if $scope.on.showInfo()
+      return h
 
     # filter photos based on $state.current
     # TODO: use ion-tabs instead?
@@ -218,8 +197,57 @@ angular.module('ionBlankApp')
           $scope.filteredPhotos = fakeFilter($scope.photos,'shared')
       return    
 
+    # use dot notation for prototypal inheritance in child scopes
+    $scope.on  = {
+      _info: true
+      showInfo: (value=null)->
+        return $scope.on._info if value == null 
+
+        if value=='toggle'
+          $scope.on._info = !$scope.on._info 
+        else if value != null
+          $scope.on._info = !value
+        # # fire 'scroll.resize' to renderOnResize collection-repeat
+        # MOVED to directive: collection-repeat-scroll-wrap
+        # crw = document.getElementsByClassName('collection-repeat-wrap')
+        # return $scope.on._info  if !crw.length 
+        # $timeout ()->
+        #     angular.element(crw).triggerHandler('scroll.resize');
+        #   , 0
+        return $scope.on._info   
+      addFavorite: (event, item)->
+        item.favorite = true
+        return item
+      addShare: (event, item)->
+        confirmPopup = $ionicPopup.confirm {
+          title: "Share Photo"
+          template: "Are you sure you want to share this photo?"
+        }
+        confirmPopup.then (res)->
+          item.shared = !!res
+        return item  
+      dontShowHint : (hide)->
+        # check config['dont-show-again'] to see if we should hide hint card
+        current = $scope.$state.current.name.split('.').pop()
+        if hide
+          target = ionic.DomUtil.getParentOrSelfWithClass(hide.currentTarget, 'card')
+          # TODO: add proper hide animation
+          target = angular.element(target).addClass('card-animate').addClass('slide-out-left-hide')
+          property = $scope.config['dont-show-again']['top-picks']
+          $timeout ()->
+              property[current] = true
+              target.removeClass('card-animate').removeClass('slide-out-left-hide')
+            , 500
+           
+        return $scope.config['dont-show-again']['top-picks']?[current]
+    }  
+
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
       setFilter(toState)   
+
+
+
+      
        
 
     init = ()->
@@ -227,6 +255,14 @@ angular.module('ionBlankApp')
       $scope.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate($scope.photos_ByDate), 2
       $scope.photos = otgData.parsePhotosFromMoments $scope.moments
       setFilter( $state.current )
+      $scope.on.showInfo(true) if $scope.config['top-picks']?.info
+
+      # add some test data
+      TEST_DATA.addSomeFavorites($scope.photos)
+      TEST_DATA.addSomeShared($scope.photos)
+
+
+
 
       # update menu banner
       $scope.menu.top_picks.count = $scope.photos.length

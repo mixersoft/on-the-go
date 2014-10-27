@@ -666,9 +666,16 @@ angular.module('ionBlankApp')
         ]
     }      
 
+    addSomeShared: (list)->
+        match = '2'       # match last char of id
+        _.each list, (e)->
+            e.shared = true if match.indexOf(e.id[-5...-4]) > -1 
       
-    topPix:
-      [1,2,5,8,9,10,11,16,20]
+    addSomeFavorites: (list)->
+        match = '24'       # match last char of id
+        _.each list, (e)->
+            e.favorite = true if match.indexOf(e.id[-5...-4]) > -1 
+
 
 
     orders: [

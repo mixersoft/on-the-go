@@ -4,11 +4,8 @@
   </ion-nav-buttons>
   <ion-nav-buttons side="right">
       <div class="buttons">
-        <button class="button button-icon icon ion-ios7-minus-outline" 
-          ng-click="state.showDelete = !state.showDelete; state.showReorder = false"></button>
-        <button class="button hide"
-          ng-click="state.showDelete = false; state.showReorder = !state.showReorder">
-            Reorder
+        <button class="button button-icon icon ion-ios7-information-outline" 
+          ng-click="on.showInfo('toggle')">
         </button>
       </div>
   </ion-nav-buttons>
@@ -18,7 +15,7 @@
  -->
 
 
-  <ion-content>
+  <ion-content class="collection-repeat-wrap">
     <div class="button-bar bar-royal">
       <a class="button icon ion-checkmark-circled" ui-sref="app.top-picks" ui-sref-active="active"></a>
       <a class="button icon ion-heart" ui-sref=".favorites"  ui-sref-active="active"></a>
@@ -26,19 +23,19 @@
     </div>
     <!-- header card  -->
     <div class="card header-card card-animate" 
-    on-swipe-left="dontShowHint($event)"
-    ng-hide="dontShowHint()"
+    on-drag-left="on.dontShowHint($event)"
+    ng-hide="on.dontShowHint()"
     animation="slide-out-left-XXX"
     >
-      <div class="item item-divider">
+      <div class="item item-divider item-header">
         {{label.header_card[$state.current.name].header}}
         <span class="badge badge-positive">{{filteredPhotos.length}} Photos</span>
       </div>
       <div class="item item-text-wrap">
         {{label.header_card[$state.current.name].body}}
       </div>
-      <div class="item item-divider">
-        <p class="fine" ng-click="dontShowHint($event)"><i class="icon ion-close-circled"> Don't Show Me Again</i></p>
+      <div class="item item-divider item-footer">
+        <p class="fine" ng-click="on.dontShowHint($event)"><i class="icon ion-close-circled"> Don't Show Me Again</i></p>
       </div>
     </div>
 

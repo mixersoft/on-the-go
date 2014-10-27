@@ -1,34 +1,45 @@
     <!-- collection-repeat  -->
-    <ion-list class="otg-preview-list"
+    <div class="otg-preview-list"
                 show-delete="state.showDelete"
                 show-reorder="state.showReorder"
                 can-swipe="state.canSwipe">
-      <div class="item"
+      <div 
         collection-repeat="item in filteredPhotos"
         collection-item-width="'100%'"
         collection-item-height="getItemHeight(item, $index)"
+        collection-repeat-scroll-wrap="collection-repeat-wrap"
+        resize="on.showInfo()"
+        xxx-ng-style="{height: getItemHeight(item, $index)}"
         >
           <!-- {{$index}}:{{item.id}} -->
-          
-            <ion-item>
-
+          <div class="card photo-card">
+            <div class="item item-divider item-stable"
+            ng-if="on.showInfo()">
+              <div class="caption">{{item.caption || item.id}}</div>
+            </div>
+            <div class="item item-image">
               <img ng-src="{{item.src}}" height="{{item.height}}">
-              <ion-option-button class="button-positive"
-                                 ng-click="share(item)">
-                Share
-              </ion-option-button>
-              <ion-option-button class="button-energized"
-                                 ng-click="edit(item)">
-                Edit
-              </ion-option-button>
-              <ion-delete-button class="ion-minus-circled"
-                                 ng-click="photos.splice($index, 1)">
-              </ion-delete-button>
-              <ion-reorder-button class="ion-navicon"
-                                  on-reorder="reorderItem(photos, item, $fromIndex, $toIndex)">
-              </ion-reorder-button>
-
-            </ion-item>
-          
+            </div>
+            <div class="item item-stable tabs tabs-secondary tabs-icon-left"
+            ng-if="on.showInfo()">
+              <a class="tab-item" href="#"
+              ng-class="{'activated tab-item-royal':item.favorite}"
+              ng-click="on.addFavorite($event, item)">
+                <i class="icon"
+                ng-class="{'ion-ios7-heart-outline':!item.favorite,
+                'ion-ios7-heart':item.favorite}"></i>
+              </a>
+              <a class="tab-item" href="#">
+                <i class="icon ion-ios7-compose-outline"></i>
+              </a>
+              <a class="tab-item" href="#"
+              ng-class="{'activated tab-item-royal':item.shared}"
+              ng-click="on.addShare($event, item)">
+                <i class="icon"
+                ng-class="{'ion-ios7-upload-outline':!item.shared, 
+                'ion-ios7-upload':item.shared}"></i>
+              </a>
+            </div>
+          </div>
       </div>
-    </ion-list>
+    </div>
