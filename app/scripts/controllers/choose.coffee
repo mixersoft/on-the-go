@@ -9,22 +9,26 @@
 ###
 angular.module('ionBlankApp')
 # uses $q.promise to load src 
-.directive 'lazySrc', ()->
-  return {
-    restrict: 'A'
-    scope: false
-    link: (scope, element, attrs) ->
-      uuidExt = attrs.lazySrc
-      options = scope.options
-      qGetSrc = scope.qGetSrc
-      lorempixel = 'http://lorempixel.com/'+options.thumbnailSize+'/'+options.thumbnailSize+'?'+uuidExt
-      element.attr('src', lorempixel)
-      if qGetSrc && uuidExt.length == 40
-        qGetSrc(uuidExt).then (dataUrl)->
-          console.log "return from lazy-src directive getSrc()"
-          element.attr('src', dataUrl)
+.directive 'lazySrc', [
+  'TEST_DATA'
+  (TEST_DATA)->
+    return {
+      restrict: 'A'
+      scope: false
+      link: (scope, element, attrs) ->
+        uuidExt = attrs.lazySrc
+        options = scope.options
+        qGetSrc = scope.qGetSrc
+        lorempixelSrc = TEST_DATA.lorempixel.getSrc(uuidExt, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
+        # lorempixelSrc = 'http://lorempixel.com/'+options.thumbnailSize+'/'+options.thumbnailSize+'?'+uuidExt
+        element.attr('src', lorempixelSrc)
+        if qGetSrc && uuidExt.length == 40
+          qGetSrc(uuidExt).then (dataUrl)->
+            console.log "return from lazy-src directive getSrc()"
+            element.attr('src', dataUrl)
 
   }
+]
 .directive 'otgMoment', [
   '$window', 'otgWorkOrder', 'otgData'
   ($window, otgWorkOrder, otgData)->

@@ -9,20 +9,30 @@
 ###
 angular.module('ionBlankApp')
   .value 'TEST_DATA', {
-    photos: [0..24]
-    cameraRoll_byDate_lorempixel:
-      '2014-06-19':[19..20]
-      '2014-06-14':[18]
-      '2014-06-13':[14..17]
-      '2014-06-11':[8..13]
-      '2014-06-08':[5..7]
-      '2014-06-07':[2..4]
-      '2014-06-04':[1]
-      '2014-06-03':[0]
-      '2014-06-02':[21]
-      '2014-06-01':[22]
-      '2014-05-31':[23]
-      '2014-05-30':[24]
+    lorempixel:
+        # helper functions for generating static lorempixel images
+        # template: "http://lorempixel.com/[W]/[H]/[category]/[index]
+        shuffle: ()->
+            categories = ['abstract', 'animals', 'business', 'cats', 'city', 'food', 'nightlife', 'fashion', 'people', 'nature', 'sports', 'technics', 'transport']
+            lookup = []
+            _.each categories, (category)->
+                lookup.push(category + '/' + i)  for i in [1..10] 
+            lookup = _.shuffle lookup
+            result = lookup.concat(lookup, lookup, lookup, lookup)
+            return result
+        getSrc: (uuidExt, W, H, TEST_DATA)->
+            return "lorempixel error" if !TEST_DATA.lorempixel
+            if !TEST_DATA.lorempixel._static
+                TEST_DATA.lorempixel._static = TEST_DATA.lorempixel.shuffle()
+            if !TEST_DATA.lorempixel._dictionary
+                TEST_DATA.lorempixel._dictionary = {}
+
+            if TEST_DATA.lorempixel._dictionary[uuidExt]?
+                return "http://lorempixel.com/"+W+"/"+H+"/"+TEST_DATA.lorempixel._dictionary[uuidExt]+"?"+uuidExt
+            else # cache in dictionary
+                TEST_DATA.lorempixel._dictionary[uuidExt] = TEST_DATA.lorempixel._static.shift()
+                return "http://lorempixel.com/"+W+"/"+H+"/"+TEST_DATA.lorempixel._dictionary[uuidExt]+"?"+uuidExt
+
     cameraRoll_byDate: {
         "2014-01-02": [
             "00000000-0000-0000-0000-000000001A61.JPG",

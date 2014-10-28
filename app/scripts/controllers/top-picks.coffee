@@ -81,9 +81,10 @@ angular.module('ionBlankApp')
     }
     return self 
   ]
+# otgPreview is currently unused  
 .directive 'otgPreview', [
-    '$window'
-    ($window)->
+    'TEST_DATA'
+    (TEST_DATA)->
       default_options = {
         width: 320
         height: 240
@@ -101,7 +102,8 @@ angular.module('ionBlankApp')
           options = _.clone scope.$parent.options 
           if !scope.photo?.height && (scope.photo.id[-5...-4]<'4')
             options.height = 400
-          src = "http://lorempixel.com/"+(options.width)+"/"+(options.height)+"?"+scope.photo.id
+          # src = "http://lorempixel.com/"+(options.width)+"/"+(options.height)+"?"+scope.photo.id
+          src =  TEST_DATA.lorempixel.getSrc(scope.photo.id, options.width, options.height, TEST_DATA)
           scope.photo.src = src
           # scope.photo.width = options.width
           scope.photo.height = options.height
@@ -125,6 +127,51 @@ angular.module('ionBlankApp')
                   return angular.element(wrap).triggerHandler('scroll.resize')
                 , 0
           return
+      }
+]
+.factory 'otgImgCache', ['$q', '$ionicPlatform'
+    ($q, $ionicPlatform)->
+      return if !ImgCache
+      deferred = $q.defer()
+
+      $ionicPlatform.ready ()->
+        if !window.cordova
+          # console.warn 'ImgCache: Cordova not available'
+          deferred.reject('ImgCache: Cordova not available') 
+        else 
+          ImgCache.options.debug = true;
+          ImgCache.init ()->
+              console.log "ImgCache Init SUCCESS"
+              deferred.resolve('ImgCache ready')
+            , ()->
+              console.warn "ImgCache Init ERROR"
+              deferred.reject('ImgCache init ERROR')
+              
+
+      return {
+        promise : deferred.promise
+      }
+]
+
+# not properly implemented
+.directive 'imgCache', [ 'otgImgCache'
+    (otgImgCache)->
+      return {
+        restrict: 'A'
+        scope: false
+        link: (scope, element, attrs)->
+          otgImgCache.promise.then (o)->
+              # return if !ImgCache || !ImgCache.ready
+              url = attrs.ngSrc || attrs.src
+              ImgCache.isCached url , (path, success)->
+                return ImgCache.useCachedFile element if success
+                ImgCache.cacheFile url, ()->
+                    console.log "ImgCache: using cached file=" + url
+                    return ImgCache.useCachedFile element 
+                  , ()->
+                    console.log "ImgCache: cache hit ERROR. file=" + url
+          .catch (o)->
+              console.warn "ImgCache error, msg=" + o
       }
 ]
 # fake filter for selecting 'favorites' & 'shared' photos from $scope.cameraRoll_DATA.photos

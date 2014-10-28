@@ -413,16 +413,16 @@ angular
         if plugins?.appPreferences?
           prefs = plugins.appPreferences
           ok = (value)-> # appPreferences.store returns "OK"
-            # alert "SUCCESS: value=" + JSON.stringify value
-            prefs.fetch okAlert, fail, 'prefs'
+            console.log "NSUserDefaults save: value=" + value
+            # prefs.fetch okAlert, fail, 'prefs'
             return
 
           okAlert = (value)->
-            alert "SUCCESS: value=" + JSON.stringify value
+            console.log "NSUserDefaults fetch SUCCESS: value=" + JSON.stringify value
             return  
 
           fail = (err)->
-            console.warn "FAIL: error=" + JSON.stringify err
+            console.warn "NSUserDefaults: error=" + JSON.stringify err
             return
 
           return prefs.store ok, fail, 'prefs', newVal
@@ -458,10 +458,10 @@ angular
               if config?.status == "PLUGIN unavailable"
                 console.log config.status
               else if config?.status == "EMPTY"
-                alert "config=" + JSON.stringify config
+                console.log "NSUserDefaults=" + JSON.stringify config
                 _prefs.store $scope.config
               else 
-                alert "config=" + JSON.stringify config
+                console.log "NSUserDefaults=" + JSON.stringify config
                 _.extend $scope.config, config
               return
             return
@@ -474,10 +474,12 @@ angular
       TEST_DATA.addSomeFavorites( cameraRoll_DATA.photos)
       TEST_DATA.addSomeShared( cameraRoll_DATA.photos)
       # add item.height for collection-repeat
+
       _.each $scope.cameraRoll_DATA.photos, (e,i,l)->
         e.height = if e.id[-5...-4]<'4' then 400 else 240
         # e.height = 240
-        e.src = "http://lorempixel.com/"+(320)+"/"+(e.height)+"?"+e.id
+        # e.src = "http://lorempixel.com/"+(320)+"/"+(e.height)+"/"+lorempixelPhotos.shift()+"?"+e.id
+        e.src = TEST_DATA.lorempixel.getSrc(e.id, 320, e.height, TEST_DATA)
         return
 
       # otgWorkOrder methods need access to library of moments
