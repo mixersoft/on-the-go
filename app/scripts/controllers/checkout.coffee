@@ -9,8 +9,8 @@
 ###
 angular.module('ionBlankApp')
 .controller 'CheckoutCtrl', [
-  '$scope', '$rootScope', '$state', '$stateParams', '$ionicNavBarDelegate', '$ionicModal', 'otgData', 'otgWorkOrder', 'otgUploader', 'TEST_DATA',
-  ($scope, $rootScope, $state, $stateParams, $ionicNavBarDelegate, $ionicModal, otgData, otgWorkOrder, otgUploader, TEST_DATA) ->
+  '$scope', '$rootScope', '$state', '$stateParams', '$ionicNavBarDelegate', '$ionicModal', 'otgData', 'otgWorkOrder', 'otgUploader', 'otgParse', 'TEST_DATA',
+  ($scope, $rootScope, $state, $stateParams, $ionicNavBarDelegate, $ionicModal, otgData, otgWorkOrder, otgUploader, otgParse, TEST_DATA) ->
     $scope.label = {
       title: "Checkout"
       header_card: 
@@ -118,7 +118,8 @@ angular.module('ionBlankApp')
         switch $state.current.name
           when 'app.checkout.complete'
             # AFTER submit, queue photos
-            _queueSelectedMoments $scope.checkout.selectedMoments
+            _createWorkorder $scope.checkout
+            # _queueSelectedMoments $scope.checkout.selectedMoments
 
 
         # put on on $rootScope.$on '$stateChangeSuccess'
@@ -203,12 +204,36 @@ angular.module('ionBlankApp')
           servicePlan.plans.push('Promo Code: ' + promoCode)
           servicePlan.total = Math.max( servicePlan.total - 3, 0)
 
-    _queueSelectedMoments = (moments)->
-      # photos = otgData.parsePhotosFromMoments moments
-      otgUploader.queue(moments)
-      return
 
+    _createWorkorder = (checkout)->
+      otgParse.checkSessionUserP().then ()->
+        options = {
+          status: 'new'
+          fromDate: checkout.dateRange.from
+          toDate: checkout.dateRange.to
+        }
+        return otgParse.findWorkorderP(options)
+      .then (results)->
+          return otgParse.createWorkorderP(checkout) if _.isEmpty(results)
+          return results
+        , (error)->
+          return otgParse.createWorkorderP(checkout)
+      .then (workorderObj)->
+        photos = _getPhotosFromMoments(checkout.selectedMoments)
+        return otgUploader.queueP(workorderObj, photos)
+      .then (queue)->
+        console.log "workorder created successfully and photos queued, length=" + queue.length
 
+    _getPhotosFromMoments = (moments)->
+      return moments if moments[0]?.type != 'moment' 
+      photoList = otgData.parsePhotosFromMoments moments
+      lookup = $scope.cameraRoll_DATA.photos
+      photos = _.map photoList, (o)->
+        # map to lorempixel src
+        return _.findWhere lookup, {id : o.id}
+
+      return photos    # with photo.src as lorempixel  
+        
 
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams)->

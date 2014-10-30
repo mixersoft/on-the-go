@@ -67,21 +67,22 @@ angular
           , _deviceready.timeout
         $ionicPlatform.ready ()->
           $timeout.cancel _deviceready.cancel
-          console.log "$ionicPlatform reports deviceready"
+          # $rootScope.deviceId = $cordovaDevice.getUUID()
+          device = ionic.Platform.device()
+          $rootScope.deviceId = device.uuid if device.uuid
+          console.log "$ionicPlatform reports deviceready, device.UUID=" + $rootScope.deviceId
           return deferred.resolve("deviceready")
         return _deviceready.promise = deferred.promise
     }
 
-    parseUser = {
-      anonymous: 
-        username: 'anonymous'
-        password: 'dfgkj439gdlkHGW&v*634lkjg9S'
+    parseClass = {
+      PhotoObj : Parse.Object.extend('PhotoObj') 
+      WorkorderObj : Parse.Object.extend('WorkorderObj')   
     }
 
-    PhotoObj = Parse.Object.extend('PhotoObj')  
 
     self = {
-      deviceReadyP: _deviceready.check()
+      deviceReadyP: _deviceready.check
       signUpP: (userCred)->
         dfd = $q.defer()
         user = new Parse.User();
@@ -111,6 +112,10 @@ angular
           } 
         return dfd.promise
 
+      logoutSession: ()->
+        Parse.User.logOut()
+        return $rootScope.sessionUser = Parse.User.current()
+
       anonSignUpP: (seed)->
         dfd = $q.defer()
         _uniqueId = (length=8) ->
@@ -128,10 +133,69 @@ angular
               return dfd.reject "parseUser anonSignUpP() FAILED" 
         return dfd.promise
 
+      checkSessionUserP: ()-> 
+        if _.isEmpty($rootScope.sessionUser)
+          if $rootScope.user.username? && $rootScope.user.password?
+            authPromise = self.loginP($rootScope.user).then null
+                , (error)->
+                  userCred = error
+                  return self.signUpP($rootScope.user)
+          else 
+            authPromise = self.anonSignUpP()
+          authPromise.then ()->
+              return self.checkSessionUserP() # check again
+            , (error)->
+              throw error # end of line
 
-      resizeP: (o)->
-        # placeholder 
-        return $q.when(o)
+        # upgrade to named user
+        if $rootScope.user.username? && $rootScope.user.username != $rootScope.sessionUser.get('username')
+          _.each ['username', 'password', 'email'], (key)->
+            $rootScope.sessionUser.set(key, $rootScope.user[key])
+          $rootScope.sessionUser.save().then ()->
+              return $q.when()
+            , (error)->
+              throw error # end of line
+        else 
+          return $q.when()
+
+      findWorkorderP : (options)->
+        owner = new Parse.Query(parseClass.WorkorderObj)
+        owner.equalTo('owner', $rootScope.sessionUser)
+        # # or query on relation
+        # contributors = parseClass.workorderObj.getRelation('contributors')
+        # contrib = new Parse.Query(contributors)
+        owner.equalTo('status', options.status) if options.status
+        owner.equalTo('fromDate', options.fromDate || options.dateRange.from)
+        owner.equalTo('toDate', options.toDate || options.dateRange.to)
+        return owner.first()
+
+
+      createWorkorderP : (checkout)->
+        parseData = {
+          owner: $rootScope.sessionUser
+          deviceId: $rootScope.deviceId
+          # contributors: [$rootScope.sessionUser]
+          # accessors: []
+          fromDate: checkout.dateRange.from
+          toDate: checkout.dateRange.to
+          devices: [$rootScope.deviceId]
+          count_expected: checkout.count.photos || 0 
+          count_received: 0
+          editor: null 
+          status: 'new'
+          startedAt: null
+          finishedAt: null
+          approvedAt: null
+          lastActionAt: null
+          elapsed: 0
+        }
+        workorderObj = new parseClass.WorkorderObj(parseData)
+        workorderObj.relation('accessors').add($rootScope.sessionUser)
+        workorderObj.relation('contributors').add($rootScope.sessionUser)
+        return workorderObj.save().then null, (error)->
+          console.error "parse WorkorderObj save error, msg=" + JSON.stringify error
+          throw error
+        
 
       resampleP : (imgOrSrc, W=320, H=null)->
         console.log "*** resize & convert to base64 using Resample.js ******* imgOrSrc=" + imgOrSrc
@@ -162,26 +226,27 @@ angular
         return parseFile.save()
   
 
-      uploadPhotoP : (photo)->
+      uploadPhotoP : (workorder, photo)->
         # see otgData for Photo properties
-        if _.isEmpty($rootScope.sessionUser)
-          if $rootScope.user.username? && $rootScope.user.password?
-            authPromise = self.loginP($rootScope.user).then null
-                , (error)->
-                  userCred = error
-                  return self.signUpP($rootScope.user)
-          else 
-            authPromise = self.anonSignUpP()
-          return authPromise.then (userCred)->
-              self.uploadPhotoP(photo) if $rootScope.sessionUser
+        # if _.isEmpty($rootScope.sessionUser)
+        #   if $rootScope.user.username? && $rootScope.user.password?
+        #     authPromise = self.loginP($rootScope.user).then null
+        #         , (error)->
+        #           userCred = error
+        #           return self.signUpP($rootScope.user)
+        #   else 
+        #     authPromise = self.anonSignUpP()
+        #   return authPromise.then (userCred)->
+        #       self.uploadPhotoP(photo) if $rootScope.sessionUser
 
-        # upgrade to named user
-        if $rootScope.sessionUser.get('username') != $rootScope.user.username
-          _.each ['username', 'password', 'email'], (key)->
-            $rootScope.sessionUser.set(key, $rootScope.user[key])
-
-
-        return self.deviceReadyP.then ()->
+        # # upgrade to named user
+        # if $rootScope.sessionUser.get('username') != $rootScope.user.username
+        #   _.each ['username', 'password', 'email'], (key)->
+        #     $rootScope.sessionUser.set(key, $rootScope.user[key])
+        return throw "ERROR: cannot upload without valid workorder" if !workorder
+        return self.deviceReadyP()
+          .then self.checkSessionUserP() 
+          .then ()->
             return self.resampleP(photo.src, 320)
           .then (base64src)->
               return self.uploadFileP(base64src, photo)
@@ -196,12 +261,13 @@ angular
           .then (parseFile)->
               parseData = _.extend {
                     assetId: photo.id
-                    user: $rootScope.sessionUser
-                    deviceId: '123'
+                    owner: $rootScope.sessionUser
+                    workorder : workorder
+                    deviceId: $rootScope.deviceId
                     src: parseFile.url()
                   }
                 , _.pick photo, ['dateTaken', 'rating', 'favorite', 'caption', 'exif']
-              photoObj = new PhotoObj(parseData)
+              photoObj = new parseClass.PhotoObj(parseData)
               return photoObj.save()
             , (err)->
               console.warn "ERROR: parseFile.save() JPG file, err=" + JSON.stringify err

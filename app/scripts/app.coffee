@@ -392,6 +392,8 @@ angular
       tos: false
       rememberMe: false
     } 
+    # get GUID
+    $rootScope.deviceId = "1234567890" # updated in otgParse.deviceReadyP()
 
     $scope.orders = [] # order history
 
