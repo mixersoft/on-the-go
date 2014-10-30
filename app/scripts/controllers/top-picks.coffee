@@ -13,9 +13,15 @@ angular.module('ionBlankApp')
     DAY_MS = 24*60*60*1000
     defaults_photo = {
         id: null
-        date: null
+        dateTaken: null
         rating: null 
         favorite: false
+        shared: false
+        caption: null
+        exif: {}
+        # demo properties
+        height: null
+        src: null   # see: AppCtrl/otgPreview for lorempixel src
     }
     self = {
       parsePhotosFromMoments : (moments)->

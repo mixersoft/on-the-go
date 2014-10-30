@@ -11,16 +11,13 @@
 angular
 .module('ionBlankApp', [
   'ionic',
-  # 'ionBlankApp.controllers',
-  # 'ngAnimate',
-  # 'ngCookies',
-  # 'ngResource',
-  # 'ngRoute',
-  # 'ngSanitize',
-  # 'ngTouch'
+  'ngCordova',
+  'onTheGo.backend',
 ])
 .constant('version', '0.0.1')
-.run ['$rootScope', '$state', '$stateParams', '$ionicPlatform', ($rootScope, $state, $stateParams, $ionicPlatform)->
+.run [
+  '$rootScope', '$state', '$stateParams', '$ionicPlatform', 'PARSE_CREDENTIALS'
+  ($rootScope, $state, $stateParams, $ionicPlatform, PARSE_CREDENTIALS)->
     $ionicPlatform.ready ()->
       # Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
       # for form inputs)
@@ -28,9 +25,13 @@ angular
       # org.apache.cordova.statusbar required
       StatusBar.styleDefault() if window.StatusBar?
 
+    Parse.initialize( PARSE_CREDENTIALS.APP_ID, PARSE_CREDENTIALS.JS_KEY )
+    $rootScope.sessionUser = Parse.User.current()
+
+    # deprecate?
     $rootScope.$state = $state;
     $rootScope.$stateParams = $stateParams;  
-  ]
+]
 .config ($stateProvider, $urlRouterProvider)->
   $stateProvider
     .state('app', {
@@ -308,8 +309,8 @@ angular
 
 
 .controller 'AppCtrl', [
-  '$scope', '$ionicModal', '$timeout', '$q', '$ionicPlatform', 'otgData', 'otgWorkOrder', 'TEST_DATA',
-  ($scope, $ionicModal, $timeout, $q, $ionicPlatform,  otgData, otgWorkOrder, TEST_DATA)->
+  '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', '$ionicPlatform', 'otgData', 'otgWorkOrder', 'TEST_DATA',
+  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform,  otgData, otgWorkOrder, TEST_DATA)->
     # // Form data for the login modal
     $scope.loginData = {};
 
@@ -375,7 +376,7 @@ angular
           calendar: false
 
     }
-    $scope.user = {
+    $rootScope.user = $scope.user = {
       id: null
 
       username: null
@@ -448,6 +449,7 @@ angular
           promise.resolve({status:"PLUGIN unavailable"}) 
 
         return promise.promise
+
 
     }
 

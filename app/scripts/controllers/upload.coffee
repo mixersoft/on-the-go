@@ -9,8 +9,8 @@
 ###
 angular.module('ionBlankApp')
 .factory 'otgUploader', [
-  '$timeout', 'otgData'
-  ($timeout, otgData)->
+  '$timeout', 'otgData', 'otgParse'
+  ($timeout, otgData, otgParse)->
 
     self = {
       _queue : []
@@ -26,18 +26,29 @@ angular.module('ionBlankApp')
           return this.state.isEnabled
       isActive: ()->
         return self.state.isActive    
-      startUploading: (count=0)->
+      startUploading: (count=0, photos)->
         if count && _.isNumber(count)
-          self._queue.push(i) for i in [0..count] 
+          self._queue.push(photos[i]) for i in [0..count] 
         if self.state.isEnabled && self._queue.length
           self.state.isActive = true if count!='toggle'
           $timeout ()->
-              self._queue.shift()
+              index = self._queue.length
+
+
+
+
+              photo = self._queue.shift()
+              # test upload to parse
+              otgParse.uploadPhotoP(photo)
+
+
               self.state.isActive = !self.state.isActive && self._queue.length
               self.startUploading('toggle') 
             , 500
         else if !self.state.isEnabled || self._queue.length
           self.state.isActive = false
+
+
       isQueued: ()->
         return !!self.queueLength() 
       queueLength: ()->
@@ -52,6 +63,7 @@ angular.module('ionBlankApp')
           photos = momentsOrPhotos
 
         _.each photos, (photo)->
+
           self._queue.push photo.id
         return
 
@@ -90,7 +102,7 @@ angular.module('ionBlankApp')
         return  
       demo: (ev)->
         otgUploader.enable(true)
-        otgUploader.startUploading(9)
+        otgUploader.startUploading(2, $scope.cameraRoll_DATA.photos)
 
     }
 
