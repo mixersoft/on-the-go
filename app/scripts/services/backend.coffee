@@ -170,7 +170,7 @@ angular
         return owner.first()
 
 
-      createWorkorderP : (checkout)->
+      createWorkorderP : (checkout, servicePlan)->
         parseData = {
           owner: $rootScope.sessionUser
           deviceId: $rootScope.deviceId
@@ -181,6 +181,9 @@ angular
           devices: [$rootScope.deviceId]
           count_expected: checkout.count.photos || 0 
           count_received: 0
+          count_duplicate: 0
+          count_days: checkout.count.days 
+          servicePlan: servicePlan
           editor: null 
           status: 'new'
           startedAt: null

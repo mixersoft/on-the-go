@@ -43,11 +43,22 @@ angular.module('ionBlankApp')
           # test upload to parse
           self.state.isActive = true
           otgParse.uploadPhotoP(self._workorder, photo).then ()->
-            self.state.isActive = false
-            self._workorder.increment('count_received')
-            return self._workorder.save().then ()->
+              self.state.isActive = false
+              self._workorder.increment('count_received')
+              return self._workorder.save()
+            , (error)->
+              # check for duplicate assetId using cloud code
+              # https://www.parse.com/questions/unique-fields--2
+              if error == "Duplicate Photo.assetId Detected"
+                self._workorder.increment('count_received')
+                self._workorder.increment('count_duplicate')
+                return self._workorder.save()
+              else 
+                return $q.when()
+            .then ()->
               return self.startUploadingP()  if self._queue.length
               return $q.when()
+
 
         else if !self.state.isEnabled || self._queue.length
           self.state.isActive = false
@@ -96,7 +107,7 @@ angular.module('ionBlankApp')
         #   , 100
         return  
       demo: (ev)->
-        return # use checkout instead
+        return # deprecate: use checkout instead
         otgUploader.enable(true)
         otgParse.checkSessionUserP().then ()->
           return otgParse.findWorkorderP({status:'new'})

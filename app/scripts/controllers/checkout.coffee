@@ -9,8 +9,8 @@
 ###
 angular.module('ionBlankApp')
 .controller 'CheckoutCtrl', [
-  '$scope', '$rootScope', '$state', '$stateParams', '$ionicNavBarDelegate', '$ionicModal', 'otgData', 'otgWorkOrder', 'otgUploader', 'otgParse', 'TEST_DATA',
-  ($scope, $rootScope, $state, $stateParams, $ionicNavBarDelegate, $ionicModal, otgData, otgWorkOrder, otgUploader, otgParse, TEST_DATA) ->
+  '$scope', '$rootScope', '$state', '$stateParams', '$q', '$ionicNavBarDelegate', '$ionicModal', 'otgData', 'otgWorkOrder', 'otgUploader', 'otgParse', 'TEST_DATA',
+  ($scope, $rootScope, $state, $stateParams, $q,  $ionicNavBarDelegate, $ionicModal, otgData, otgWorkOrder, otgUploader, otgParse, TEST_DATA) ->
     $scope.label = {
       title: "Checkout"
       header_card: 
@@ -79,7 +79,14 @@ angular.module('ionBlankApp')
         # _wizard.goto('prev', params)
         $ionicNavBarDelegate.back()
       next : (params)-> 
-        return if !$scope.on.beforeNextStep()
+        retval = $scope.on.beforeNextStep()
+        if retval.then?  # a promise
+          return retval.then (o)->
+              _wizard.goto('next', params)
+            , (error)->
+              console.warn "wizard beforeNextStep returned FALSE by promise!!!"
+        else 
+          return if !retval
         _wizard.goto('next', params)
       getOrderType: ()->
         # camera-roll or calendar
@@ -97,29 +104,33 @@ angular.module('ionBlankApp')
         console.log $state.current.name
         return $state.current.name
       beforeNextStep: ()->
+        # before you leave!!!
         switch $state.current.name
           when 'app.checkout.terms-of-service'
             if !$scope.user.tos
               # TODO: notify TOS must be checked
               return false 
           when 'app.checkout.submit'
-            $scope.orders.push {
-              datetime: new Date()
-              status: 'new'
-              checkout: $scope.checkout
-              servicePlan: $scope.watch.servicePlan
-            }
-            
+            # return false on error by promise
+            return parse._createWorkorderP( $scope.checkout, $scope.watch.servicePlan ).then (workorderObj)->
+                # deprecate: /orders should fetch from parse instead of $scope.orders
+                $scope.orders.push {
+                  datetime: new Date()
+                  status: 'new'
+                  checkout: $scope.checkout
+                  servicePlan: $scope.watch.servicePlan
+                }
+                $ionicNavBarDelegate.showBackButton(false)
+                return $q.when(workorderObj)
           when 'app.checkout.complete'
-            $ionicNavBarDelegate.showBackButton(false)
+            return true
             
         return true
       afterNextStep: ()->
         switch $state.current.name
           when 'app.checkout.complete'
             # AFTER submit, queue photos
-            _createWorkorder $scope.checkout
-            # _queueSelectedMoments $scope.checkout.selectedMoments
+            parse._queueSelectedMomentsP $scope.checkout, $scope.workorder
 
 
         # put on on $rootScope.$on '$stateChangeSuccess'
@@ -204,37 +215,43 @@ angular.module('ionBlankApp')
           servicePlan.plans.push('Promo Code: ' + promoCode)
           servicePlan.total = Math.max( servicePlan.total - 3, 0)
 
+    parse = {
+      _createWorkorderP : (checkout, servicePlan)->
+        return otgParse.checkSessionUserP().then ()->
+          options = {
+            status: 'new'
+            fromDate: checkout.dateRange.from
+            toDate: checkout.dateRange.to
+          }
+          return otgParse.findWorkorderP(options)
+        .then (results)->
+            return otgParse.createWorkorderP(checkout, servicePlan) if _.isEmpty(results)
+            return results
+          , (error)->
+            return otgParse.createWorkorderP(checkout, servicePlan)
+        .then (workorderObj)->
+          $scope.workorder = workorderObj
+          return $q.when(workorderObj)
 
-    _createWorkorder = (checkout)->
-      otgParse.checkSessionUserP().then ()->
-        options = {
-          status: 'new'
-          fromDate: checkout.dateRange.from
-          toDate: checkout.dateRange.to
-        }
-        return otgParse.findWorkorderP(options)
-      .then (results)->
-          return otgParse.createWorkorderP(checkout) if _.isEmpty(results)
-          return results
-        , (error)->
-          return otgParse.createWorkorderP(checkout)
-      .then (workorderObj)->
-        photos = _getPhotosFromMoments(checkout.selectedMoments)
-        return otgUploader.queueP(workorderObj, photos)
-      .then (queue)->
-        console.log "workorder created successfully and photos queued, length=" + queue.length
 
-    _getPhotosFromMoments = (moments)->
-      return moments if moments[0]?.type != 'moment' 
-      photoList = otgData.parsePhotosFromMoments moments
-      lookup = $scope.cameraRoll_DATA.photos
-      photos = _.map photoList, (o)->
-        # map to lorempixel src
-        return _.findWhere lookup, {id : o.id}
+      _getPhotosFromMoments : (moments)->
+        return moments if moments[0]?.type != 'moment' 
+        photoList = otgData.parsePhotosFromMoments moments
+        lookup = $scope.cameraRoll_DATA.photos
+        photos = _.map photoList, (o)->
+          # map to lorempixel src
+          return _.findWhere lookup, {id : o.id}
 
-      return photos    # with photo.src as lorempixel  
-        
+        return photos    # with photo.src as lorempixel  
+          
 
+      _queueSelectedMomentsP : (checkout, workorder)->
+        workorder = $scope.workorder if !workorder
+        photos = parse._getPhotosFromMoments(checkout.selectedMoments)
+        return otgUploader.queueP(workorder, photos).then (queue)->
+          console.log "workorder created successfully and photos queued, length=" + queue.length
+          return $q.when(queue)
+    }
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams)->
       if /^app.checkout/.test(toState.name) && /^app.checkout/.test(fromState.name)
