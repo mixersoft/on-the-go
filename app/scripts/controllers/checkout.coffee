@@ -226,7 +226,7 @@ angular.module('ionBlankApp')
           return otgParse.findWorkorderP(options)
         .then (results)->
             return otgParse.createWorkorderP(checkout, servicePlan) if _.isEmpty(results)
-            return results
+            return results.shift()
           , (error)->
             return otgParse.createWorkorderP(checkout, servicePlan)
         .then (workorderObj)->

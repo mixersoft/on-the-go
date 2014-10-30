@@ -77,7 +77,8 @@ angular
 
     parseClass = {
       PhotoObj : Parse.Object.extend('PhotoObj') 
-      WorkorderObj : Parse.Object.extend('WorkorderObj')   
+      WorkorderObj : Parse.Object.extend('WorkorderObj') 
+      
     }
 
 
@@ -159,15 +160,17 @@ angular
           return $q.when()
 
       findWorkorderP : (options)->
-        owner = new Parse.Query(parseClass.WorkorderObj)
-        owner.equalTo('owner', $rootScope.sessionUser)
+        query = new Parse.Query(parseClass.WorkorderObj)
+        query.equalTo('owner', $rootScope.sessionUser)
         # # or query on relation
         # contributors = parseClass.workorderObj.getRelation('contributors')
         # contrib = new Parse.Query(contributors)
-        owner.equalTo('status', options.status) if options.status
-        owner.equalTo('fromDate', options.fromDate || options.dateRange.from)
-        owner.equalTo('toDate', options.toDate || options.dateRange.to)
-        return owner.first()
+        query.equalTo('status', options.status) if options.status
+        query.equalTo('fromDate', options.dateRange.from) if options.dateRange
+        query.equalTo('fromDate', options.fromDate) if options.fromDate
+        query.equalTo('toDate', options.dateRange.to) if options.dateRange
+        query.equalTo('toDate', options.toDate) if options.toDate
+        return query.find()
 
 
       createWorkorderP : (checkout, servicePlan)->
@@ -198,6 +201,16 @@ angular
         return workorderObj.save().then null, (error)->
           console.error "parse WorkorderObj save error, msg=" + JSON.stringify error
           throw error
+
+      fetchWorkordersByOwnerP : ()->
+        query = new Parse.Query(parseClass.WorkorderObj)
+        query.equalTo('owner', $rootScope.sessionUser)
+        collection = query.collection()
+        collection.comparator = (o)->
+          return o.get('toDate')
+        return collection.fetch()
+
+          
         
 
       resampleP : (imgOrSrc, W=320, H=null)->

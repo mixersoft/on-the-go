@@ -56,8 +56,8 @@ angular.module('ionBlankApp')
               else 
                 return $q.when()
             .then ()->
-              return self.startUploadingP()  if self._queue.length
-              return $q.when()
+              return self.startUploadingP()  if self._queue.length # repeat recursively
+              return $q.when() # finish
 
 
         else if !self.state.isEnabled || self._queue.length
@@ -101,13 +101,12 @@ angular.module('ionBlankApp')
         target = angular.element(ev.currentTarget)
         target.removeClass('activated')
         target.removeClass('enabled') if otgUploader.enable()
-        # $timeout ()->
-        #     target.removeClass('activated')
-        #     target.removeClass('enabled') if otgUploader.enable()
-        #   , 100
-        return  
+        return 
+
+
+      # deprecate: use checkout instead   
       demo: (ev)->
-        return # deprecate: use checkout instead
+        return 
         otgUploader.enable(true)
         otgParse.checkSessionUserP().then ()->
           return otgParse.findWorkorderP({status:'new'})

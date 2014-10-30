@@ -17,8 +17,8 @@
 
 
 
-      <div ng-repeat="order in filteredOrders = (orders | filter:filterStatusNotComplete )">
-        <div ng-include="'partials/order-card'"></div>
+      <div ng-repeat="order in filteredOrders = (workorders | filter:filterStatusNotComplete )">
+        <div ng-include="'partials/workorder-card'"></div>
       </div>
       <div class="empty-list" ng-if="!filteredOrders.length"> 
         <div class="card empty-list" >
@@ -99,6 +99,46 @@
 
 </ion-tabs>
 
+
+
+<script type="text/ng-template" id="partials/workorder-card">
+  <div class="list card workorder-card" >
+    <div class="item item-divider item-assertive">
+    <i class="icon ion-gear-b"> {{order.fromDate | date}} - {{order.toDate | date}}</i>
+    </div>
+
+    <div class="item item-text-wrap item-icon-left">
+      <i class="icon ion-clipboard"></i>
+      <div>Order Date: {{order.createdAt | date }}</div>
+      <div>Plan: <span ng-if="order.checkout.count.photos">{{order.count_expected}} Photos in </span>{{order.count_days}} Days
+      </div>
+      <div>Total: {{order.servicePlan.total | currency:$}}
+        <div class="assertive service-plans"
+        ng-if="order.servicePlan.plans.length==1">
+          Based on: {{order.servicePlan.plans[0]}}</div>
+          <div class="assertive" ng-if="order.servicePlan.plans.length>1">
+          Based on:
+          <ul class="padding-left" ng-repeat="plan in order.servicePlan.plans">
+            <li class="assertive" ng-bind="plan"></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="item item-text-wrap item-icon-left">
+      <i class="icon ion-clock"></i>
+      <div>Status: {{order.status}}</div>
+      <div>Photos Received: {{ order.count_received }}</div>
+    </div>
+    <div class="item item-complex" 
+    style="height:150px;" 
+    ng-if="order.count_expected">
+      <otg-order-moment otg-model="order.selectedMoments"></otg-order-moment>
+    </div>
+    <div class="item item-divider item-assertive">
+    <!-- footer  -->
+    </div>
+  </div><!--  end workorder-card  -->
+</script> 
 
 
 <script type="text/ng-template" id="partials/order-card">

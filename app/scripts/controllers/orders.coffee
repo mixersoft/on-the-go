@@ -62,8 +62,8 @@ angular.module('ionBlankApp')
     return self
 ]
 .controller 'OrdersCtrl', [
-  '$scope', '$ionicTabsDelegate', 'otgData', 'otgWorkOrder', 'TEST_DATA',
-  ($scope, $ionicTabsDelegate, otgData, otgWorkOrder, TEST_DATA) ->
+  '$scope', '$q', '$ionicTabsDelegate', 'otgData', 'otgWorkOrder', 'otgParse', 'TEST_DATA',
+  ($scope, $q, $ionicTabsDelegate, otgData, otgWorkOrder, otgParse, TEST_DATA) ->
     $scope.label = {
       title: "Order History"
       subtitle: "Share something great today!"
@@ -78,14 +78,33 @@ angular.module('ionBlankApp')
       $ionicTabsDelegate.select(index)
 
     $scope.filterStatusNotComplete = (o)->
-      return o if o.status !='complete'
+      return o if o.status? && o.status !='complete'
+      if o.className == 'WorkorderObj'
+        return o if o.get('status') !='complete'
+
+    parse = {
+      _fetchWorkordersP : (options = {})->
+        return otgParse.checkSessionUserP().then ()->
+          return otgParse.fetchWorkordersByOwnerP(options)
+        .then (results)->
+          $scope.workorders = results.toJSON()      # .toJSON() -> readonly
+          _.each $scope.workorders, (o)->
+            # DEMO: recreate selectedMoments from dates
+            otgWorkOrder.on.selectByCalendar(o.fromDate, o.toDate)
+            o.selectedMoments = otgWorkOrder.checkout.getSelectedAsMoments().selectedMoments
+            return
+          return $q.when(results)  
+    }
+    $scope.workorders = []
 
     init = ()->
       $scope.orders = TEST_DATA.orders
 
-      # $scope.order = $scope.orders[0]
-      # console.log $scope.order.checkout
-      return
+      # from parse
+      # show loading
+      parse._fetchWorkordersP().then ()->
+        # hide loading
+        return
 
     init()  
 
