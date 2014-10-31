@@ -9,8 +9,9 @@
 ###
 angular.module('ionBlankApp')
 .controller 'CheckoutCtrl', [
-  '$scope', '$rootScope', '$state', '$stateParams', '$q', '$ionicNavBarDelegate', '$ionicModal', 'otgData', 'otgWorkOrder', 'otgUploader', 'otgParse', 'TEST_DATA',
-  ($scope, $rootScope, $state, $stateParams, $q,  $ionicNavBarDelegate, $ionicModal, otgData, otgWorkOrder, otgUploader, otgParse, TEST_DATA) ->
+  '$scope', '$rootScope', '$state', '$q', '$ionicNavBarDelegate', '$ionicModal', 
+  'otgData', 'otgWorkOrder', 'otgUploader', 'otgParse', 'otgProfile', 'TEST_DATA',
+  ($scope, $rootScope, $state, $q, $ionicNavBarDelegate, $ionicModal, otgData, otgWorkOrder, otgUploader, otgParse, otgProfile, TEST_DATA) ->
     $scope.label = {
       title: "Checkout"
       header_card: 
@@ -108,7 +109,8 @@ angular.module('ionBlankApp')
         switch $state.current.name
           when 'app.checkout.sign-up'
             # return false on error by promise
-            return otgParse.checkSessionUserP()
+            return $scope.otgProfile.submitP() if $scope.otgProfile.dirty
+
           when 'app.checkout.terms-of-service'
             if !$scope.user.tos
               # TODO: notify TOS must be checked
@@ -142,8 +144,9 @@ angular.module('ionBlankApp')
       getPromoCode: ()->
         $scope.watch.promoCode = "3DAYSFREE"
         _applyPromoCode($scope.watch.promoCode, $scope.watch.servicePlan)
-
     }
+
+    $scope.otgProfile = otgProfile
 
     $scope.watch = {
       promoCode: ''
@@ -264,6 +267,11 @@ angular.module('ionBlankApp')
 
 
     init = ()->
+      # TODO: move to AppCtrl
+      otgParse.checkSessionUserP().then ()->  
+        check = $rootScope.user 
+        return 
+
       console.log "init: state="+$state.current.name
       $scope.checkout = otgWorkOrder.checkout.getSelectedAsMoments()
       $scope.watch.servicePlan = _getTotal($scope.checkout)

@@ -3,7 +3,7 @@
   </ion-nav-buttons>
   <ion-content class="has-header">
 
-<div ng-if="on.isAnonymous()"> 
+<div ng-if="otgProfile.isAnonymous()"> 
     <div ng-include="'partials/anonymous-signup'"></div> 
 
     <!-- header card : guest -->
@@ -12,48 +12,20 @@
         <i class="icon ion-person"> Sign-up</i>
       </div>
 
-        <label class="item item-input item-icon-right">
-          <span class="input-label">Username</span>
-          <input type="text" ng-model="user.username" placeholder="HappiGuy"
-          ng-change="on.username.isChanged($event)">
-          <i class="icon"  
-          ng-class="on.username.ngClassValidIcon()"></i>
-        </label>
+      <div ng-include src="'partials/anonymous-signup-fields'"></div>
 
-
-        <div class="item item-input item-icon-right">
-          <span class="input-label">Password</span>
-          <input type="password" ng-model="user.password" placeholder="Required"
-          ng-change="on.password.isChanged($event)">
-          <i class="icon"
-          ng-class="on.password.ngClassValidIcon()"></i>
-        </div>
-        <label class="item item-input item-icon-right">
-          <span class="input-label">Password</span>
-          <input type="password" placeholder="(again)"
-          ng-model="on.password.passwordAgainModel" 
-          ng-change="on.password.isChanged($event)">
-          <i class="icon"  
-          ng-class="on.password.ngClassConfirmedIcon()"></i>
-        </label>
-
-
-        <div class="item item-input item-icon-right" >
-          <span class="input-label">Email</span>
-          <input type="text" ng-model="user.email" placeholder="me@gmail.com" 
-          ng-change="on.email.isChanged($event)"> 
-          <i class="icon"  ng-class="on.email.ngClassEmailIcon()"></i>
-        </div>
-
-        <button class="button button-block button-energized padding-horizontal" 
-          ng-class="on.ngClassSubmit()"
-          ui-sref="app.settings.main"
-          ng-click="on.submit()"
-          >Submit</button>
+      <button class="button button-block button-energized padding-horizontal" 
+        ng-class="otgProfile.ngClassSubmit()"
+        ui-sref="app.settings.main"
+        ng-click="otgProfile.submitP()"
+        >
+        Submit
+      </button>
+        
     </div>
 </div>    
 
-<div ng-if="!on.isAnonymous()">
+<div ng-if="!otgProfile.isAnonymous()">
     <div class="padding">
       <p class="text-center"><span class="username badge badge-positive capitalize padding"><i class="icon ion-person"> {{user.username}}</i></span></p>
       <p>Hello <span class="capitalize">{{user.username}}</span>. You can manage your account information below.</p>
@@ -63,64 +35,29 @@
       <div class="item item-divider item-energized">
         <i class="icon ion-person"> Profile</i>
       </div>
-      <label class="item item-input item-icon-right">
-        <span class="input-label">Username</span>
-        <input type="text" ng-model="user.username" placeholder="HappiGuy" 
-          ng-change="on.username.isChanged($event)">
-        <i class="icon"  
-          ng-class="on.username.ngClassValidIcon()"></i>
-      </label>
 
+      <div ng-include src="'partials/anonymous-signup-fields'"></div>
 
-      <div class="item item-input item-icon-right">
-        <span class="input-label">Password</span>
-        <input type="password" ng-model="user.password" placeholder="Required" 
-        ng-readonly="!on.password.dirty"
-        >
-        <i class="icon" tabindex=-1>
-          <button class="button button-small button-assertive" ng-click="on.password.change($event)">
-            <i class="icon ion-edit" 
-            ng-show="!on.password.dirty"></i>
-            <span ng-show="on.password.dirty">Cancel
-            </span>
-          </button>
-        </i>
-      </div>
-
-      <label class="item item-input item-icon-right" ng-show="on.password.showPasswordAgain">
-        <span class="input-label">Password</span>
-        <input type="password" placeholder="(again)"
-        ng-model="on.password.passwordAgainModel" 
-        ng-change="on.password.isChanged($event)">
-        <i class="icon"  
-        ng-class="on.password.ngClassConfirmedIcon()"></i>
-      </label>
-
-
-      <div class="item item-input item-icon-right" >
-        <span class="input-label">Email</span>
-        <input type="text" ng-model="user.email" placeholder="me@gmail.com" 
-        ng-change="on.email.isChanged($event)" >
-        <i class="icon"  ng-class="on.email.ngClassEmailIcon()"></i>
-      </div>
-
+      <!-- // anonymous only -->
       <button class="button button-block button-assertive padding-horizontal" 
-      ng-show="!on.email.dirty && !user.emailVerified"
+      ng-if="!otgProfile.isAnonymous()"
+      ng-show="!otgProfile.email.dirty && !user.emailVerified"
       ui-sref="app.settings.main">
       Resend Email Verification
       </button>
 
-      <button class="button button-block padding-horizontal" 
-        ng-class="on.ngClassSubmit()"
+      <button class="button button-block button-energized padding-horizontal" 
+        ng-class="otgProfile.ngClassSubmit()"
         ui-sref="app.settings.main"
-        ng-click="on.submit()"
-        >Submit
-      </button> 
+        ng-click="otgProfile.submitP()"
+        >
+        Submit
+      </button>      
 
     </div>
 </div>
 
-<div ng-if="on.currentState()=='app.settings.terms-of-service'">
+<div ng-if="otgProfile.currentState()=='app.settings.terms-of-service'">
     <div class="card header-card">
       <div class="item item-divider item-energized">
         {{headerCard.header}}

@@ -22,6 +22,59 @@
   </div>
 </script>
 
+<script id="partials/anonymous-signup-fields" type="text/ng-template">
+  <label class="item item-input item-icon-right">
+    <span class="input-label">Username</span>
+    <input type="text" ng-model="user.username" placeholder="HappiGuy"
+    ng-change="otgProfile.username.isChanged($event)">
+    <i class="icon"  
+    ng-class="otgProfile.username.ngClassValidIcon()"></i>
+  </label>
+
+  <!-- // anonymous only -->
+  <div class="item item-input item-icon-right"
+  ng-if="otgProfile.isAnonymous()">
+    <span class="input-label">Password</span>
+    <input type="password" ng-model="user.password" placeholder="Required"
+    ng-change="otgProfile.password.isChanged($event)">
+    <i class="icon"
+    ng-class="otgProfile.password.ngClassValidIcon()"></i>
+  </div>
+  <label class="item item-input item-icon-right">
+    <span class="input-label">Password</span>
+    <input type="password" placeholder="(again)"
+    ng-model="otgProfile.password.passwordAgainModel" 
+    ng-change="otgProfile.password.isChanged($event)">
+    <i class="icon"  
+    ng-class="otgProfile.password.ngClassConfirmedIcon()"></i>
+  </label>
+  <!-- // named user only -->
+  <div class="item item-input item-icon-right"
+  ng-if="!otgProfile.isAnonymous()">
+    <span class="input-label">Password</span>
+    <input type="password" ng-model="user.password" placeholder="Required" 
+    ng-readonly="!otgProfile.password.dirty"
+    >
+    <i class="icon" tabindex=-1 ng-show="!otgProfile.password.dirty">
+      <button class="button button-small button-assertive" ng-click="otgProfile.password.change($event)">
+        <i class="icon ion-edit"></i>
+      </button>
+    </i>
+    <i class="icon"  
+    ng-show="otgProfile.password.dirty"
+    ng-class="otgProfile.password.ngClassValidIcon()"></i>
+  </div>
+
+
+  <div class="item item-input item-icon-right" >
+    <span class="input-label">Email</span>
+    <input type="text" ng-model="user.email" placeholder="me@email.com" 
+    ng-change="otgProfile.email.isChanged($event)"> 
+    <i class="icon"  ng-class="otgProfile.email.ngClassEmailIcon()"></i>
+  </div>
+
+</script>
+
 <script id="partials/pricing" type="text/ng-template">
   <div class="card has-header">
     <div class="item item-divider text-center item-positive">
