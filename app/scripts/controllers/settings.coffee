@@ -62,27 +62,27 @@ angular.module('ionBlankApp')
     _email = {
       changing: false
       dirty: false
-      old: null
-      oldVerified: null
       
       regExp : /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
       isChanged: (ev)->
         return self.dirty = _email.dirty = true
-      isValid: (emailAddr)->
-        return _email.regExp.test(emailAddr)
+      isValid: (ev)->
+        return _email.regExp.test($rootScope.user.email)
       isVerified: ()->
         return $rootScope.user.emailVerified
       ngClassEmailIcon: ()->
         if _email.dirty 
-          if _email.isValid($rootScope.user.email)
+          if _email.isValid()
             return 'ion-ios7-checkmark balanced' 
           else 
             return 'ion-ios7-close assertive'
         else 
           if _email.isVerified()
             return 'ion-ios7-checkmark balanced'
-          else 
+          else if $rootScope.user.email?
             return 'ion-flag assertive'
+          else 
+            return 'hide'
 
     }
 
