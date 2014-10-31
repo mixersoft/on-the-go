@@ -81,9 +81,19 @@ angular
       
     }
 
+    ANON_PREFIX = {
+      username: 'anonymous-'
+      password: 'password-'
+    }
+
 
     self = {
       deviceReadyP: _deviceready.check
+      isAnonymousUser: ()->
+        return true if _.isEmpty $rootScope.sessionUser
+        return true if $rootScope.sessionUser.get('username').indexOf(ANON_PREFIX.username) == 0
+        return false
+
       signUpP: (userCred)->
         dfd = $q.defer()
         user = new Parse.User();
@@ -125,8 +135,8 @@ angular
           id.substr 0, length
         seed = _uniqueId(8) if !seed
         anon = {
-          username: 'anonymous-'+seed
-          password: 'password-'+seed
+          username: ANON_PREFIX.username + seed
+          password: ANON_PREFIX.password + seed
         }
         self.signUpP(anon).then (userCred)->
               return dfd.resolve(userCred)
@@ -148,16 +158,31 @@ angular
             , (error)->
               throw error # end of line
 
-        # upgrade to named user
-        if $rootScope.user.username? && $rootScope.user.username != $rootScope.sessionUser.get('username')
-          _.each ['username', 'password', 'email'], (key)->
-            $rootScope.sessionUser.set(key, $rootScope.user[key])
-          $rootScope.sessionUser.save().then ()->
-              return $q.when()
-            , (error)->
-              throw error # end of line
+        # # upgrade to named user
+        # if $rootScope.user.username? && $rootScope.user.username != $rootScope.sessionUser.get('username')
+        #   _.each ['username', 'password', 'email'], (key)->
+        #     $rootScope.sessionUser.set(key, $rootScope.user[key])
+        #   $rootScope.sessionUser.save().then (user)->
+        #       return $q.when(user)
+        #     , (error)->
+        #       throw error # end of line
         else 
-          return $q.when()
+          return $q.when({}) if self.isAnonymousUser()
+          # copy sessionUser to local user
+          userCred = _.pick( $rootScope.sessionUser.toJSON(), ['username', 'email', 'emailVerified'] )
+          userCred.password = 'HIDDEN'
+          _.extend $rootScope.user, userCred
+          return $q.when(userCred)
+
+      saveSessionUserP : (updateKeys)->
+        _.each updateKeys, (key)->
+            $rootScope.sessionUser.set(key, $rootScope.user[key])
+        return $rootScope.sessionUser.save().then (user)->
+            $rootScope.sessionUser = Parse.User.current()
+            return $q.when($rootScope.sessionUser)
+          , (error)->
+            throw error # end of line
+
 
       findWorkorderP : (options)->
         query = new Parse.Query(parseClass.WorkorderObj)

@@ -9,75 +9,119 @@
 ###
 angular.module('ionBlankApp')
 .controller 'SettingsCtrl', [
-  '$scope', '$ionicNavBarDelegate'
-  ($scope, $ionicNavBarDelegate) ->
+  '$scope', '$ionicNavBarDelegate', 'otgParse'
+  ($scope, $ionicNavBarDelegate, otgParse) ->
     $scope.label = {
       title: "Settings"
       subtitle: "Share something great today!"
     }
 
-    $scope.password = password = {
-      minLength: 3
-      changing: !$scope.user.username
-      passwordAgain: null
-      old: null
-      change: (ev)->
-        return password.revert(ev) if password.changing
-        console.log "click: "+ev.target
-        password.changing = true
-        password.old = $scope.user.password
-        $scope.user.password = null
-      revert: (ev)->
-        return if password.changing == false
-        $scope.user.password = password.old
-        password.old = password.passwordAgain = null 
-        password.changing = false
-        ev.target.blur()
-      commit: (ev)->
-        if password.isValid() && password.isConfirmed()
-          password.changing = false
-          password.passwordAgain = null
-          ev.target.blur()
-        else return false
-      isValid: ()->
-        return $scope.user.password?.length >= password.minLength
-      isConfirmed: ()-> 
-        return password.isValid() && password.passwordAgain == $scope.user.password    
+    _username = {
+      dirty: false
+      regExp : /^[a-z0-9_!\@\#\$\%\^\&\*.-]{3,20}$/
+      isChanged: (ev)->
+        return $scope.on.dirty = _username.dirty = true
+      isValid: (ev)->
+        return _username.regExp.test($scope.user.username)
+      ngClassValidIcon: ()->
+        return 'hide' if !_username.dirty
+        if _username.isValid($scope.user.username)
+          return 'ion-ios7-checkmark balanced' 
+        else 
+          return 'ion-ios7-close assertive'
     }
 
-    $scope.email = email = {
+    _password = {
+      dirty: false
+      regExp : /^[A-Za-z0-9_-]{3,20}$/
+      passwordAgainModel: null
+      showPasswordAgain : false
+      change: (ev)-> 
+        # show password confirm popup before edit
+        $scope.on.dirty = _password.dirty = true
+        _password.showPasswordAgain = true
+        $scope.user.password = null
+      isChanged: (ev)->
+        return $scope.on.dirty = _password.dirty = true
+
+      isValid: (ev)-> # validate password
+        return _password.regExp.test($scope.user.password)
+
+      isConfirmed: ()-> 
+        return _password.isValid() && _password.passwordAgainModel == $scope.user.password
+      
+      ngClassValidIcon: ()->
+        return 'hide' if !_password.dirty
+        if _password.isValid($scope.user.password)
+          return 'ion-ios7-checkmark balanced' 
+        else 
+          return 'ion-ios7-close assertive'
+      ngClassConfirmedIcon: ()->
+        return 'hide' if !_password.dirty || !_password.passwordAgainModel
+        if _password.isConfirmed() 
+          return 'ion-ios7-checkmark balanced' 
+        else 
+          return 'ion-ios7-close assertive'
+    }
+
+    _email = {
       changing: false
+      dirty: false
       old: null
       oldVerified: null
-      change: (ev)->
-        return email.revert(ev) if email.changing
-        email.changing = true
-        email.old = $scope.user.email
-        email.oldVerified = $scope.user.emailVerified
-        $scope.user.email = null
-        $scope.user.emailVerified = false
-      revert: (ev)->
-        return if email.changing == false
-        $scope.user.email = email.old
-        $scope.user.emailVerified = email.oldVerified
-        email.old = email.oldVerified = null 
-        email.changing = false
-        ev.target.blur()
-      commit: (ev)->
-        if email.isValid()
-          email.changing = false
-        else return false
-      isValid: ()->
-        return $scope.user.email?.length
+      
+      regExp : /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      isChanged: (ev)->
+        return $scope.on.dirty = _email.dirty = true
+      isValid: (emailAddr)->
+        return _email.regExp.test(emailAddr)
       isVerified: ()->
         return $scope.user.emailVerified
+      ngClassEmailIcon: ()->
+        if _email.dirty 
+          if _email.isValid($scope.user.email)
+            return 'ion-ios7-checkmark balanced' 
+          else 
+            return 'ion-ios7-close assertive'
+        else 
+          if _email.isVerified()
+            return 'ion-ios7-checkmark balanced'
+          else 
+            return 'ion-flag assertive'
+
     }
 
-
-
+    $scope.on = {
+      isAnonymous: otgParse.isAnonymousUser
+      submit: ()->
+        updateKeys = []
+        _.each ['username', 'password', 'email'], (key)->
+          updateKeys.push(key) if $scope.on[key].dirty
+          # if key == 'email'  # managed by parse
+          #   $rootScope.user['emailVerified'] = false
+          #   updateKeys.push('emailVerified')
+          return
+        return otgParse.saveSessionUserP(updateKeys).then ()->
+        # return otgParse.checkSessionUserP().then ()->
+          $scope.on.dirty = _username.dirty = _password.dirty = _email.dirty = false
+      ngClassSubmit : ()->
+        if $scope.on.dirty && 
+        _email.isValid($scope.user.email) &&
+        (!_password.dirty || (_password.dirty && _password.isConfirmed()) )
+          enabled = true 
+        else 
+          enabled = false
+        return if enabled then 'button-balanced' else 'button-energized disabled'
+      username: _username
+      password: _password
+      email: _email
+      dirty: false
+    }
+    
 
     init = ()->
-      $scope.isAnonymous = !$scope.user.username
+      otgParse.checkSessionUserP().then (userCred)->
+        return 
       return
 
     init()

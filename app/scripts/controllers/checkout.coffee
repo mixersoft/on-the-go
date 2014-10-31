@@ -106,6 +106,9 @@ angular.module('ionBlankApp')
       beforeNextStep: ()->
         # before you leave!!!
         switch $state.current.name
+          when 'app.checkout.sign-up'
+            # return false on error by promise
+            return otgParse.checkSessionUserP()
           when 'app.checkout.terms-of-service'
             if !$scope.user.tos
               # TODO: notify TOS must be checked
