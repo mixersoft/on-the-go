@@ -32,6 +32,34 @@ angular
     $rootScope.$state = $state;
     $rootScope.$stateParams = $stateParams;  
 ]
+.factory 'SideMenuSwitcher', ['$window', ($window)->
+  self = {
+    isEmpty: (side)->
+      # use for ion-side-menu attr:is-enabled and also ng-show <ion-nav-buttons side=""> 
+      return _.isEmpty self.leftSide.src if side=='left'
+      return _.isEmpty self.rightSide.src if side=='right' 
+      return true
+
+    setSrc: (side, src)->
+      self.leftSide.src = src if side='left'
+      self.rightSide.src = src if side='right'
+      # add additional code here
+      return
+
+    leftSide:
+      src: ''
+    rightSide: 
+      src: ''
+
+    mediaQuery : (mq='(min-width:768px)')->
+      return $window.matchMedia(mq).matches
+
+    watch: {
+      # from SideMenuSwitcher scope
+    } 
+  }
+  return self
+]
 .config ($stateProvider, $urlRouterProvider)->
   $stateProvider
     .state('app', {
@@ -44,7 +72,8 @@ angular
           controller: 'AppCtrl'
         'appPartials':
           templateUrl: "views/template/app-partials.html"
-
+        'workorderPartials':
+          templateUrl: "views/workorders/workorder-partials.html"
     })
 
     # directive:gallery
@@ -267,50 +296,66 @@ angular
         }
       }
     })
-
-    # .state('app.search', {
-    #   url: "/search",
-    #   views: {
-    #     'menuContent' : {
-    #       templateUrl: "templates/search.html"
-    #     }
-    #   }
-    # })
-
-    # .state('app.browse', {
-    #   url: "/browse",
-    #   views: {
-    #     'menuContent' : {
-    #       templateUrl: "templates/browse.html"
-    #     }
-    #   }
-    # })
-    # .state('app.playlists', {
-    #   url: "/playlists",
-    #   views: {
-    #     'menuContent' : {
-    #       templateUrl: "templates/playlists.html",
-    #       controller: 'PlaylistsCtrl'
-    #     }
-    #   }
-    # })
-
-    # .state('app.single', {
-    #   url: "/playlists/:playlistId",
-    #   views: {
-    #     'menuContent' : {
-    #       templateUrl: "templates/playlist.html",
-    #       controller: 'PlaylistCtrl'
-    #     }
-    #   }
-    # })
+    #
+    # Workorder Management System
+    #
+    .state('app.workorders', {
+      url: "/workorders",
+      views: {
+        'menuContent': {
+          template: '<ion-view title="Workorders" hide-back-button="true" ><ion-nav-view  id="workorder" name="workorderContent" animation="slide-left-right"></ion-nav-view></ion-view>'
+        }
+        'workorderPartials':
+          templateUrl: "views/workorders/workorder-partials.html"  
+      }
+    })
+    .state('app.workorders.all', {
+      url: "/all",
+      views: {
+        'workorderContent' : {
+          templateUrl: "views/workorders/workorders.html"
+          controller: 'WorkordersCtrl'
+        }
+      }
+    })
+    .state('app.workorders.detail', {
+      url: "/:woid",
+      views: {
+        'workorderContent' : {
+          templateUrl: "views/workorders/workorders.html"
+          controller: 'WorkordersCtrl'
+        }
+      }
+    })
+    .state('app.workorders.photos', {
+      url: "/:woid/photos",
+      views: {
+        'workorderContent' : {
+          templateUrl: "views/workorders/workorder-photos.html"
+          controller: 'WorkorderPhotosCtrl'
+        }
+      }
+    })
+    .state('app.workorders.photos.todo', {
+      url: "/todo",
+    })
+    .state('app.workorders.photos.picks', {
+      url: "/picks",
+    })    
   # if none of the above states are matched, use this as the fallback
   $urlRouterProvider.otherwise('/app/top-picks');  
 
 
 .controller 'AppCtrl', [
-  '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', '$ionicPlatform', 'otgData', 'otgWorkOrder', 'TEST_DATA',
-  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform,  otgData, otgWorkOrder, TEST_DATA)->
+  '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', '$ionicPlatform', 
+  'SideMenuSwitcher', '$ionicSideMenuDelegate'
+  'otgData', 'otgWorkOrder', 'TEST_DATA',
+  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, otgData, otgWorkOrder, TEST_DATA)->
+
+    # dynamically update left side menu
+    $scope.SideMenuSwitcher = SideMenuSwitcher  
+    SideMenuSwitcher.leftSide.src = 'partials/left-side-menu'
+
     # // Form data for the login modal
     $scope.loginData = {};
 
@@ -398,6 +443,11 @@ angular
     $scope.orders = [] # order history
 
 
+    $rootScope.rightMenu = {
+      isEmpty: ()->
+
+    }
+
     # placeholder for cameraRoll data from mapLibraryAssets()
     $scope.cameraRoll_DATA = cameraRoll_DATA = {
       photos_ByDate : TEST_DATA.cameraRoll_byDate
@@ -469,7 +519,7 @@ angular
                 _.extend $scope.config, config
               return
             return
-        , 5000
+        , 2000
       cameraRoll_DATA.photos_ByDate = TEST_DATA.cameraRoll_byDate
       cameraRoll_DATA.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( cameraRoll_DATA.photos_ByDate ), 2
       cameraRoll_DATA.photos = otgData.parsePhotosFromMoments cameraRoll_DATA.moments

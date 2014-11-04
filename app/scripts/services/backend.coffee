@@ -183,6 +183,12 @@ angular
           , (error)->
             throw error # end of line
 
+      checkSessionUserRoleP : (o)->
+        # Placeholder: for workorders, check for role=EDITOR and Assignment
+        o.role = 'EDITOR'
+        return $q.when(o)
+
+
 
       findWorkorderP : (options)->
         query = new Parse.Query(parseClass.WorkorderObj)
@@ -235,6 +241,18 @@ angular
           return o.get('toDate')
         return collection.fetch()
 
+      getWorkorderByIdP : (woid)->
+        query = new Parse.Query(parseClass.WorkorderObj)
+        query.equalTo('objectId', woid)
+        return query.first()  
+
+      fetchWorkorderPhotosByWoIdP : (options)-> 
+        query = new Parse.Query(parseClass.PhotoObj)
+        query.equalTo('workorder', options.workorder)
+        collection = query.collection()
+        # collection.comparator = (o)->
+        #   return o.get('toDate')
+        return collection.fetch()
           
         
 

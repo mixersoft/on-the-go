@@ -100,10 +100,6 @@ p.fine {
   line-height: 1;
 }
 
-.icon-positive {
-  color: $positive;
-}
-
 .username {
   #profile & {
     font-size: 1.4em;
@@ -119,10 +115,35 @@ ion-nav-view {
   background-color: transparent;
 }
 
+ion-pane[ion-side-menu-content] .item > * {
+  .badge, .icon {
+    display: inline-block;
+    position: inherit;
+  }
+}
 
+.menu.workorder-card {
+  margin: 20px 4px;
+  width: 266px;
+  .item {
+    & > * {
+      .badge, .icon {
+        display: inline-block;
+        position: inherit;
+      }
+    }
+  }
+}
 
 /* directive:otg-preview */
 .otg-preview-list {
+  .workorder-photo-card {
+/*    width: 50%;
+    margin: 0 auto;*/
+    .item-image img:first-child {
+      width: auto;
+    }
+  }
   .photo-card {
     width: 100%;
     .caption {

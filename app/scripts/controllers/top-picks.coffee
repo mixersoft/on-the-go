@@ -105,6 +105,7 @@ angular.module('ionBlankApp')
           # element.text 'this is the moment directive'
           if !scope.$parent.options?.width
             scope.$parent.options = _.defaults (scope.$parent.options || {}), default_options
+          scope.crWidth = attrs['cr-width'] || '100%'
           options = _.clone scope.$parent.options 
           if !scope.photo?.height && (scope.photo.id[-5...-4]<'4')
             options.height = 400
@@ -222,6 +223,8 @@ angular.module('ionBlankApp')
           body: "A selection of Top Picks and Favorite Shots you have Shared from this App"
           footer: ""  
     }
+
+    $scope.SideMenuSwitcher.leftSide.src = 'partials/left-side-menu'
 
     window.$state = $scope.$state = $state;
 
