@@ -254,6 +254,14 @@ angular
         #   return o.get('toDate')
         return collection.fetch()
           
+
+      savePhotoP : (item, collection, pick)->
+        photoObj = _.findWhere(collection.models, {id: item.objectId})
+        return false if !photoObj
+        data = _.pick item, pick
+        photoObj.set(data)
+        return photoObj.save()
+
         
 
       resampleP : (imgOrSrc, W=320, H=null)->

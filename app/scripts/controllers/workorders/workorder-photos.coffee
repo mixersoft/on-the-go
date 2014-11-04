@@ -16,7 +16,7 @@ angular.module('ionBlankApp')
       when 'todo' 
         # match = '2468ACE'   # match last CHAR of UUID
         return _.reduce input, (result, e, i)->
-            result.push(e) if e.topPick != null
+            result.push(e) if e.topPick != false &&  !e.topPick
             return result
           , [] 
       when 'picks'
@@ -86,31 +86,29 @@ angular.module('ionBlankApp')
         #     angular.element(crw).triggerHandler('scroll.resize');
         #   , 0
         return $scope.on._info   
-      addFavorite: (event, item)->
+      notTopPick: (event, item)->
         event.preventDefault();
-        item.favorite = !item.favorite
-        if item.favorite == false && $state.current.name == 'app.top-picks.favorites'
-          # ???: how do we remove from/refresh collection repeat??
-          setFilter( $state.current )
-        return item
-      addShare: (event, item)->
-        event.preventDefault();
-        confirmPopup = $ionicPopup.confirm {
-          title: "Share Photo"
-          template: "Are you sure you want to share this photo?"
-        }
-        confirmPopup.then (res)->
-          item.shared = true if res
+        revert = item.topPick
+        item.topPick = false
+        coll = $scope.parse_raw.photosColl
+        otgParse.savePhotoP(item, coll, 'topPick').then null, (err)->
+            item.topPick = revert
+            console.warn "item NOT saved, err=" + JSON.stringify err
+        # if $state.current.name != 'app.workorders.photos'
+          # refresh on reload
+          # setFilter( $state.current )
         return item  
-      addCaption: (event, item)->
+      addTopPick: (event, item)->
         event.preventDefault();
-        captionPopup = $ionicPopup.prompt {
-          title: "Add a Caption"
-          subTitle: "Something to capture the momeent"
-          inputPlaceholder: " Enter caption"
-        }
-        captionPopup.then (res)->
-          item.caption = res if res
+        revert = item.topPick
+        item.topPick = true
+        coll = $scope.parse_raw.photosColl
+        otgParse.savePhotoP(item, coll, 'topPick').then null, (err)->
+            item.topPick = revert
+            console.warn "item NOT saved, err=" + JSON.stringify err
+        # if  $state.current.name != 'app.workorders.photos'
+          # refresh on reload
+          # setFilter( $state.current )
         return item  
 
       dontShowHint : (hide)->
@@ -157,6 +155,7 @@ angular.module('ionBlankApp')
 
           return $q.when(o)  
     }
+
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
       setFilter(toState)   

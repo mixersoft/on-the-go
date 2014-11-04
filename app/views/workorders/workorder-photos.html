@@ -48,7 +48,57 @@
       </div>
     </div>
 
-    <div ng-include="'views/template/gallery.html'"></div>
+    <!-- collection-repeat  -->
+    <div class="otg-preview-list"
+                show-delete="watch.showDelete"
+                show-reorder="watch.showReorder"
+                can-swipe="watch.canSwipe">
+      <div 
+        collection-repeat="item in filteredPhotos"
+        collection-item-width="'67%'"
+        collection-item-height="getItemHeight(item, $index)"
+        collection-repeat-scroll-wrap="collection-repeat-wrap"
+        resize="on.showInfo()"
+        xxx-ng-style="{height: getItemHeight(item, $index)}"
+        >
+<div class="responsive-md-wrap" ng-style="data.cardStyle">
+          <div class="card workorder photo-card"
+          >
+            <div class="item item-divider item-stable padding-horizontal"
+            ng-if="on.showInfo()">
+              <div class="caption">{{item.caption || item.id}}</div>
+            </div>
+            <div class="item item-image">
+              <img ng-src="{{item.src}}" height="{{item.height}}" xxx-img-cache>
+            </div>
+            <div class="item item-stable tabs tabs-secondary tabs-icon-left"
+            ng-if="on.showInfo()">
+              <a class="tab-item" href="#"
+              ng-click="on.notTopPick($event, item)">
+                <i class="icon" 
+                ng-class="{ 'ion-ios7-close assertive':item.topPick===false,
+                'ion-ios7-close-outline':item.topPick!==false }"></i>
+              </a>
+              
+              <a class="tab-item" href="#"
+              ng-class="{'activated tab-item-royal':item.favorite}">
+                <i class="icon"
+                ng-class="{'ion-ios7-heart-outline':!item.favorite,
+                'ion-ios7-heart':item.favorite}"></i>
+              </a>
+
+              <a class="tab-item" href="#"
+              ng-class="{'activated tab-item-balanced':item.topPick}"
+              ng-click="on.addTopPick($event, item)">
+                <i class="icon"
+                ng-class="{'ion-ios7-checkmark-outline':item.topPick!==true, 
+                'ion-ios7-checkmark balanced':item.topPick===true}"></i>
+              </a>
+            </div>
+          </div>
+</div>
+      </div>
+    </div>
   </ion-content>
 </ion-view>
 
