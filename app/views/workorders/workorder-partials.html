@@ -82,7 +82,7 @@
       <div>Work: 
         <ul class="padding-horizontal">
         <li class="badge badge-light">Total: {{order.count_expected }} </li>
-        <li class="badge badge-light">ToDo: {{order.progress.todo ||  order.count_expected  }} </li>
+        <li class="badge badge-light">ToDo: {{order.progress.todo || '&mdash;' }} </li>
         <li class="badge badge-light">TopPicks: {{order.progress.picks ||  0 }} </li>
         </ul>
       </div>

@@ -22,7 +22,7 @@
         <span class="badge badge-dark">{{workorderAttr.count_expected}}</span> 
         </button>
       <button class="button" ui-sref="app.workorders.photos.todo({oid:wo.objectId})"  ui-sref-active="active">  <i class="icon ion-ios7-gear ion-spin"></i> To-Do 
-      <span class="badge badge-dark">{{workorderAttr.progress.todo}}</span> 
+      <span class="badge badge-dark">{{workorderAttr.progress.todo || '&mdash;'}}</span> 
       </button>
       <button class="button" ui-sref="app.workorders.photos.picks({oid:wo.objectId})"  ui-sref-active="active">
         <i class="icon ion-ios7-checkmark"></i> Picks
