@@ -262,6 +262,10 @@ angular
         photoObj.set(data)
         return photoObj.save()
 
+
+      saveParseP : (obj, data)->
+        # simple pass thru
+        return obj.save(data)
         
 
       resampleP : (imgOrSrc, W=320, H=null)->

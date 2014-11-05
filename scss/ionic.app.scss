@@ -115,7 +115,7 @@ ion-nav-view {
   background-color: transparent;
 }
 
-ion-pane[ion-side-menu-content] .item > * {
+ion-side-menu-content .item > * {
   .badge, .icon {
     display: inline-block;
     position: inherit;

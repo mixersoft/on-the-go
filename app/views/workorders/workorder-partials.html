@@ -81,9 +81,9 @@
       <i class="icon ion-ios7-gear ion-spin"></i>
       <div>Work: 
         <ul class="padding-horizontal">
-        <li class="badge badge-light">Total: 15 </li>
-        <li class="badge badge-light">ToDo: 15 </li>
-        <li class="badge badge-light">Picks: 0 </li>
+        <li class="badge badge-light">Total: {{order.count_expected }} </li>
+        <li class="badge badge-light">ToDo: {{order.progress.todo ||  order.count_expected  }} </li>
+        <li class="badge badge-light">TopPicks: {{order.progress.picks ||  0 }} </li>
         </ul>
       </div>
     </div>

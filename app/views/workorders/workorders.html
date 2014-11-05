@@ -128,12 +128,26 @@
         <li class="badge badge-light">Received: {{ order.count_received }}</li>
         <li class="badge badge-light">Duplicates: {{ order.count_duplicate}}</li></ul>
 
-        <button class="button button-full"
-        ng-class="watch.ngClass_UploadStatus(order, 'button')" 
-        ui-sref="app.workorders.photos({woid:order.objectId})">Open</button>
+        
 
       </div>
     </div>
+
+    <div class="item item-text-wrap item-icon-left">
+      <i class="icon ion-ios7-gear ion-spin"></i>
+      <div>Work: 
+        <ul class="padding-horizontal">
+        <li class="badge badge-light">Total: {{order.count_expected }} </li>
+        <li class="badge badge-light">ToDo: {{order.progress.todo ||  order.count_expected  }} </li>
+        <li class="badge badge-light">TopPicks: {{order.progress.picks ||  0 }} </li>
+        </ul>
+      </div>
+      <button class="button button-full"
+        ng-class="watch.ngClass_UploadStatus(order, 'button')" 
+        ui-sref="app.workorders.photos({woid:order.objectId})">Open</button>
+    </div>
+
+
     <div class="item item-complex" 
     style="height:150px;" 
     ng-if="order.count_expected">

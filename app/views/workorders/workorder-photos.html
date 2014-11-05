@@ -19,14 +19,14 @@
     <div class="button-bar bar-balanced">
       <button class="button" ui-sref="app.workorders.photos({oid:wo.objectId})" ui-sref-active="active">
         <i class="icon ion-ios7-cloud-upload"></i> All Photos 
-        <!-- <span class="badge badge-dark">{{($scope.photos | workorderPhotoFilter:'none').length}}</span>  -->
+        <span class="badge badge-dark">{{workorderAttr.count_expected}}</span> 
         </button>
       <button class="button" ui-sref="app.workorders.photos.todo({oid:wo.objectId})"  ui-sref-active="active">  <i class="icon ion-ios7-gear ion-spin"></i> To-Do 
-      <!-- <span class="badge badge-dark">{{($scope.photos | workorderPhotoFilter:'todo').length}}</span>  -->
+      <span class="badge badge-dark">{{workorderAttr.progress.todo}}</span> 
       </button>
       <button class="button" ui-sref="app.workorders.photos.picks({oid:wo.objectId})"  ui-sref-active="active">
         <i class="icon ion-ios7-checkmark"></i> Picks
-        <!-- <span class="badge badge-dark">{{($scope.photos | workorderPhotoFilter:'picks').length}}</span>  -->
+        <span class="badge badge-dark">{{workorderAttr.progress.picks}}</span> 
         </button>
     </div>
     <!-- header card  -->
@@ -47,6 +47,8 @@
         <p class="fine" ng-click="on.dontShowHint($event)"><i class="icon ion-close-circled"> Don't Show Me Again</i></p>
       </div>
     </div>
+
+    <!-- <div workorder-in-progress-card ng-model="SideMenuSwitcher.watch.workorder"></div> -->
 
     <!-- collection-repeat  -->
     <div class="otg-preview-list"
@@ -99,6 +101,9 @@
 </div>
       </div>
     </div>
+
+
+
   </ion-content>
 </ion-view>
 

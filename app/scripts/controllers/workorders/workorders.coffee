@@ -75,6 +75,8 @@ angular.module('ionBlankApp')
 
     }
     $scope.workorders = []
+    $scope.workorder = null
+
 
     init = ()->
       $scope.orders = TEST_DATA.orders

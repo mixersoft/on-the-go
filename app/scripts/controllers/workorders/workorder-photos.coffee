@@ -69,7 +69,7 @@ angular.module('ionBlankApp')
     # HACK: directive:workorderInProgressCard is NOT watching updates to
     # SideMenuSwitcher.watch.workorder (parent scope) from promise
     # so force redirect to working 'path', need a $apply() somewhere????
-    return $state.transitionTo("app.workorders.all") if !$rootScope.workorderColl?
+    return $state.transitionTo("app.workorders.all") if true && !$rootScope.workorderColl?
 
 
     $scope.getItemHeight = (item, index)->
@@ -110,26 +110,42 @@ angular.module('ionBlankApp')
       notTopPick: (event, item)->
         event.preventDefault();
         revert = item.topPick
+        return if revert==false
         item.topPick = false
         coll = $scope.parse_raw.photosColl
-        otgParse.savePhotoP(item, coll, 'topPick').then null, (err)->
+        otgParse.savePhotoP(item, coll, 'topPick').then ()->
+            $scope.workorderAttr.progress.todo -= 1 if !revert && revert != false
+            $scope.workorderAttr.progress.picks -= 1 if revert==true
+            return $scope.$apply()
+            # don't have to save to Parse yet
+          , (err)->
             item.topPick = revert
             console.warn "item NOT saved, err=" + JSON.stringify err
         # if $state.current.name != 'app.workorders.photos'
           # refresh on reload
           # setFilter( $state.current )
+
+        # scroll to next item()
         return item  
       addTopPick: (event, item)->
         event.preventDefault();
         revert = item.topPick
+        return if revert==true
         item.topPick = true
         coll = $scope.parse_raw.photosColl
-        otgParse.savePhotoP(item, coll, 'topPick').then null, (err)->
+        otgParse.savePhotoP(item, coll, 'topPick').then ()->
+            $scope.workorderAttr.progress.todo -= 1 if !revert && revert != false
+            $scope.workorderAttr.progress.picks += 1 if revert==false
+            return $scope.$apply()
+            # don't have to save to Parse yet
+          , (err)->
             item.topPick = revert
             console.warn "item NOT saved, err=" + JSON.stringify err
         # if  $state.current.name != 'app.workorders.photos'
           # refresh on reload
           # setFilter( $state.current )
+
+        # scroll to next item()
         return item  
 
       dontShowHint : (hide)->
@@ -194,13 +210,27 @@ angular.module('ionBlankApp')
         $scope.parse_raw = o
 
         # add to sideMenu
-        $scope.SideMenuSwitcher.watch['workorder'] = o.workorder.attributes
-        window.sms = $scope.SideMenuSwitcher.watch
-        window.root = $rootScope
+        $scope.SideMenuSwitcher.watch['workorder'] = $scope.workorderAttr =  $scope.workorder.toJSON()
+        window.debug.sms = $scope.SideMenuSwitcher.watch
+        window.debug.root = $rootScope
 
         # add fake height for collecton-repeat on TEST_DATA from lookup
         _.each $scope.photos, (item)->
           item.height = _.findWhere( $scope.cameraRoll_DATA.photos, {id:item.assetId} ).height
+
+        # update work in progress counts
+        woProgress = _.reduce $scope.photos, (result, item)->
+            result.picks += 1 if item.topPick == true
+            result.todo +=1 if !item.topPick && item.topPick != false
+            return result
+          , {
+            todo: 0
+            picks: 0 
+          }
+
+        $scope.workorder.save({progress: woProgress})
+
+          
 
         setFilter( $state.current )
         $scope.on.showInfo(true) if $scope.config['workorder.photos']?.info
