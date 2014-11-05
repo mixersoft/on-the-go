@@ -181,16 +181,20 @@ angular.module('ionBlankApp')
               console.warn "ImgCache error, msg=" + o
       }
 ]
-# fake filter for selecting 'favorites' & 'shared' photos from $scope.cameraRoll_DATA.photos
-.filter 'fake', ()->
-  return (input, type='none')->
+
+
+.filter 'ownerPhotosByType', ()->
+  return (input, type='topPick')->
     switch type
-      when 'none' 
-        return input
+      when 'topPicks' 
+        return _.reduce input, (result, e, i)->
+            result.push(e) if e.topPick == true
+            return result
+          , [] 
       when 'favorites' 
         # match = '2468ACE'   # match last CHAR of UUID
         return _.reduce input, (result, e, i)->
-            result.push(e) if e.favorite == true 
+            result.push(e) if e.favorite == true
             return result
           , [] 
       when 'shared'
@@ -198,15 +202,11 @@ angular.module('ionBlankApp')
             result.push(e) if e.shared == true 
             return result
           , [] 
-        # match = '2ACE'
-    # return _.reduce input, (result, e, i)->
-    #         result.push(e) if match.indexOf(e.id[-5...-4]) > 0 
-    #         return result
-    #       , [] 
       
 .controller 'TopPicksCtrl', [
-  '$scope', '$rootScope', '$state', 'otgData', '$timeout', '$window', '$ionicPopup', 'TEST_DATA', 'fakeFilter'
-  ($scope, $rootScope, $state, otgData, $timeout, $window, $ionicPopup, TEST_DATA, fakeFilter) ->
+  '$scope', '$rootScope', '$state', 'otgData', 'otgParse', 
+  '$timeout', '$window', '$q', '$filter', '$ionicPopup', 'TEST_DATA'
+  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, TEST_DATA) ->
     $scope.label = {
       title: "Top Picks"
       header_card: 
@@ -246,11 +246,11 @@ angular.module('ionBlankApp')
     setFilter = (toState)->
       switch toState.name
         when 'app.top-picks'
-          $scope.filteredPhotos = fakeFilter($scope.cameraRoll_DATA.photos,'none')
+          $scope.filteredPhotos = $filter('ownerPhotosByType')($scope.photos,'topPicks')
         when 'app.top-picks.favorites'
-          $scope.filteredPhotos = fakeFilter($scope.cameraRoll_DATA.photos,'favorites')
+          $scope.filteredPhotos = $filter('ownerPhotosByType')($scope.photos,'favorites')
         when 'app.top-picks.shared'
-          $scope.filteredPhotos = fakeFilter($scope.cameraRoll_DATA.photos,'shared')
+          $scope.filteredPhotos = $filter('ownerPhotosByType')($scope.photos,'shared')
       return    
 
     # use dot notation for prototypal inheritance in child scopes
@@ -325,16 +325,48 @@ angular.module('ionBlankApp')
       setFilter(toState)   
 
 
+    parse = {
+      _fetchPhotosByOwnerP : (options = {})->
+        _options = options  # closure
+        return otgParse.checkSessionUserP().then otgParse.checkSessionUserRoleP 
+        .then ()->
+            $q.when(_options)
+        .then ()->
+          return otgParse.fetchPhotosByOwnerP(_options)
+        .then (photosColl)->
+          _options.photosColl = photosColl
+
+          return $q.when(_options)
+    }
+
     init = ()->
+      $scope.photos = $scope.cameraRoll_DATA.photos
+
+
       setFilter( $state.current )
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info
-
-      # update menu banner
-      $scope.menu.top_picks.count = $scope.cameraRoll_DATA.photos.length
 
       # ???: should be able to set width as %, but it doesn't work
       $scope.data.cardStyle.width = $window.innerWidth - 20 + 'px';
 
+      parse._fetchPhotosByOwnerP().then null, (err)->
+          conosle.warn "PARSE error, err=" + JSON.stringify err
+          return {}
+      .then (o)->
+        
+        # merge topPicks with photoRoll
+        # TODO: save to local storage
+        $scope.topPicks = o.photosColl.toJSON()
+        _.each $scope.topPicks, (o)->
+          found = _.findWhere $scope.cameraRoll_DATA.photos, (id: o.assetId)
+          _.each ['topPick'], (key)->
+            found[key] = o[key]
+            return
+        $scope.filteredPhotos = $filter('ownerPhotosByType')($scope.photos,'topPicks')
+
+        # update menu banner
+        $scope.menu.top_picks.count = $filter('ownerPhotosByType')($scope.photos,'topPicks').length
+        return 
 
       return
 

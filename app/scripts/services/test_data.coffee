@@ -686,6 +686,11 @@ angular.module('ionBlankApp')
         _.each list, (e)->
             e.favorite = true if match.indexOf(e.id[-5...-4]) > -1 
 
+    addSomeTopPicks: (list)->
+        match = '4'       # match last char of id
+        _.each list, (e)->
+            e.topPick = true if match.indexOf(e.id[-5...-4]) > -1         
+
 
 
     orders: [

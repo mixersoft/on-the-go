@@ -528,6 +528,7 @@ angular
       cameraRoll_DATA.photos = otgData.parsePhotosFromMoments cameraRoll_DATA.moments
 
       # add some test data for favorite and shared
+      TEST_DATA.addSomeTopPicks( cameraRoll_DATA.photos)
       TEST_DATA.addSomeFavorites( cameraRoll_DATA.photos)
       TEST_DATA.addSomeShared( cameraRoll_DATA.photos)
       # add item.height for collection-repeat

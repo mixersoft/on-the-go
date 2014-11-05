@@ -262,6 +262,18 @@ angular
         photoObj.set(data)
         return photoObj.save()
 
+      fetchPhotosByOwnerP : (owner)->
+        owner = $rootScope.sessionUser if !owner
+        query = new Parse.Query(parseClass.PhotoObj)
+        query.equalTo('owner', $rootScope.sessionUser)
+        collection = query.collection()
+        collection.comparator = (a, b)->
+          # sort by mostRecent
+          return -1 if a.createdAt > b.createdAt 
+          return 1 if a.createdAt < b.createdAt
+          return 0
+        return collection.fetch()
+
 
       saveParseP : (obj, data)->
         # simple pass thru
