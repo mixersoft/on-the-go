@@ -97,7 +97,7 @@ angular
       signUpP: (userCred)->
         dfd = $q.defer()
         user = new Parse.User();
-        user.set("username", userCred.username)
+        user.set("username", userCred.username.toLowerCase())
         user.set("password", userCred.password)
         user.signUp null, {
             success: (user)->
@@ -112,7 +112,7 @@ angular
 
       loginP: (userCred)->
         dfd = $q.defer()
-        Parse.User.logIn userCred.username, userCred.password, {
+        Parse.User.logIn userCred.username.toLowerCase(), userCred.password, {
             success: (user)->
               $rootScope.sessionUser = Parse.User.current()
               return dfd.resolve(userCred)
