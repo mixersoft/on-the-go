@@ -18,9 +18,7 @@
         </ion-item>
       </ion-list>
 
-
-      <ng-include src="'partials/workorders/menu-workorder-snapshot'" 
-      ng-if="SideMenuSwitcher.watch.workorder"></ng-include>
+      <div workorder-in-progress-card ng-model="SideMenuSwitcher.watch.workorder"></div>
 
 
     </ion-content>
@@ -31,9 +29,8 @@
   
   <!-- // make into directive, add watch on SideMenuSwitcher.watch.workorder, refresh -->
   
-  <div class="list card menu workorder-card " 
-  ng-init="order = SideMenuSwitcher.watch.workorder" 
-  >
+  <div class="list card menu workorder-card"
+  ng-show="order">
     <div class="item item-divider item-assertive">
     <i class="icon ion-gear-b"> {{order.fromDate | date}} - {{order.toDate | date}}</i>
     </div>

@@ -25,6 +25,21 @@ angular.module('ionBlankApp')
             return result
           , [] 
 
+.directive 'workorderInProgressCard', [
+  '$q'
+  ($q)->
+    self = {
+      templateUrl: 'partials/workorders/menu-workorder-snapshot'
+      restrict: 'EA'
+      scope:{
+        order:'=ngModel'
+      }
+      link: (scope, element, attrs)->
+        return
+    }
+    return self
+]
+
 .controller 'WorkorderPhotosCtrl', [
   '$scope', '$rootScope', '$state', '$q', 
   '$ionicSideMenuDelegate', 'otgData', 'otgParse', 
@@ -49,6 +64,12 @@ angular.module('ionBlankApp')
 
     # $scope.SideMenuSwitcher.leftSide.src = 'partials/workorders/left-side-menu'
     $scope.SideMenuSwitcher.watch['workorder'] = null
+
+
+    # HACK: directive:workorderInProgressCard is NOT watching updates to
+    # SideMenuSwitcher.watch.workorder (parent scope) from promise
+    # so force redirect to working 'path', need a $apply() somewhere????
+    return $state.transitionTo("app.workorders.all") if !$rootScope.workorderColl?
 
 
     $scope.getItemHeight = (item, index)->
@@ -173,7 +194,9 @@ angular.module('ionBlankApp')
         $scope.parse_raw = o
 
         # add to sideMenu
-        $scope.SideMenuSwitcher.watch['workorder'] = o.workorder.toJSON()
+        $scope.SideMenuSwitcher.watch['workorder'] = o.workorder.attributes
+        window.sms = $scope.SideMenuSwitcher.watch
+        window.root = $rootScope
 
         # add fake height for collecton-repeat on TEST_DATA from lookup
         _.each $scope.photos, (item)->

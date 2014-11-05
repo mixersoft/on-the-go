@@ -32,7 +32,9 @@ angular
     $rootScope.$state = $state;
     $rootScope.$stateParams = $stateParams;  
 ]
-.factory 'SideMenuSwitcher', ['$window', ($window)->
+.factory 'SideMenuSwitcher', ['$window',
+($window)->
+
   self = {
     isEmpty: (side)->
       # use for ion-side-menu attr:is-enabled and also ng-show <ion-nav-buttons side=""> 
@@ -54,8 +56,9 @@ angular
     mediaQuery : (mq='(min-width:768px)')->
       return $window.matchMedia(mq).matches
 
+
     watch: {
-      # from SideMenuSwitcher scope
+      workorder: null
     } 
   }
   return self
