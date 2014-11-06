@@ -94,19 +94,13 @@ angular.module('ionBlankApp')
       _info: true
       showInfo: (value=null)->
         return $scope.on._info if value == null 
-
+        revert = $scope.on._info
         if value=='toggle'
           $scope.on._info = !$scope.on._info 
-        else if value != null
-          $scope.on._info = !value
-        # # fire 'scroll.resize' to renderOnResize collection-repeat
-        # MOVED to directive: collection-repeat-scroll-wrap
-        # crw = document.getElementsByClassName('collection-repeat-wrap')
-        # return $scope.on._info  if !crw.length 
-        # $timeout ()->
-        #     angular.element(crw).triggerHandler('scroll.resize');
-        #   , 0
-        return $scope.on._info   
+        else if value != null 
+          $scope.on._info = value
+        $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() if $scope.on._info != revert
+        return $scope.on._info     
       notTopPick: (event, item)->
         event.preventDefault();
         revert = item.topPick

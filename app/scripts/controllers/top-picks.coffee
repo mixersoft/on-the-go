@@ -117,25 +117,7 @@ angular.module('ionBlankApp')
           return
       }
   ]
-.directive 'collectionRepeatScrollWrap', [ '$timeout'
-    ($timeout)->
-      return {
-        restrict: 'A'
-        scope: 
-          resize : '&'
-        link: (scope, element, attrs)->
-          className = attrs.collectionRepeatScrollWrap   
-          scope.$watch ()->
-              return scope.resize()
-            , (newV, oldV)->
-              # wrap = ionic.DomUtil.getParentOrSelfWithClass(element[0], className)
-              wrap = document.getElementsByClassName(className)
-              return $timeout ()-> 
-                  return angular.element(wrap).triggerHandler('scroll.resize')
-                , 0
-          return
-      }
-]
+
 .factory 'otgImgCache', ['$q', '$ionicPlatform'
     ($q, $ionicPlatform)->
       return if !ImgCache
@@ -205,8 +187,10 @@ angular.module('ionBlankApp')
       
 .controller 'TopPicksCtrl', [
   '$scope', '$rootScope', '$state', 'otgData', 'otgParse', 
-  '$timeout', '$window', '$q', '$filter', '$ionicPopup', 'TEST_DATA'
-  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, TEST_DATA) ->
+  '$timeout', '$window', '$q', '$filter', 
+  '$ionicPopup', '$ionicScrollDelegate', 
+  'TEST_DATA'
+  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicScrollDelegate, TEST_DATA) ->
     $scope.label = {
       title: "Top Picks"
       header_card: 
@@ -258,18 +242,12 @@ angular.module('ionBlankApp')
       _info: true
       showInfo: (value=null)->
         return $scope.on._info if value == null 
-
+        revert = $scope.on._info
         if value=='toggle'
           $scope.on._info = !$scope.on._info 
-        else if value != null
-          $scope.on._info = !value
-        # # fire 'scroll.resize' to renderOnResize collection-repeat
-        # MOVED to directive: collection-repeat-scroll-wrap
-        # crw = document.getElementsByClassName('collection-repeat-wrap')
-        # return $scope.on._info  if !crw.length 
-        # $timeout ()->
-        #     angular.element(crw).triggerHandler('scroll.resize');
-        #   , 0
+        else if value != null 
+          $scope.on._info = value
+        $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() if $scope.on._info != revert
         return $scope.on._info   
       addFavorite: (event, item)->
         event.preventDefault();
