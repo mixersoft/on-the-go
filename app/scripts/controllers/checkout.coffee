@@ -9,9 +9,10 @@
 ###
 angular.module('ionBlankApp')
 .controller 'CheckoutCtrl', [
-  '$scope', '$rootScope', '$state', '$q', '$ionicNavBarDelegate', '$ionicModal', 
+  '$scope', '$rootScope', '$state', '$q', 
+  '$ionicNavBarDelegate', '$ionicModal', '$ionicScrollDelegate'
   'otgData', 'otgWorkOrder', 'otgUploader', 'otgParse', 'otgProfile', 'TEST_DATA',
-  ($scope, $rootScope, $state, $q, $ionicNavBarDelegate, $ionicModal, otgData, otgWorkOrder, otgUploader, otgParse, otgProfile, TEST_DATA) ->
+  ($scope, $rootScope, $state, $q, $ionicNavBarDelegate, $ionicModal, $ionicScrollDelegate, otgData, otgWorkOrder, otgUploader, otgParse, otgProfile, TEST_DATA) ->
     $scope.label = {
       title: "Checkout"
       header_card: 
@@ -114,6 +115,7 @@ angular.module('ionBlankApp')
           when 'app.checkout.terms-of-service'
             if !$scope.user.tos
               # TODO: notify TOS must be checked
+              $ionicScrollDelegate.scrollBottom(true)
               return false 
           when 'app.checkout.submit'
             # return false on error by promise
