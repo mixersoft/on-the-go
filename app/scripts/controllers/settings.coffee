@@ -19,7 +19,7 @@ angular.module('ionBlankApp')
       isValid: (ev)->
         return _username.regExp.test($rootScope.user.username.toLowerCase())
       ngClassValidIcon: ()->
-        return 'hide' if !_username.dirty
+        return 'hide' if !_username.dirty || !$rootScope.user.username
         if _username.isValid($rootScope.user.username.toLowerCase())
           # TODO: also check with parse?
           return 'ion-ios7-checkmark balanced' 
