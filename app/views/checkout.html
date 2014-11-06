@@ -26,6 +26,7 @@
   <div class="card header-card">
     <div class="item item-divider item-royal">
       {{headerCard.header}}
+      <span class="pull-right capitalize" ><i class="icon ion-person"> {{otgProfile.displaySessionUsername()}}</i></span>
     </div>
     <div class="item item-text-wrap">
       {{headerCard.body}}
@@ -62,7 +63,7 @@
         </div>
       </div>
       <div class="row" ng-show="on.getOrderType()=='calendar' && watch.servicePlan.total>1">
-        Note: No matter how many days you are On-the-Go, it is only $1 for your first 100 photos.
+        <p>Note: No matter how many days you are On-the-Go, it is only $1 for your first 100 photos.</p>
       </div>
     </div> 
 
@@ -100,11 +101,11 @@
 <script type="text/ng-template" id="partials/checkout/submit">
   <ion-view title="Submit Order"  hide-back-button="true"><ion-content>
     <ng-include src="'partials/checkout/header-card'"></ng-include>
-    <div class="row"><div class="col">
-    <button class="button button-block button-balanced"
-    ng-click="on.next()"
-    >Submit Order</button>
-    </div></div>
+    <div class="padding-horizontal">
+      <button class="button button-block button-balanced"
+      ng-click="on.next()"
+      >Submit Order</button>
+    </div>
   </ion-content></ion-view>
 </script>
 

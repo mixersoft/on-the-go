@@ -10,6 +10,9 @@
     <div class="list card header-card">
       <div class="item item-divider item-energized">
         <i class="icon ion-person"> Sign-up</i>
+        <i class="icon ion-log-in pull-right"
+        ui-sref="app.settings.sign-in"
+        ></i>
       </div>
 
       <div ng-include src="'partials/anonymous-signup-fields'"></div>
@@ -34,6 +37,9 @@
     <div class="list card header-card" >
       <div class="item item-divider item-energized">
         <i class="icon ion-person"> Profile</i>
+        <i class="icon ion-log-out pull-right"
+        ng-click="otgProfile.logout()"
+        ></i>
       </div>
 
       <div ng-include src="'partials/anonymous-signup-fields'"></div>

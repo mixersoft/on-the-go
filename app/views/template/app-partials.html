@@ -35,14 +35,37 @@
   </label>
 
   <!-- // anonymous only -->
-  <div class="item item-input item-icon-right"
-  ng-if="otgProfile.isAnonymous()">
+<div ng-if="otgProfile.isAnonymous()">
+  <label class="item item-input item-icon-right">
     <span class="input-label">Password</span>
     <input type="password" ng-model="user.password" placeholder="Required"
     ng-change="otgProfile.password.isChanged($event)">
     <i class="icon"
     ng-class="otgProfile.password.ngClassValidIcon()"></i>
-  </div>
+  </label>
+</div>
+
+  <!-- // named user only -->
+<div ng-if="!otgProfile.isAnonymous()">
+  <label class="item item-input item-icon-right">
+    <span class="input-label">Password</span>
+    <input type="password" ng-model="user.password" placeholder="Required" 
+    ng-click="otgProfile.password.edit($event)"
+    ng-readonly="!otgProfile.password.dirty"
+    >
+    <i class="icon" tabindex=-1 ng-show="!otgProfile.password.dirty">
+      <button class="button button-small button-assertive" 
+      ng-click="otgProfile.password.edit($event)">
+        <i class="icon ion-edit"></i>
+      </button>
+    </i>
+    <i class="icon"  
+    ng-show="otgProfile.password.dirty"
+    ng-class="otgProfile.password.ngClassValidIcon()"></i>
+  </label>
+</div>
+
+<div ng-if="otgProfile.isAnonymous() || otgProfile.password.dirty">
   <label class="item item-input item-icon-right">
     <span class="input-label">Password</span>
     <input type="password" placeholder="(again)"
@@ -51,22 +74,7 @@
     <i class="icon"  
     ng-class="otgProfile.password.ngClassConfirmedIcon()"></i>
   </label>
-  <!-- // named user only -->
-  <div class="item item-input item-icon-right"
-  ng-if="!otgProfile.isAnonymous()">
-    <span class="input-label">Password</span>
-    <input type="password" ng-model="user.password" placeholder="Required" 
-    ng-readonly="!otgProfile.password.dirty"
-    >
-    <i class="icon" tabindex=-1 ng-show="!otgProfile.password.dirty">
-      <button class="button button-small button-assertive" ng-click="otgProfile.password.change($event)">
-        <i class="icon ion-edit"></i>
-      </button>
-    </i>
-    <i class="icon"  
-    ng-show="otgProfile.password.dirty"
-    ng-class="otgProfile.password.ngClassValidIcon()"></i>
-  </div>
+</div>
 
 
   <div class="item item-input item-icon-right" >
@@ -77,6 +85,43 @@
   </div>
 
 </script>
+
+
+<script id="partials/signin" type="text/ng-template">
+<ion-content class="has-header">
+    <div class="list card header-card">
+      <div class="item item-divider item-energized">
+        <i class="icon ion-person"> Sign-up</i>
+        <i class="icon ion-log-in pull-right"
+        ui-sref="app.settings.profile.sign-in"
+        ></i>
+      </div>
+
+  <label class="item item-input item-icon-right">
+    <span class="input-label">Username</span>
+    <input type="text" ng-model="user.username" placeholder="HappiGuy"
+    ng-change="otgProfile.username.isChanged($event)">
+  </label>
+
+  <label class="item item-input item-icon-right">
+    <span class="input-label">Password</span>
+    <input type="password" ng-model="user.password" placeholder="Required"
+    ng-change="otgProfile.password.isChanged($event)">
+  </label>
+
+      <button class="button button-block button-energized padding-horizontal" 
+        ng-class="otgProfile.ngClassSignin()"
+        ui-sref="app.settings.main"
+        ng-click="otgProfile.signinP($event)"
+        >
+        Submit
+      </button>
+        
+    </div>
+</ion-content>
+</script>
+
+
 
 <script id="partials/pricing" type="text/ng-template">
   <div class="card has-header">
@@ -107,5 +152,7 @@
     </div>
   </div>
 </script>
+
+
 
 

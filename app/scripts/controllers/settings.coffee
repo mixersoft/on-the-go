@@ -9,8 +9,8 @@
 ###
 angular.module('ionBlankApp')
 .factory 'otgProfile', [
-  '$rootScope', '$q', 'otgParse'
-  ($rootScope, $q, otgParse)->
+  '$rootScope', '$q', '$state', 'otgParse'
+  ($rootScope, $q, $state, otgParse)->
     _username = {
       dirty: false
       regExp : /^[a-z0-9_!\@\#\$\%\^\&\*.-]{3,20}$/
@@ -32,7 +32,7 @@ angular.module('ionBlankApp')
       regExp : /^[A-Za-z0-9_-]{3,20}$/
       passwordAgainModel: null
       showPasswordAgain : ''
-      change: (ev)-> 
+      edit: (ev)-> 
         # show password confirm popup before edit
         self.dirty = _password.dirty = true
         _password.showPasswordAgain = true
@@ -89,6 +89,18 @@ angular.module('ionBlankApp')
 
     self = {
       isAnonymous: otgParse.isAnonymousUser
+      signinP: (ev)->
+        ev.preventDefault()
+        return otgParse.loginP(['username', 'password']).then (o)->
+            self.dirty = _username.dirty = _password.dirty = _email.dirty = false
+            # $state.transitionTo('app.settings.profile')
+            return o
+          , (err)->
+            self.dirty = _username.dirty = _password.dirty = _email.dirty = false
+            $rootScope.user.password = ''
+            $state.transitionTo('app.settings.sign-in')
+            alert("Sign-in failed. Please try again")
+
       submitP: ()->
         updateKeys = []
         _.each ['username', 'password', 'email'], (key)->
@@ -110,6 +122,21 @@ angular.module('ionBlankApp')
         else 
           enabled = false
         return if enabled then 'button-balanced' else 'button-energized disabled'
+
+      ngClassSignin : ()->
+        if self.dirty && _password.dirty && _username.dirty
+          enabled = true 
+        else 
+          enabled = false
+        return if enabled then 'button-balanced' else 'button-energized disabled'
+
+
+
+      displaySessionUsername: ()->
+        return "anonymous" if self.isAnonymous()
+        return $rootScope.sessionUser.get('username')
+      logout: ()->
+        return otgParse.logoutSession()
       username: _username
       password: _password
       email: _email

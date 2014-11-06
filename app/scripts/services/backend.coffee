@@ -94,6 +94,7 @@ angular
         return true if $rootScope.sessionUser.get('username').indexOf(ANON_PREFIX.username) == 0
         return false
 
+
       signUpP: (userCred)->
         dfd = $q.defer()
         user = new Parse.User();
@@ -105,26 +106,38 @@ angular
               return dfd.resolve(userCred)
             error: (user, error)->
               $rootScope.sessionUser = null
+              $rootScope.user.username = ''
+              $rootScope.user.password = ''
               console.warn "parse User.signUp error, msg=" + JSON.stringify error
               return dfd.reject(userCred)
           }
         return dfd.promise
 
       loginP: (userCred)->
-        dfd = $q.defer()
-        Parse.User.logIn userCred.username.toLowerCase(), userCred.password, {
-            success: (user)->
-              $rootScope.sessionUser = Parse.User.current()
-              return dfd.resolve(userCred)
-            error: (user, error)->
-              $rootScope.sessionUser = null
-              console.warn "parse User.login error, msg=" + JSON.stringify error
-              return dfd.reject(userCred)
-          } 
-        return dfd.promise
+        if _.isArray(userCred)
+          userCred = {
+            username: $rootScope.user[userCred[0]]
+            password: $rootScope.user[userCred[1]]
+          }
+        return Parse.User.logIn( userCred.username.toLowerCase(), userCred.password )
+        .then (user)->  
+            $rootScope.sessionUser = Parse.User.current()
+            return user
+        , (user, error)->
+            $rootScope.sessionUser = null
+            $q.reject("User login error. msg=" + JSON.stringify error)
 
       logoutSession: ()->
         Parse.User.logOut()
+        $rootScope.user = {
+          id: null
+          username: null
+          password: null
+          email: null
+          emailVerified: false
+          tos: false
+          rememberMe: false
+        }
         return $rootScope.sessionUser = Parse.User.current()
 
       anonSignUpP: (seed)->

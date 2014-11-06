@@ -248,6 +248,15 @@ angular
         }
       }
     })
+    .state('app.settings.sign-in', {
+      url: "/sign-in",
+      views: {
+        'settingsContent' : {
+          templateUrl: "partials/signin"
+          controller: 'SettingsCtrl'
+        }
+      }
+    })
     .state('app.settings.terms-of-service', {
       url: "/terms-of-service",
       views: {

@@ -94,6 +94,10 @@ $ionicons-font-path: "../lib/ionic/fonts" !default;
 .capitalize {
   text-transform: capitalize;
 }
+.pull-right {
+  float: right;
+}
+
 
 p.fine {
   font-size: 0.7em;
@@ -131,6 +135,20 @@ ion-side-menu-content .item > * {
         display: inline-block;
         position: inherit;
       }
+    }
+  }
+}
+
+.header-card {
+  .pull-right .icon.ion-person {
+    font-weight: normal;
+  }
+  .item-text-wrap {
+    .col {
+      padding: 1px 5px;
+    }
+    hr {
+      margin: 0;
     }
   }
 }
