@@ -252,7 +252,8 @@ angular
       url: "/sign-in",
       views: {
         'settingsContent' : {
-          templateUrl: "partials/signin"
+          # templateUrl: "partials/signin"
+          templateUrl: "views/template/sign-in.html"
           controller: 'SettingsCtrl'
         }
       }

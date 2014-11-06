@@ -9,8 +9,8 @@
 ###
 angular.module('ionBlankApp')
 .factory 'otgProfile', [
-  '$rootScope', '$q', '$state', 'otgParse'
-  ($rootScope, $q, $state, otgParse)->
+  '$rootScope', '$q', 'otgParse'
+  ($rootScope, $q, otgParse)->
     _username = {
       dirty: false
       regExp : /^[a-z0-9_!\@\#\$\%\^\&\*.-]{3,20}$/
@@ -89,8 +89,8 @@ angular.module('ionBlankApp')
 
     self = {
       isAnonymous: otgParse.isAnonymousUser
-      signinP: (ev)->
-        ev.preventDefault()
+      signInP: (ev)->
+        
         return otgParse.loginP(['username', 'password']).then (o)->
             self.dirty = _username.dirty = _password.dirty = _email.dirty = false
             # $state.transitionTo('app.settings.profile')
@@ -98,8 +98,7 @@ angular.module('ionBlankApp')
           , (err)->
             self.dirty = _username.dirty = _password.dirty = _email.dirty = false
             $rootScope.user.password = ''
-            $state.transitionTo('app.settings.sign-in')
-            alert("Sign-in failed. Please try again")
+            $q.reject(err)
 
       submitP: ()->
         updateKeys = []
@@ -135,7 +134,7 @@ angular.module('ionBlankApp')
       displaySessionUsername: ()->
         return "anonymous" if self.isAnonymous()
         return $rootScope.sessionUser.get('username')
-      logout: ()->
+      signOut: ()->
         return otgParse.logoutSession()
       username: _username
       password: _password
@@ -147,8 +146,8 @@ angular.module('ionBlankApp')
 
 ]
 .controller 'SettingsCtrl', [
-  '$scope', '$ionicNavBarDelegate', 'otgParse', 'otgProfile'
-  ($scope, $ionicNavBarDelegate, otgParse, otgProfile) ->
+  '$scope', '$rootScope', '$state', '$ionicPopup', '$ionicNavBarDelegate', 'otgParse', 'otgProfile'
+  ($scope, $rootScope, $state, $ionicPopup, $ionicNavBarDelegate, otgParse, otgProfile) ->
     $scope.label = {
       title: "Settings"
       subtitle: "Share something great today!"
@@ -156,7 +155,31 @@ angular.module('ionBlankApp')
 
     
     $scope.otgProfile = otgProfile
+
+    $scope.signOut = (ev)->
+      ev.preventDefault()   
+      otgProfile.signOut()
+      $state.transitionTo('app.settings.sign-in')
+      return     
     
+    $scope.signIn = (ev)->
+      ev.preventDefault()
+      return otgProfile.signInP().then ()->
+          $state.transitionTo('app.settings.main')
+        , (error)->
+          $scope.user.password ==''
+          otgProfile.username.dirty = !! $scope.user.username
+          $state.transitionTo('app.settings.sign-in')
+          alertPopup = $ionicPopup.alert {
+            title: "Sign In"
+            subTitle: "The Username and Password combination was not found. Please try again."
+          }
+          alertPopup.then()
+          $timeout ()->
+              return alertPopup.close()
+            , 3000
+          return 
+        
 
     init = ()->
       otgParse.checkSessionUserP().then (userCred)->

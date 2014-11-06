@@ -129,7 +129,7 @@ angular
 
       logoutSession: ()->
         Parse.User.logOut()
-        $rootScope.user = {
+        _.extend $rootScope.user , {
           id: null
           username: null
           password: null

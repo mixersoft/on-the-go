@@ -91,10 +91,7 @@
 <ion-content class="has-header">
     <div class="list card header-card">
       <div class="item item-divider item-energized">
-        <i class="icon ion-person"> Sign-up</i>
-        <i class="icon ion-log-in pull-right"
-        ui-sref="app.settings.profile.sign-in"
-        ></i>
+        <i class="icon ion-person"> Sign In</i>
       </div>
 
   <label class="item item-input item-icon-right">
@@ -111,8 +108,7 @@
 
       <button class="button button-block button-energized padding-horizontal" 
         ng-class="otgProfile.ngClassSignin()"
-        ui-sref="app.settings.main"
-        ng-click="otgProfile.signinP($event)"
+        ng-click="signIn($event)"
         >
         Submit
       </button>
