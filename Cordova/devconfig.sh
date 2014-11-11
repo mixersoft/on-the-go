@@ -1,24 +1,24 @@
 
 
-/* 
- * On-the-Go project config
- */
-sudo npm install -g bower ionic 
+#
+# On-the-Go project config
+#
+sudo npm install -g bower ionic gulp
 
 
-git clone https://github.com/mixersoft/on-the-go.git snappi-onthego
+#git clone https://github.com/mixersoft/on-the-go.git snappi-onthego
 #
 # provide github user/pass
 #
 
 
-cd snappi-onthego;
+#cd snappi-onthego;
 ionic lib update
 #
 # answer 'yes'
 #
 
-ln -s ../bower_components ./www/components
+ln -s /bower_components ./www/components
 ionic platform ios
 ionic plugin add org.apache.cordova.console 
 ionic plugin add org.apache.cordova.device 
@@ -34,4 +34,4 @@ gulp
 ionic build ios
 
 # run, or open ./platforms/ios/ion-OnTheGo.xcodeproj
-ionic emulate
+#ionic emulate
