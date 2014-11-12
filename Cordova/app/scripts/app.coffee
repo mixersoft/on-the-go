@@ -13,6 +13,7 @@ angular
   'ionic',
   'ngCordova',
   'onTheGo.backend',
+  'ionic.contrib.ui.cards',
 ])
 .constant('version', '0.0.1')
 .run [
@@ -439,6 +440,10 @@ angular
         choose:
           'camera-roll': false
           calendar: false
+        'workorders':
+          'photos': false
+          'todo' : false
+          'picks' : false
 
     }
     $rootScope.user = $scope.user = {

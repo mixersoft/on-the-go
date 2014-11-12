@@ -1,9 +1,9 @@
 
 <ion-content id="choose-tab-camera-roll" class="has-header has-footer">
   <!-- header card  -->
-  <div class="card header-card"
-  on-swipe-left="dontShowHint($event)"
-  ng-hide="dontShowHint()"
+  <swipe-cards><swipe-card class="card header-card" fly="out"
+    on-destroy="on.dontShowHint(this, keep)"
+    ng-hide="on.dontShowHint()"
   >
     <div class="item item-divider">
       {{label.header_card[$state.current.name].header}}
@@ -14,9 +14,9 @@
       {{label.header_card[$state.current.name].body}}
     </div>
     <div class="item item-divider">
-      <p class="fine" ng-click="dontShowHint($event)"><i class="icon ion-close-circled"> Don't Show Me Again</i></p>
+      <p class="fine cursor-pointer" ng-click="on.dontShowHint($event)"><i class="icon ion-close-circled"> Don't Show Me Again</i></p>
     </div>
-  </div>
+  </swipe-card></swipe-cards>
   <!-- collection-repeat of moments -->
   <!-- <div ng-include="'views/template/moment.html'"></div> -->
   <otg-moment otg-model="cameraRoll_DATA.moments"></otg-moment>

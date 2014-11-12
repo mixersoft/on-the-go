@@ -314,10 +314,23 @@ angular.module('ionBlankApp')
     $scope.$on('$destroy', ()->
       $scope.pricelist.remove();
     );
-    $scope.dontShowHint = (hide)->
-      current = $scope.$state.current.name.split('.').pop()
-      $scope.config['dont-show-again']['choose']?[current] = true if hide
-      return $scope.config['dont-show-again']['choose']?[current] 
+
+    $scope.on = {
+      dontShowHint : (hide, keep)->
+        # check config['dont-show-again'] to see if we should hide hint card
+        current = $scope.$state.current.name.split('.').pop()
+        if hide?.currentTarget
+          target = ionic.DomUtil.getParentOrSelfWithClass(hide.currentTarget, 'card')
+          return target.swipeCard.swipeOut('left')
+        if hide?.swipeCard
+          property = $scope.config['dont-show-again']['choose']
+          property[current] = true
+          $timeout ()->
+              return hide.swipeCard.resetPosition()
+            , 500
+          return 
+        return $scope.config['dont-show-again']['choose']?[current]
+    }
 
 
     init()

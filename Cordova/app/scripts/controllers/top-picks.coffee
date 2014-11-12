@@ -188,7 +188,7 @@ angular.module('ionBlankApp')
 .controller 'TopPicksCtrl', [
   '$scope', '$rootScope', '$state', 'otgData', 'otgParse', 
   '$timeout', '$window', '$q', '$filter', 
-  '$ionicPopup', '$ionicScrollDelegate', 
+  '$ionicPopup', '$ionicScrollDelegate'
   'TEST_DATA'
   ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicScrollDelegate, TEST_DATA) ->
     $scope.label = {
@@ -276,20 +276,32 @@ angular.module('ionBlankApp')
           item.caption = res if res
         return item  
 
-      dontShowHint : (hide)->
+      dontShowHint : (hide, keep)->
         # check config['dont-show-again'] to see if we should hide hint card
         current = $scope.$state.current.name.split('.').pop()
-        if hide
+        if hide?.currentTarget
           target = ionic.DomUtil.getParentOrSelfWithClass(hide.currentTarget, 'card')
-          # TODO: add proper hide animation
-          target = angular.element(target).addClass('card-animate').addClass('slide-out-left-hide')
+          return target.swipeCard.swipeOut('left')
+        if hide?.swipeCard
           property = $scope.config['dont-show-again']['top-picks']
+          property[current] = true
           $timeout ()->
-              property[current] = true
-              target.removeClass('card-animate').removeClass('slide-out-left-hide')
+              return hide.swipeCard.resetPosition()
             , 500
-           
+          return 
         return $scope.config['dont-show-again']['top-picks']?[current]
+
+      # swipeCard methods
+      cardKeep: (item)->
+        item.favorite = true
+      cardReject: (item)->
+        item.favorite = false
+      cardSwiped: (item)->
+        # console.log "Swipe, item.id=" + item.id
+        return
+
+
+
     }
 
     $scope.data = {

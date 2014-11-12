@@ -74,7 +74,7 @@ angular.module('ionBlankApp')
 
     $scope.getItemHeight = (item, index)->
       # console.log "index="+index+", item.h="+item.height+" === index.h="+$scope.cameraRoll_DATA.photos[index].height+", index.id="+$scope.cameraRoll_DATA.photos[index].id
-      h = $scope.filteredPhotos[index].height
+      h = $scope.filteredPhotos[index].height*2
       h += 90 if $scope.on.showInfo()
       return h
 
@@ -102,7 +102,7 @@ angular.module('ionBlankApp')
         $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() if $scope.on._info != revert
         return $scope.on._info     
       notTopPick: (event, item)->
-        event.preventDefault();
+        event.preventDefault() if event
         revert = item.topPick
         return if revert==false
         item.topPick = false
@@ -122,7 +122,7 @@ angular.module('ionBlankApp')
         # scroll to next item()
         return item  
       addTopPick: (event, item)->
-        event.preventDefault();
+        event.preventDefault() if event
         revert = item.topPick
         return if revert==true
         item.topPick = true
@@ -142,20 +142,30 @@ angular.module('ionBlankApp')
         # scroll to next item()
         return item  
 
-      dontShowHint : (hide)->
+      dontShowHint : (hide, keep)->
         # check config['dont-show-again'] to see if we should hide hint card
         current = $scope.$state.current.name.split('.').pop()
-        if hide
+        if hide?.currentTarget
           target = ionic.DomUtil.getParentOrSelfWithClass(hide.currentTarget, 'card')
-          # TODO: add proper hide animation
-          target = angular.element(target).addClass('card-animate').addClass('slide-out-left-hide')
-          property = $scope.config['dont-show-again']['top-picks']
+          return target.swipeCard.swipeOut('left')
+        if hide?.swipeCard
+          property = $scope.config['dont-show-again']['workorders']
+          property[current] = true
           $timeout ()->
-              property[current] = true
-              target.removeClass('card-animate').removeClass('slide-out-left-hide')
+              return hide.swipeCard.resetPosition()
             , 500
-           
-        return $scope.config['dont-show-again']['top-picks']?[current]
+          return 
+        return $scope.config['dont-show-again']['workorders']?[current]
+
+
+      # swipeCard methods
+      cardKeep: (item)->
+        return $scope.on.addTopPick(null, item)
+      cardReject: (item)->
+        return $scope.on.notTopPick(null, item)
+      cardSwiped: (item)->
+        # console.log "Swipe, item.id=" + item.id
+        return  
     }
 
     $scope.data = {
