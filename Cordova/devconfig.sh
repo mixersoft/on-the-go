@@ -38,9 +38,15 @@ if [ ! -d "$bowerComponentsDir"]; then
 fi
 
 npm install
+npm list gulp-sass
+echo 'confirm gulp-sass was correctly installed, may need sudo'
+### NOTE: confirm correct install of gulp-sass, type `npm list gulp-sass`  
+### it may need to be installed as administrator
+# sudo npm install gulp-sass
+
 bower install 
-ln -s /bower_components ./www/components
-### NOTE: confirm this symlink is correct!!!
+unlink ./www/components
+ln -s ../bower_components ./www/components
 
 
 
