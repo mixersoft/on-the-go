@@ -78,6 +78,13 @@ angular
         'workorderPartials':
           templateUrl: "views/workorders/workorder-partials.html"
     })
+    .state('nav-menu', {
+      url: "/nav-menu",
+      views:
+        'appContent':
+          templateUrl: "views/menu-only.html",
+          controller: 'AppCtrl'
+    })
 
     # directive:gallery
     # view:top-picks
