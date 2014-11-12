@@ -1,7 +1,8 @@
-<ion-side-menus>
+<ion-side-menus ng-class="{'no-view-headers':config['no-view-headers']}">
 
   <ion-side-menu-content>
-    <ion-nav-bar align-title="center" class="bar-positive nav-title-slide-ios7">
+    <ion-nav-bar align-title="center" class="bar-positive nav-title-slide-ios7" 
+    ng-hide="config['no-view-headers']">
       <ion-nav-back-button class="button-clear"><i class="icon ion-ios7-arrow-back"></i> Back</ion-nav-back-button>
     </ion-nav-bar>
     <ion-nav-view name="menuContent" animation="slide-left-right"></ion-nav-view>
@@ -15,7 +16,7 @@
 
 
 <script type="text/ng-template" id="partials/left-side-menu">
-    <header class="bar bar-header bar-positive">
+    <header class="bar bar-header bar-positive" ng-if="!config['no-view-headers']">
       <h1 class="title">Menu</h1>
     </header>
     <ion-content class="has-header">

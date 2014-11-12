@@ -123,6 +123,25 @@ ion-nav-view {
   background-color: transparent;
 }
 
+/*
+ * hide ion-nav-bar header spacing 
+ */
+.no-view-headers {
+  ion-nav-view ion-tabs {
+    top: 0 !important;
+    &.tabs-top > .tabs {
+      top: 0 !important;
+    }
+    ion-content.has-tabs-top {
+      top: 49px;
+    }
+  }
+  ion-content.has-header {
+    top: 0 !important;
+  }
+}
+
+
 ion-side-menu-content .item > * {
   .badge, .icon {
     display: inline-block;

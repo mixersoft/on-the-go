@@ -419,6 +419,7 @@ angular
 
     # config values read from localstorage, set in settings
     $scope.config = {
+      'no-view-headers' : true
       help: false
       privacy:
         'only-mothers': false
@@ -531,20 +532,20 @@ angular
     }
 
     init = ()->
-      $timeout ()->
-          $ionicPlatform.ready ()->
-            _prefs.load().then (config)->
-              if config?.status == "PLUGIN unavailable"
-                console.log config.status
-              else if config?.status == "EMPTY"
-                console.log "NSUserDefaults=" + JSON.stringify config
-                _prefs.store $scope.config
-              else 
-                console.log "NSUserDefaults=" + JSON.stringify config
-                _.extend $scope.config, config
-              return
-            return
-        , 2000
+      $ionicPlatform.ready ()->
+        $scope.config['no-view-headers'] = $ionicPlatform?.isWebView?()
+        
+        _prefs.load().then (config)->
+          if config?.status == "PLUGIN unavailable"
+            console.log config.status
+          else if config?.status == "EMPTY"
+            console.log "NSUserDefaults=" + JSON.stringify config
+            _prefs.store $scope.config
+          else 
+            console.log "NSUserDefaults=" + JSON.stringify config
+            _.extend $scope.config, config
+          return
+        return
       cameraRoll_DATA.photos_ByDate = TEST_DATA.cameraRoll_byDate
       cameraRoll_DATA.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( cameraRoll_DATA.photos_ByDate ), 2
       cameraRoll_DATA.photos = otgData.parsePhotosFromMoments cameraRoll_DATA.moments
