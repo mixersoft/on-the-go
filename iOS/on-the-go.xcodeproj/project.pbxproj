@@ -20,6 +20,12 @@
 		BF3810991A125C3200915183 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF3810981A125C3200915183 /* MobileCoreServices.framework */; };
 		BF38109C1A125C8400915183 /* www in Resources */ = {isa = PBXBuildFile; fileRef = BF38109B1A125C8400915183 /* www */; };
 		BF38109E1A125CA100915183 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = BF38109D1A125CA100915183 /* config.xml */; };
+		BFD751951A1391390008664A /* DrawerContainerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD7518D1A1391390008664A /* DrawerContainerViewController.m */; };
+		BFD751961A1391390008664A /* DrawerOverlayViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD7518F1A1391390008664A /* DrawerOverlayViewController.m */; };
+		BFD751971A1391390008664A /* DrawerOverlayPresentationController.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD751921A1391390008664A /* DrawerOverlayPresentationController.m */; };
+		BFD751981A1391390008664A /* DrawerOverlayAnimatedTransitioning.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD751941A1391390008664A /* DrawerOverlayAnimatedTransitioning.m */; };
+		BFD7519B1A1391F00008664A /* MainMenuViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD7519A1A1391F00008664A /* MainMenuViewController.m */; };
+		BFD751A11A1394AE0008664A /* DrawerContentSegue.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD751A01A1394AE0008664A /* DrawerContentSegue.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +73,19 @@
 		BF3810981A125C3200915183 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		BF38109B1A125C8400915183 /* www */ = {isa = PBXFileReference; lastKnownFileType = folder; name = www; path = ../../Cordova/platforms/ios/www; sourceTree = "<group>"; };
 		BF38109D1A125CA100915183 /* config.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = config.xml; path = "../../Cordova/platforms/ios/ion-OnTheGo/config.xml"; sourceTree = "<group>"; };
+		BFD7518C1A1391390008664A /* DrawerContainerViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DrawerContainerViewController.h; sourceTree = "<group>"; };
+		BFD7518D1A1391390008664A /* DrawerContainerViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DrawerContainerViewController.m; sourceTree = "<group>"; };
+		BFD7518E1A1391390008664A /* DrawerOverlayViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DrawerOverlayViewController.h; sourceTree = "<group>"; };
+		BFD7518F1A1391390008664A /* DrawerOverlayViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DrawerOverlayViewController.m; sourceTree = "<group>"; };
+		BFD751901A1391390008664A /* DrawerOverlayInternalProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DrawerOverlayInternalProtocol.h; sourceTree = "<group>"; };
+		BFD751911A1391390008664A /* DrawerOverlayPresentationController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DrawerOverlayPresentationController.h; sourceTree = "<group>"; };
+		BFD751921A1391390008664A /* DrawerOverlayPresentationController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DrawerOverlayPresentationController.m; sourceTree = "<group>"; };
+		BFD751931A1391390008664A /* DrawerOverlayAnimatedTransitioning.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DrawerOverlayAnimatedTransitioning.h; sourceTree = "<group>"; };
+		BFD751941A1391390008664A /* DrawerOverlayAnimatedTransitioning.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DrawerOverlayAnimatedTransitioning.m; sourceTree = "<group>"; };
+		BFD751991A1391F00008664A /* MainMenuViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MainMenuViewController.h; sourceTree = "<group>"; };
+		BFD7519A1A1391F00008664A /* MainMenuViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MainMenuViewController.m; sourceTree = "<group>"; };
+		BFD7519F1A1394AE0008664A /* DrawerContentSegue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DrawerContentSegue.h; sourceTree = "<group>"; };
+		BFD751A01A1394AE0008664A /* DrawerContentSegue.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DrawerContentSegue.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -133,6 +152,11 @@
 				BF3810411A125A3400915183 /* Main.storyboard */,
 				BF3810441A125A3400915183 /* Images.xcassets */,
 				BF3810461A125A3400915183 /* LaunchScreen.xib */,
+				BFD751991A1391F00008664A /* MainMenuViewController.h */,
+				BFD7519A1A1391F00008664A /* MainMenuViewController.m */,
+				BFD7519F1A1394AE0008664A /* DrawerContentSegue.h */,
+				BFD751A01A1394AE0008664A /* DrawerContentSegue.m */,
+				BFD7518B1A13911D0008664A /* Drawer Base */,
 				BF3810371A125A3400915183 /* Supporting Files */,
 			);
 			path = "on-the-go";
@@ -162,6 +186,22 @@
 				BF3810521A125A3400915183 /* Info.plist */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		BFD7518B1A13911D0008664A /* Drawer Base */ = {
+			isa = PBXGroup;
+			children = (
+				BFD7518C1A1391390008664A /* DrawerContainerViewController.h */,
+				BFD7518D1A1391390008664A /* DrawerContainerViewController.m */,
+				BFD7518E1A1391390008664A /* DrawerOverlayViewController.h */,
+				BFD7518F1A1391390008664A /* DrawerOverlayViewController.m */,
+				BFD751901A1391390008664A /* DrawerOverlayInternalProtocol.h */,
+				BFD751911A1391390008664A /* DrawerOverlayPresentationController.h */,
+				BFD751921A1391390008664A /* DrawerOverlayPresentationController.m */,
+				BFD751931A1391390008664A /* DrawerOverlayAnimatedTransitioning.h */,
+				BFD751941A1391390008664A /* DrawerOverlayAnimatedTransitioning.m */,
+			);
+			name = "Drawer Base";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -283,8 +323,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BFD751971A1391390008664A /* DrawerOverlayPresentationController.m in Sources */,
 				BF38103D1A125A3400915183 /* AppDelegate.m in Sources */,
+				BFD751981A1391390008664A /* DrawerOverlayAnimatedTransitioning.m in Sources */,
 				BF38103A1A125A3400915183 /* main.m in Sources */,
+				BFD7519B1A1391F00008664A /* MainMenuViewController.m in Sources */,
+				BFD751961A1391390008664A /* DrawerOverlayViewController.m in Sources */,
+				BFD751A11A1394AE0008664A /* DrawerContentSegue.m in Sources */,
+				BFD751951A1391390008664A /* DrawerContainerViewController.m in Sources */,
 				BF160B391A126C8200309CEE /* CordovaViewController.m in Sources */,
 				BF160B3D1A12712300309CEE /* RootViewController.m in Sources */,
 			);

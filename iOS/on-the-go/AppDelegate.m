@@ -7,7 +7,7 @@
 //
 
 #import "AppDelegate.h"
-
+#import "DrawerContainerViewController.h"
 @interface AppDelegate ()
 
 @end
@@ -16,7 +16,14 @@
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    // Override point for customization after application launch.
+    DrawerOverlayViewController *overlay = (DrawerOverlayViewController *)self.window.rootViewController;
+    DrawerContainerViewController *container = [[DrawerContainerViewController alloc] initWithDrawerOverlay:overlay];
+    [self.window setRootViewController:container];
+    
+    [[UINavigationBar appearance] setTranslucent:NO];
+    [[UINavigationBar appearance] setBarTintColor:[UIColor colorWithRed:74/255.0 green:135/255.0 blue:238/255.0 alpha:1.0]];
+    [[UINavigationBar appearance] setTintColor:[UIColor blackColor]];
+    
     return YES;
 }
 

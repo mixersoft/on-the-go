@@ -33,7 +33,7 @@
 //        [c setWwwFolderName:@"www/views"];
 //        [c setStartPage:@"top-picks.html"];
         [c setWwwFolderName:@"www"];
-        [c setStartPage:@"index.html"];
+        [c setStartPage:@"index.html#/app/choose/camera-roll"];
     }
 }
 

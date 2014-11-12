@@ -10,20 +10,20 @@
 
 
 ### required node packages, install globally:
-npm install -g bower gulp cordova ionic 
+npm install -g bower gulp cordova ionic
 ### optional: packages for angular development
 # npm install -g grunt-cli yo generator-angular generator-angular-bootstrap generator-karma   
 
 
 ### clone the github repo
-echo 'enter github user credentials'
-git clone https://github.com/mixersoft/on-the-go.git snappi-onthego
+#echo 'enter github user credentials'
+#git clone https://github.com/mixersoft/on-the-go.git snappi-onthego
 ###
 ### prompt> provide github user/pass
 ###
 
 ### goto cordova project folder
-cd snappi-onthego/Cordova
+#cd snappi-onthego/Cordova
 
 
 ### install dependencies
@@ -31,6 +31,12 @@ echo '{
   "directory": "bower_components"
 }' > .bowerrc
 ### OR, add .bowerrc to github repo
+
+bowerComponentsDir=/bower_components
+if [ ! -d "$bowerComponentsDir"]; then
+    mkdir $bowerComponentsDir
+fi
+
 npm install
 bower install 
 ln -s /bower_components ./www/components
@@ -41,7 +47,7 @@ ln -s /bower_components ./www/components
 ### install Cordova platform for ios and plugins
 ionic platform ios
 ionic plugin add org.apache.cordova.console 
-ionic plugin add org.apache.cordova.device 
+ionic plugin add org.apache.cordova.device
 ionic plugin add org.apache.cordova.file
 ionic plugin add com.ionic.keyboard 
 ionic plugin add me.apla.cordova.app-preferences 
