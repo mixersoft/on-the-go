@@ -1,0 +1,56 @@
+<ion-view >
+  <div class="bar bar-header bar-positive text-center">Menu</div>
+  <ng-include src="'partials/left-side-menu-2'"></ng-include>
+</ion-view>
+
+
+<script type="text/ng-template" id="partials/left-side-menu-2">
+    <header class="bar bar-header bar-positive">
+      <h1 class="title">Menu</h1>
+    </header>
+    <ion-content class="has-header">
+      <ion-list>
+        <ion-item class="item-icon-left item-icon-right" nav-clear menu-close href="#/app/top-picks">
+        <i class="icon ion-images positive"></i>
+          Top Picks
+          <span class="badge badge-balanced">{{menu.top_picks.count}}</span>
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close ui-sref="app.choose.calendar">
+          <i class="icon ion-calendar positive"></i>
+          Choose Your Days
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close href="#/app/orders">
+          <i class="icon ion-archive positive"></i>
+          My Orders
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close href="#/app/uploader">
+          <i class="icon ion-ios7-cloud-upload positive"></i>
+          Uploader
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close href="#/app/settings">
+          <i class="icon ion-gear-b positive"></i>
+          Settings
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close href="#/app/help">
+          <i class="icon ion-help-circled positive"></i>
+          Help
+        </ion-item>
+
+      <div ng-show="SideMenuSwitcher.mediaQuery()">  
+        <ion-item class="item-divider">
+          (for Editors only)
+        </ion-item>
+        <ion-item class="item-icon-left item-assertive" nav-clear menu-close 
+        ui-sref="app.workorders.all"
+        ng-click="SideMenuSwitcher.leftSide.src='partials/workorders/left-side-menu'">
+          <i class="icon ion-archive icon-assertive"></i>
+          Workorders
+        </ion-item>
+      </div>
+
+
+      </ion-list>
+    </ion-content>
+</script>  
+
+ 
