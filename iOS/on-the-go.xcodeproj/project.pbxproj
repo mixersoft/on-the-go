@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		BF160B341A126B7700309CEE /* libCordova.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BF160B2F1A126B6200309CEE /* libCordova.a */; settings = {ATTRIBUTES = (Required, ); }; };
 		BF160B391A126C8200309CEE /* CordovaViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF160B381A126C8200309CEE /* CordovaViewController.m */; };
-		BF160B3D1A12712300309CEE /* RootViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF160B3C1A12712300309CEE /* RootViewController.m */; };
 		BF38103A1A125A3400915183 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = BF3810391A125A3400915183 /* main.m */; };
 		BF38103D1A125A3400915183 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = BF38103C1A125A3400915183 /* AppDelegate.m */; };
 		BF3810431A125A3400915183 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BF3810411A125A3400915183 /* Main.storyboard */; };
@@ -56,8 +55,6 @@
 		BF160B2A1A126B6200309CEE /* CordovaLib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = CordovaLib.xcodeproj; path = ../Cordova/platforms/ios/CordovaLib/CordovaLib.xcodeproj; sourceTree = "<group>"; };
 		BF160B371A126C8200309CEE /* CordovaViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CordovaViewController.h; sourceTree = "<group>"; };
 		BF160B381A126C8200309CEE /* CordovaViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CordovaViewController.m; sourceTree = "<group>"; };
-		BF160B3B1A12712300309CEE /* RootViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RootViewController.h; sourceTree = "<group>"; };
-		BF160B3C1A12712300309CEE /* RootViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RootViewController.m; sourceTree = "<group>"; };
 		BF3810341A125A3400915183 /* on-the-go.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "on-the-go.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF3810381A125A3400915183 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BF3810391A125A3400915183 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -147,8 +144,6 @@
 				BF38103C1A125A3400915183 /* AppDelegate.m */,
 				BF160B371A126C8200309CEE /* CordovaViewController.h */,
 				BF160B381A126C8200309CEE /* CordovaViewController.m */,
-				BF160B3B1A12712300309CEE /* RootViewController.h */,
-				BF160B3C1A12712300309CEE /* RootViewController.m */,
 				BF3810411A125A3400915183 /* Main.storyboard */,
 				BF3810441A125A3400915183 /* Images.xcassets */,
 				BF3810461A125A3400915183 /* LaunchScreen.xib */,
@@ -332,7 +327,6 @@
 				BFD751A11A1394AE0008664A /* DrawerContentSegue.m in Sources */,
 				BFD751951A1391390008664A /* DrawerContainerViewController.m in Sources */,
 				BF160B391A126C8200309CEE /* CordovaViewController.m in Sources */,
-				BF160B3D1A12712300309CEE /* RootViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

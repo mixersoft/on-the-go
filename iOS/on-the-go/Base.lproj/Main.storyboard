@@ -2,25 +2,8 @@
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6250" systemVersion="14B17" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="bgX-d2-kfe">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6244"/>
-        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
     </dependencies>
     <scenes>
-        <!--Navigation Controller-->
-        <scene sceneID="jfO-7Y-uuk">
-            <objects>
-                <navigationController id="p08-Oy-eNn" sceneMemberID="viewController">
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" translucent="NO" id="vRs-Qr-DGh">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                        <autoresizingMask key="autoresizingMask"/>
-                    </navigationBar>
-                    <connections>
-                        <segue destination="xce-0I-dw3" kind="relationship" relationship="rootViewController" id="9Qp-Dj-ymf"/>
-                    </connections>
-                </navigationController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="ozY-vc-HdC" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-702" y="324"/>
-        </scene>
         <!--Menu-->
         <scene sceneID="s22-Qf-UY8">
             <objects>
@@ -89,45 +72,6 @@
             </objects>
             <point key="canvasLocation" x="-701" y="980"/>
         </scene>
-        <!--My Picks-->
-        <scene sceneID="UTK-US-MZ7">
-            <objects>
-                <viewController id="xce-0I-dw3" customClass="RootViewController" sceneMemberID="viewController">
-                    <layoutGuides>
-                        <viewControllerLayoutGuide type="top" id="pHh-U3-YrO"/>
-                        <viewControllerLayoutGuide type="bottom" id="m57-Bh-zAt"/>
-                    </layoutGuides>
-                    <view key="view" contentMode="scaleToFill" id="hwz-ko-8DI">
-                        <rect key="frame" x="0.0" y="0.0" width="600" height="536"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <containerView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Tpc-pX-TCm">
-                                <rect key="frame" x="0.0" y="0.0" width="600" height="536"/>
-                                <connections>
-                                    <segue destination="vXZ-lx-hvc" kind="embed" identifier="TopPicksSegue" id="m2K-F8-7Ql"/>
-                                </connections>
-                            </containerView>
-                        </subviews>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <constraints>
-                            <constraint firstAttribute="bottom" secondItem="Tpc-pX-TCm" secondAttribute="bottom" id="4e0-XG-PHi"/>
-                            <constraint firstItem="Tpc-pX-TCm" firstAttribute="leading" secondItem="hwz-ko-8DI" secondAttribute="leading" id="7oT-5p-vIr"/>
-                            <constraint firstItem="Tpc-pX-TCm" firstAttribute="top" secondItem="pHh-U3-YrO" secondAttribute="bottom" id="OLm-aA-fgh"/>
-                            <constraint firstAttribute="trailing" secondItem="Tpc-pX-TCm" secondAttribute="trailing" id="Od6-cy-fwH"/>
-                            <constraint firstItem="Tpc-pX-TCm" firstAttribute="top" secondItem="hwz-ko-8DI" secondAttribute="topMargin" id="xHd-4U-vWb"/>
-                        </constraints>
-                        <variation key="default">
-                            <mask key="constraints">
-                                <exclude reference="OLm-aA-fgh"/>
-                            </mask>
-                        </variation>
-                    </view>
-                    <navigationItem key="navigationItem" title="My Picks" id="Avq-uX-TG6"/>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="8cK-uj-7fd" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-74" y="323"/>
-        </scene>
         <!--Cordova View Controller-->
         <scene sceneID="ufC-wZ-h7g">
             <objects>
@@ -144,10 +88,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="x5A-6p-PRh" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-14" y="1004"/>
+            <point key="canvasLocation" x="-9" y="980"/>
         </scene>
     </scenes>
-    <inferredMetricsTieBreakers>
-        <segue reference="3Yp-00-XWm"/>
-    </inferredMetricsTieBreakers>
 </document>
