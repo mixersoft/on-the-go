@@ -127,7 +127,7 @@ ion-nav-view {
   .header-card {
     background-color: transparent;
   }
-  .card .item {
+  .card:not(.header-card) .item {
     border-color: black;
   }
 }
