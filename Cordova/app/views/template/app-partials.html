@@ -157,7 +157,8 @@
         <ion-item>
           <div class="list-group-item camera-roll-date"> 
             <!-- dates -->
-            <ul class="list-inline">
+            <ul class="list-inline" 
+            ng-class="{'text-left':options.rows==2}">
               <button class="btn btn-from {{options.btnSize}} date selected start" >
                 <div>{{summaryMoment.dateRange.from | date:'dd MMM'}}</div>
                 <div class="day">{{summaryMoment.dateRange.from | date:'EEE'}}</div>

@@ -264,6 +264,9 @@ otg-moment {
   .item {
     width: 100%;
     border: none;
+    .item {
+      padding: 0;
+    }
   }
   .item-complex .item-content {
     padding: 0;

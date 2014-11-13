@@ -15,13 +15,14 @@ angular.module('ionBlankApp')
   (otgData)->
 
     options = defaults = {
-      rows: 2
       breakpoint: 480
       'col-xs': 
+        rows: 2
         btnClass: ''
         thumbnailSize: 58-2
         thumbnailLimit: null # (w-69)/thumbnailSize
       'col-sm':
+        rows: 2
         btnClass: 'btn-lg'
         thumbnailSize: 74-2
         thumbnailLimit: null # (w-88)/thumbnailSize
@@ -48,6 +49,7 @@ angular.module('ionBlankApp')
       if cfg.thumbnailLimit > 5
         cfg.rows = 1 
         cfg.thumbnailLimit -= 1
+
       # console.log "directive:otgMoment thumbnailLimit=" + cfg.thumbnailLimit
       return cfg
 
@@ -100,7 +102,6 @@ angular.module('ionBlankApp')
 
         if scope.moments.length
           scope.summaryMoment = summarize(scope.moments, scope.options) 
-          scope
         return
     }
     return self
