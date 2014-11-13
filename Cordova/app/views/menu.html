@@ -1,6 +1,6 @@
 <ion-side-menus ng-class="{'no-view-headers':config['no-view-headers']}">
 
-  <ion-side-menu-content>
+  <ion-side-menu-content edge-drag-threshold="true" drag-content="!config['no-view-headers']">
     <ion-nav-bar align-title="center" class="bar-positive nav-title-slide-ios7" 
     ng-hide="config['no-view-headers']">
       <ion-nav-back-button class="button-clear"><i class="icon ion-ios7-arrow-back"></i> Back</ion-nav-back-button>

@@ -58,7 +58,7 @@
 
       // Calculate the top left of a default card, as a translated pos
       var topLeft = window.innerHeight / 2 - this.maxHeight/2;
-      console.log(window.innerHeight, this.maxHeight);
+      // console.log(window.innerHeight, this.maxHeight);
 
       var cardOffset = Math.min(this.cards.length, 3) * 5;
 
@@ -246,7 +246,7 @@
       var width = this.el.offsetWidth;
       var point = window.innerWidth / 2 + this.rotationDirection * (width / 2)
       var distance = Math.abs(point - e.gesture.touches[0].pageY);// - window.innerWidth/2);
-      console.log(distance);
+      // console.log(distance);
 
       this.touchDistance = distance * 10;
 
@@ -301,7 +301,6 @@
       },
       compile: function(element, attr) {
         return function($scope, $element, $attr, swipeCards) {
-          console.log('directive SwipeCard link')
           var el = $element[0];
 
           // Instantiate our card view
