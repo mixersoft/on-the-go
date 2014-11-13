@@ -58,7 +58,7 @@ angular.module('ionBlankApp')
 
       whitespace = cfg.thumbnailLimit % 1
       # console.log "whitespace=" + whitespace + ", pixels=" +(whitespace * cfg.thumbnailSize)
-      if whitespace * cfg.thumbnailSize < 28 
+      if whitespace * cfg.thumbnailSize < 50 
         # leave room for .badge
         cfg.thumbnailLimit -= 1
       cfg.thumbnailLimit = Math.floor(cfg.thumbnailLimit)  
@@ -69,6 +69,18 @@ angular.module('ionBlankApp')
     _getAsPhotos = (uuids)->
       return _.map uuids, (uuidExt)->
         return _.findWhere _lookupPhoto, {id: uuidExt}
+
+    _getMomentHeight = (moment, index)->
+      days = moment.value.length
+      paddingTop = 10
+      padding = 16+1
+      h = days * (this.options.thumbnailSize+1) + padding * 2
+      # console.log "i="+index+", moment.key="+moment.key+", h="+h
+      return h  
+
+    _getOverflowPhotos = (photos)->
+      return count = Math.max(0, photos.length - this.options.thumbnailLimit )
+
 
     return {
       templateUrl: 'views/template/moment.html'
@@ -82,9 +94,8 @@ angular.module('ionBlankApp')
         scope.options = _setSizes(element)
         scope.getAsPhotos = _getAsPhotos
         _lookupPhoto = otgData.parsePhotosFromMoments scope.moments if !_lookupPhoto
-
-        # TODO: these scope methods should be delegated
-        scope.controllerScope = scope.$parent.controllerScope
+        scope.getMomentHeight = _getMomentHeight
+        scope.getOverflowPhotos = _getOverflowPhotos
         scope.otgWorkOrder = otgWorkOrder
         scope.ClassSelected = scope.$parent.ClassSelected
         return
@@ -118,6 +129,12 @@ angular.module('ionBlankApp')
       isDaySelected: (day)->
         found = _.find( _data, {key: day.key} )
         return found
+
+      isDayIncluded: (day)->
+        return false if !_selected.dateRange.from || day.key < _selected.dateRange.from
+        return false if !_selected.dateRange.to || day.key > _selected.dateRange.to 
+        return false if self.isDaySelected(day)
+        return true
 
       countSelectedPhotos: ()->
         _selected.selectedPhotos =  _.reduce _data, (result, day)->
@@ -218,6 +235,7 @@ angular.module('ionBlankApp')
           _.extend _selected, _reset
           return
 
+
     }
 
     window.debug = _.extend window.debug || {} , {
@@ -243,36 +261,6 @@ angular.module('ionBlankApp')
     }
 
     $scope.otgWorkOrder = otgWorkOrder
-
-    $scope.localstate = {
-      showDelete: false
-      showReorder: false
-      canSwipe: true
-    }
-
-
-    $scope.getItemHeight = (moment, index)->
-      days = moment.value.length
-      paddingTop = 10
-      padding = 16+1
-      h = days * (56+1) + padding * 2
-      # console.log "i="+index+", moment.key="+moment.key+", h="+h
-      return h
-
-    
-    # TODO: make camera-roll date HScroll to see all thumbs
-    $scope.hScrollable = ($ev)->
-      console.log "hScrollable(): make camera-roll-date H scrollable"
-      return
-
-
-
-    # ???: is there a better way to access controllerScope within an ng-repat
-    $scope.controllerScope = _.pick($scope, [
-      'localstate',
-      'getItemHeight',
-      'hScrollable'
-    ])
 
     $rootScope.$on '$stateChangeStart', (event, toState, toParams, fromState, fromParams)->
       if toState.name.indexOf('app.choose') == 0 
@@ -317,6 +305,9 @@ angular.module('ionBlankApp')
     );
 
     $scope.on = {
+      hScrollable : ($ev)->
+        console.log "hScrollable(): make camera-roll-date H scrollable"
+        return
       dontShowHint : (hide, keep)->
         # check config['dont-show-again'] to see if we should hide hint card
         current = $scope.$state.current.name.split('.').pop()

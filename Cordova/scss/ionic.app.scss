@@ -274,7 +274,7 @@ otg-moment {
         height: 56px;
         margin-right: -3px;
       }
-      .btn.date {
+      .btn.date, .btn.end-cap {
         border-radius: 0;
         background-color: $positive;
         height: 72px;
@@ -286,13 +286,26 @@ otg-moment {
           font-size: 1.2em;
           font-weight: bold;
         }
-        &.selected {
-          background-color: $balanced;
-        }
+      }
+      &.included .btn.date  .day {
+        color: $balanced;
+      }
+      &.selected .btn.date {
+        background-color: $balanced;
       }
       .badge {
         right: inherit;
         cursor: pointer;
+      }
+      .btn.end-cap {
+        border-top-right-radius: 6px;
+        border-bottom-right-radius: 6px;
+        height: 71px;
+        padding-left: 6px;
+        padding-right: 6px;
+        @include respondto(phone) {
+          height: 55px;
+        }
       }
     }
     &:first-child ul.list-inline .btn.date {
@@ -301,6 +314,7 @@ otg-moment {
     &:last-child ul.list-inline .btn.date {
       border-bottom-left-radius: 6px;
     }
+    
     li {
         padding: 0;
         img {
