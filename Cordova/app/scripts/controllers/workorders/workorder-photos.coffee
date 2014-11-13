@@ -146,9 +146,6 @@ angular.module('ionBlankApp')
       dontShowHint : (hide, keep)->
         # check config['dont-show-again'] to see if we should hide hint card
         current = $scope.$state.current.name.split('.').pop()
-        if hide?.currentTarget
-          target = ionic.DomUtil.getParentOrSelfWithClass(hide.currentTarget, 'card')
-          return target.swipeCard.swipeOut('left')
         if hide?.swipeCard
           property = $scope.config['dont-show-again']['workorders']
           property[current] = true

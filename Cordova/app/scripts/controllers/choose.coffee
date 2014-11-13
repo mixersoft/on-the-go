@@ -227,8 +227,8 @@ angular.module('ionBlankApp')
 
 ]
 .controller 'ChooseCtrl', [
-  '$scope', '$rootScope', '$state', '$stateParams', '$ionicModal', 'otgData', 'otgWorkOrder', 'TEST_DATA',
-  ($scope, $rootScope, $state, $stateParams, $ionicModal, otgData, otgWorkOrder, TEST_DATA) ->
+  '$scope', '$rootScope', '$state', '$stateParams', '$timeout', '$ionicModal', 'otgData', 'otgWorkOrder', 'TEST_DATA',
+  ($scope, $rootScope, $state, $stateParams, $timeout, $ionicModal, otgData, otgWorkOrder, TEST_DATA) ->
     $scope.label = {
       title: "Choose Your Days"
       header_card: 
@@ -320,9 +320,6 @@ angular.module('ionBlankApp')
       dontShowHint : (hide, keep)->
         # check config['dont-show-again'] to see if we should hide hint card
         current = $scope.$state.current.name.split('.').pop()
-        if hide?.currentTarget
-          target = ionic.DomUtil.getParentOrSelfWithClass(hide.currentTarget, 'card')
-          return target.swipeCard.swipeOut('left')
         if hide?.swipeCard
           property = $scope.config['dont-show-again']['choose']
           property[current] = true

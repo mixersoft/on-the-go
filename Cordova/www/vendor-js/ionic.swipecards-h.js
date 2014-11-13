@@ -185,18 +185,18 @@
     transitionOut: function(positive) {
       var self = this;
       var duration = 0.2;
-      var fly;
-      fly = this.fly === 'back' ? 0 : 1; 
+      var flyTo;
+      flyTo = this.fly === 'back' ? 0 : window.innerWidth * 1.5 ; 
       this.el.style[TRANSITION] = '-webkit-transform ' + duration + 's ease-in-out';
       self.positive = ((positive === true) || (this.x > 0))
 
       if(self.positive) {
         // Fly right
-        this.el.style[ionic.CSS.TRANSFORM] = 'translate3d(' + (fly * window.innerWidth * 1.5) + 'px,' + this.y + 'px, 0)';
+        this.el.style[ionic.CSS.TRANSFORM] = 'translate3d(' + flyTo + 'px,' + this.y + 'px, 0)';
         this.onSwipe && this.onSwipe(self.positive);
       } else {
         // Fly left
-        this.el.style[ionic.CSS.TRANSFORM] = 'translate3d(' + (fly * window.innerWidth * -1.5) + 'px,' + this.y + 'px, 0)';
+        this.el.style[ionic.CSS.TRANSFORM] = 'translate3d(' + (-1 * flyTo) + 'px,' + this.y + 'px, 0)';
         this.onSwipe && this.onSwipe(self.positive);
       }
       // Trigger destroy after card has swiped out
@@ -233,11 +233,13 @@
 
     // Rotate anchored to the left of the screen
     _transformOriginLeft: function() {
+      return
       this.el.style[TRANSFORM_ORIGIN] = 'left center';
       this.rotationDirection = 1;
     },
 
     _transformOriginRight: function() {
+      return
       this.el.style[TRANSFORM_ORIGIN] = 'right center';
       this.rotationDirection = -1;
     },
@@ -323,8 +325,8 @@
             },
           });
           $scope.$parent.swipeCard = swipeableCard;
-          // back link
-          el.swipeCard = swipeableCard
+          // back link, use from parent scope onDestroy() callback, but should use $ionicSwipeCardDelegate
+          // el.swipeCard = swipeableCard
 
           swipeCards.pushCard(swipeableCard);
 
