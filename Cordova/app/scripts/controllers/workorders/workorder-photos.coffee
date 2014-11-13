@@ -26,6 +26,7 @@ angular.module('ionBlankApp')
           , [] 
 
 .directive 'workorderInProgressCard', [
+# workorder-in-progress-card appears in the workorder left-side menu  
   '$q'
   ($q)->
     self = {

@@ -61,7 +61,7 @@
     <ion-content class="has-header ">
 
       <div ng-repeat="order in filteredOrders = (orders | filter:{status:'complete'} )">
-        <div ng-include="'partials/order-card'"></div>
+        <div ng-include="'partials/order-card-TEST_DATA'"></div>
       </div>
       <div class="empty-list" ng-if="!filteredOrders.length"> 
         <div class="card empty-list" >
@@ -130,9 +130,8 @@
       <div>Photos Received: {{ order.count_received }}</div>
     </div>
     <div class="item item-complex" 
-    style="height:150px;" 
     ng-if="order.count_expected">
-      <otg-order-moment otg-model="order.selectedMoments"></otg-order-moment>
+      <otg-moment-date-range otg-model="order.selectedMoments"></otg-moment-date-range>
     </div>
     <div class="item item-divider item-assertive">
     <!-- footer  -->
@@ -141,7 +140,7 @@
 </script> 
 
 
-<script type="text/ng-template" id="partials/order-card">
+<script type="text/ng-template" id="partials/order-card-TEST_DATA">
   <div class="list card workorder-card" >
     <div class="item item-divider item-assertive">
     <i class="icon ion-gear-b"> {{order.checkout.dateRange.from | date}} - {{order.checkout.dateRange.to | date}}</i>
@@ -170,9 +169,8 @@
       <div>Photos Received: {{ order.received || order.checkout.count.photos}}</div>
     </div>
     <div class="item item-complex" 
-    style="height:150px;" 
     ng-if="order.checkout.count.photos">
-      <otg-order-moment otg-model="order.checkout.selectedMoments"></otg-order-moment>
+      <otg-moment-date-range otg-model="order.checkout.selectedMoments"></otg-moment-date-range>
     </div>
     <div class="item item-divider item-assertive">
     <!-- footer  -->
@@ -181,38 +179,7 @@
 </script>  
 
 
-<script type="text/ng-template" id="partials/otg-summary-moment">
-  <ion-list class="otg-summary-moment">
-        <ion-item>
-          <div class="list-group-item camera-roll-date"> 
-            <!-- dates -->
-            <ul class="list-inline">
-              <button class="btn btn-from {{options.btnSize}} date selected" >
-                <div>{{from.key | date:'dd MMM'}}</div>
-                <div class="day">{{from.key | date:'EEE'}}</div>
-              </button>
-              <li ng-repeat="photo in from.value | limitTo:options.thumbnailLimit">
-                <img lazy-src="{{photo.id}}" title="Photo {{photo.date}}" 
-                  width="{{options.thumbnailSize}}" 
-                  height="{{options.thumbnailSize}}">
-              </li>
-            </ul>
-            <!-- dates -->
-            <ul class="list-inline text-right">
-              <li ng-repeat="photo in to.value | limitTo:options.thumbnailLimit">
-                <img lazy-src="{{photo.id}}" title="taken: {{photo.date}}" 
-                  width="{{options.thumbnailSize}}" 
-                  height="{{options.thumbnailSize}}">
-              </li>
-              <button class="btn btn-to {{options.btnSize}} date selected" >
-                <div>{{to.key | date:'dd MMM'}}</div>
-                <div class="day">{{to.key | date:'EEE'}}</div>
-              </button>
-            </ul>
-          </div>
-        </ion-item>
-  </ion-list>
-</script>
+
 
 
 

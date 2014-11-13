@@ -30,6 +30,7 @@ angular.module('ionBlankApp')
   }
 ]
 .directive 'otgMoment', [
+  # renders moment as a list of days
   '$window', 'otgWorkOrder', 'otgData'
   ($window, otgWorkOrder, otgData)->
     options = defaults = {
