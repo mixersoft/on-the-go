@@ -43,9 +43,10 @@ angular.module('ionBlankApp')
 
 .controller 'WorkorderPhotosCtrl', [
   '$scope', '$rootScope', '$state', '$q', 
-  '$ionicSideMenuDelegate', 'otgData', 'otgParse', 
-  '$timeout', '$filter', '$window', '$ionicPopup', 'TEST_DATA', 
-  ($scope, $rootScope, $state, $q, $ionicSideMenuDelegate, otgData, otgParse, $timeout, $filter, $window, $ionicPopup, TEST_DATA) ->
+  '$ionicSideMenuDelegate', '$ionicScrollDelegate', '$ionicPopup', 
+  'otgData', 'otgParse', 
+  '$timeout', '$filter', '$window', 'TEST_DATA', 
+  ($scope, $rootScope, $state, $q, $ionicSideMenuDelegate, $ionicScrollDelegate, $ionicPopup, otgData, otgParse, $timeout, $filter, $window, TEST_DATA) ->
     $scope.label = {
       title: "Workorder Photos"
       header_card: 
@@ -73,12 +74,6 @@ angular.module('ionBlankApp')
     return $state.transitionTo("app.workorders.all") if true && !$rootScope.workorderColl?
 
 
-    $scope.getItemHeight = (item, index)->
-      # console.log "index="+index+", item.h="+item.height+" === index.h="+$scope.cameraRoll_DATA.photos[index].height+", index.id="+$scope.cameraRoll_DATA.photos[index].id
-      h = $scope.filteredPhotos[index].height*2
-      h += 90 if $scope.on.showInfo()
-      return h
-
     # filter photos based on $state.current
     setFilter = (toState)->
       switch toState.name
@@ -93,6 +88,11 @@ angular.module('ionBlankApp')
     # use dot notation for prototypal inheritance in child scopes
     $scope.on  = {
       _info: true
+      getItemHeight : (item, index)->
+        # console.log "index="+index+", item.h="+item.height+" === index.h="+$scope.cameraRoll_DATA.photos[index].height+", index.id="+$scope.cameraRoll_DATA.photos[index].id
+        h = ( $scope.filteredPhotos[index].height * 2 ) + ( 2 * 6 ) # paddingV
+        h += 90 if $scope.on.showInfo()
+        return h
       showInfo: (value=null)->
         return $scope.on._info if value == null 
         revert = $scope.on._info
@@ -165,6 +165,7 @@ angular.module('ionBlankApp')
         # console.log "Swipe, item.id=" + item.id
         return  
       cardClick: (scope, ev, item)->
+        return if $scope.config['isWebView']
         clickSide = ev.offsetX/ev.currentTarget.clientWidth
         clickSide = 'left' if clickSide < 0.33 
         clickSide = 'right' if clickSide > 0.67  
@@ -241,13 +242,8 @@ angular.module('ionBlankApp')
 
         $scope.workorder.save({progress: woProgress})
 
-          
-
         setFilter( $state.current )
         $scope.on.showInfo(true) if $scope.config['workorder.photos']?.info
-
-        # ???: should be able to set width as %, but it doesn't work
-        $scope.data.cardStyle.width = Math.min( ($window.innerWidth - 20) , 640 ) + 'px';
 
 
       return

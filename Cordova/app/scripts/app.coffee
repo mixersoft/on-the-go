@@ -419,6 +419,7 @@ angular
 
     # config values read from localstorage, set in settings
     $scope.config = {
+      'isWebView' : true
       'no-view-headers' : true
       help: false
       privacy:
@@ -533,7 +534,8 @@ angular
 
     init = ()->
       $ionicPlatform.ready ()->
-        $scope.config['no-view-headers'] = $ionicPlatform?.isWebView?()
+        $scope.config['isWebView'] = $ionicPlatform?.isWebView?()
+        $scope.config['no-view-headers'] = $scope.config['isWebView'] || false
         
         _prefs.load().then (config)->
           if config?.status == "PLUGIN unavailable"

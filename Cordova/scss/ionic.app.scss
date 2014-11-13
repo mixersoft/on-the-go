@@ -127,8 +127,12 @@ ion-nav-view {
   .header-card {
     background-color: transparent;
   }
-  .card:not(.header-card) .item {
-    border-color: black;
+  .card:not(.header-card) {
+    box-shadow: 2px 2px 8px #222;
+
+    .item {
+      border-color: $dark;
+    }
   }
 }
 
@@ -204,7 +208,7 @@ ion-side-menu-content .item > * {
   }
 
   .photo-card, .workorder-card {
-    margin: 4px auto;
+    margin: 6px auto;
     padding: 0;
 
     .caption {
