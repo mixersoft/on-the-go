@@ -72,7 +72,8 @@
           uuid-ext="{{item.id}}"
           on-keep="on.cardKeep(item)" 
           on-reject="on.cardReject(item)" 
-          on-card-swipe="on.cardSwiped(item)">
+          on-card-swipe="on.cardSwiped(item)"
+          ng-click="on.cardClick(this, $event, item)">
             <!-- header -->
             <div class="item item-divider item-stable padding-horizontal"
             ng-if="on.showInfo()">

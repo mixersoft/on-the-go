@@ -164,6 +164,15 @@ angular.module('ionBlankApp')
       cardSwiped: (item)->
         # console.log "Swipe, item.id=" + item.id
         return  
+      cardClick: (scope, ev, item)->
+        clickSide = ev.offsetX/ev.currentTarget.clientWidth
+        clickSide = 'left' if clickSide < 0.33 
+        clickSide = 'right' if clickSide > 0.67  
+        switch clickSide
+          when 'left' 
+            scope.swipeCard.swipeOver('left')
+          when 'right'
+            scope.swipeCard.swipeOver('right')
     }
 
     $scope.data = {

@@ -172,6 +172,23 @@
     },
 
     /**
+     * Swipe a card over programtically, then back
+     */
+    swipeOver: function(positive, dist) {
+      var self = this;
+      var duration = 0.2;
+      if (dist == null) {
+        dist = 50
+      }
+      dir = positive === 'right' || positive > 0 ? 1 : -1;
+      flyTo = dir * dist
+      this.el.style[ionic.CSS.TRANSFORM] = 'translate3d(' + flyTo + 'px, 0, 0)';
+      setTimeout(function() {
+          self.transitionOut(dir>0)
+        }, duration * 1000);
+    }, 
+
+    /**
      * Fly the card back to original position
      */
     resetPosition: function() {
