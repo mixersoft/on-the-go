@@ -123,6 +123,15 @@ ion-nav-view {
   background-color: transparent;
 }
 
+.dark-bg {
+  .header-card {
+    background-color: transparent;
+  }
+  .card .item {
+    border-color: black;
+  }
+}
+
 /*
  * hide ion-nav-bar header spacing 
  */
