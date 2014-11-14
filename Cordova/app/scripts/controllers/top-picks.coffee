@@ -250,6 +250,7 @@ angular.module('ionBlankApp')
         return $scope.on._info   
       addFavorite: (event, item)->
         event.preventDefault();
+        event.stopPropagation()
         item.favorite = !item.favorite
         if item.favorite == false && $state.current.name == 'app.top-picks.favorites'
           # ???: how do we remove from/refresh collection repeat??
@@ -257,6 +258,7 @@ angular.module('ionBlankApp')
         return item
       addShare: (event, item)->
         event.preventDefault();
+        event.stopPropagation()
         confirmPopup = $ionicPopup.confirm {
           title: "Share Photo"
           template: "Are you sure you want to share this photo?"
@@ -265,7 +267,8 @@ angular.module('ionBlankApp')
           item.shared = true if res
         return item  
       addCaption: (event, item)->
-        event.preventDefault();
+        event.preventDefault()
+        event.stopPropagation()
         captionPopup = $ionicPopup.prompt {
           title: "Add a Caption"
           subTitle: "Something to capture the momeent"

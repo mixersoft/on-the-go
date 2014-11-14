@@ -1,3 +1,15 @@
+'use strict'
+
+###*
+ # @ngdoc factory
+ # @name onTheGo.backend.otgParse
+ # @description 
+ # methods for accessing parse javascript SDK
+ # 
+###
+
+
+
 angular
 .module 'onTheGo.backend', []
 .value 'PARSE_CREDENTIALS', {
@@ -57,7 +69,6 @@ angular
     _deviceready = {
       promise : null
       cancel: null
-      promise: null
       timeout: 5000
       check: ()->
         return _deviceready.promise if _deviceready.promise
@@ -119,7 +130,8 @@ angular
             username: $rootScope.user[userCred[0]]
             password: $rootScope.user[userCred[1]]
           }
-        return Parse.User.logIn( userCred.username.toLowerCase(), userCred.password )
+        return self.deviceReadyP().then ()->
+          Parse.User.logIn( userCred.username.toLowerCase(), userCred.password )
         .then (user)->  
             $rootScope.sessionUser = Parse.User.current()
             return user

@@ -193,6 +193,15 @@ ion-side-menu-content .item > * {
   }
 }
 
+
+.header-card .item.item-divider .icon-large-right {
+  font-size: 1.8em;
+  position: absolute;
+  right: 0;
+  top: 4px;
+  padding: 0px 10px;
+}
+
 .otg-cr-preview {
   $max-preview-dim: 320px;  
   $max-preview-dim-workorder: 640px; 
