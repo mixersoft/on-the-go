@@ -66,6 +66,7 @@
                     <nil key="simulatedTopBarMetrics"/>
                     <connections>
                         <segue destination="vXZ-lx-hvc" kind="custom" identifier="CordovaViewControllerSegue" customClass="DrawerContentSegue" id="3Yp-00-XWm"/>
+                        <segue destination="WSX-qb-7Pv" kind="custom" identifier="ChooseYourDaysSegue" customClass="DrawerContentSegue" id="wFf-bb-5t1"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="hRo-uT-q3u" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -89,6 +90,76 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="x5A-6p-PRh" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-9" y="980"/>
+        </scene>
+        <!--Choose Your Days-->
+        <scene sceneID="QLc-Sn-Ynh">
+            <objects>
+                <viewController id="WSX-qb-7Pv" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="Z7g-sx-onI"/>
+                        <viewControllerLayoutGuide type="bottom" id="ZKP-ed-nle"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="316-Em-iMB">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" translucent="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4eE-Hj-QRI">
+                                <rect key="frame" x="0.0" y="556" width="600" height="44"/>
+                                <color key="backgroundColor" red="0.36470588240000001" green="0.76862745099999996" blue="0.08235294118" alpha="1" colorSpace="calibratedRGB"/>
+                                <items/>
+                            </toolbar>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="loG-hV-MKx">
+                                <rect key="frame" x="0.0" y="64" width="600" height="44"/>
+                                <color key="backgroundColor" red="0.36470588235294116" green="0.7686274509803922" blue="0.082352941176470587" alpha="1" colorSpace="calibratedRGB"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="44" id="2Nd-OM-okQ"/>
+                                </constraints>
+                            </view>
+                            <containerView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Y0g-wI-WKb">
+                                <rect key="frame" x="0.0" y="108" width="600" height="448"/>
+                                <connections>
+                                    <segue destination="Iec-Xw-rpm" kind="embed" id="uJt-Xf-ubi"/>
+                                </connections>
+                            </containerView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstItem="4eE-Hj-QRI" firstAttribute="top" secondItem="Y0g-wI-WKb" secondAttribute="bottom" id="1ic-Hd-p7y"/>
+                            <constraint firstAttribute="trailing" secondItem="Y0g-wI-WKb" secondAttribute="trailing" id="6Ba-gX-Gdb"/>
+                            <constraint firstItem="loG-hV-MKx" firstAttribute="leading" secondItem="316-Em-iMB" secondAttribute="leading" id="6a7-37-s71"/>
+                            <constraint firstItem="loG-hV-MKx" firstAttribute="top" secondItem="Z7g-sx-onI" secondAttribute="bottom" id="ONU-ii-3MY"/>
+                            <constraint firstAttribute="trailing" secondItem="4eE-Hj-QRI" secondAttribute="trailing" id="SS9-SW-7e9"/>
+                            <constraint firstAttribute="trailing" secondItem="loG-hV-MKx" secondAttribute="trailing" id="TFw-6t-A9l"/>
+                            <constraint firstItem="Y0g-wI-WKb" firstAttribute="leading" secondItem="316-Em-iMB" secondAttribute="leading" id="aKp-8m-GHF"/>
+                            <constraint firstItem="Y0g-wI-WKb" firstAttribute="top" secondItem="loG-hV-MKx" secondAttribute="bottom" id="ewd-KJ-EeA"/>
+                            <constraint firstItem="ZKP-ed-nle" firstAttribute="top" secondItem="4eE-Hj-QRI" secondAttribute="bottom" id="mI8-az-dW9"/>
+                            <constraint firstItem="4eE-Hj-QRI" firstAttribute="leading" secondItem="316-Em-iMB" secondAttribute="leading" id="zss-ux-2qZ"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" title="Choose Your Days" id="0dP-sS-fYh"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="v4J-pk-8G7" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-9" y="1643"/>
+        </scene>
+        <!--Kal View Controller-->
+        <scene sceneID="aVr-zU-3kp">
+            <objects>
+                <viewController automaticallyAdjustsScrollViewInsets="NO" id="Iec-Xw-rpm" customClass="KalViewController" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="2KC-3r-0ae"/>
+                        <viewControllerLayoutGuide type="bottom" id="XzR-kC-Tfc"/>
+                    </layoutGuides>
+                    <view key="view" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" id="Lla-sR-BaX">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="448"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                    </view>
+                    <toolbarItems/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="CHt-No-t5j" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="681" y="1643"/>
         </scene>
     </scenes>
 </document>

@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		BF160B341A126B7700309CEE /* libCordova.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BF160B2F1A126B6200309CEE /* libCordova.a */; settings = {ATTRIBUTES = (Required, ); }; };
 		BF160B391A126C8200309CEE /* CordovaViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF160B381A126C8200309CEE /* CordovaViewController.m */; };
+		BF365C5E1A162385006EE290 /* ChooseYourDaysViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF365C5D1A162385006EE290 /* ChooseYourDaysViewController.m */; };
+		BF365C5F1A1623CB006EE290 /* libKal.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BF365C5B1A1620D2006EE290 /* libKal.a */; };
 		BF38103A1A125A3400915183 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = BF3810391A125A3400915183 /* main.m */; };
 		BF38103D1A125A3400915183 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = BF38103C1A125A3400915183 /* AppDelegate.m */; };
 		BF3810431A125A3400915183 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BF3810411A125A3400915183 /* Main.storyboard */; };
@@ -19,6 +21,9 @@
 		BF3810991A125C3200915183 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF3810981A125C3200915183 /* MobileCoreServices.framework */; };
 		BF38109C1A125C8400915183 /* www in Resources */ = {isa = PBXBuildFile; fileRef = BF38109B1A125C8400915183 /* www */; };
 		BF38109E1A125CA100915183 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = BF38109D1A125CA100915183 /* config.xml */; };
+		BFB94CFA1A1628EE004BDB1C /* Kal.bundle in Resources */ = {isa = PBXBuildFile; fileRef = BFB94CF91A1628EE004BDB1C /* Kal.bundle */; };
+		BFB94D011A162B3A004BDB1C /* EventKitDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = BFB94D001A162B3A004BDB1C /* EventKitDataSource.m */; };
+		BFB94D031A162BF2004BDB1C /* EventKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BFB94D021A162BF2004BDB1C /* EventKitUI.framework */; };
 		BFD751951A1391390008664A /* DrawerContainerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD7518D1A1391390008664A /* DrawerContainerViewController.m */; };
 		BFD751961A1391390008664A /* DrawerOverlayViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD7518F1A1391390008664A /* DrawerOverlayViewController.m */; };
 		BFD751971A1391390008664A /* DrawerOverlayPresentationController.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD751921A1391390008664A /* DrawerOverlayPresentationController.m */; };
@@ -42,6 +47,20 @@
 			remoteGlobalIDString = D2AAC07D0554694100DB518D;
 			remoteInfo = CordovaLib;
 		};
+		BF365C5A1A1620D2006EE290 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BF365C561A1620D2006EE290 /* Kal.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = D2AAC07E0554694100DB518D;
+			remoteInfo = Kal;
+		};
+		BF365C601A1623DB006EE290 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BF365C561A1620D2006EE290 /* Kal.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D2AAC07D0554694100DB518D;
+			remoteInfo = Kal;
+		};
 		BF38104E1A125A3400915183 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = BF38102C1A125A3400915183 /* Project object */;
@@ -55,6 +74,9 @@
 		BF160B2A1A126B6200309CEE /* CordovaLib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = CordovaLib.xcodeproj; path = ../Cordova/platforms/ios/CordovaLib/CordovaLib.xcodeproj; sourceTree = "<group>"; };
 		BF160B371A126C8200309CEE /* CordovaViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CordovaViewController.h; sourceTree = "<group>"; };
 		BF160B381A126C8200309CEE /* CordovaViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CordovaViewController.m; sourceTree = "<group>"; };
+		BF365C561A1620D2006EE290 /* Kal.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Kal.xcodeproj; path = src/Kal.xcodeproj; sourceTree = "<group>"; };
+		BF365C5C1A162385006EE290 /* ChooseYourDaysViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ChooseYourDaysViewController.h; sourceTree = "<group>"; };
+		BF365C5D1A162385006EE290 /* ChooseYourDaysViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ChooseYourDaysViewController.m; sourceTree = "<group>"; };
 		BF3810341A125A3400915183 /* on-the-go.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "on-the-go.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF3810381A125A3400915183 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BF3810391A125A3400915183 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -70,6 +92,10 @@
 		BF3810981A125C3200915183 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		BF38109B1A125C8400915183 /* www */ = {isa = PBXFileReference; lastKnownFileType = folder; name = www; path = ../../Cordova/platforms/ios/www; sourceTree = "<group>"; };
 		BF38109D1A125CA100915183 /* config.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = config.xml; path = "../../Cordova/platforms/ios/ion-OnTheGo/config.xml"; sourceTree = "<group>"; };
+		BFB94CF91A1628EE004BDB1C /* Kal.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; name = Kal.bundle; path = "Kal-Master/src/Kal.bundle"; sourceTree = "<group>"; };
+		BFB94CFF1A162B3A004BDB1C /* EventKitDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EventKitDataSource.h; sourceTree = "<group>"; };
+		BFB94D001A162B3A004BDB1C /* EventKitDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EventKitDataSource.m; sourceTree = "<group>"; };
+		BFB94D021A162BF2004BDB1C /* EventKitUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKitUI.framework; path = System/Library/Frameworks/EventKitUI.framework; sourceTree = SDKROOT; };
 		BFD7518C1A1391390008664A /* DrawerContainerViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DrawerContainerViewController.h; sourceTree = "<group>"; };
 		BFD7518D1A1391390008664A /* DrawerContainerViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DrawerContainerViewController.m; sourceTree = "<group>"; };
 		BFD7518E1A1391390008664A /* DrawerOverlayViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DrawerOverlayViewController.h; sourceTree = "<group>"; };
@@ -90,6 +116,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BFB94D031A162BF2004BDB1C /* EventKitUI.framework in Frameworks */,
+				BF365C5F1A1623CB006EE290 /* libKal.a in Frameworks */,
 				BF160B341A126B7700309CEE /* libCordova.a in Frameworks */,
 				BF3810991A125C3200915183 /* MobileCoreServices.framework in Frameworks */,
 				BF3810971A125C2B00915183 /* AssetsLibrary.framework in Frameworks */,
@@ -114,9 +142,30 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		BF365C551A162092006EE290 /* Kal-Master */ = {
+			isa = PBXGroup;
+			children = (
+				BFB94CFF1A162B3A004BDB1C /* EventKitDataSource.h */,
+				BFB94D001A162B3A004BDB1C /* EventKitDataSource.m */,
+				BF365C561A1620D2006EE290 /* Kal.xcodeproj */,
+			);
+			path = "Kal-Master";
+			sourceTree = "<group>";
+		};
+		BF365C571A1620D2006EE290 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BF365C5B1A1620D2006EE290 /* libKal.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		BF38102B1A125A3400915183 = {
 			isa = PBXGroup;
 			children = (
+				BFB94D021A162BF2004BDB1C /* EventKitUI.framework */,
+				BFB94CF91A1628EE004BDB1C /* Kal.bundle */,
+				BF365C551A162092006EE290 /* Kal-Master */,
 				BF3810981A125C3200915183 /* MobileCoreServices.framework */,
 				BF3810961A125C2B00915183 /* AssetsLibrary.framework */,
 				BF160B2A1A126B6200309CEE /* CordovaLib.xcodeproj */,
@@ -147,6 +196,8 @@
 				BF3810411A125A3400915183 /* Main.storyboard */,
 				BF3810441A125A3400915183 /* Images.xcassets */,
 				BF3810461A125A3400915183 /* LaunchScreen.xib */,
+				BF365C5C1A162385006EE290 /* ChooseYourDaysViewController.h */,
+				BF365C5D1A162385006EE290 /* ChooseYourDaysViewController.m */,
 				BFD751991A1391F00008664A /* MainMenuViewController.h */,
 				BFD7519A1A1391F00008664A /* MainMenuViewController.m */,
 				BFD7519F1A1394AE0008664A /* DrawerContentSegue.h */,
@@ -213,6 +264,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				BF365C611A1623DB006EE290 /* PBXTargetDependency */,
 				BF160B331A126B7200309CEE /* PBXTargetDependency */,
 			);
 			name = "on-the-go";
@@ -272,6 +324,10 @@
 					ProductGroup = BF160B2B1A126B6200309CEE /* Products */;
 					ProjectRef = BF160B2A1A126B6200309CEE /* CordovaLib.xcodeproj */;
 				},
+				{
+					ProductGroup = BF365C571A1620D2006EE290 /* Products */;
+					ProjectRef = BF365C561A1620D2006EE290 /* Kal.xcodeproj */;
+				},
 			);
 			projectRoot = "";
 			targets = (
@@ -289,6 +345,13 @@
 			remoteRef = BF160B2E1A126B6200309CEE /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
+		BF365C5B1A1620D2006EE290 /* libKal.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libKal.a;
+			remoteRef = BF365C5A1A1620D2006EE290 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 /* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
@@ -298,6 +361,7 @@
 			files = (
 				BF3810431A125A3400915183 /* Main.storyboard in Resources */,
 				BF3810481A125A3400915183 /* LaunchScreen.xib in Resources */,
+				BFB94CFA1A1628EE004BDB1C /* Kal.bundle in Resources */,
 				BF38109E1A125CA100915183 /* config.xml in Resources */,
 				BF38109C1A125C8400915183 /* www in Resources */,
 				BF3810451A125A3400915183 /* Images.xcassets in Resources */,
@@ -325,7 +389,9 @@
 				BFD7519B1A1391F00008664A /* MainMenuViewController.m in Sources */,
 				BFD751961A1391390008664A /* DrawerOverlayViewController.m in Sources */,
 				BFD751A11A1394AE0008664A /* DrawerContentSegue.m in Sources */,
+				BF365C5E1A162385006EE290 /* ChooseYourDaysViewController.m in Sources */,
 				BFD751951A1391390008664A /* DrawerContainerViewController.m in Sources */,
+				BFB94D011A162B3A004BDB1C /* EventKitDataSource.m in Sources */,
 				BF160B391A126C8200309CEE /* CordovaViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -345,6 +411,11 @@
 			isa = PBXTargetDependency;
 			name = CordovaLib;
 			targetProxy = BF160B321A126B7200309CEE /* PBXContainerItemProxy */;
+		};
+		BF365C611A1623DB006EE290 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Kal;
+			targetProxy = BF365C601A1623DB006EE290 /* PBXContainerItemProxy */;
 		};
 		BF38104F1A125A3400915183 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -453,6 +524,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"$(SRCROOT)/Kal-Master/src",
+				);
 				INFOPLIST_FILE = "on-the-go/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
@@ -467,6 +543,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"$(SRCROOT)/Kal-Master/src",
+				);
 				INFOPLIST_FILE = "on-the-go/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
