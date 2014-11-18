@@ -27,15 +27,17 @@
     self.collectionTitles = nil;
     
     void (^block)(void) = ^{
-        PHFetchResult * collections = [PHCollectionList fetchMomentListsWithSubtype:PHCollectionListSubtypeMomentListCluster options:nil];
+        PHFetchOptions *options = [PHFetchOptions new];
+        [options setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"startDate" ascending:NO]]];
+        PHFetchResult * collections = [PHCollectionList fetchMomentListsWithSubtype:PHCollectionListSubtypeMomentListCluster options:options];
         self.collections = [NSMutableArray arrayWithCapacity:collections.count];
         self.collectionTitles = [NSMutableArray arrayWithCapacity:collections.count];
         
         for (PHCollectionList * collection in collections) {
             NSMutableArray *momentAssets = [NSMutableArray new];
             PHFetchOptions *options = [PHFetchOptions new];
-            [options setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"creationDate" ascending:NO]]];
-            PHFetchResult * momentsInCollection = [PHCollection fetchCollectionsInCollectionList:collection options:nil];
+            [options setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"startDate" ascending:NO]]];
+            PHFetchResult * momentsInCollection = [PHCollection fetchCollectionsInCollectionList:collection options:options];
             
             [momentsInCollection enumerateObjectsUsingBlock:^(PHAssetCollection * obj, NSUInteger idx, BOOL *stop) {
                
