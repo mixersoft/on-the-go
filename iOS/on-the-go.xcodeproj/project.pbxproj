@@ -21,9 +21,13 @@
 		BF3810991A125C3200915183 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF3810981A125C3200915183 /* MobileCoreServices.framework */; };
 		BF38109C1A125C8400915183 /* www in Resources */ = {isa = PBXBuildFile; fileRef = BF38109B1A125C8400915183 /* www */; };
 		BF38109E1A125CA100915183 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = BF38109D1A125CA100915183 /* config.xml */; };
+		BF3E9BA11A1A450600588C13 /* ImagePickerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF3E9BA01A1A450600588C13 /* ImagePickerViewController.m */; };
+		BF3E9BA51A1A4D7C00588C13 /* ImagePickerTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = BF3E9BA41A1A4D7C00588C13 /* ImagePickerTableViewCell.m */; };
 		BFB94CFA1A1628EE004BDB1C /* Kal.bundle in Resources */ = {isa = PBXBuildFile; fileRef = BFB94CF91A1628EE004BDB1C /* Kal.bundle */; };
 		BFB94D011A162B3A004BDB1C /* EventKitDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = BFB94D001A162B3A004BDB1C /* EventKitDataSource.m */; };
 		BFB94D031A162BF2004BDB1C /* EventKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BFB94D021A162BF2004BDB1C /* EventKitUI.framework */; };
+		BFBA28151A1B336700FF5E71 /* UIImageView+Additions.m in Sources */ = {isa = PBXBuildFile; fileRef = BFBA28141A1B336700FF5E71 /* UIImageView+Additions.m */; };
+		BFBA28181A1B4F5700FF5E71 /* ImagePickerFlowLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = BFBA28171A1B4F5700FF5E71 /* ImagePickerFlowLayout.m */; };
 		BFD751951A1391390008664A /* DrawerContainerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD7518D1A1391390008664A /* DrawerContainerViewController.m */; };
 		BFD751961A1391390008664A /* DrawerOverlayViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD7518F1A1391390008664A /* DrawerOverlayViewController.m */; };
 		BFD751971A1391390008664A /* DrawerOverlayPresentationController.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD751921A1391390008664A /* DrawerOverlayPresentationController.m */; };
@@ -92,10 +96,18 @@
 		BF3810981A125C3200915183 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		BF38109B1A125C8400915183 /* www */ = {isa = PBXFileReference; lastKnownFileType = folder; name = www; path = ../../Cordova/platforms/ios/www; sourceTree = "<group>"; };
 		BF38109D1A125CA100915183 /* config.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = config.xml; path = "../../Cordova/platforms/ios/ion-OnTheGo/config.xml"; sourceTree = "<group>"; };
+		BF3E9B9F1A1A450600588C13 /* ImagePickerViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImagePickerViewController.h; sourceTree = "<group>"; };
+		BF3E9BA01A1A450600588C13 /* ImagePickerViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImagePickerViewController.m; sourceTree = "<group>"; };
+		BF3E9BA31A1A4D7C00588C13 /* ImagePickerTableViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImagePickerTableViewCell.h; sourceTree = "<group>"; };
+		BF3E9BA41A1A4D7C00588C13 /* ImagePickerTableViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImagePickerTableViewCell.m; sourceTree = "<group>"; };
 		BFB94CF91A1628EE004BDB1C /* Kal.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; name = Kal.bundle; path = "Kal-Master/src/Kal.bundle"; sourceTree = "<group>"; };
 		BFB94CFF1A162B3A004BDB1C /* EventKitDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EventKitDataSource.h; sourceTree = "<group>"; };
 		BFB94D001A162B3A004BDB1C /* EventKitDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EventKitDataSource.m; sourceTree = "<group>"; };
 		BFB94D021A162BF2004BDB1C /* EventKitUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKitUI.framework; path = System/Library/Frameworks/EventKitUI.framework; sourceTree = SDKROOT; };
+		BFBA28131A1B336700FF5E71 /* UIImageView+Additions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImageView+Additions.h"; sourceTree = "<group>"; };
+		BFBA28141A1B336700FF5E71 /* UIImageView+Additions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImageView+Additions.m"; sourceTree = "<group>"; };
+		BFBA28161A1B4F5700FF5E71 /* ImagePickerFlowLayout.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImagePickerFlowLayout.h; sourceTree = "<group>"; };
+		BFBA28171A1B4F5700FF5E71 /* ImagePickerFlowLayout.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImagePickerFlowLayout.m; sourceTree = "<group>"; };
 		BFD7518C1A1391390008664A /* DrawerContainerViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DrawerContainerViewController.h; sourceTree = "<group>"; };
 		BFD7518D1A1391390008664A /* DrawerContainerViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DrawerContainerViewController.m; sourceTree = "<group>"; };
 		BFD7518E1A1391390008664A /* DrawerOverlayViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DrawerOverlayViewController.h; sourceTree = "<group>"; };
@@ -187,6 +199,7 @@
 		BF3810361A125A3400915183 /* on-the-go */ = {
 			isa = PBXGroup;
 			children = (
+				BFBA28111A1B333000FF5E71 /* Shared */,
 				BF38109D1A125CA100915183 /* config.xml */,
 				BF38109B1A125C8400915183 /* www */,
 				BF38103B1A125A3400915183 /* AppDelegate.h */,
@@ -194,14 +207,15 @@
 				BF160B371A126C8200309CEE /* CordovaViewController.h */,
 				BF160B381A126C8200309CEE /* CordovaViewController.m */,
 				BF3810411A125A3400915183 /* Main.storyboard */,
-				BF3810441A125A3400915183 /* Images.xcassets */,
 				BF3810461A125A3400915183 /* LaunchScreen.xib */,
+				BF3810441A125A3400915183 /* Images.xcassets */,
 				BF365C5C1A162385006EE290 /* ChooseYourDaysViewController.h */,
 				BF365C5D1A162385006EE290 /* ChooseYourDaysViewController.m */,
 				BFD751991A1391F00008664A /* MainMenuViewController.h */,
 				BFD7519A1A1391F00008664A /* MainMenuViewController.m */,
 				BFD7519F1A1394AE0008664A /* DrawerContentSegue.h */,
 				BFD751A01A1394AE0008664A /* DrawerContentSegue.m */,
+				BF3E9BA21A1A4D5A00588C13 /* Image Picker */,
 				BFD7518B1A13911D0008664A /* Drawer Base */,
 				BF3810371A125A3400915183 /* Supporting Files */,
 			);
@@ -232,6 +246,36 @@
 				BF3810521A125A3400915183 /* Info.plist */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		BF3E9BA21A1A4D5A00588C13 /* Image Picker */ = {
+			isa = PBXGroup;
+			children = (
+				BF3E9B9F1A1A450600588C13 /* ImagePickerViewController.h */,
+				BF3E9BA01A1A450600588C13 /* ImagePickerViewController.m */,
+				BF3E9BA31A1A4D7C00588C13 /* ImagePickerTableViewCell.h */,
+				BF3E9BA41A1A4D7C00588C13 /* ImagePickerTableViewCell.m */,
+				BFBA28161A1B4F5700FF5E71 /* ImagePickerFlowLayout.h */,
+				BFBA28171A1B4F5700FF5E71 /* ImagePickerFlowLayout.m */,
+			);
+			name = "Image Picker";
+			sourceTree = "<group>";
+		};
+		BFBA28111A1B333000FF5E71 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				BFBA28121A1B334000FF5E71 /* Categories */,
+			);
+			name = Shared;
+			sourceTree = "<group>";
+		};
+		BFBA28121A1B334000FF5E71 /* Categories */ = {
+			isa = PBXGroup;
+			children = (
+				BFBA28131A1B336700FF5E71 /* UIImageView+Additions.h */,
+				BFBA28141A1B336700FF5E71 /* UIImageView+Additions.m */,
+			);
+			name = Categories;
 			sourceTree = "<group>";
 		};
 		BFD7518B1A13911D0008664A /* Drawer Base */ = {
@@ -384,14 +428,18 @@
 			files = (
 				BFD751971A1391390008664A /* DrawerOverlayPresentationController.m in Sources */,
 				BF38103D1A125A3400915183 /* AppDelegate.m in Sources */,
+				BFBA28151A1B336700FF5E71 /* UIImageView+Additions.m in Sources */,
 				BFD751981A1391390008664A /* DrawerOverlayAnimatedTransitioning.m in Sources */,
 				BF38103A1A125A3400915183 /* main.m in Sources */,
 				BFD7519B1A1391F00008664A /* MainMenuViewController.m in Sources */,
 				BFD751961A1391390008664A /* DrawerOverlayViewController.m in Sources */,
+				BF3E9BA51A1A4D7C00588C13 /* ImagePickerTableViewCell.m in Sources */,
 				BFD751A11A1394AE0008664A /* DrawerContentSegue.m in Sources */,
 				BF365C5E1A162385006EE290 /* ChooseYourDaysViewController.m in Sources */,
 				BFD751951A1391390008664A /* DrawerContainerViewController.m in Sources */,
+				BFBA28181A1B4F5700FF5E71 /* ImagePickerFlowLayout.m in Sources */,
 				BFB94D011A162B3A004BDB1C /* EventKitDataSource.m in Sources */,
+				BF3E9BA11A1A450600588C13 /* ImagePickerViewController.m in Sources */,
 				BF160B391A126C8200309CEE /* CordovaViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
