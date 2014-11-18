@@ -25,13 +25,6 @@
     [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0] atScrollPosition:UICollectionViewScrollPositionLeft animated:NO];
 }
 
--(void)prepareForReuse {
-    [super prepareForReuse];
-//    [self setAssets:nil];
-  //  [self.collectionView reloadData];
-   // [self.collectionView.collectionViewLayout invalidateLayout];
-}
-
 - (void)awakeFromNib {
     // Initialization code
 }
@@ -68,7 +61,8 @@
     UIImageView *imgView = (UIImageView *)[cell viewWithTag:1];
     [imgView setImage:nil];
     PHAsset *asset = self.assets[indexPath.row];
-    [PHImageManager.defaultManager requestImageForAsset:asset targetSize:CGSizeMake(80, 80) contentMode:PHImageContentModeAspectFit options:nil resultHandler:^(UIImage *result, NSDictionary *info) {
+    CGFloat side = 80 * [UIScreen.mainScreen scale];
+    [PHImageManager.defaultManager requestImageForAsset:asset targetSize:CGSizeMake(side, side) contentMode:PHImageContentModeAspectFit options:nil resultHandler:^(UIImage *result, NSDictionary *info) {
         [imgView setImage:result];
     }];
     
