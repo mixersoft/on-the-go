@@ -7,9 +7,9 @@
 //
 
 #import <UIKit/UIKit.h>
-
+@class PHFetchResult;
 @interface ImagePickerTableViewCell : UITableViewCell
 
-@property (nonatomic, strong) NSArray *assets;
+@property (nonatomic, strong) PHFetchResult *assets;
 
 @end

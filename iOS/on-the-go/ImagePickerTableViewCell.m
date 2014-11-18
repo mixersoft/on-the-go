@@ -13,28 +13,27 @@
 
 @interface ImagePickerTableViewCell () <UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout>
 @property (weak, nonatomic) IBOutlet UICollectionView *collectionView;
-@property (nonatomic, strong) PHCachingImageManager *cachingManager;
 
 @end
 
 @implementation ImagePickerTableViewCell
 
--(void)setAssets:(NSArray *)assets {
+-(void)setAssets:(PHFetchResult *)assets {
     _assets = assets;
     [self.collectionView reloadData];
-    [self.cachingManager startCachingImagesForAssets:_assets targetSize:CGSizeMake(80, 80) contentMode:PHImageContentModeAspectFit options:nil];
+    [self.collectionView.collectionViewLayout invalidateLayout];
+    [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0] atScrollPosition:UICollectionViewScrollPositionLeft animated:NO];
 }
 
 -(void)prepareForReuse {
     [super prepareForReuse];
-    [self setAssets:nil];
-    [self.collectionView reloadData];
-    [self.cachingManager stopCachingImagesForAllAssets];
+//    [self setAssets:nil];
+  //  [self.collectionView reloadData];
+   // [self.collectionView.collectionViewLayout invalidateLayout];
 }
 
 - (void)awakeFromNib {
     // Initialization code
-    self.cachingManager = [PHCachingImageManager new];
 }
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated {
@@ -69,7 +68,7 @@
     UIImageView *imgView = (UIImageView *)[cell viewWithTag:1];
     [imgView setImage:nil];
     PHAsset *asset = self.assets[indexPath.row];
-    [self.cachingManager requestImageForAsset:asset targetSize:CGSizeMake(80, 80) contentMode:PHImageContentModeAspectFit options:nil resultHandler:^(UIImage *result, NSDictionary *info) {
+    [PHImageManager.defaultManager requestImageForAsset:asset targetSize:CGSizeMake(80, 80) contentMode:PHImageContentModeAspectFit options:nil resultHandler:^(UIImage *result, NSDictionary *info) {
         [imgView setImage:result];
     }];
     

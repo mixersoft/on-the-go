@@ -199,7 +199,6 @@
 		BF3810361A125A3400915183 /* on-the-go */ = {
 			isa = PBXGroup;
 			children = (
-				BFBA28111A1B333000FF5E71 /* Shared */,
 				BF38109D1A125CA100915183 /* config.xml */,
 				BF38109B1A125C8400915183 /* www */,
 				BF38103B1A125A3400915183 /* AppDelegate.h */,
@@ -215,6 +214,7 @@
 				BFD7519A1A1391F00008664A /* MainMenuViewController.m */,
 				BFD7519F1A1394AE0008664A /* DrawerContentSegue.h */,
 				BFD751A01A1394AE0008664A /* DrawerContentSegue.m */,
+				BFBA28111A1B333000FF5E71 /* Shared */,
 				BF3E9BA21A1A4D5A00588C13 /* Image Picker */,
 				BFD7518B1A13911D0008664A /* Drawer Base */,
 				BF3810371A125A3400915183 /* Supporting Files */,

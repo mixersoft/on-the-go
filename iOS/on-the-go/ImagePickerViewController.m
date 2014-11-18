@@ -13,7 +13,8 @@
 
 
 @interface ImagePickerViewController () <UITableViewDataSource, UITableViewDelegate>
-@property (nonatomic, strong) NSMutableArray *moments;
+@property (nonatomic, strong) NSMutableArray *collections;
+@property (nonatomic, strong) NSMutableArray *collectionTitles;
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 @end
 
@@ -21,40 +22,28 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    [self.tableView setContentInset:UIEdgeInsetsMake(16, 0, 16, 0)];
-    self.moments = nil;
+    [self.tableView setRowHeight:80];
+    self.collections = nil;
+    self.collectionTitles = nil;
     
     void (^block)(void) = ^{
-        PHFetchResult * allMoments = [PHAssetCollection fetchMomentsWithOptions:nil];
-        self.moments = [NSMutableArray arrayWithCapacity:allMoments.count];
-        for (PHAssetCollection * moment in allMoments) {
+        PHFetchResult * collections = [PHCollectionList fetchMomentListsWithSubtype:PHCollectionListSubtypeMomentListCluster options:nil];
+        self.collections = [NSMutableArray arrayWithCapacity:collections.count];
+        self.collectionTitles = [NSMutableArray arrayWithCapacity:collections.count];
+        
+        for (PHCollectionList * collection in collections) {
             NSMutableArray *momentAssets = [NSMutableArray new];
             PHFetchOptions *options = [PHFetchOptions new];
             [options setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"creationDate" ascending:NO]]];
-            PHFetchResult * assetsFetchResults = [PHAsset fetchAssetsInAssetCollection:moment options:options];
-            __block NSDate *currentDateFromComponents = nil;
-            [assetsFetchResults enumerateObjectsUsingBlock:^(PHAsset *obj, NSUInteger idx, BOOL *stop) {
-                if (!currentDateFromComponents) {
-                    NSDateComponents *currentComponents = [[NSCalendar currentCalendar] components:(NSCalendarUnitYear|NSCalendarUnitMonth|NSCalendarUnitDay) fromDate:[obj creationDate]];
-                    currentDateFromComponents = [NSCalendar.currentCalendar dateFromComponents:currentComponents];
-                    [momentAssets addObject:[NSMutableArray arrayWithObject:obj]];
-                    return;
-                }
-                NSDate * assetDate = obj.creationDate;
-                NSDateComponents *components = [[NSCalendar currentCalendar] components:(NSCalendarUnitYear|NSCalendarUnitMonth|NSCalendarUnitDay) fromDate:assetDate];
-                NSComparisonResult result = [[NSCalendar.currentCalendar dateFromComponents:components]
-                                             compare:currentDateFromComponents];
-                if (result == NSOrderedSame) {
-                    //
-                    [[momentAssets lastObject] addObject:obj];
-                }
-                else {
-                    NSDateComponents *currentComponents = [[NSCalendar currentCalendar] components:(NSCalendarUnitYear|NSCalendarUnitMonth|NSCalendarUnitDay) fromDate:[obj creationDate]];
-                    currentDateFromComponents = [NSCalendar.currentCalendar dateFromComponents:currentComponents];
-                    [momentAssets addObject:[NSMutableArray arrayWithObject:obj]];
-                }
+            PHFetchResult * momentsInCollection = [PHCollection fetchCollectionsInCollectionList:collection options:nil];
+            
+            [momentsInCollection enumerateObjectsUsingBlock:^(PHAssetCollection * obj, NSUInteger idx, BOOL *stop) {
+               
+                PHFetchResult *result = [PHAsset fetchAssetsInAssetCollection:obj options:nil];
+                [momentAssets addObject:result];
             }];
-            [self.moments addObject:momentAssets];
+            [self.collections addObject:momentAssets];
+            [self.collectionTitles addObject:collection.localizedTitle?:@""];
         }
         [[NSOperationQueue mainQueue] addOperationWithBlock:^{
             [self.tableView reloadData];
@@ -86,20 +75,28 @@
 #pragma mark UITableView
 
 -(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return self.moments.count;
+    return self.collections.count;
 }
 
 -(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     
-    return [self.moments[section] count];
+    return [self.collections[section] count];
 }
 
 
 -(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    NSArray *assetsPerDay = self.moments[indexPath.section][indexPath.row];
+    PHFetchResult *moment = self.collections[indexPath.section][indexPath.row];
     ImagePickerTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"Cell"];
-    [cell setAssets:assetsPerDay];
+    [cell setAssets:moment];
     return cell;
+}
+
+-(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+    return 50;
+}
+
+-(NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    return self.collectionTitles[section];
 }
 
 @end
