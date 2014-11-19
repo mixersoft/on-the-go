@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+		id="com.cordova.native-messenger"
+		version="0.0.1dev">
+
+	<name>CordovaNativeMessenger</name>
+
+	<description>YADA YADA</description>
+	<repo></repo>
+	<keywords>messanging,events</keywords>
+
+	<engines>
+		<engine name="cordova" version=">=3.0.0"/>
+	</engines>
+
+	<js-module src="www/messenger.js" name="Messenger">
+		<clobbers target="window.Messenger"/>
+	</js-module>
+
+	<platform name="ios">
+
+		<config-file target="config.xml" parent="/*">
+			<feature name="CordovaNativeMessenger">
+				<param name="ios-package" value="CordovaNativeMessenger" onload="true" />
+				<param name="onload" value="true" />
+			</feature>
+		</config-file>
+
+		<header-file src="src/ios/CordovaNativeMessenger.h"/>
+		<source-file src="src/ios/CordovaNativeMessenger.m"/>
+
+		<framework src="Foundation.framework" weak="true" />
+	</platform>
+
+</plugin>
