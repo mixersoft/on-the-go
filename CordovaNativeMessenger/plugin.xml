@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
-		id="com.cordova.native-messenger"
-		version="0.0.1dev">
+		id="com.snaphappi.native-messenger.Messenger"
+		version="0.0.2dev">
 
 	<name>CordovaNativeMessenger</name>
 
@@ -30,7 +30,7 @@
 		<header-file src="src/ios/CordovaNativeMessenger.h"/>
 		<source-file src="src/ios/CordovaNativeMessenger.m"/>
 
-		<framework src="Foundation.framework" weak="true" />
+		<framework src="Photos.framework" weak="true" />
 	</platform>
 
 </plugin>

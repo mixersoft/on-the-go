@@ -7,6 +7,10 @@ cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
 		exec(listener, listener, "CordovaNativeMessenger", "bindListener", []);
 	};
 
+	Messenger.prototype.mapAssetsLibrary = function(callback) {
+		exec(callback, null, "CordovaNativeMessenger", "mapAssetsLibrary", []);
+	};
+
 	var plugin = new Messenger();
 
 	module.exports = plugin;
@@ -14,4 +18,4 @@ cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
 
 var Messenger = cordova.require("cordova/plugin/Messenger");
 
-module.exports = Messenger
+module.exports = Messenger;
