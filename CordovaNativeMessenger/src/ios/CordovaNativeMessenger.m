@@ -12,6 +12,8 @@
 
 NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeMessageNotification";
 
+#define PLUGIN_ERROR(message) [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: message]
+
 @interface CordovaNativeMessenger () {
     NSString *callbackId;
 }
@@ -47,6 +49,54 @@ NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeM
     
     CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultArray];
     [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
+}
+
+-(void)getPhotoById:(CDVInvokedUrlCommand*) command {
+    
+    NSString *identifier = command.arguments[0];
+    
+    PHFetchResult *fetchResult = [PHAsset fetchAssetsWithLocalIdentifiers:@[identifier] options:nil];
+    
+    if(fetchResult.count == 0) {
+        CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Image not found"];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+        
+        return;
+    }
+    
+    NSNumber *width = command.arguments[1];
+    NSNumber *height = command.arguments[2];
+    
+    CGSize imageSize = CGSizeMake([width doubleValue], [height doubleValue]);
+    
+    PHAsset *asset = [fetchResult firstObject];
+    
+    
+    __weak __typeof(self) weakself = self;
+    
+    [[PHImageManager defaultManager] requestImageForAsset:asset targetSize:imageSize contentMode:PHImageContentModeAspectFit options:nil resultHandler:^(UIImage *result, NSDictionary *info) {
+        
+        if(result == nil) {
+            CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Unable to read image"];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+            return;
+        }
+        
+        [weakself.commandDelegate runInBackground:^{
+            NSData *bytes = UIImageJPEGRepresentation(result, 1);
+            NSString *base64 = [bytes base64Encoding];
+            
+            
+            CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
+                                                    messageAsDictionary:@{@"UUID":identifier,
+                                                                          @"data":base64}];
+            
+            [weakself.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+        }];
+        
+    }];
+    
+    
 }
 
 -(void)sendEvent:(NSDictionary *)eventData {
