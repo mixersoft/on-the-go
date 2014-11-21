@@ -57,6 +57,7 @@ ionic plugin add org.apache.cordova.device
 ionic plugin add org.apache.cordova.file
 ionic plugin add com.ionic.keyboard 
 ionic plugin add me.apla.cordova.app-preferences 
+ionic plugin add ../CordovaNativeMessenger
 
 
 ### install ionic libs to ./www/lib

@@ -13,6 +13,7 @@ angular
   'ionic',
   'ngCordova',
   'onTheGo.backend',
+  'onTheGo.snappiAssetsPicker'
   'ionic.contrib.ui.cards',
 ])
 .constant('version', '0.0.1')
@@ -370,8 +371,8 @@ angular
 .controller 'AppCtrl', [
   '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', '$ionicPlatform', 
   'SideMenuSwitcher', '$ionicSideMenuDelegate'
-  'otgData', 'otgWorkOrder', 'TEST_DATA',
-  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, otgData, otgWorkOrder, TEST_DATA)->
+  'otgData', 'otgWorkOrder',   'snappiAssetsPickerService', 'TEST_DATA',
+  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, otgData, otgWorkOrder, snappiAssetsPickerService, TEST_DATA)->
 
     # dynamically update left side menu
     $scope.SideMenuSwitcher = SideMenuSwitcher  
@@ -528,18 +529,41 @@ angular
           promise.resolve({status:"PLUGIN unavailable"}) 
 
         return promise.promise
+    }
 
+    _MessengerPLUGIN = {
+      # methods for testing messenger plugin
+      mapAssetsLibrary: ()->
+        console.log "mapAssetsLibrary() calling window.Messenger.mapAssetsLibrary(assets)"
+        return snappiAssetsPickerService.mapAssetsLibraryP();
+      getPhotoById: (asset)->
+        return snappiAssetsPickerService.getAssetByIdP(asset, 320,240)
+      testMessengerPlugin: ()->
+        _MessengerPLUGIN.mapAssetsLibrary().then (mapped)->
+            console.log JSON.stringify mapped[0..3]
+            asset = mapped[0]
+            _MessengerPLUGIN.getPhotoById(asset, 320, 240).then (photo)->
+              check = photo
+              console.log _.keys photo
+              return
+          .then null, (error)->
+            console.error error
 
     }
+
+
 
     init = ()->
       $ionicPlatform.ready ()->
         $scope.config['isWebView'] = $ionicPlatform?.isWebView?()
         $scope.config['no-view-headers'] = $scope.config['isWebView'] || false
+
+        
+        _MessengerPLUGIN.testMessengerPlugin()
         
         _prefs.load().then (config)->
           if config?.status == "PLUGIN unavailable"
-            console.log config.status
+            console.warn "AppPreferences" + config.status
           else if config?.status == "EMPTY"
             console.log "NSUserDefaults=" + JSON.stringify config
             _prefs.store $scope.config
@@ -547,7 +571,9 @@ angular
             console.log "NSUserDefaults=" + JSON.stringify config
             _.extend $scope.config, config
           return
-        return
+
+        return  # end $ionicPlatform.ready
+
       cameraRoll_DATA.photos_ByDate = TEST_DATA.cameraRoll_byDate
       cameraRoll_DATA.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( cameraRoll_DATA.photos_ByDate ), 2
       cameraRoll_DATA.photos = otgData.parsePhotosFromMoments cameraRoll_DATA.moments
