@@ -188,9 +188,9 @@ angular.module('ionBlankApp')
 .controller 'TopPicksCtrl', [
   '$scope', '$rootScope', '$state', 'otgData', 'otgParse', 
   '$timeout', '$window', '$q', '$filter', 
-  '$ionicPopup', '$ionicScrollDelegate'
+  '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', 'snappiAssetsPickerService',
   'TEST_DATA'
-  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicScrollDelegate, TEST_DATA) ->
+  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, snappiAssetsPickerService, TEST_DATA) ->
     $scope.label = {
       title: "Top Picks"
       header_card: 
@@ -308,6 +308,34 @@ angular.module('ionBlankApp')
             scope.swipeCard.swipeOver('left')
           when 'right'
             scope.swipeCard.swipeOver('right')
+      mapAssetsLibrary: ()->
+        console.log "TopPicks on.mapAssetsLib() calling window.Messenger.mapAssetsLibrary(assets)"
+        start = new Date().getTime()
+        return $scope.testMessengerPlugin().then (retval)->
+          end = new Date().getTime()
+          retval.elapsed = (end-start)/1000
+          console.log "testMessengerPlugin RETURNED"
+          $scope.console_message = JSON.stringify retval, null, 2
+          console.log "mapAssetsLibrary, json=" + $scope.console_message
+          # show in modal
+
+          return $scope.modal.show() if $scope.model
+          $ionicModal.fromTemplateUrl 'partials/modal/console', {
+              scope: $scope
+              message: $scope.console_message
+              animation: 'slide-in-up'
+            }
+          .then (modal)->
+              console.log "modal ready"
+              $scope.modal = modal
+              modal.show()
+              $scope.$on 'destroy', ()->
+                $scope.modal.remove()
+              return
+            , (error)->
+              console.log "Error: $ionicModal.fromTemplate"
+              console.log error
+          return
 
     }
 

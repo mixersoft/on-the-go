@@ -125,13 +125,15 @@ angular
           dfd = $q.defer()
           start = new Date().getTime()
           return $q.reject "ERROR: window.Messenger Plugin not available" if !(window.Messenger?.mapAssetsLibrary)
-          console.log "about to call Messenger.mapAssetsLibrary(), options=" + JSON.stringify options
+          console.log "about to call Messenger.mapAssetsLibrary(), Messenger.properties=" + JSON.stringify _.keys window.Messenger.prototype 
           window.Messenger.mapAssetsLibrary (mapped)->
-              console.log "*** window.Messenger.mapAssetsLibrary success!! ***"
+              ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
+              end = new Date().getTime()
+              console.log "*** window.Messenger.mapAssetsLibrary success!! ***elapsed=" + (end-start)/1000
               return dfd.resolve ( mapped )
             , (error)->
               return dfd.reject("ERROR: MessengermapAssetsLibrary(), msg=" + JSON.stringify error)
-            , options
+          console.log "called Messenger.mapAssetsLibrary(), waiting for callbacks..."
           return dfd.promise
       getAssetByIdP: (asset, w, h)->
         self.deviceReadyP().then (retval)->
@@ -139,9 +141,10 @@ angular
           dfd = $q.defer()
           start = new Date().getTime()
           return $q.reject "ERROR: window.Messenger Plugin not available" if !(window.Messenger?.getPhotoById)
-          window.Messenger.getPhotoById testAsset.UUID, w, h, (photo)->
-              console.log "*** window.Messenger.getPhotoById success!! ***"
-              console.log _.keys photo
+          window.Messenger.getPhotoById asset.UUID, w, h, (photo)->
+              end = new Date().getTime()
+              photo.elapsed = (end-start)/1000
+              console.log "*** window.Messenger.getPhotoById success!! *** elapsed=" + (end-start)/1000
               return dfd.resolve ( photo )
             , (error)->
               console.log error

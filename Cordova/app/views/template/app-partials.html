@@ -16,6 +16,20 @@
   </div>
 </script>
 
+<script id="partials/modal/console" type="text/ng-template">
+  <div class="console-modal">
+    <ion-content>
+      <div class="body padding" ng-click="modal.hide()">
+        <h2>Console</h2>
+        <div>
+          <pre>{{console_message}}</pre>
+        </div>
+      </div>
+    </ion-content>
+  </div>
+</script>
+
+
 <script id="partials/anonymous-signup" type="text/ng-template">
   <div class="padding">
     <h3 class="text-center">Hey You!</h3>

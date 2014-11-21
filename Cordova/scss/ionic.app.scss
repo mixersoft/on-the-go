@@ -487,6 +487,18 @@ otg-moment-date-range {
 }
  
 
+.console-modal {
+  background-color: rgba(0,0,0,0.5);
+  padding: 20px 10px;
+  .body {
+    background-color: white;
+    color: black;
+  }
+  .bar-header {
+    position: relative;
+  }
+} 
+
 
 /*
  * .thumb markup for gallery views

@@ -537,19 +537,30 @@ angular
         console.log "mapAssetsLibrary() calling window.Messenger.mapAssetsLibrary(assets)"
         return snappiAssetsPickerService.mapAssetsLibraryP();
       getPhotoById: (asset)->
-        return snappiAssetsPickerService.getAssetByIdP(asset, 320,240)
+        return snappiAssetsPickerService.getAssetByIdP(asset, 64,64)
       testMessengerPlugin: ()->
-        _MessengerPLUGIN.mapAssetsLibrary().then (mapped)->
-            console.log JSON.stringify mapped[0..3]
+        console.log "testing testMessengerPlugin...."
+        return _MessengerPLUGIN.mapAssetsLibrary().then (mapped)->
+            # console.log "mapped.length=" + mapped.length + ", first 3 items to follow:"
+            # console.log JSON.stringify mapped[0..3]
+            ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
             asset = mapped[0]
-            _MessengerPLUGIN.getPhotoById(asset, 320, 240).then (photo)->
-              check = photo
-              console.log _.keys photo
-              return
-          .then null, (error)->
-            console.error error
+            return _MessengerPLUGIN.getPhotoById(asset, 320, 240).then (photo)->
+                # console.log "getPhotoById(" + asset.UUID + "), DataURL[0..20]=" + photo.data[0..20]
+                return {
+                    count: mapped.length
+                    sample: mapped[0..5]
+                    samplePhoto: 
+                      UUID: photo.UUID
+                      dataURL: photo.data[0..100]
+                  }
+              , (error)->
+                return console.error error
+
 
     }
+
+    $scope.testMessengerPlugin = _MessengerPLUGIN.testMessengerPlugin 
 
 
 
@@ -558,8 +569,9 @@ angular
         $scope.config['isWebView'] = $ionicPlatform?.isWebView?()
         $scope.config['no-view-headers'] = $scope.config['isWebView'] || false
 
-        
-        _MessengerPLUGIN.testMessengerPlugin()
+        # $timeout ()->
+        #     _MessengerPLUGIN.testMessengerPlugin()
+        #   , 10000
         
         _prefs.load().then (config)->
           if config?.status == "PLUGIN unavailable"
