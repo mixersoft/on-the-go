@@ -533,25 +533,48 @@ angular
 
     _MessengerPLUGIN = {
       # methods for testing messenger plugin
-      mapAssetsLibrary: ()->
+      mapAssetsLibraryP: ()->
         console.log "mapAssetsLibrary() calling window.Messenger.mapAssetsLibrary(assets)"
         # return snappiAssetsPickerService.mapAssetsLibraryP();
         start = new Date().getTime()
-        return snappiAssetsPickerService.mapAssetsLibraryP().then (retval)->
+        return snappiAssetsPickerService.mapAssetsLibraryP().then (mapped)->
             ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
             end = new Date().getTime()
-            retval.elapsed = (end-start)/1000
-            console.log "testMessengerPlugin RETURNED"
-            $scope.appConsole.log JSON.stringify retval, null, 2
-            # show in modal
-            $scope.appConsole.show() 
-            return 
+            photos = otgData.mapDateTakenByDays(mapped, "like TEST_DATA")
+            retval = {
+              elapsed : (end-start)/1000
+              photos: photos
+              raw: mapped
+            }
+            return retval
           , (error)->
-            $scope.appConsole.show( JSON.stringify error) 
+            $scope.appConsole.show( JSON.stringify error)
+        .then (retval)->
+
+          _MessengerPLUGIN.replace_TEST_DATA(retval)
+
+          $scope.appConsole.show( retval )
 
 
-      getPhotoById: (asset)->
+
+      getPhotoByIdP: (asset)->
         return snappiAssetsPickerService.getAssetByIdP(asset, 64,64)
+
+      replace_TEST_DATA: (retval)->
+        photos_AsTestData = {} # COPY!!
+        _.each _.keys( retval.photos ) , (key)->
+          photos_AsTestData[key] = _.map retval.photos[key], (o)->
+            return o.UUID[0...36]
+
+        TEST_DATA.cameraRoll_byDate = photos_AsTestData  
+        cameraRoll_DATA.photos_ByDate = TEST_DATA.cameraRoll_byDate
+        cameraRoll_DATA.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( cameraRoll_DATA.photos_ByDate ), 2
+        cameraRoll_DATA.photos = otgData.parsePhotosFromMoments cameraRoll_DATA.moments
+         # add some test data for favorite and shared
+        TEST_DATA.addSomeTopPicks( cameraRoll_DATA.photos)
+        TEST_DATA.addSomeFavorites( cameraRoll_DATA.photos)
+        TEST_DATA.addSomeShared( cameraRoll_DATA.photos)
+
       testMessengerPlugin: ()->
         console.log "testing testMessengerPlugin...."
         return snappiAssetsPickerService.mapAssetsLibraryP().then (mapped)->
@@ -559,8 +582,8 @@ angular
             # console.log JSON.stringify mapped[0..3]
             ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
             asset = mapped[0]
-            return _MessengerPLUGIN.getPhotoById(asset, 320, 240).then (photo)->
-                # console.log "getPhotoById(" + asset.UUID + "), DataURL[0..20]=" + photo.data[0..20]
+            return _MessengerPLUGIN.getPhotoByIdP(asset, 320, 240).then (photo)->
+                # console.log "getPhotoByIdP(" + asset.UUID + "), DataURL[0..20]=" + photo.data[0..20]
                 return {
                     count: mapped.length
                     sample: mapped[0..5]
@@ -586,7 +609,8 @@ angular
         log: (message)->
           $scope.appConsole.message = message
         show: (message)->
-          $scope.appConsole.message = message if message
+          $scope.appConsole.message = message if _.isString message
+          $scope.appConsole.message = JSON.stringify message, null, 2 if _.isObject message
           $scope.appConsole._modal?.show()
         hide: ()->
           $scope.appConsole._modal?.hide()

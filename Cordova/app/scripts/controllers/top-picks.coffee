@@ -24,6 +24,35 @@ angular.module('ionBlankApp')
         src: null   # see: AppCtrl/otgPreview for lorempixel src
     }
     self = {
+      _getAsLocalTime : (d, asJSON=true)->
+        d = new Date() if !d    # now
+        throw "_getAsLocalTimeJSON: expecting a Date param" if !_.isDate(d)
+        d.setHours(d.getHours() - d.getTimezoneOffset() / 60)
+        return d.toJSON() if asJSON
+        return d
+
+      mapDateTakenByDays: (photos )->
+        ## in: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
+        # out: {2014-07-14:[{dateTaken: UUID: }, ]}
+        return _.reduce photos, (result, o)->
+            if o.dateTaken.indexOf('+')>-1
+              datetime = new Date(o.dateTaken) 
+              # console.log "compare times: " + datetime + "==" +o.dateTaken
+            else 
+              datetime = self._getAsLocalTime(o.dateTaken, false) # no TZ info
+
+            datetime.setHours(0,0,0,0)
+            day = self._getAsLocalTime( datetime, true)
+            day = day.substring(0,10)  # like "2014-07-14"
+
+            if result[day]?
+              result[day].push o 
+            else               
+              result[day] = [o]
+
+            return result
+          , {}
+
       parsePhotosFromMoments : (moments)->
         photos = []
         _.each moments, (v,k,l)->
@@ -308,34 +337,6 @@ angular.module('ionBlankApp')
             scope.swipeCard.swipeOver('left')
           when 'right'
             scope.swipeCard.swipeOver('right')
-      mapAssetsLibrary: ()->
-        console.log "TopPicks on.mapAssetsLib() calling window.Messenger.mapAssetsLibrary(assets)"
-        start = new Date().getTime()
-        return $scope.testMessengerPlugin().then (retval)->
-          end = new Date().getTime()
-          retval.elapsed = (end-start)/1000
-          console.log "testMessengerPlugin RETURNED"
-          $scope.console_message = JSON.stringify retval, null, 2
-          console.log "mapAssetsLibrary, json=" + $scope.console_message
-          # show in modal
-
-          return $scope.modal.show() if $scope.model
-          $ionicModal.fromTemplateUrl 'partials/modal/console', {
-              scope: $scope
-              message: $scope.console_message
-              animation: 'slide-in-up'
-            }
-          .then (modal)->
-              console.log "modal ready"
-              $scope.modal = modal
-              modal.show()
-              $scope.$on 'destroy', ()->
-                $scope.modal.remove()
-              return
-            , (error)->
-              console.log "Error: $ionicModal.fromTemplate"
-              console.log error
-          return
 
     }
 
