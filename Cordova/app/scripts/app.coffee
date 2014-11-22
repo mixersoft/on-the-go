@@ -552,9 +552,57 @@ angular
         .then (retval)->
 
           _MessengerPLUGIN.replace_TEST_DATA(retval)
-
           $scope.appConsole.show( retval )
+          # $timeout ()->
+          #     $scope.appConsole.hide()
+          #   , 3000 
+          return retval
 
+        .then (retval)->
+          return _MessengerPLUGIN.getDataURLForAllPhotos_PARALLEL_P( retval.raw ).then (photos)->
+            # dataUrls = cameraRoll_DATA.dataUrls 
+            truncated = {
+              "desc": "$scope.cameraRoll_DATA.dataUrls"
+            }
+            if "dataUrls" && true
+              _.each cameraRoll_DATA.dataUrls, (v,k)->
+                truncated[k] = v[0...40]
+            else 
+              _.each photos, (v,k)->
+                truncated[v.UUID] = v.data[0...40]
+            
+            console.log truncated
+
+            # $scope.appConsole.log( truncated )
+            $scope.appConsole.show( truncated )
+            # lookup dataUrls in cameraRoll_DATA.dataUrls 
+            return cameraRoll_DATA.dataUrls
+
+      getDataURLForAllPhotos_PARALLEL_P : (raw)->
+        # fetch dataURLs in parallel # does not work!!!
+        # load dataURLs for aswets
+        DATAURL_PREFIX = 'data:image/jpeg;base64,'
+        assets = _.clone raw
+        cameraRoll_DATA.dataUrls = {}
+        BAD_asset = {UUID : "E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}
+        promises = []
+        _.each assets, (asset)->
+          return true if asset.UUID == BAD_asset.UUID
+          # console.log ">>>>>>>  Here each, asset.UUID=" + asset.UUID
+          promise = _MessengerPLUGIN.getPhotoByIdP(asset).then (photo)->
+              console.log ">>>>>>>  getPhotoByIdP(" + photo.UUID + "), DataURL[0..20]=" + photo.data[0..20]
+              cameraRoll_DATA.dataUrls[ photo.UUID[...36] ] = DATAURL_PREFIX + photo.data
+              # console.log _.keys cameraRoll_DATA.dataUrls
+              # console.log "*****************************"
+              return photo
+            , (error)->
+              console.log error
+          promises.push(promise)
+          return true
+
+        return $q.all(promises).then (photos)->
+          console.log ">>>>>>>>>  $q.all dataUrls retrieved!  ***"
+          return photos 
 
 
       getPhotoByIdP: (asset)->
@@ -607,10 +655,10 @@ angular
         _modal: null
         message: null
         log: (message)->
-          $scope.appConsole.message = message
-        show: (message)->
           $scope.appConsole.message = message if _.isString message
           $scope.appConsole.message = JSON.stringify message, null, 2 if _.isObject message
+        show: (message)->
+          $scope.appConsole.log(message) if message
           $scope.appConsole._modal?.show()
         hide: ()->
           $scope.appConsole._modal?.hide()
