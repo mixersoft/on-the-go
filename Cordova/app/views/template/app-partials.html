@@ -8,7 +8,6 @@
         <h1 class="title">Service Plans</h1>
           <button class="button button-icon icon ion-close-circled"
           ng-click="pricelist.hide()"></button>
-        
       </div>
       <div ng-include="'partials/pricing'"></div>
       <button class="button button-full button-balanced" ng-click="pricelist.hide()">Done</button>
@@ -17,12 +16,16 @@
 </script>
 
 <script id="partials/modal/console" type="text/ng-template">
-  <div class="console-modal">
+  <div class="app-console-modal">
     <ion-content>
-      <div class="body padding" ng-click="modal.hide()">
-        <h2>Console</h2>
+      <div class="bar-header bar bar-assertive">
+        <h1 class="title">App Console</h1>
+          <button class="button button-icon icon ion-close-circled"
+          ng-click="appConsole.hide()"></button>
+      </div>
+      <div class="body padding" ng-click="appConsole.hide()">
         <div>
-          <pre>{{console_message}}</pre>
+          <pre>{{appConsole.message}}</pre>
         </div>
       </div>
     </ion-content>

@@ -535,12 +535,26 @@ angular
       # methods for testing messenger plugin
       mapAssetsLibrary: ()->
         console.log "mapAssetsLibrary() calling window.Messenger.mapAssetsLibrary(assets)"
-        return snappiAssetsPickerService.mapAssetsLibraryP();
+        # return snappiAssetsPickerService.mapAssetsLibraryP();
+        start = new Date().getTime()
+        return snappiAssetsPickerService.mapAssetsLibraryP().then (retval)->
+            ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
+            end = new Date().getTime()
+            retval.elapsed = (end-start)/1000
+            console.log "testMessengerPlugin RETURNED"
+            $scope.appConsole.log JSON.stringify retval, null, 2
+            # show in modal
+            $scope.appConsole.show() 
+            return 
+          , (error)->
+            $scope.appConsole.show( JSON.stringify error) 
+
+
       getPhotoById: (asset)->
         return snappiAssetsPickerService.getAssetByIdP(asset, 64,64)
       testMessengerPlugin: ()->
         console.log "testing testMessengerPlugin...."
-        return _MessengerPLUGIN.mapAssetsLibrary().then (mapped)->
+        return snappiAssetsPickerService.mapAssetsLibraryP().then (mapped)->
             # console.log "mapped.length=" + mapped.length + ", first 3 items to follow:"
             # console.log JSON.stringify mapped[0..3]
             ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
@@ -560,11 +574,48 @@ angular
 
     }
 
-    $scope.testMessengerPlugin = _MessengerPLUGIN.testMessengerPlugin 
+    # Dev/Debug tools
+    _LOAD_DEBUG_TOOLS = ()->
+      # currently testing
+      $scope.MessengerPlugin = _MessengerPLUGIN
+
+
+      $scope.appConsole = {
+        _modal: null
+        message: null
+        log: (message)->
+          $scope.appConsole.message = message
+        show: (message)->
+          $scope.appConsole.message = message if message
+          $scope.appConsole._modal?.show()
+        hide: ()->
+          $scope.appConsole._modal?.hide()
+
+
+
+      }
+      $ionicModal.fromTemplateUrl 'partials/modal/console', {
+            scope: $scope
+            animation: 'slide-in-up'
+          }
+        .then (modal)->
+            console.log "modal ready"
+            $scope.appConsole._modal = modal
+            $scope.$on 'destroy', ()->
+              $scope.appConsole._modal.remove()
+            return
+          , (error)->
+            console.log "Error: $ionicModal.fromTemplate"
+            console.log error
+
+
+
 
 
 
     init = ()->
+      _LOAD_DEBUG_TOOLS()
+
       $ionicPlatform.ready ()->
         $scope.config['isWebView'] = $ionicPlatform?.isWebView?()
         $scope.config['no-view-headers'] = $scope.config['isWebView'] || false

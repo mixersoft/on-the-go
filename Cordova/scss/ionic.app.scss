@@ -487,12 +487,16 @@ otg-moment-date-range {
 }
  
 
-.console-modal {
+.app-console-modal {
   background-color: rgba(0,0,0,0.5);
   padding: 20px 10px;
+  ion-content {
+    padding: 10px;
+  }
   .body {
     background-color: white;
     color: black;
+    min-height: 400px;
   }
   .bar-header {
     position: relative;
