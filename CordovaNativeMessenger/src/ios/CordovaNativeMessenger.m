@@ -33,70 +33,147 @@ NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeM
 }
 
 -(void)mapAssetsLibrary:(CDVInvokedUrlCommand*) command {
-    PHFetchResult *assets = [PHAsset fetchAssetsWithMediaType:PHAssetMediaTypeImage options:nil];
     
-    NSMutableArray *resultArray = [NSMutableArray arrayWithCapacity:assets.count];
+    [self.commandDelegate runInBackground:^{
+        PHFetchResult *assets = [PHAsset fetchAssetsWithMediaType:PHAssetMediaTypeImage options:nil];
+        
+        NSMutableArray *resultArray = [NSMutableArray arrayWithCapacity:assets.count];
+        
+        NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+        NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
+        [dateFormatter setLocale:enUSPOSIXLocale];
+        [dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
+        
+        for(PHAsset *asset in assets) {
+            [resultArray addObject:@{@"UUID":asset.localIdentifier,
+                                     @"dateTaken":[dateFormatter stringFromDate:asset.creationDate]}];
+        }
+        
+        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultArray];
+        [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
+    }];
     
-    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-    NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
-    [dateFormatter setLocale:enUSPOSIXLocale];
-    [dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
-    
-    for(PHAsset *asset in assets) {
-        [resultArray addObject:@{@"UUID":asset.localIdentifier,
-                                 @"dateTaken":[dateFormatter stringFromDate:asset.creationDate]}];
-    }
-    
-    CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultArray];
-    [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
 }
 
 -(void)getPhotoById:(CDVInvokedUrlCommand*) command {
     
-    NSString *identifier = command.arguments[0];
-    
-    PHFetchResult *fetchResult = [PHAsset fetchAssetsWithLocalIdentifiers:@[identifier] options:nil];
-    
-    if(fetchResult.count == 0) {
-        CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Image not found"];
-        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-        
-        return;
-    }
-    
-    NSNumber *width = command.arguments[1];
-    NSNumber *height = command.arguments[2];
-    
-    CGSize imageSize = CGSizeMake([width doubleValue], [height doubleValue]);
-    
-    PHAsset *asset = [fetchResult firstObject];
-    
-    
     __weak __typeof(self) weakself = self;
+    [weakself.commandDelegate runInBackground:^{
     
-    [[PHImageManager defaultManager] requestImageForAsset:asset targetSize:imageSize contentMode:PHImageContentModeAspectFit options:nil resultHandler:^(UIImage *result, NSDictionary *info) {
+        NSArray *identifiers;
         
-        if(result == nil) {
-            CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Unable to read image"];
-            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-            return;
+        NSObject *arg0 = command.arguments[0];
+        if([arg0 isKindOfClass:[NSString class]]) {
+            identifiers = @[command.arguments.firstObject];
+        } else if([arg0 isKindOfClass:[NSArray class]]) {
+            identifiers = (NSArray*)arg0;
         }
         
-        [weakself.commandDelegate runInBackground:^{
-            NSData *bytes = UIImageJPEGRepresentation(result, 1);
-            NSString *base64 = [bytes base64Encoding];
+        __block NSUInteger requestsLeft = identifiers.count;
+        
+        PHFetchResult *fetchResults = [PHAsset fetchAssetsWithLocalIdentifiers:identifiers options:nil];
+        
+        if(fetchResults.count != identifiers.count) {
+            NSMutableArray *missingObjects = [identifiers mutableCopy];
+            for(PHAsset *asset in fetchResults) {
+                [missingObjects removeObject:asset.localIdentifier];
+            }
             
-            
-            CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
-                                                    messageAsDictionary:@{@"UUID":identifier,
-                                                                          @"data":base64}];
-            
-            [weakself.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-        }];
+            for(NSString *identifier in missingObjects) {
+                CDVPluginResult *pluginResult = [CDVPluginResult
+                                                 resultWithStatus:CDVCommandStatus_ERROR
+                                                 messageAsDictionary:@{@"UUID":identifier,
+                                                                       @"message":@"Not found!"}];
+                
+                pluginResult.keepCallback = @(requestsLeft > 1);
+                --requestsLeft;
+                
+                [weakself.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+
+            }
+        }
+        
+        NSDictionary *options = command.arguments[1];
+        
+        NSNumber *width = options[@"targetWidth"];
+        NSNumber *height = options[@"targetHeight"];
+        NSString *resizeModeString = options[@"resizeMode"];
+        
+        PHImageRequestOptions *requestOptions = [PHImageRequestOptions new];
+        requestOptions.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
+        requestOptions.resizeMode = PHImageRequestOptionsResizeModeExact;
+        
+        PHImageContentMode resizeMode;
+        if([resizeModeString isEqualToString:@"aspectFit"]) {
+            resizeMode = PHImageContentModeAspectFit;
+        } else if([resizeModeString isEqualToString:@"aspectFill"]) {
+            resizeMode = PHImageContentModeAspectFill;
+        } else {
+            resizeMode = PHImageContentModeDefault;
+        }
+        
+        CGSize imageSize = CGSizeMake([width doubleValue], [height doubleValue]);
+        
+        NSMutableArray *imageRequests = [[NSMutableArray alloc] initWithCapacity:[identifiers count]];
+        for(PHAsset *asset in fetchResults) {
+            PHImageRequestID request = [[PHImageManager defaultManager] requestImageForAsset:asset targetSize:imageSize contentMode:resizeMode options:requestOptions resultHandler:^(UIImage *result, NSDictionary *info) {
+                
+                NSUInteger index = [imageRequests indexOfObject:info[PHImageResultRequestIDKey]];
+                if(index == NSNotFound) {
+                    NSLog(@"Warning: received orphaned image request. Should not be happening.");
+                    return;
+                }
+                
+                NSString *identifier = [fetchResults[index] localIdentifier];
+                
+                if(info[PHImageErrorKey]) {
+                    NSError *err = info[PHImageErrorKey];
+                    CDVPluginResult *pluginResult = [CDVPluginResult
+                                                     resultWithStatus:CDVCommandStatus_ERROR
+                                                     messageAsDictionary:@{@"UUID":identifier,
+                                                                           @"message":err.localizedDescription}];
+                    
+                    pluginResult.keepCallback = @(requestsLeft > 1);
+                    --requestsLeft;
+
+                    
+                    [weakself.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                    return;
+                }
+                
+                
+                NSData *bytes = UIImageJPEGRepresentation(result, 1);
+                NSString *base64 = [bytes base64Encoding];
+                
+                if(base64 == nil) {
+                    CDVPluginResult *pluginResult = [CDVPluginResult
+                                                     resultWithStatus:CDVCommandStatus_ERROR
+                                                     messageAsDictionary:@{@"UUID":identifier,
+                                                                           @"message":@"Base64 encoding failed"}];
+                    
+                    pluginResult.keepCallback = @(requestsLeft > 1);
+                    --requestsLeft;
+
+                    
+                    [weakself.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                    return;
+                }
+                
+                NSString *withMIME = [@"data:image/jpg;base64," stringByAppendingString:base64];
+                
+                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
+                                                              messageAsDictionary:@{@"UUID":identifier,
+                                                                                    @"data":withMIME}];
+                pluginResult.keepCallback = @(requestsLeft > 1);
+                --requestsLeft;
+                
+                [weakself.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            }];
+            [imageRequests addObject:@(request)];
+        }
         
     }];
-    
-    
+
 }
 
 -(void)sendEvent:(NSDictionary *)eventData {
