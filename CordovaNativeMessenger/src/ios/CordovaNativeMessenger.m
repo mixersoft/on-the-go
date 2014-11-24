@@ -93,14 +93,30 @@ NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeM
             }
         }
         
-        NSNumber *width = command.arguments[1];
-        NSNumber *height = command.arguments[2];
+        NSDictionary *options = command.arguments[1];
+        
+        NSNumber *width = options[@"targetWidth"];
+        NSNumber *height = options[@"targetHeight"];
+        NSString *resizeModeString = options[@"resizeMode"];
+        
+        PHImageRequestOptions *requestOptions = [PHImageRequestOptions new];
+        requestOptions.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
+        requestOptions.resizeMode = PHImageRequestOptionsResizeModeExact;
+        
+        PHImageContentMode resizeMode;
+        if([resizeModeString isEqualToString:@"aspectFit"]) {
+            resizeMode = PHImageContentModeAspectFit;
+        } else if([resizeModeString isEqualToString:@"aspectFill"]) {
+            resizeMode = PHImageContentModeAspectFill;
+        } else {
+            resizeMode = PHImageContentModeDefault;
+        }
         
         CGSize imageSize = CGSizeMake([width doubleValue], [height doubleValue]);
         
         NSMutableArray *imageRequests = [[NSMutableArray alloc] initWithCapacity:[identifiers count]];
         for(PHAsset *asset in fetchResults) {
-            PHImageRequestID request = [[PHImageManager defaultManager] requestImageForAsset:asset targetSize:imageSize contentMode:PHImageContentModeAspectFit options:nil resultHandler:^(UIImage *result, NSDictionary *info) {
+            PHImageRequestID request = [[PHImageManager defaultManager] requestImageForAsset:asset targetSize:imageSize contentMode:resizeMode options:requestOptions resultHandler:^(UIImage *result, NSDictionary *info) {
                 
                 NSUInteger index = [imageRequests indexOfObject:info[PHImageResultRequestIDKey]];
                 if(index == NSNotFound) {
