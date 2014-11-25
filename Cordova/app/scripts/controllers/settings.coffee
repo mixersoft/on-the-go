@@ -29,7 +29,7 @@ angular.module('ionBlankApp')
 
     _password = {
       dirty: false
-      regExp : /^[A-Za-z0-9_-]{3,20}$/
+      regExp : /^[A-Za-z0-9_-]{8,20}$/
       passwordAgainModel: null
       showPasswordAgain : ''
       edit: (ev)-> 
@@ -146,8 +146,8 @@ angular.module('ionBlankApp')
 
 ]
 .controller 'SettingsCtrl', [
-  '$scope', '$rootScope', '$state', '$ionicPopup', '$ionicNavBarDelegate', 'otgParse', 'otgProfile'
-  ($scope, $rootScope, $state, $ionicPopup, $ionicNavBarDelegate, otgParse, otgProfile) ->
+  '$scope', '$rootScope', '$state','$timeout', '$ionicPopup', '$ionicNavBarDelegate', 'otgParse', 'otgProfile'
+  ($scope, $rootScope, $state, $timeout, $ionicPopup, $ionicNavBarDelegate, otgParse, otgProfile) ->
     $scope.label = {
       title: "Settings"
       subtitle: "Share something great today!"

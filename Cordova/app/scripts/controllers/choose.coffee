@@ -19,9 +19,9 @@ angular.module('ionBlankApp')
         uuidExt = attrs.lazySrc
         options = scope.options
         # TODO: fix this using '&' scope 
-        src = $rootScope.getDataUrlFromUUID(uuidExt)  || scope.photo.src
+        src = $rootScope.getDataUrlFromUUID(uuidExt) ||scope.photo.getSrc || scope.photo.src
         # console.log "\n\n $$$$$ dataurl[0..30]=" + src[0..30] + "\n\n" if src
-        if !src
+        if !src && $rootScope.isWebView == false
           src = TEST_DATA.lorempixel.getSrc(uuidExt, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
         element.attr('src', src)
 

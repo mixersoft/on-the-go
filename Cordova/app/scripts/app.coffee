@@ -538,7 +538,7 @@ angular
             assets = retval.raw[0.._MessengerPLUGIN.MAX_PHOTOS]
           else assets = retval.raw
           return _MessengerPLUGIN.getDataURLForAssetsByChunks_P( assets
-            , 'thumbnail'                           # [thmbnail, preview, previewHD]
+            , 'preview'                           # [thmbnail, preview, previewHD]
             , _MessengerPLUGIN.SERIES_DELAY_MS 
           )
 
@@ -710,10 +710,21 @@ angular
           photos_AsTestData[key] = _.map retval.photos[key], (o)->
             return o.UUID[0...36]
 
+        serverPhotos = _.filter cameraRoll_DATA.photos, {from: "PARSE"}
+        console.log "\n\n****** keeping serverPhotos, count=" + serverPhotos.length + "\n\n"
+
         TEST_DATA.cameraRoll_byDate = photos_AsTestData  
         cameraRoll_DATA.photos_ByDate = TEST_DATA.cameraRoll_byDate
         cameraRoll_DATA.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( cameraRoll_DATA.photos_ByDate ), 2
         cameraRoll_DATA.photos = otgData.parsePhotosFromMoments cameraRoll_DATA.moments
+
+        console.log "\n\n****** merging serverPhotos, count=" + serverPhotos.length + "\n\n"
+        _.each serverPhotos, (o)->
+          found = _.find cameraRoll_DATA.photos, {id: o.id}
+          return console.log " ???  can't find id="+o.id if !found
+          _.extend found, _.pick o, ['topPick', 'favorite']
+          return console.log "\n\n !!!!! copy topPick, favorite for id="+o.id + ", found.topPick=" + found.topPick
+
         otgWorkOrder.setMoments(cameraRoll_DATA.moments)
 
          # add some test data for favorite and shared
@@ -729,7 +740,7 @@ angular
           return console.log "  !!!!!!!!!!!!   replace_TEST_DATA_SRC: not found, UUID="+UUID if !e
           e.height = if photo.crop then photo.targetHeight else 240
           e.src = _MessengerPLUGIN.getDataUrlFromUUID(UUID)
-          e.topPick = true          ## debug only !!!
+          # e.topPick = true          ## debug only !!!
           e.getSrc = _MessengerPLUGIN.getDataUrlFromUUID
           console.log "\n\n ##############   asset.id=" + e.id + "\ndataURL[0...20]=" + e.src[0...20]
           return
@@ -804,8 +815,11 @@ angular
       _LOAD_DEBUG_TOOLS()
 
       $ionicPlatform.ready ()->
-        $scope.config['isWebView'] = $ionicPlatform?.isWebView?()
+        $rootScope.isWebView = $scope.config['isWebView'] = $ionicPlatform?.isWebView?()
         $scope.config['no-view-headers'] = $scope.config['isWebView'] || false
+
+        if $scope.config['isWebView'] == false
+          $scope.orders = TEST_DATA.orders 
 
         # $timeout ()->
         #     _MessengerPLUGIN.testMessengerPlugin()
@@ -843,7 +857,7 @@ angular
 
       # otgWorkOrder methods need access to library of moments
       otgWorkOrder.setMoments(cameraRoll_DATA.moments)
-      $scope.orders = TEST_DATA.orders
+      $scope.orders = TEST_DATA.orders if $scope.config['isWebView'] == false
 
     init()
 

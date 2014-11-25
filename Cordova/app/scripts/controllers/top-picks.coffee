@@ -366,25 +366,37 @@ angular.module('ionBlankApp')
       setFilter( $state.current )
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info
 
-      return console.log "SKIPPING FETCH TOP PICKS FROM PARSE !!! "
-      # parse._fetchPhotosByOwnerP().then null, (err)->
-      #     conosle.warn "PARSE error, err=" + JSON.stringify err
-      #     return {}
-      # .then (o)->
+      # return console.log "SKIPPING FETCH TOP PICKS FROM PARSE !!! "
+      parse._fetchPhotosByOwnerP().then null, (err)->
+          conosle.warn "PARSE error, err=" + JSON.stringify err
+          return {}
+      .then (o)->
         
-      #   # merge topPicks with photoRoll
-      #   # TODO: save to local storage
-      #   $scope.topPicks = o.photosColl.toJSON()
-      #   _.each $scope.topPicks, (o)->
-      #     found = _.findWhere $scope.cameraRoll_DATA.photos, (id: o.assetId)
-      #     _.each ['topPick'], (key)->
-      #       found[key] = o[key]
-      #       return
-      #   $scope.filteredPhotos = $filter('ownerPhotosByType')($scope.photos,'topPicks')
+        # merge topPicks with photoRoll
+        # HACK: replace_TEST_DATA() will NOT remove photo.from="PARSE"
+        # TODO: save to local storage
+        $scope.serverPhotos = o.photosColl.toJSON()
+        _.each $scope.serverPhotos, (photo)->
+          found = _.findWhere $scope.photos, (id: photo.assetId)
+          if !found 
+            # add to $scope.photos
+            # real workorder photos will NOT be found in TEST_DATA the FIRST time
+            photo.from = "PARSE"
+            photo.date = o.dateTaken
+            photo.id = photo.assetId
+            photo.topPick = !!photo.topPick
+            $scope.photos.push photo
+          else 
+            # found['topPick'] = !!photo['topPick']
+            _.extend found, _.pick photo, ['topPick', 'favorite']
+            console.log "\n\n**** COPY topPick from serverPhotos for uuid=" + photo.assetId
+          return true
 
-      #   # update menu banner
-      #   $scope.menu.top_picks.count = $filter('ownerPhotosByType')($scope.photos,'topPicks').length
-      #   return 
+        $scope.filteredPhotos = $filter('ownerPhotosByType')($scope.photos,'topPicks')
+
+        # update menu banner
+        $scope.menu.top_picks.count = $filter('ownerPhotosByType')($scope.photos,'topPicks').length
+        return 
 
       return
 
