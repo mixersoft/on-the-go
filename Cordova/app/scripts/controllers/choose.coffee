@@ -10,23 +10,25 @@
 angular.module('ionBlankApp')
 # uses $q.promise to load src 
 .directive 'lazySrc', [
-  'TEST_DATA'
-  (TEST_DATA)->
+  '$rootScope', 'TEST_DATA'
+  ($rootScope, TEST_DATA)->
     return {
       restrict: 'A'
       scope: false
       link: (scope, element, attrs) ->
         uuidExt = attrs.lazySrc
         options = scope.options
-        qGetSrc = scope.qGetSrc
-        lorempixelSrc = TEST_DATA.lorempixel.getSrc(uuidExt, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
-        # lorempixelSrc = 'http://lorempixel.com/'+options.thumbnailSize+'/'+options.thumbnailSize+'?'+uuidExt
-        element.attr('src', lorempixelSrc)
-        if qGetSrc && uuidExt.length == 40
-          qGetSrc(uuidExt).then (dataUrl)->
-            console.log "return from lazy-src directive getSrc()"
-            element.attr('src', dataUrl)
+        # TODO: fix this using '&' scope 
+        src = $rootScope.getDataUrlFromUUID(uuidExt)  || scope.photo.src
+        # console.log "\n\n $$$$$ dataurl[0..30]=" + src[0..30] + "\n\n" if src
+        if !src
+          src = TEST_DATA.lorempixel.getSrc(uuidExt, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
+        element.attr('src', src)
 
+        # scope.$watch scope.photo.src, (newVal, oldVal)->
+        #   console.log "\n\n2 -  photo.src changed, src=" + newVal[0..40] if newVal
+        #   element.attr('src', src) if newVal != oldVal
+        return
   }
 ]
 .directive 'otgMoment', [
@@ -305,6 +307,8 @@ angular.module('ionBlankApp')
     );
 
     $scope.on = {
+      getDataUrlFromUUID: (uuid)->
+        return $scope.MessengerPlugin.getDataUrlFromUUID(uuid)
       hScrollable : ($ev)->
         console.log "hScrollable(): make camera-roll-date H scrollable"
         return

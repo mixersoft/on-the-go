@@ -531,11 +531,46 @@ angular
         return promise.promise
     }
 
+    $scope.loadCameraRollP = ()->
+      return _MessengerPLUGIN.mapAssetsLibraryP().then (retval)->    # now get DataURLS...
+          if retval.raw.length > _MessengerPLUGIN.MAX_PHOTOS
+            console.warn "\n\nWARNING: truncating assets, max=" + _MessengerPLUGIN.MAX_PHOTOS + "\n\n"
+            assets = retval.raw[0.._MessengerPLUGIN.MAX_PHOTOS]
+          else assets = retval.raw
+          return _MessengerPLUGIN.getDataURLForAssetsByChunks_P( assets
+            , 'thumbnail'                           # [thmbnail, preview, previewHD]
+            , _MessengerPLUGIN.SERIES_DELAY_MS 
+          )
+
+      .then (photos)->    
+        # show results in AppConsole
+        truncated = {
+          "desc": "$scope.cameraRoll_DATA.dataUrls"
+        }
+        if "dataUrls" && true
+          _.each cameraRoll_DATA.dataUrls, (v,k)->
+            truncated[k] = v[0...40]
+        else 
+          _.each photos, (v,k)->
+            truncated[v.UUID] = v.data[0...40]
+        
+        console.log truncated
+
+        # $scope.appConsole.log( truncated )
+        $scope.appConsole.show( truncated )
+        # lookup dataUrls in cameraRoll_DATA.dataUrls 
+        return cameraRoll_DATA.dataUrls
+
+
     _MessengerPLUGIN = {
+      MAX_PHOTOS: 1000
+      CHUNK_SIZE : 10
+      SERIES_DELAY_MS: 100
       # methods for testing messenger plugin
       mapAssetsLibraryP: ()->
         console.log "mapAssetsLibrary() calling window.Messenger.mapAssetsLibrary(assets)"
         # return snappiAssetsPickerService.mapAssetsLibraryP();
+        cameraRoll_DATA.dataUrls = {}
         start = new Date().getTime()
         return snappiAssetsPickerService.mapAssetsLibraryP().then (mapped)->
             ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
@@ -553,60 +588,121 @@ angular
 
           _MessengerPLUGIN.replace_TEST_DATA(retval)
           $scope.appConsole.show( retval )
-          # $timeout ()->
-          #     $scope.appConsole.hide()
-          #   , 3000 
           return retval
 
-        .then (retval)->
-          return _MessengerPLUGIN.getDataURLForAllPhotos_PARALLEL_P( retval.raw ).then (photos)->
-            # dataUrls = cameraRoll_DATA.dataUrls 
-            truncated = {
-              "desc": "$scope.cameraRoll_DATA.dataUrls"
-            }
-            if "dataUrls" && true
-              _.each cameraRoll_DATA.dataUrls, (v,k)->
-                truncated[k] = v[0...40]
-            else 
-              _.each photos, (v,k)->
-                truncated[v.UUID] = v.data[0...40]
-            
-            console.log truncated
+      getDataURLForAssets_P: (assets, size)->
+        # call getPhotosByIdP() with array
+        return _MessengerPLUGIN.getPhotosByIdP( assets , size).then (photos)->
+            _.each photos, (photo)->
+              # merge into cameraRoll_DATA.dataUrls
+              # keys:  UUID,data,elapsed
+              # console.log ">>>>>>>  getPhotosByIdP(" + photo.UUID + "), DataURL[0..80]=" + photo.data[0..80]
+              cameraRoll_DATA.dataUrls[ photo.UUID[0...36] ] = photo.data
+              console.log "\n*****************************\n"
+            # update img.src DB with dataURL  
+            _MessengerPLUGIN.replace_TEST_DATA_SRC photos  
+            console.log "\n********** updated src ***********\n"
+            return photos
+          , (errors)->
+            console.log errors
+            return $q.reject(errors)  # pass it on
 
-            # $scope.appConsole.log( truncated )
-            $scope.appConsole.show( truncated )
-            # lookup dataUrls in cameraRoll_DATA.dataUrls 
-            return cameraRoll_DATA.dataUrls
+      getDataURLForAssetsByChunks_P : (tooManyAssets, size, delayMS=0)->
+        if tooManyAssets.length < _MessengerPLUGIN.CHUNK_SIZE
+          return _MessengerPLUGIN.getDataURLForAssets_P(tooManyAssets, size) 
 
-      getDataURLForAllPhotos_PARALLEL_P : (raw)->
-        # fetch dataURLs in parallel # does not work!!!
-        # load dataURLs for aswets
-        DATAURL_PREFIX = 'data:image/jpeg;base64,'
+        # load dataURLs for assets in chunks
+        chunks = []
+        chunkable = _.clone tooManyAssets
+        chunks.push chunkable.splice(0, _MessengerPLUGIN.CHUNK_SIZE ) while chunkable.length
+        console.log "\n ********** chunk count=" + chunks.length
+
+        
+        ## in Parallel, overloads device
+        if !delayMS
+          promises = []
+          _.each chunks, (assets)->
+            console.log "\n\none chunk of count=" + assets.length
+            promise = _MessengerPLUGIN.getDataURLForAssets_P( assets, size )
+            promises.push(promise)
+          return $q.all(promises).then (photos)->
+              allPhotos = []
+              # console.log photos
+              _.each photos, (chunkOfPhotos, k)->
+                allPhotos = allPhotos.concat( chunkOfPhotos )
+              console.log "\n\n>>>  $q.all() done, dataURLs for all chunks retrieved!, length=" + allPhotos.length + "\n\n"
+              return allPhotos
+            , (errors)->
+              console.error errors  
+
+
+        ## in Series, call recursively, no delay
+        # allPhotos = []
+        # getNextChunkInSERIES_P = (chunks)->
+        #   assets = chunks.shift()
+        #   return $q.reject("done") if !assets.length
+        #   console.log "\n\none chunk of count=" + assets.length + ", remaining chunks=" + chunks.length
+        #   return _MessengerPLUGIN.getDataURLForAssets_P( assets  , size).then (chunkOfPhotos)->
+
+
+        allPhotos = []
+        recurivePromise = (chunks, delayMS)->
+          assets = chunks.shift()
+          # all chunks fetched, exit recursion
+          return $q.reject("done") if !assets
+          # chunks remain, fetch chunk
+          return _MessengerPLUGIN.getDataURLForAssets_P( assets , size).then (chunkOfPhotos)->
+            return allPhotos if chunkOfPhotos=="done"
+            allPhotos = allPhotos.concat( chunkOfPhotos ) # collate resolves into 1 array
+            return chunkOfPhotos
+          .then (o)->   # delay between recursive call
+            dfd = $q.defer()
+            $timeout ()->
+              # console.log "\n\ntimeout fired!!! remaining="+chunks.length+"\n\n"
+              dfd.resolve(o)
+            , delayMS || _MessengerPLUGIN.SERIES_DELAY_MS
+            return dfd.promise 
+          .then (o)->
+              # call recurively AFTER delay
+              return recurivePromise(chunks)
+
+        return recurivePromise(chunks, 500).catch (error)->
+          return $q.when(allPhotos) if error == 'done'
+          return $q.reject(error)
+        .then (allPhotos)->
+          console.log "\n\n>>>  SERIES fetch done, dataURLs for all chunks retrieved!, length=" + allPhotos.length + "\n\n"
+          return allPhotos
+
+
+      getPhotosByIdP: (assets, size = 'preview')->
+        # takes asset OR array of assets
+        options = {type: size} if _.isString size
+        return snappiAssetsPickerService.getAssetsByIdP(assets, options)
+
+      getDataURLForAllPhotos_PARALLEL_snappiAssetsPicker_P : (raw)->
+        # install snappiAssetsPicker plugin!!!
+        # load dataURLs for assets
         assets = _.clone raw
         cameraRoll_DATA.dataUrls = {}
-        BAD_asset = {UUID : "E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}
         promises = []
         _.each assets, (asset)->
-          return true if asset.UUID == BAD_asset.UUID
-          # console.log ">>>>>>>  Here each, asset.UUID=" + asset.UUID
-          promise = _MessengerPLUGIN.getPhotoByIdP(asset).then (photo)->
-              console.log ">>>>>>>  getPhotoByIdP(" + photo.UUID + "), DataURL[0..20]=" + photo.data[0..20]
-              cameraRoll_DATA.dataUrls[ photo.UUID[...36] ] = DATAURL_PREFIX + photo.data
-              # console.log _.keys cameraRoll_DATA.dataUrls
-              # console.log "*****************************"
+          label = 'preview' # [preview | thumbnail]
+          uuidExt = asset.UUID[0...36] + '.JPG' 
+          console.log ">>>>>>>  Here in _.each, uuidExt=" + uuidExt
+          promise = snappiAssetsPickerService.getAssetByIdP_snappiAssetsPicker(uuidExt, {}, null, label).then (photo)->
+              console.log ">>>>>>>  getPhotosByIdP(" + photo.uuid + "), DataURL[0..20]=" + photo.data[label][0..20]
+              cameraRoll_DATA.dataUrls[ photo.uuid ] = photo.data[label]
+              console.log "*****************************"
               return photo
             , (error)->
               console.log error
+          
           promises.push(promise)
           return true
 
         return $q.all(promises).then (photos)->
           console.log ">>>>>>>>>  $q.all dataUrls retrieved!  ***"
-          return photos 
-
-
-      getPhotoByIdP: (asset)->
-        return snappiAssetsPickerService.getAssetByIdP(asset, 64,64)
+          return photos   
 
       replace_TEST_DATA: (retval)->
         photos_AsTestData = {} # COPY!!
@@ -618,10 +714,29 @@ angular
         cameraRoll_DATA.photos_ByDate = TEST_DATA.cameraRoll_byDate
         cameraRoll_DATA.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( cameraRoll_DATA.photos_ByDate ), 2
         cameraRoll_DATA.photos = otgData.parsePhotosFromMoments cameraRoll_DATA.moments
+        otgWorkOrder.setMoments(cameraRoll_DATA.moments)
+
          # add some test data for favorite and shared
         TEST_DATA.addSomeTopPicks( cameraRoll_DATA.photos)
         TEST_DATA.addSomeFavorites( cameraRoll_DATA.photos)
         TEST_DATA.addSomeShared( cameraRoll_DATA.photos)
+        _.extend window.debug , cameraRoll_DATA
+
+      replace_TEST_DATA_SRC : (photos)->
+        _.each photos, (photo, i)-> 
+          UUID = photo.UUID[0...36]
+          e = _.find cameraRoll_DATA.photos, {id: UUID }
+          return console.log "  !!!!!!!!!!!!   replace_TEST_DATA_SRC: not found, UUID="+UUID if !e
+          e.height = if photo.crop then photo.targetHeight else 240
+          e.src = _MessengerPLUGIN.getDataUrlFromUUID(UUID)
+          e.topPick = true          ## debug only !!!
+          e.getSrc = _MessengerPLUGIN.getDataUrlFromUUID
+          console.log "\n\n ##############   asset.id=" + e.id + "\ndataURL[0...20]=" + e.src[0...20]
+          return
+
+
+      getDataUrlFromUUID : (UUID)->
+        return cameraRoll_DATA.dataUrls?[ UUID ]
 
       testMessengerPlugin: ()->
         console.log "testing testMessengerPlugin...."
@@ -649,7 +764,7 @@ angular
     _LOAD_DEBUG_TOOLS = ()->
       # currently testing
       $scope.MessengerPlugin = _MessengerPLUGIN
-
+      $rootScope.getDataUrlFromUUID = _MessengerPLUGIN.getDataUrlFromUUID
 
       $scope.appConsole = {
         _modal: null
@@ -735,6 +850,7 @@ angular
     window.debug = _.extend window.debug || {} , {
       user: $scope.user
       moments: cameraRoll_DATA.moments
+      photos: cameraRoll_DATA.photos
       orders: $scope.orders
     }
 

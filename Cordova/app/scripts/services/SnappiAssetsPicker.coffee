@@ -129,26 +129,83 @@ angular
           window.Messenger.mapAssetsLibrary (mapped)->
               ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
               end = new Date().getTime()
-              console.log "*** window.Messenger.mapAssetsLibrary success!! ***elapsed=" + (end-start)/1000
+              console.log "\n\n*** window.Messenger.mapAssetsLibrary() success!! *** elapsed=" + (end-start)/1000 + "\n\n"
               return dfd.resolve ( mapped )
             , (error)->
               return dfd.reject("ERROR: MessengermapAssetsLibrary(), msg=" + JSON.stringify error)
-          console.log "called Messenger.mapAssetsLibrary(), waiting for callbacks..."
+          # console.log "called Messenger.mapAssetsLibrary(), waiting for callbacks..."
           return dfd.promise
-      getAssetByIdP: (asset, w, h)->
+
+      getAssetsByIdP: (assets, options)->
+        defaults = {
+          preview: 
+            targetWidth: 640
+            targetHeight: 640
+            resizeMode: 'aspectFit'
+          previewHD: 
+            targetWidth: 1080
+            targetHeight: 1080
+            resizeMode: 'aspectFit'
+          thumbnail:
+            targetWidth: 64
+            targetHeight: 64
+            resizeMode: 'aspectFill'
+        }
+        options = _.extend options, defaults.preview if options.type=="preview" || !(options?.type)
+        options = _.extend options, defaults.thumbnail if options.type=="thumbnail"
+        options = _.extend options, defaults.previewHD if options.type=="previewHD"
+        
+        assets = [assets] if !_.isArray(assets)
+        assetIds = _.pluck assets, 'UUID'
+
+        # console.log "\n>>>>>>>>> snappiAssetsPickerService: assetIds=" + JSON.stringify assetIds 
+        # console.log "\n>>>>>>>>> snappiAssetsPickerService: options=" + JSON.stringify options
+
         self.deviceReadyP().then (retval)->
           # console.log "deviceReadyP, retval="+retval
           dfd = $q.defer()
           start = new Date().getTime()
           return $q.reject "ERROR: window.Messenger Plugin not available" if !(window.Messenger?.getPhotoById)
-          window.Messenger.getPhotoById asset.UUID, w, h, (photo)->
+          remaining = assetIds.length
+          retval = {
+            photos: []
+            errors: []
+          }
+
+          # similar to $q.all()
+          _resolveIfDone = (remaining, retval, dfd)->
+            if remaining == 0
+              if retval.errors.length == 0
+                console.log "\n>>>>>>>> window.Messenger.getPhotoById()  complete, count=" + retval.photos.length + " \n\n"
+                return dfd.resolve ( retval.photos ) 
+              else if retval.photos.length && retval.errors.length 
+                console.log "WARNING: SOME errors occurred in Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
+                return dfd.resolve ( retval.photos ) 
+              else if retval.errors.length 
+                return dfd.reject "ERROR: Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
+            return
+
+
+
+          window.Messenger.getPhotoById assetIds, options, (photo)->
+              # one callback for each element in assetIds
               end = new Date().getTime()
               photo.elapsed = (end-start)/1000
+              # TODO: need to get auto-rotate width/height from plugin
+              photo.targetWidth = options.targetWidth
+              photo.targetHeight = options.targetHeight
+              photo.crop = options.resizeMode == 'aspectFill'
               console.log "*** window.Messenger.getPhotoById success!! *** elapsed=" + (end-start)/1000
-              return dfd.resolve ( photo )
+
+              retval.photos.push photo
+              remaining--
+              return _resolveIfDone(remaining, retval, dfd)
             , (error)->
               console.log error
-              return dfd.reject("ERROR: Messenger.getPhotoById(), msg=" + JSON.stringify error)
+              retval.errors.push error
+              remaining -= 1
+              return _resolveIfDone(remaining, retval, dfd)
+
           return dfd.promise
 
       mapAssetsLibraryP_snappiAssetsPicker: (options = {})->

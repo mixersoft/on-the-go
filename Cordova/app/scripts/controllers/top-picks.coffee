@@ -366,24 +366,25 @@ angular.module('ionBlankApp')
       setFilter( $state.current )
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info
 
-      parse._fetchPhotosByOwnerP().then null, (err)->
-          conosle.warn "PARSE error, err=" + JSON.stringify err
-          return {}
-      .then (o)->
+      return console.log "SKIPPING FETCH TOP PICKS FROM PARSE !!! "
+      # parse._fetchPhotosByOwnerP().then null, (err)->
+      #     conosle.warn "PARSE error, err=" + JSON.stringify err
+      #     return {}
+      # .then (o)->
         
-        # merge topPicks with photoRoll
-        # TODO: save to local storage
-        $scope.topPicks = o.photosColl.toJSON()
-        _.each $scope.topPicks, (o)->
-          found = _.findWhere $scope.cameraRoll_DATA.photos, (id: o.assetId)
-          _.each ['topPick'], (key)->
-            found[key] = o[key]
-            return
-        $scope.filteredPhotos = $filter('ownerPhotosByType')($scope.photos,'topPicks')
+      #   # merge topPicks with photoRoll
+      #   # TODO: save to local storage
+      #   $scope.topPicks = o.photosColl.toJSON()
+      #   _.each $scope.topPicks, (o)->
+      #     found = _.findWhere $scope.cameraRoll_DATA.photos, (id: o.assetId)
+      #     _.each ['topPick'], (key)->
+      #       found[key] = o[key]
+      #       return
+      #   $scope.filteredPhotos = $filter('ownerPhotosByType')($scope.photos,'topPicks')
 
-        # update menu banner
-        $scope.menu.top_picks.count = $filter('ownerPhotosByType')($scope.photos,'topPicks').length
-        return 
+      #   # update menu banner
+      #   $scope.menu.top_picks.count = $filter('ownerPhotosByType')($scope.photos,'topPicks').length
+      #   return 
 
       return
 
