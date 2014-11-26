@@ -186,7 +186,8 @@ angular.module('ionBlankApp')
     parse = {
       _fetchWorkorderPhotosP : (options = {})->
         _options = options  # closure
-        return otgParse.checkSessionUserP().then otgParse.checkSessionUserRoleP 
+        return otgParse.checkSessionUserP().then (o)->
+          return otgParse.checkSessionUserRoleP(o)
         .then ()->
           _options.editor = $rootScope.sessionUser.get('id')
           if _.isEmpty _options.workorder

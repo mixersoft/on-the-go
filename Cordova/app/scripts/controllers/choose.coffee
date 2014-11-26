@@ -10,19 +10,20 @@
 angular.module('ionBlankApp')
 # uses $q.promise to load src 
 .directive 'lazySrc', [
-  '$rootScope', 'TEST_DATA'
-  ($rootScope, TEST_DATA)->
+  'deviceReady', 'cameraRoll', 'TEST_DATA'
+  (deviceReady, cameraRoll, TEST_DATA)->
     return {
       restrict: 'A'
       scope: false
       link: (scope, element, attrs) ->
-        uuidExt = attrs.lazySrc
+        UUID = attrs.lazySrc
         options = scope.options
         # TODO: fix this using '&' scope 
-        src = $rootScope.getDataUrlFromUUID(uuidExt) ||scope.photo.getSrc || scope.photo.src
+        console.log "\n\n UUID=" + JSON.stringify UUID
+        src = cameraRoll.getDataURL(UUID, 'preview') ||scope.photo.getSrc || scope.photo.src
         # console.log "\n\n $$$$$ dataurl[0..30]=" + src[0..30] + "\n\n" if src
-        if !src && $rootScope.isWebView == false
-          src = TEST_DATA.lorempixel.getSrc(uuidExt, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
+        if !src && deviceReady.isWebView() == false
+          src = TEST_DATA.lorempixel.getSrc(UUID, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
         element.attr('src', src)
 
         # scope.$watch scope.photo.src, (newVal, oldVal)->
@@ -33,8 +34,8 @@ angular.module('ionBlankApp')
 ]
 .directive 'otgMoment', [
   # renders moment as a list of days
-  '$window', 'otgWorkOrder', 'otgData'
-  ($window, otgWorkOrder, otgData)->
+  '$window', 'otgWorkOrder', 'cameraRoll', 'otgData'
+  ($window, otgWorkOrder, cameraRoll, otgData)->
     options = defaults = {
       breakpoint: 480
       'col-xs': 
@@ -69,8 +70,8 @@ angular.module('ionBlankApp')
 
     _lookupPhoto = null
     _getAsPhotos = (uuids)->
-      return _.map uuids, (uuidExt)->
-        return _.findWhere _lookupPhoto, {id: uuidExt}
+      return _.map uuids, (uuid)->
+        return _.findWhere _lookupPhoto, {UUID: uuid}
 
     _getMomentHeight = (moment, index)->
       days = moment.value.length
@@ -81,6 +82,7 @@ angular.module('ionBlankApp')
       return h  
 
     _getOverflowPhotos = (photos)->
+      console.log "\n\n_getOverflowPhotos  ** photo.length=" + photos.length+"\n"
       return count = Math.max(0, photos.length - this.options.thumbnailLimit )
 
 
@@ -95,17 +97,23 @@ angular.module('ionBlankApp')
         # element.text 'this is the moment directive'
         scope.options = _setSizes(element)
         scope.getAsPhotos = _getAsPhotos
-        _lookupPhoto = otgData.parsePhotosFromMoments scope.moments if !_lookupPhoto
+        console.log "\n\n otgMoment ************* 0 " 
+        console.log cameraRoll.moments
+        _lookupPhoto = otgData.parsePhotosFromMoments cameraRoll.moments if !_lookupPhoto
+        console.log "\n\n otgMoment ************* 1 "
+        console.log _lookupPhoto
+        console.log "otgMoment ************* 2 \n\n"
         scope.getMomentHeight = _getMomentHeight
         scope.getOverflowPhotos = _getOverflowPhotos
         scope.otgWorkOrder = otgWorkOrder
         scope.ClassSelected = scope.$parent.ClassSelected
+        console.log "otgMoment ************* 3 \n\n"
         return
       }
 ]
-.factory 'otgWorkOrder', [
-  ()->
-    _moments = null
+.factory 'otgWorkOrder', [ 'cameraRoll', 'otgData'
+  (cameraRoll, otgData)->
+    _moments = cameraRoll.moments
     _data = []
     _selected = _reset = {
       selectedPhotos: 0
@@ -145,10 +153,6 @@ angular.module('ionBlankApp')
           , 0
         return _selected.selectedPhotos
 
-      setMoments: (moments)->
-        _moments = moments || []
-
-
       getContiguousPhotos: ()->
         return otgData.parsePhotosFromMoments _selected.moments
 
@@ -160,7 +164,7 @@ angular.module('ionBlankApp')
 
         selectedMoments = {}
         contiguousPhotos = 0
-        _.each _moments, (moment)->
+        _.each cameraRoll.moments, (moment)->
           found = false
           _.each moment.value, (day)->
             found = if dateRange.from <= day.key <= dateRange.to then day else false
@@ -247,8 +251,8 @@ angular.module('ionBlankApp')
 
 ]
 .controller 'ChooseCtrl', [
-  '$scope', '$rootScope', '$state', '$stateParams', '$timeout', '$ionicModal', 'otgData', 'otgWorkOrder', 'TEST_DATA',
-  ($scope, $rootScope, $state, $stateParams, $timeout, $ionicModal, otgData, otgWorkOrder, TEST_DATA) ->
+  '$scope', '$rootScope', '$state', '$stateParams', '$timeout', '$ionicModal', 'otgData', 'otgWorkOrder', 'cameraRoll', 'TEST_DATA',
+  ($scope, $rootScope, $state, $stateParams, $timeout, $ionicModal, otgData, otgWorkOrder, cameraRoll, TEST_DATA) ->
     $scope.label = {
       title: "Choose Your Days"
       header_card: 
@@ -263,6 +267,7 @@ angular.module('ionBlankApp')
     }
 
     $scope.otgWorkOrder = otgWorkOrder
+    $scope.cameraRoll = cameraRoll
 
     $rootScope.$on '$stateChangeStart', (event, toState, toParams, fromState, fromParams)->
       if toState.name.indexOf('app.choose') == 0 

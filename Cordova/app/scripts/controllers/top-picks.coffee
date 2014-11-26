@@ -62,6 +62,7 @@ angular.module('ionBlankApp')
                 _.each v2['value'], (pid)->
                   photos.push _.defaults {
                       id: pid, 
+                      UUID: pid,
                       date: v2['key']
                     }, defaults_photo
 
@@ -79,9 +80,10 @@ angular.module('ionBlankApp')
         moments = _.reduce dates, (result, k)->
             date = if _.isDate(k) then k else new Date(k)
             if _current? 
+              # ??? use cameraRoll.getDateFromLocalTime()???
               if date.setHours(0,0,0,0) == _last + DAY_MS # next day
                 _last = date.setHours(0,0,0,0)
-                _current.days[k] = cameraRollDates[k]
+                _current.days[k] = cameraRollDates[k]   # or _.pluck UUID
               else 
                 _current = _last = null    
 
@@ -89,9 +91,9 @@ angular.module('ionBlankApp')
               # ???: use $dateParser?
               _last = date.setHours(0,0,0,0)
               o = {}
-              o[k] = cameraRollDates[k]
+              o[k] = cameraRollDates[k]  # or _.pluck UUID
               _current = { label: k, days: o }
-              result[_current.label] =  _current.days
+              result[_current.label] =  _current.days 
 
             return result
           , {}
@@ -217,9 +219,10 @@ angular.module('ionBlankApp')
 .controller 'TopPicksCtrl', [
   '$scope', '$rootScope', '$state', 'otgData', 'otgParse', 
   '$timeout', '$window', '$q', '$filter', 
-  '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', 'snappiAssetsPickerService',
+  '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', 
+  'snappiAssetsPickerService', 'snappiMessengerPluginService', 'cameraRoll'
   'TEST_DATA'
-  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, snappiAssetsPickerService, TEST_DATA) ->
+  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, snappiAssetsPickerService, snappiMessengerPluginService, cameraRoll, TEST_DATA) ->
     $scope.label = {
       title: "Top Picks"
       header_card: 
@@ -264,7 +267,7 @@ angular.module('ionBlankApp')
     $scope.on  = {
       _info: true
       getItemHeight : (item, index)->
-        # console.log "index="+index+", item.h="+item.height+" === index.h="+$scope.cameraRoll_DATA.photos[index].height+", index.id="+$scope.cameraRoll_DATA.photos[index].id
+        # console.log "index="+index+", item.h="+item.height+" === index.h="+cameraRoll.photos[index].height+", index.id="+cameraRoll.photos[index].id
         h = $scope.filteredPhotos[index].height + ( 2 * 6 ) # paddingV
         h += 90 if $scope.on.showInfo()
         return h
@@ -360,7 +363,7 @@ angular.module('ionBlankApp')
     }
 
     init = ()->
-      $scope.photos = $scope.cameraRoll_DATA.photos
+      $scope.photos = cameraRoll.photos
 
 
       setFilter( $state.current )
@@ -377,25 +380,27 @@ angular.module('ionBlankApp')
         # TODO: save to local storage
         $scope.serverPhotos = o.photosColl.toJSON()
         _.each $scope.serverPhotos, (photo)->
-          found = _.findWhere $scope.photos, (id: photo.assetId)
+          found = _.findWhere cameraRoll.photos, (UUID: photo.assetId)
           if !found 
-            # add to $scope.photos
+            # add to cameraRoll.photos
             # real workorder photos will NOT be found in TEST_DATA the FIRST time
-            photo.from = "PARSE"
-            photo.date = o.dateTaken
-            photo.id = photo.assetId
+            photo.UUID = photo.assetId
+            photo.id = photo.assetId    # deprecate, use UUID
+            photo.from = "PARSE"        # deprecate, TODO: keep track of server photos from workorders separately
+            photo.date = cameraRoll.getDateFromLocalTime(photo.dateTaken)
             photo.topPick = !!photo.topPick
-            $scope.photos.push photo
+            cameraRoll.photos.push photo
           else 
-            # found['topPick'] = !!photo['topPick']
-            _.extend found, _.pick photo, ['topPick', 'favorite']
+            # merge values set by Editor
+            # merge shotId
+            _.extend found, _.pick photo, ['topPick', 'favorite', 'shotId', 'isBestshot']
             console.log "\n\n**** COPY topPick from serverPhotos for uuid=" + photo.assetId
           return true
 
-        $scope.filteredPhotos = $filter('ownerPhotosByType')($scope.photos,'topPicks')
+        $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks')
 
         # update menu banner
-        $scope.menu.top_picks.count = $filter('ownerPhotosByType')($scope.photos,'topPicks').length
+        $scope.menu.top_picks.count = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks').length
         return 
 
       return

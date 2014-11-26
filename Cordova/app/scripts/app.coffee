@@ -371,8 +371,14 @@ angular
 .controller 'AppCtrl', [
   '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', '$ionicPlatform', 
   'SideMenuSwitcher', '$ionicSideMenuDelegate'
-  'otgData', 'otgWorkOrder',   'snappiAssetsPickerService', 'TEST_DATA',
-  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, otgData, otgWorkOrder, snappiAssetsPickerService, TEST_DATA)->
+  'otgData', 'otgWorkOrder', 
+  'snappiAssetsPickerService', 'snappiMessengerPluginService', 
+  'deviceReady', 'cameraRoll', 'appConsole'
+  'TEST_DATA',
+  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, otgData, otgWorkOrder, 
+    snappiAssetsPickerService, snappiMessengerPluginService, 
+    deviceReady, cameraRoll, appConsole,
+    TEST_DATA)->
 
     # dynamically update left side menu
     $scope.SideMenuSwitcher = SideMenuSwitcher  
@@ -468,24 +474,8 @@ angular
     # get GUID
     $rootScope.deviceId = "1234567890" # updated in otgParse.deviceReadyP()
 
-    $scope.orders = [] # order history
-
-
-    $rootScope.rightMenu = {
-      isEmpty: ()->
-
-    }
-
-    # placeholder for cameraRoll data from mapLibraryAssets()
-    $scope.cameraRoll_DATA = cameraRoll_DATA = {
-      photos_ByDate : TEST_DATA.cameraRoll_byDate
-      moments : null
-      photos : null
-    }
-
     $scope.$watch 'config', (newVal, oldVal)->
         return _prefs.store newVal, oldVal
-
       , true
 
     # initial app preferences, priority to NSUserDefaults via plugin
@@ -531,15 +521,19 @@ angular
         return promise.promise
     }
 
-    $scope.loadCameraRollP = ()->
-      return _MessengerPLUGIN.mapAssetsLibraryP().then (retval)->    # now get DataURLS...
-          if retval.raw.length > _MessengerPLUGIN.MAX_PHOTOS
-            console.warn "\n\nWARNING: truncating assets, max=" + _MessengerPLUGIN.MAX_PHOTOS + "\n\n"
-            assets = retval.raw[0.._MessengerPLUGIN.MAX_PHOTOS]
+    $scope.loadCameraRollP = ()->  # on button click
+      return snappiMessengerPluginService.mapAssetsLibraryP().then (retval)->   
+          console.log "\n\nabout to get getDataURLForAssetsByChunks_P()\n\n" 
+          # now get DataURLS...
+          if retval.raw.length > snappiMessengerPluginService.MAX_PHOTOS
+            console.warn "\n\nWARNING: truncating assets, max=" + snappiMessengerPluginService.MAX_PHOTOS + "\n\n"
+            assets = retval.raw[0..snappiMessengerPluginService.MAX_PHOTOS]
           else assets = retval.raw
-          return _MessengerPLUGIN.getDataURLForAssetsByChunks_P( assets
+
+          return snappiMessengerPluginService.getDataURLForAssetsByChunks_P( 
+            assets
             , 'preview'                           # [thmbnail, preview, previewHD]
-            , _MessengerPLUGIN.SERIES_DELAY_MS 
+            , snappiMessengerPluginService.SERIES_DELAY_MS 
           )
 
       .then (photos)->    
@@ -548,7 +542,7 @@ angular
           "desc": "$scope.cameraRoll_DATA.dataUrls"
         }
         if "dataUrls" && true
-          _.each cameraRoll_DATA.dataUrls, (v,k)->
+          _.each cameraRoll.dataURLs['preview'], (v,k)->
             truncated[k] = v[0...40]
         else 
           _.each photos, (v,k)->
@@ -558,272 +552,65 @@ angular
 
         # $scope.appConsole.log( truncated )
         $scope.appConsole.show( truncated )
-        # lookup dataUrls in cameraRoll_DATA.dataUrls 
-        return cameraRoll_DATA.dataUrls
+        # lookup dataUrls in cameraRoll.dataURLs 
+        return cameraRoll.dataURLs
 
 
-    _MessengerPLUGIN = {
-      MAX_PHOTOS: 1000
-      CHUNK_SIZE : 10
-      SERIES_DELAY_MS: 100
-      # methods for testing messenger plugin
-      mapAssetsLibraryP: ()->
-        console.log "mapAssetsLibrary() calling window.Messenger.mapAssetsLibrary(assets)"
-        # return snappiAssetsPickerService.mapAssetsLibraryP();
-        cameraRoll_DATA.dataUrls = {}
-        start = new Date().getTime()
-        return snappiAssetsPickerService.mapAssetsLibraryP().then (mapped)->
-            ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
-            end = new Date().getTime()
-            photos = otgData.mapDateTakenByDays(mapped, "like TEST_DATA")
-            retval = {
-              elapsed : (end-start)/1000
-              photos: photos
-              raw: mapped
-            }
-            return retval
-          , (error)->
-            $scope.appConsole.show( JSON.stringify error)
-        .then (retval)->
-
-          _MessengerPLUGIN.replace_TEST_DATA(retval)
-          $scope.appConsole.show( retval )
-          return retval
-
-      getDataURLForAssets_P: (assets, size)->
-        # call getPhotosByIdP() with array
-        return _MessengerPLUGIN.getPhotosByIdP( assets , size).then (photos)->
-            _.each photos, (photo)->
-              # merge into cameraRoll_DATA.dataUrls
-              # keys:  UUID,data,elapsed
-              # console.log ">>>>>>>  getPhotosByIdP(" + photo.UUID + "), DataURL[0..80]=" + photo.data[0..80]
-              cameraRoll_DATA.dataUrls[ photo.UUID[0...36] ] = photo.data
-              console.log "\n*****************************\n"
-            # update img.src DB with dataURL  
-            _MessengerPLUGIN.replace_TEST_DATA_SRC photos  
-            console.log "\n********** updated src ***********\n"
-            return photos
-          , (errors)->
-            console.log errors
-            return $q.reject(errors)  # pass it on
-
-      getDataURLForAssetsByChunks_P : (tooManyAssets, size, delayMS=0)->
-        if tooManyAssets.length < _MessengerPLUGIN.CHUNK_SIZE
-          return _MessengerPLUGIN.getDataURLForAssets_P(tooManyAssets, size) 
-
-        # load dataURLs for assets in chunks
-        chunks = []
-        chunkable = _.clone tooManyAssets
-        chunks.push chunkable.splice(0, _MessengerPLUGIN.CHUNK_SIZE ) while chunkable.length
-        console.log "\n ********** chunk count=" + chunks.length
-
-        
-        ## in Parallel, overloads device
-        if !delayMS
-          promises = []
-          _.each chunks, (assets)->
-            console.log "\n\none chunk of count=" + assets.length
-            promise = _MessengerPLUGIN.getDataURLForAssets_P( assets, size )
-            promises.push(promise)
-          return $q.all(promises).then (photos)->
-              allPhotos = []
-              # console.log photos
-              _.each photos, (chunkOfPhotos, k)->
-                allPhotos = allPhotos.concat( chunkOfPhotos )
-              console.log "\n\n>>>  $q.all() done, dataURLs for all chunks retrieved!, length=" + allPhotos.length + "\n\n"
-              return allPhotos
-            , (errors)->
-              console.error errors  
-
-
-        ## in Series, call recursively, no delay
-        # allPhotos = []
-        # getNextChunkInSERIES_P = (chunks)->
-        #   assets = chunks.shift()
-        #   return $q.reject("done") if !assets.length
-        #   console.log "\n\none chunk of count=" + assets.length + ", remaining chunks=" + chunks.length
-        #   return _MessengerPLUGIN.getDataURLForAssets_P( assets  , size).then (chunkOfPhotos)->
-
-
-        allPhotos = []
-        recurivePromise = (chunks, delayMS)->
-          assets = chunks.shift()
-          # all chunks fetched, exit recursion
-          return $q.reject("done") if !assets
-          # chunks remain, fetch chunk
-          return _MessengerPLUGIN.getDataURLForAssets_P( assets , size).then (chunkOfPhotos)->
-            return allPhotos if chunkOfPhotos=="done"
-            allPhotos = allPhotos.concat( chunkOfPhotos ) # collate resolves into 1 array
-            return chunkOfPhotos
-          .then (o)->   # delay between recursive call
-            dfd = $q.defer()
-            $timeout ()->
-              # console.log "\n\ntimeout fired!!! remaining="+chunks.length+"\n\n"
-              dfd.resolve(o)
-            , delayMS || _MessengerPLUGIN.SERIES_DELAY_MS
-            return dfd.promise 
-          .then (o)->
-              # call recurively AFTER delay
-              return recurivePromise(chunks)
-
-        return recurivePromise(chunks, 500).catch (error)->
-          return $q.when(allPhotos) if error == 'done'
-          return $q.reject(error)
-        .then (allPhotos)->
-          console.log "\n\n>>>  SERIES fetch done, dataURLs for all chunks retrieved!, length=" + allPhotos.length + "\n\n"
-          return allPhotos
-
-
-      getPhotosByIdP: (assets, size = 'preview')->
-        # takes asset OR array of assets
-        options = {type: size} if _.isString size
-        return snappiAssetsPickerService.getAssetsByIdP(assets, options)
-
-      getDataURLForAllPhotos_PARALLEL_snappiAssetsPicker_P : (raw)->
-        # install snappiAssetsPicker plugin!!!
-        # load dataURLs for assets
-        assets = _.clone raw
-        cameraRoll_DATA.dataUrls = {}
-        promises = []
-        _.each assets, (asset)->
-          label = 'preview' # [preview | thumbnail]
-          uuidExt = asset.UUID[0...36] + '.JPG' 
-          console.log ">>>>>>>  Here in _.each, uuidExt=" + uuidExt
-          promise = snappiAssetsPickerService.getAssetByIdP_snappiAssetsPicker(uuidExt, {}, null, label).then (photo)->
-              console.log ">>>>>>>  getPhotosByIdP(" + photo.uuid + "), DataURL[0..20]=" + photo.data[label][0..20]
-              cameraRoll_DATA.dataUrls[ photo.uuid ] = photo.data[label]
-              console.log "*****************************"
-              return photo
-            , (error)->
-              console.log error
-          
-          promises.push(promise)
-          return true
-
-        return $q.all(promises).then (photos)->
-          console.log ">>>>>>>>>  $q.all dataUrls retrieved!  ***"
-          return photos   
-
-      replace_TEST_DATA: (retval)->
-        photos_AsTestData = {} # COPY!!
-        _.each _.keys( retval.photos ) , (key)->
-          photos_AsTestData[key] = _.map retval.photos[key], (o)->
-            return o.UUID[0...36]
-
-        serverPhotos = _.filter cameraRoll_DATA.photos, {from: "PARSE"}
-        console.log "\n\n****** keeping serverPhotos, count=" + serverPhotos.length + "\n\n"
-
-        TEST_DATA.cameraRoll_byDate = photos_AsTestData  
-        cameraRoll_DATA.photos_ByDate = TEST_DATA.cameraRoll_byDate
-        cameraRoll_DATA.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( cameraRoll_DATA.photos_ByDate ), 2
-        cameraRoll_DATA.photos = otgData.parsePhotosFromMoments cameraRoll_DATA.moments
-
-        console.log "\n\n****** merging serverPhotos, count=" + serverPhotos.length + "\n\n"
-        _.each serverPhotos, (o)->
-          found = _.find cameraRoll_DATA.photos, {id: o.id}
-          return console.log " ???  can't find id="+o.id if !found
-          _.extend found, _.pick o, ['topPick', 'favorite']
-          return console.log "\n\n !!!!! copy topPick, favorite for id="+o.id + ", found.topPick=" + found.topPick
-
-        otgWorkOrder.setMoments(cameraRoll_DATA.moments)
-
-         # add some test data for favorite and shared
-        TEST_DATA.addSomeTopPicks( cameraRoll_DATA.photos)
-        TEST_DATA.addSomeFavorites( cameraRoll_DATA.photos)
-        TEST_DATA.addSomeShared( cameraRoll_DATA.photos)
-        _.extend window.debug , cameraRoll_DATA
-
-      replace_TEST_DATA_SRC : (photos)->
-        _.each photos, (photo, i)-> 
-          UUID = photo.UUID[0...36]
-          e = _.find cameraRoll_DATA.photos, {id: UUID }
-          return console.log "  !!!!!!!!!!!!   replace_TEST_DATA_SRC: not found, UUID="+UUID if !e
-          e.height = if photo.crop then photo.targetHeight else 240
-          e.src = _MessengerPLUGIN.getDataUrlFromUUID(UUID)
-          # e.topPick = true          ## debug only !!!
-          e.getSrc = _MessengerPLUGIN.getDataUrlFromUUID
-          console.log "\n\n ##############   asset.id=" + e.id + "\ndataURL[0...20]=" + e.src[0...20]
-          return
-
-
-      getDataUrlFromUUID : (UUID)->
-        return cameraRoll_DATA.dataUrls?[ UUID ]
-
-      testMessengerPlugin: ()->
-        console.log "testing testMessengerPlugin...."
-        return snappiAssetsPickerService.mapAssetsLibraryP().then (mapped)->
-            # console.log "mapped.length=" + mapped.length + ", first 3 items to follow:"
-            # console.log JSON.stringify mapped[0..3]
-            ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
-            asset = mapped[0]
-            return _MessengerPLUGIN.getPhotoByIdP(asset, 320, 240).then (photo)->
-                # console.log "getPhotoByIdP(" + asset.UUID + "), DataURL[0..20]=" + photo.data[0..20]
-                return {
-                    count: mapped.length
-                    sample: mapped[0..5]
-                    samplePhoto: 
-                      UUID: photo.UUID
-                      dataURL: photo.data[0..100]
-                  }
-              , (error)->
-                return console.error error
-
-
-    }
+    
 
     # Dev/Debug tools
     _LOAD_DEBUG_TOOLS = ()->
       # currently testing
-      $scope.MessengerPlugin = _MessengerPLUGIN
-      $rootScope.getDataUrlFromUUID = _MessengerPLUGIN.getDataUrlFromUUID
+      $scope.MessengerPlugin = snappiMessengerPluginService
+      $rootScope.getDataUrlFromUUID = (uuid)->
+        console.log "\n\n\n\ ^^^^^^^^^^ REFACTOR $rootScope.getDataUrlFromUUID   ^^^^^^^^^^\N\N"
+        return snappiMessengerPluginService.getDataUrlFromUUID(uuid)
+      $rootScope.appConsole = appConsole
 
-      $scope.appConsole = {
-        _modal: null
-        message: null
-        log: (message)->
-          $scope.appConsole.message = message if _.isString message
-          $scope.appConsole.message = JSON.stringify message, null, 2 if _.isObject message
-        show: (message)->
-          $scope.appConsole.log(message) if message
-          $scope.appConsole._modal?.show()
-        hide: ()->
-          $scope.appConsole._modal?.hide()
+    _LOAD_BROWSER_TOOLS = ()->
+      # moment and photos loaded in cameraRoll service via deviceReady.waitP()
+      # cameraRoll.photos_ByDate = TEST_DATA.cameraRoll_byDate
+      # cameraRoll.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( cameraRoll.photos_ByDate ), 2
+      # cameraRoll.photos = otgData.parsePhotosFromMoments cameraRoll.moments
 
+      # add some test data for favorite and shared
+      TEST_DATA.addSomeTopPicks( cameraRoll.photos)
+      TEST_DATA.addSomeFavorites( cameraRoll.photos)
+      TEST_DATA.addSomeShared( cameraRoll.photos)
+      # add item.height for collection-repeat
 
+      _.each $scope.cameraRoll.photos, (e,i,l)->
+        e.height = if e.id[-5...-4]<'4' then 400 else 240
+        # e.height = 240
+        # e.src = "http://lorempixel.com/"+(320)+"/"+(e.height)+"/"+lorempixelPhotos.shift()+"?"+e.id
+        e.src = TEST_DATA.lorempixel.getSrc(e.id, 320, e.height, TEST_DATA)
+        return
 
-      }
-      $ionicModal.fromTemplateUrl 'partials/modal/console', {
-            scope: $scope
-            animation: 'slide-in-up'
-          }
-        .then (modal)->
-            console.log "modal ready"
-            $scope.appConsole._modal = modal
-            $scope.$on 'destroy', ()->
-              $scope.appConsole._modal.remove()
-            return
-          , (error)->
-            console.log "Error: $ionicModal.fromTemplate"
-            console.log error
+      # otgWorkOrder methods need access to library of moments
+      'skip' || otgWorkOrder.setMoments(cameraRoll.moments)
+      return
 
 
 
 
-
+    # placeholder for cameraRoll data from mapLibraryAssets()
+    $scope.cameraRoll_DATA = cameraRoll_DATA = {
+      photos_ByDate : null
+      moments : null
+      photos : null
+    }
+    $scope.orders = [] # order history
 
     init = ()->
       _LOAD_DEBUG_TOOLS()
 
-      $ionicPlatform.ready ()->
+      deviceReady.waitP().then ()->
         $rootScope.isWebView = $scope.config['isWebView'] = $ionicPlatform?.isWebView?()
         $scope.config['no-view-headers'] = $scope.config['isWebView'] || false
 
         if $scope.config['isWebView'] == false
+          _LOAD_BROWSER_TOOLS()
           $scope.orders = TEST_DATA.orders 
-
-        # $timeout ()->
-        #     _MessengerPLUGIN.testMessengerPlugin()
-        #   , 10000
         
         _prefs.load().then (config)->
           if config?.status == "PLUGIN unavailable"
@@ -837,27 +624,6 @@ angular
           return
 
         return  # end $ionicPlatform.ready
-
-      cameraRoll_DATA.photos_ByDate = TEST_DATA.cameraRoll_byDate
-      cameraRoll_DATA.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( cameraRoll_DATA.photos_ByDate ), 2
-      cameraRoll_DATA.photos = otgData.parsePhotosFromMoments cameraRoll_DATA.moments
-
-      # add some test data for favorite and shared
-      TEST_DATA.addSomeTopPicks( cameraRoll_DATA.photos)
-      TEST_DATA.addSomeFavorites( cameraRoll_DATA.photos)
-      TEST_DATA.addSomeShared( cameraRoll_DATA.photos)
-      # add item.height for collection-repeat
-
-      _.each $scope.cameraRoll_DATA.photos, (e,i,l)->
-        e.height = if e.id[-5...-4]<'4' then 400 else 240
-        # e.height = 240
-        # e.src = "http://lorempixel.com/"+(320)+"/"+(e.height)+"/"+lorempixelPhotos.shift()+"?"+e.id
-        e.src = TEST_DATA.lorempixel.getSrc(e.id, 320, e.height, TEST_DATA)
-        return
-
-      # otgWorkOrder methods need access to library of moments
-      otgWorkOrder.setMoments(cameraRoll_DATA.moments)
-      $scope.orders = TEST_DATA.orders if $scope.config['isWebView'] == false
 
     init()
 

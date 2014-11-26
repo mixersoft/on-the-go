@@ -21,11 +21,11 @@
       <div class="bar-header bar bar-assertive">
         <h1 class="title">App Console</h1>
           <button class="button button-icon icon ion-close-circled"
-          ng-click="appConsole.hide()"></button>
+          ng-click="$parent.$parent.modal.appConsole.hide()"></button>
       </div>
-      <div class="body padding" ng-click="appConsole.hide()">
+      <div class="body padding" ng-click="$parent.modal.appConsole.hide()">
         <div>
-          <pre>{{appConsole.message}}</pre>
+          <pre>{{$parent.$parent.modal.appConsole._message}}</pre>
         </div>
       </div>
     </ion-content>
