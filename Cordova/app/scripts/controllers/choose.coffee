@@ -18,8 +18,7 @@ angular.module('ionBlankApp')
       link: (scope, element, attrs) ->
         UUID = attrs.lazySrc
         options = scope.options
-        # TODO: fix this using '&' scope 
-        console.log "\n\n UUID=" + JSON.stringify UUID
+        # console.log "\n\n UUID=" + JSON.stringify UUID
         src = cameraRoll.getDataURL(UUID, 'preview') ||scope.photo.getSrc || scope.photo.src
         # console.log "\n\n $$$$$ dataurl[0..30]=" + src[0..30] + "\n\n" if src
         if !src && deviceReady.isWebView() == false
@@ -82,7 +81,7 @@ angular.module('ionBlankApp')
       return h  
 
     _getOverflowPhotos = (photos)->
-      console.log "\n\n_getOverflowPhotos  ** photo.length=" + photos.length+"\n"
+      # console.log "\n\n_getOverflowPhotos  ** photo.length=" + photos.length+"\n"
       return count = Math.max(0, photos.length - this.options.thumbnailLimit )
 
 
@@ -97,17 +96,11 @@ angular.module('ionBlankApp')
         # element.text 'this is the moment directive'
         scope.options = _setSizes(element)
         scope.getAsPhotos = _getAsPhotos
-        console.log "\n\n otgMoment ************* 0 " 
-        console.log cameraRoll.moments
         _lookupPhoto = otgData.parsePhotosFromMoments cameraRoll.moments if !_lookupPhoto
-        console.log "\n\n otgMoment ************* 1 "
-        console.log _lookupPhoto
-        console.log "otgMoment ************* 2 \n\n"
         scope.getMomentHeight = _getMomentHeight
         scope.getOverflowPhotos = _getOverflowPhotos
         scope.otgWorkOrder = otgWorkOrder
         scope.ClassSelected = scope.$parent.ClassSelected
-        console.log "otgMoment ************* 3 \n\n"
         return
       }
 ]

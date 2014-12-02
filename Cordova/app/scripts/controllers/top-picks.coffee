@@ -221,8 +221,8 @@ angular.module('ionBlankApp')
   '$timeout', '$window', '$q', '$filter', 
   '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', 
   'snappiAssetsPickerService', 'snappiMessengerPluginService', 'cameraRoll'
-  'TEST_DATA'
-  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, snappiAssetsPickerService, snappiMessengerPluginService, cameraRoll, TEST_DATA) ->
+  'TEST_DATA', 'imageCacheSvc'
+  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, snappiAssetsPickerService, snappiMessengerPluginService, cameraRoll, TEST_DATA, imageCacheSvc) ->
     $scope.label = {
       title: "Top Picks"
       header_card: 
@@ -341,6 +341,10 @@ angular.module('ionBlankApp')
           when 'right'
             scope.swipeCard.swipeOver('right')
 
+      test: ()->
+        _TEST_imageCacheSvc()
+        # $scope.loadCameraRollP()
+
     }
 
 
@@ -362,9 +366,27 @@ angular.module('ionBlankApp')
           return $q.when(_options)
     }
 
+    _testImg = new Image()
+    _TEST_imageCacheSvc = ()->
+      # test imgCache
+      container = document.getElementsByClassName('item-text-wrap')[0]
+      img =_testImg
+      img.src = window.testDataURL
+      # img.src = "img/ionic.png"
+      img.width = 320
+      $img = angular.element(img)
+      $img.attr('uuid', '12345')
+      angular.element(container).append $img
+      ImgCache.init()
+      ImgCache.clearCache ()->
+        console.log "\n\n $$$ cache cleared!!! "
+      imageCacheSvc.cacheDataURLP($img, null, true)
+      window.isCached = imageCacheSvc.isCachedP
+      # imageCacheSvc.raw $img
+
+
     init = ()->
       $scope.photos = cameraRoll.photos
-
 
       setFilter( $state.current )
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info

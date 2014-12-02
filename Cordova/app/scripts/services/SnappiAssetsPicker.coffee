@@ -82,7 +82,6 @@ angular
   '$q', '$timeout',  '$ionicPlatform'
   ($q, $timeout, $ionicPlatform)->
     _promise = null
-    _cancel = null
     _timeout = 2000
     _device = null
     _isWebView = null 
@@ -178,7 +177,14 @@ angular
       getDataURL: (UUID, size='preview')->
         if !/preview|thumbnail/.test size
           throw "ERROR: invalid dataURL size, size=" + size
-        return self.dataURLs[size][UUID]
+        console.log "$$$$$ UUID="+UUID+size
+        console.log self.dataURLs[size][UUID]
+        found = self.dataURLs[size][UUID]
+        if !found
+          found = _.find self.dataURLs[size][UUID], (o)->
+              return true if o.UUID[0...36] == UUID
+        console.log found
+        return found
       # array of moments
       moments: []
       # orders
@@ -210,6 +216,7 @@ angular
   'snappiAssetsPickerService', 'deviceReady', 'appConsole', 'otgData'
   ($rootScope, $q, cameraRoll, snappiAssetsPickerService, deviceReady, appConsole, otgData)->
     _MessengerPLUGIN = {
+      _mapped: null
       MAX_PHOTOS: 1000
       CHUNK_SIZE : 10
       SERIES_DELAY_MS: 100
@@ -217,6 +224,8 @@ angular
       mapAssetsLibraryP: ()->
         console.log "mapAssetsLibrary() calling window.Messenger.mapAssetsLibrary(assets)"
         # return snappiAssetsPickerService.mapAssetsLibraryP();
+        return $q.when(_MessengerPLUGIN._mapped) if _MessengerPLUGIN._mapped
+
         start = new Date().getTime()
         return snappiAssetsPickerService.mapAssetsLibraryP().then (mapped)->
             ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
@@ -229,9 +238,11 @@ angular
               photos: photosByDate
               raw: mapped
             }
+
             return retval
           , (error)->
             appConsole.show( JSON.stringify error)
+            return $q.reject(error)
         .then (retval)->
           # replace cameraRoll.moments
           photos_inTestDataForm = {} # COPY!!
@@ -245,6 +256,7 @@ angular
           'skip' || _MessengerPLUGIN.replace_TEST_DATA(retval)
 
           appConsole.show( retval )
+          _MessengerPLUGIN._mapped = retval
           return retval
 
       getDataURLForAssets_P: (assets, size)->
