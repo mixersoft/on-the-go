@@ -16,6 +16,22 @@
           <i class="icon ion-archive assertive"></i>
           Workorders
         </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close 
+          ng-show="user.username"
+          ui-sref="app.settings.profile">
+          <i class="icon ion-person assertive"></i>
+          <div class="username badge badge-positive capitalize padding text-center" 
+          style="position:relative;left:0;top:0;"
+          >{{user.username}}</div>
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close 
+        ng-show="!user.username"
+        ui-sref="app.settings.sign-in">
+          <i class="icon ion-person assertive"></i>
+          <div class="username badge badge-energized capitalize padding text-center" 
+          style="position:relative;left:0;top:0;"
+          >Please Sign In</div>
+        </ion-item>
       </ion-list>
 
       <div workorder-in-progress-card ng-model="SideMenuSwitcher.watch.workorder"></div>

@@ -8,13 +8,30 @@
         <h1 class="title">Service Plans</h1>
           <button class="button button-icon icon ion-close-circled"
           ng-click="pricelist.hide()"></button>
-        
       </div>
       <div ng-include="'partials/pricing'"></div>
       <button class="button button-full button-balanced" ng-click="pricelist.hide()">Done</button>
     </ion-content>
   </div>
 </script>
+
+<script id="partials/modal/console" type="text/ng-template">
+  <div class="app-console-modal">
+    <ion-content>
+      <div class="bar-header bar bar-assertive">
+        <h1 class="title">App Console</h1>
+          <button class="button button-icon icon ion-close-circled"
+          ng-click="$parent.$parent.modal.appConsole.hide()"></button>
+      </div>
+      <div class="body padding" ng-click="$parent.modal.appConsole.hide()">
+        <div>
+          <pre>{{$parent.$parent.modal.appConsole._message}}</pre>
+        </div>
+      </div>
+    </ion-content>
+  </div>
+</script>
+
 
 <script id="partials/anonymous-signup" type="text/ng-template">
   <div class="padding">

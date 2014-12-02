@@ -24,6 +24,35 @@ angular.module('ionBlankApp')
         src: null   # see: AppCtrl/otgPreview for lorempixel src
     }
     self = {
+      _getAsLocalTime : (d, asJSON=true)->
+        d = new Date() if !d    # now
+        throw "_getAsLocalTimeJSON: expecting a Date param" if !_.isDate(d)
+        d.setHours(d.getHours() - d.getTimezoneOffset() / 60)
+        return d.toJSON() if asJSON
+        return d
+
+      mapDateTakenByDays: (photos )->
+        ## in: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
+        # out: {2014-07-14:[{dateTaken: UUID: }, ]}
+        return _.reduce photos, (result, o)->
+            if o.dateTaken.indexOf('+')>-1
+              datetime = new Date(o.dateTaken) 
+              # console.log "compare times: " + datetime + "==" +o.dateTaken
+            else 
+              datetime = self._getAsLocalTime(o.dateTaken, false) # no TZ info
+
+            datetime.setHours(0,0,0,0)
+            day = self._getAsLocalTime( datetime, true)
+            day = day.substring(0,10)  # like "2014-07-14"
+
+            if result[day]?
+              result[day].push o 
+            else               
+              result[day] = [o]
+
+            return result
+          , {}
+
       parsePhotosFromMoments : (moments)->
         photos = []
         _.each moments, (v,k,l)->
@@ -33,6 +62,7 @@ angular.module('ionBlankApp')
                 _.each v2['value'], (pid)->
                   photos.push _.defaults {
                       id: pid, 
+                      UUID: pid,
                       date: v2['key']
                     }, defaults_photo
 
@@ -50,9 +80,10 @@ angular.module('ionBlankApp')
         moments = _.reduce dates, (result, k)->
             date = if _.isDate(k) then k else new Date(k)
             if _current? 
+              # ??? use cameraRoll.getDateFromLocalTime()???
               if date.setHours(0,0,0,0) == _last + DAY_MS # next day
                 _last = date.setHours(0,0,0,0)
-                _current.days[k] = cameraRollDates[k]
+                _current.days[k] = cameraRollDates[k]   # or _.pluck UUID
               else 
                 _current = _last = null    
 
@@ -60,9 +91,9 @@ angular.module('ionBlankApp')
               # ???: use $dateParser?
               _last = date.setHours(0,0,0,0)
               o = {}
-              o[k] = cameraRollDates[k]
+              o[k] = cameraRollDates[k]  # or _.pluck UUID
               _current = { label: k, days: o }
-              result[_current.label] =  _current.days
+              result[_current.label] =  _current.days 
 
             return result
           , {}
@@ -188,9 +219,10 @@ angular.module('ionBlankApp')
 .controller 'TopPicksCtrl', [
   '$scope', '$rootScope', '$state', 'otgData', 'otgParse', 
   '$timeout', '$window', '$q', '$filter', 
-  '$ionicPopup', '$ionicScrollDelegate'
-  'TEST_DATA'
-  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicScrollDelegate, TEST_DATA) ->
+  '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', 
+  'snappiAssetsPickerService', 'snappiMessengerPluginService', 'cameraRoll'
+  'TEST_DATA', 'imageCacheSvc'
+  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, snappiAssetsPickerService, snappiMessengerPluginService, cameraRoll, TEST_DATA, imageCacheSvc) ->
     $scope.label = {
       title: "Top Picks"
       header_card: 
@@ -235,7 +267,7 @@ angular.module('ionBlankApp')
     $scope.on  = {
       _info: true
       getItemHeight : (item, index)->
-        # console.log "index="+index+", item.h="+item.height+" === index.h="+$scope.cameraRoll_DATA.photos[index].height+", index.id="+$scope.cameraRoll_DATA.photos[index].id
+        # console.log "index="+index+", item.h="+item.height+" === index.h="+cameraRoll.photos[index].height+", index.id="+cameraRoll.photos[index].id
         h = $scope.filteredPhotos[index].height + ( 2 * 6 ) # paddingV
         h += 90 if $scope.on.showInfo()
         return h
@@ -309,6 +341,10 @@ angular.module('ionBlankApp')
           when 'right'
             scope.swipeCard.swipeOver('right')
 
+      test: ()->
+        _TEST_imageCacheSvc()
+        # $scope.loadCameraRollP()
+
     }
 
 
@@ -330,30 +366,63 @@ angular.module('ionBlankApp')
           return $q.when(_options)
     }
 
-    init = ()->
-      $scope.photos = $scope.cameraRoll_DATA.photos
+    _testImg = new Image()
+    _TEST_imageCacheSvc = ()->
+      # test imgCache
+      container = document.getElementsByClassName('item-text-wrap')[0]
+      img =_testImg
+      img.src = window.testDataURL
+      # img.src = "img/ionic.png"
+      img.width = 320
+      $img = angular.element(img)
+      $img.attr('uuid', '12345')
+      angular.element(container).append $img
+      ImgCache.init()
+      ImgCache.clearCache ()->
+        console.log "\n\n $$$ cache cleared!!! "
+      imageCacheSvc.cacheDataURLP($img, null, true)
+      window.isCached = imageCacheSvc.isCachedP
+      # imageCacheSvc.raw $img
 
+
+    init = ()->
+      $scope.photos = cameraRoll.photos
 
       setFilter( $state.current )
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info
 
+      # return console.log "SKIPPING FETCH TOP PICKS FROM PARSE !!! "
       parse._fetchPhotosByOwnerP().then null, (err)->
           conosle.warn "PARSE error, err=" + JSON.stringify err
           return {}
       .then (o)->
         
         # merge topPicks with photoRoll
+        # HACK: replace_TEST_DATA() will NOT remove photo.from="PARSE"
         # TODO: save to local storage
-        $scope.topPicks = o.photosColl.toJSON()
-        _.each $scope.topPicks, (o)->
-          found = _.findWhere $scope.cameraRoll_DATA.photos, (id: o.assetId)
-          _.each ['topPick'], (key)->
-            found[key] = o[key]
-            return
-        $scope.filteredPhotos = $filter('ownerPhotosByType')($scope.photos,'topPicks')
+        $scope.serverPhotos = o.photosColl.toJSON()
+        _.each $scope.serverPhotos, (photo)->
+          found = _.findWhere cameraRoll.photos, (UUID: photo.assetId)
+          if !found 
+            # add to cameraRoll.photos
+            # real workorder photos will NOT be found in TEST_DATA the FIRST time
+            photo.UUID = photo.assetId
+            photo.id = photo.assetId    # deprecate, use UUID
+            photo.from = "PARSE"        # deprecate, TODO: keep track of server photos from workorders separately
+            photo.date = cameraRoll.getDateFromLocalTime(photo.dateTaken)
+            photo.topPick = !!photo.topPick
+            cameraRoll.photos.push photo
+          else 
+            # merge values set by Editor
+            # merge shotId
+            _.extend found, _.pick photo, ['topPick', 'favorite', 'shotId', 'isBestshot']
+            console.log "\n\n**** COPY topPick from serverPhotos for uuid=" + photo.assetId
+          return true
+
+        $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks')
 
         # update menu banner
-        $scope.menu.top_picks.count = $filter('ownerPhotosByType')($scope.photos,'topPicks').length
+        $scope.menu.top_picks.count = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks').length
         return 
 
       return

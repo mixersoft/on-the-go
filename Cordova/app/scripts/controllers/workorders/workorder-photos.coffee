@@ -90,7 +90,8 @@ angular.module('ionBlankApp')
       _info: true
       getItemHeight : (item, index)->
         # console.log "index="+index+", item.h="+item.height+" === index.h="+$scope.cameraRoll_DATA.photos[index].height+", index.id="+$scope.cameraRoll_DATA.photos[index].id
-        h = ( $scope.filteredPhotos[index].height * 2 ) + ( 2 * 6 ) # paddingV
+        h = item.height || $scope.filteredPhotos[index].height * 2 
+        h += ( 2 * 6 ) # paddingV
         h += 90 if $scope.on.showInfo()
         return h
       showInfo: (value=null)->
@@ -185,7 +186,8 @@ angular.module('ionBlankApp')
     parse = {
       _fetchWorkorderPhotosP : (options = {})->
         _options = options  # closure
-        return otgParse.checkSessionUserP().then otgParse.checkSessionUserRoleP 
+        return otgParse.checkSessionUserP().then (o)->
+          return otgParse.checkSessionUserRoleP(o)
         .then ()->
           _options.editor = $rootScope.sessionUser.get('id')
           if _.isEmpty _options.workorder
@@ -228,7 +230,11 @@ angular.module('ionBlankApp')
 
         # add fake height for collecton-repeat on TEST_DATA from lookup
         _.each $scope.photos, (item)->
-          item.height = _.findWhere( $scope.cameraRoll_DATA.photos, {id:item.assetId} ).height
+          found = _.findWhere( $scope.cameraRoll_DATA.photos, {id:item.assetId} )
+          #################################################################
+          # TODO: we need to get imgHeight from server or from img.EXIF!!!
+          #################################################################
+          item.height = found?.height || 480
 
         # update work in progress counts
         woProgress = _.reduce $scope.photos, (result, item)->

@@ -134,6 +134,7 @@ angular
           Parse.User.logIn( userCred.username.toLowerCase(), userCred.password )
         .then (user)->  
             $rootScope.sessionUser = Parse.User.current()
+            $rootScope.user.isRegistered = true
             return user
         , (user, error)->
             $rootScope.sessionUser = null
@@ -149,6 +150,7 @@ angular
           emailVerified: false
           tos: false
           rememberMe: false
+          isRegistered: false
         }
         return $rootScope.sessionUser = Parse.User.current()
 
@@ -326,7 +328,8 @@ angular
         return dfd.promise
 
       uploadFileP : (base64src, photo, belongsTo78)->
-        filename = photo.id.substr(0, photo.id.lastIndexOf(".")) + ".jpg"
+        # filename = photo.id.substr(0, photo.id.lastIndexOf(".")) + ".jpg"
+        filename = photo.id + ".jpg"
         # must end in '.jpg'
         parseFile = new Parse.File(filename, {
             base64: base64src
@@ -355,6 +358,9 @@ angular
         return self.deviceReadyP()
           .then self.checkSessionUserP() 
           .then ()->
+            if /^data:image/.test( photo.src )
+              console.log "WARNING: skipping photo resample before upload !!!"
+              return photo.src
             return self.resampleP(photo.src, 320)
           .then (base64src)->
               return self.uploadFileP(base64src, photo)
@@ -367,6 +373,7 @@ angular
               else 
                 throw error
           .then (parseFile)->
+              console.log "\n\n *** parseFile uploaded, check url=" + parseFile.url()
               parseData = _.extend {
                     assetId: photo.id
                     owner: $rootScope.sessionUser

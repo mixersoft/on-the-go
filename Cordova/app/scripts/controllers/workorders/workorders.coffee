@@ -52,7 +52,9 @@ angular.module('ionBlankApp')
 
     parse = {
       _fetchWorkordersP : (options = {})->
-        return otgParse.checkSessionUserP().then ()->
+        return otgParse.checkSessionUserP().then (o)->
+          return otgParse.checkSessionUserRoleP(o)
+        .then (o)->
           return otgParse.fetchWorkordersByOwnerP(options)
         .then (results)->
           $scope.workorders = results.toJSON()      # .toJSON() -> readonly
@@ -62,7 +64,13 @@ angular.module('ionBlankApp')
             otgWorkOrder.on.selectByCalendar(o.fromDate, o.toDate)
             o.selectedMoments = otgWorkOrder.checkout.getSelectedAsMoments().selectedMoments
             return
-          return $q.when(results)  
+          return results
+        .then (results)->
+          return otgParse.fetchWorkorderPhotosByWoIdP( _.pluck $scope.workorders, 'objectId' )
+        .then (retval)->
+          #merge workorder photos into cameraRoll_DATA
+          return retval
+ 
     }
 
     $scope.watch = _watch = {

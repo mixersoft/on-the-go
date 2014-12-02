@@ -13,6 +13,7 @@ angular
   'ionic',
   'ngCordova',
   'onTheGo.backend',
+  'onTheGo.snappiAssetsPicker'
   'ionic.contrib.ui.cards',
 ])
 .constant('version', '0.0.1')
@@ -366,12 +367,166 @@ angular
   # if none of the above states are matched, use this as the fallback
   $urlRouterProvider.otherwise('/app/top-picks');  
 
+.factory 'imageCacheSvc', [
+  '$q', '$timeout',  'deviceReady'
+  ($q, $timeout, deviceReady)->
+    _promise = null
+    _timeout = 2000
+    _defaults = {
+      chromeQuota: 50*1024*1024
+      debug: true
+      skipURIencoding: true    # required for dataURLs
+      usePersistentCache: true
+    }
+    _.extend ImgCache.options, _defaults
 
+    deviceReady.waitP().then ()->
+      ImgCache.init()
+    self = {
+      cacheIndex : {} # index of cached files by UUID
+      mostRecent : [] # stack for garbage collection, mostRecently used UUID on the 'top'
+      cacheTemplate: 'imgcache/{uuid}.jpg'
+      isDataURL : (src)->
+        return /^data:image/.test src[10..20]
+      waitP: ()->
+        return _promise if _promise
+        deferred = $q.defer()
+        _cancel = $timeout ()->
+            return deferred.reject("ERROR: ImgCache.init TIMEOUT")
+          , _timeout
+          console.log "$$$ calling ImgCache.init() $$$"
+          ImgCache.init ()->
+              return deferred.resolve("ImgCache.init() ready!")
+            , (error)->
+              return deferred.reject("ERROR: ImgCache.init TIMEOUT")
+        return _promise = deferred.promise
+
+      cacheDataURLP: ($targetOrDataURL, UUID, useCached=true)->
+        hashkey = self.getHashKey($targetOrDataURL) 
+        UUID = hashkey if hashkey
+        UUID = UUID[0...36] # localStorage might balk at '/' in pathname
+        isTarget = $targetOrDataURL.src? || $targetOrDataURL.attr?
+        if isTarget
+          $target = $targetOrDataURL
+          dataURL = $targetOrDataURL.attr('src') 
+        else 
+          dataURL = $targetOrDataURL
+
+
+        return $q.reject "ERROR: dataURL is missing!" if !dataURL && !UUID
+
+        return self.waitP().then ()->
+            return self.useCachedFileP($target) if useCached
+            return $q.reject()
+          .then (found)->
+            return $q.reject() if !found
+            console.log "\n\nCACHE HIT!!!!\n\n"
+            # return self.useCachedFileP( $target, UUID) 
+            
+          .catch ()->
+            deferred = $q.defer()
+            return $q.reject('dataURL is missing: load from MessengerPlugin?') if !dataURL
+
+            ImgCache.cacheDataURL dataURL
+              , UUID
+              , (filepath, fileEntry)-> 
+                
+                if !filepath
+                  ImgCache.useCachedFile($target)
+                  return deferred.resolve("success") 
+
+                console.log "\n *** right here 2 filepath=" + filepath
+                console.log "ImgCache.cacheDataURL(): UUID="+UUID+", fileEntry=" + fileEntry?.toURL()
+                self.cacheIndex[UUID] = filepath.slice(1) # fileEntry.toURL()
+
+                console.log self.cacheIndex
+
+                return deferred.resolve("success")
+              , (error)->
+                console.log "\n *** right here 3"
+                console.log error
+                return deferred.reject("ImgCache.cacheFile() errors. see log")
+            return deferred.promise.then ()->
+                if $target && useCached
+                  return self.useCachedFileP($target, UUID)
+              , (error)->
+                console.log error
+          .catch (error)->
+            console.log error
+            return $q.reject(error)
+
+      getHashKey: ($targetOrUUID)->
+        # priority: $target.attr('uuid') > UUID > $target.attr(src)
+        $targetOrUUID = angular.element($targetOrUUID) if $targetOrUUID instanceof HTMLElement
+        UUID = $targetOrUUID.attr('uuid') if $targetOrUUID.attr
+        UUID = $targetOrUUID if !UUID && _.isString $targetOrUUID
+        UUID = UUID[0...36] if UUID
+        return UUID if UUID
+        # degrade to img.src for imageCacheSvc
+        src = $targetOrUUID.attr('src')
+        return src if src
+
+        throw "ERROR: cannot find Hashkey for imageCacheSvc!!!"
+
+
+
+      useCachedFileP: ($target)->
+        UUID = self.getHashKey($target) 
+        UUID = UUID[0...36] if UUID
+        return self.waitP().then ()->
+          deferred = $q.defer()
+          # filepath = self.cacheIndex[UUID]
+          # filepath =  self.cacheTemplate.replace('{uuid}', UUID) if !filepath
+          ImgCache.useCachedDataURL $target 
+            , ()->
+              self.mostRecent.splice self.mostRecent.indexOf(UUID), 1
+              self.mostRecent.push(UUID)
+              return deferred.resolve("success")
+            , ($img)->
+              console.log "useCachedFileP, file not found in cache"
+              return deferred.reject("ImgCache.useCachedFileP, file not found")
+          return deferred.promise
+
+      isCachedP: ($targetOrUUID)->
+        hashkey = self.getHashKey($targetOrUUID)
+
+        return self.waitP().then ()->
+          deferred = $q.defer()
+          filepath = self.cacheIndex[hashkey]
+          filepath =  self.cacheTemplate.replace('{uuid}', hashkey) if !filepath
+          console.log "\n\n *** checking cache for file=" + filepath
+          # return deferred.resolve(!!filepath)
+
+          ImgCache.isDataURLCached filepath, (src, isCached)->
+            console.log "ImgCache isCached() says isCached=" + !!isCached + " for src=" + src
+            return deferred.reject false if !isCached
+            self.cacheIndex[hashkey] = src # cache in localStorage
+            return deferred.resolve isCached
+          return deferred.promise
+      raw: (target)->
+        target = angular.element(target)
+        return ImgCache.cacheFile target.attr('src'), ()->
+          return ImgCache.useCachedFile target, ()->
+              console.log('now using local copy');
+            , ()->
+              console.log('could not load from cache');
+
+
+
+    }
+    return self
+]
 .controller 'AppCtrl', [
   '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', '$ionicPlatform', 
   'SideMenuSwitcher', '$ionicSideMenuDelegate'
-  'otgData', 'otgWorkOrder', 'TEST_DATA',
-  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, otgData, otgWorkOrder, TEST_DATA)->
+  'otgData', 'otgWorkOrder', 
+  'snappiAssetsPickerService', 'snappiMessengerPluginService', 
+  'deviceReady', 'cameraRoll', 'appConsole'
+  'TEST_DATA', 'imageCacheSvc'
+  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, otgData, otgWorkOrder, 
+    snappiAssetsPickerService, snappiMessengerPluginService, 
+    deviceReady, cameraRoll, appConsole,
+    TEST_DATA, imageCacheSvc  )->
 
     # dynamically update left side menu
     $scope.SideMenuSwitcher = SideMenuSwitcher  
@@ -467,24 +622,8 @@ angular
     # get GUID
     $rootScope.deviceId = "1234567890" # updated in otgParse.deviceReadyP()
 
-    $scope.orders = [] # order history
-
-
-    $rootScope.rightMenu = {
-      isEmpty: ()->
-
-    }
-
-    # placeholder for cameraRoll data from mapLibraryAssets()
-    $scope.cameraRoll_DATA = cameraRoll_DATA = {
-      photos_ByDate : TEST_DATA.cameraRoll_byDate
-      moments : null
-      photos : null
-    }
-
     $scope.$watch 'config', (newVal, oldVal)->
         return _prefs.store newVal, oldVal
-
       , true
 
     # initial app preferences, priority to NSUserDefaults via plugin
@@ -528,37 +667,68 @@ angular
           promise.resolve({status:"PLUGIN unavailable"}) 
 
         return promise.promise
-
-
     }
 
-    init = ()->
-      $ionicPlatform.ready ()->
-        $scope.config['isWebView'] = $ionicPlatform?.isWebView?()
-        $scope.config['no-view-headers'] = $scope.config['isWebView'] || false
+    $scope.loadCameraRollP = ()->  # on button click
+      return snappiMessengerPluginService.mapAssetsLibraryP().then (retval)->   
+          console.log "\n\nabout to get getDataURLForAssetsByChunks_P()\n\n" 
+          # now get DataURLS...
+          if retval.raw.length > snappiMessengerPluginService.MAX_PHOTOS
+            console.warn "\n\nWARNING: truncating assets, max=" + snappiMessengerPluginService.MAX_PHOTOS + "\n\n"
+            assets = retval.raw[0..snappiMessengerPluginService.MAX_PHOTOS]
+          else assets = retval.raw
+
+          return snappiMessengerPluginService.getDataURLForAssetsByChunks_P( 
+            assets
+            , 'preview'                           # [thmbnail, preview, previewHD]
+            , snappiMessengerPluginService.SERIES_DELAY_MS 
+          )
+
+      .then (photos)->    
+        # show results in AppConsole
+        truncated = {
+          "desc": "$scope.cameraRoll_DATA.dataUrls"
+        }
+        if "dataUrls" && true
+          _.each cameraRoll.dataURLs['preview'], (v,k)->
+            truncated[k] = v[0...40]
+        else 
+          _.each photos, (v,k)->
+            truncated[v.UUID] = v.data[0...40]
         
-        _prefs.load().then (config)->
-          if config?.status == "PLUGIN unavailable"
-            console.log config.status
-          else if config?.status == "EMPTY"
-            console.log "NSUserDefaults=" + JSON.stringify config
-            _prefs.store $scope.config
-          else 
-            console.log "NSUserDefaults=" + JSON.stringify config
-            _.extend $scope.config, config
-          return
-        return
-      cameraRoll_DATA.photos_ByDate = TEST_DATA.cameraRoll_byDate
-      cameraRoll_DATA.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( cameraRoll_DATA.photos_ByDate ), 2
-      cameraRoll_DATA.photos = otgData.parsePhotosFromMoments cameraRoll_DATA.moments
+        console.log truncated
+
+        # $scope.appConsole.log( truncated )
+        $scope.appConsole.show( truncated )
+        # lookup dataUrls in cameraRoll.dataURLs 
+        return cameraRoll.dataURLs
+
+
+    
+
+    # Dev/Debug tools
+    _LOAD_DEBUG_TOOLS = ()->
+      # currently testing
+      $scope.MessengerPlugin = snappiMessengerPluginService
+      $rootScope.getDataUrlFromUUID = (uuid)->
+        console.log "\n\n\n\ ^^^^^^^^^^ REFACTOR $rootScope.getDataUrlFromUUID   ^^^^^^^^^^\N\N"
+        return snappiMessengerPluginService.getDataUrlFromUUID(uuid)
+      $rootScope.appConsole = appConsole
+
+
+    _LOAD_BROWSER_TOOLS = ()->
+      # moment and photos loaded in cameraRoll service via deviceReady.waitP()
+      # cameraRoll.photos_ByDate = TEST_DATA.cameraRoll_byDate
+      # cameraRoll.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( cameraRoll.photos_ByDate ), 2
+      # cameraRoll.photos = otgData.parsePhotosFromMoments cameraRoll.moments
 
       # add some test data for favorite and shared
-      TEST_DATA.addSomeTopPicks( cameraRoll_DATA.photos)
-      TEST_DATA.addSomeFavorites( cameraRoll_DATA.photos)
-      TEST_DATA.addSomeShared( cameraRoll_DATA.photos)
+      TEST_DATA.addSomeTopPicks( cameraRoll.photos)
+      TEST_DATA.addSomeFavorites( cameraRoll.photos)
+      TEST_DATA.addSomeShared( cameraRoll.photos)
       # add item.height for collection-repeat
 
-      _.each $scope.cameraRoll_DATA.photos, (e,i,l)->
+      _.each $scope.cameraRoll.photos, (e,i,l)->
         e.height = if e.id[-5...-4]<'4' then 400 else 240
         # e.height = 240
         # e.src = "http://lorempixel.com/"+(320)+"/"+(e.height)+"/"+lorempixelPhotos.shift()+"?"+e.id
@@ -566,14 +736,55 @@ angular
         return
 
       # otgWorkOrder methods need access to library of moments
-      otgWorkOrder.setMoments(cameraRoll_DATA.moments)
-      $scope.orders = TEST_DATA.orders
+      'skip' || otgWorkOrder.setMoments(cameraRoll.moments)
+
+
+
+      # imageCacheSvc.cacheDataURLP()
+      return
+
+
+
+
+    # placeholder for cameraRoll data from mapLibraryAssets()
+    $scope.cameraRoll_DATA = cameraRoll_DATA = {
+      photos_ByDate : null
+      moments : null
+      photos : null
+    }
+    $scope.orders = [] # order history
+
+    init = ()->
+      _LOAD_DEBUG_TOOLS()
+      
+
+      deviceReady.waitP().then ()->
+        $rootScope.isWebView = $scope.config['isWebView'] = $ionicPlatform?.isWebView?()
+        $scope.config['no-view-headers'] = $scope.config['isWebView'] || false
+
+        if $scope.config['isWebView'] == false
+          _LOAD_BROWSER_TOOLS()
+          $scope.orders = TEST_DATA.orders 
+        
+        _prefs.load().then (config)->
+          if config?.status == "PLUGIN unavailable"
+            console.warn "AppPreferences" + config.status
+          else if config?.status == "EMPTY"
+            console.log "NSUserDefaults=" + JSON.stringify config
+            _prefs.store $scope.config
+          else 
+            console.log "NSUserDefaults=" + JSON.stringify config
+            _.extend $scope.config, config
+          return
+
+        return  # end $ionicPlatform.ready
 
     init()
 
     window.debug = _.extend window.debug || {} , {
       user: $scope.user
       moments: cameraRoll_DATA.moments
+      photos: cameraRoll_DATA.photos
       orders: $scope.orders
     }
 
