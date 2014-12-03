@@ -382,6 +382,7 @@ angular
 
     deviceReady.waitP().then ()->
       ImgCache.init()
+
     self = {
       cacheIndex : {} # index of cached files by UUID
       mostRecent : [] # stack for garbage collection, mostRecently used UUID on the 'top'
@@ -394,7 +395,6 @@ angular
         _cancel = $timeout ()->
             return deferred.reject("ERROR: ImgCache.init TIMEOUT")
           , _timeout
-          console.log "$$$ calling ImgCache.init() $$$"
           ImgCache.init ()->
               return deferred.resolve("ImgCache.init() ready!")
             , (error)->
@@ -439,7 +439,7 @@ angular
                 console.log "ImgCache.cacheDataURL(): UUID="+UUID+", fileEntry=" + fileEntry?.toURL()
                 self.cacheIndex[UUID] = filepath.slice(1) # fileEntry.toURL()
 
-                console.log self.cacheIndex
+                console.log self.cacheIndex  # $$$
 
                 return deferred.resolve("success")
               , (error)->
@@ -520,11 +520,11 @@ angular
   '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', '$ionicPlatform', 
   'SideMenuSwitcher', '$ionicSideMenuDelegate'
   'otgData', 'otgWorkOrder', 
-  'snappiAssetsPickerService', 'snappiMessengerPluginService', 
+  'snappiMessengerPluginService', 
   'deviceReady', 'cameraRoll', 'appConsole'
   'TEST_DATA', 'imageCacheSvc'
   ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, otgData, otgWorkOrder, 
-    snappiAssetsPickerService, snappiMessengerPluginService, 
+    snappiMessengerPluginService, 
     deviceReady, cameraRoll, appConsole,
     TEST_DATA, imageCacheSvc  )->
 
@@ -670,38 +670,62 @@ angular
     }
 
     $scope.loadCameraRollP = ()->  # on button click
-      return snappiMessengerPluginService.mapAssetsLibraryP().then (retval)->   
-          console.log "\n\nabout to get getDataURLForAssetsByChunks_P()\n\n" 
-          # now get DataURLS...
-          if retval.raw.length > snappiMessengerPluginService.MAX_PHOTOS
-            console.warn "\n\nWARNING: truncating assets, max=" + snappiMessengerPluginService.MAX_PHOTOS + "\n\n"
-            assets = retval.raw[0..snappiMessengerPluginService.MAX_PHOTOS]
-          else assets = retval.raw
 
-          return snappiMessengerPluginService.getDataURLForAssetsByChunks_P( 
-            assets
-            , 'preview'                           # [thmbnail, preview, previewHD]
-            , snappiMessengerPluginService.SERIES_DELAY_MS 
-          )
+      IMAGE_FORMAT = 'thumbnail'    # [thmbnail, preview, previewHD]
+      TEST_LIMIT = 5 # snappiMessengerPluginService.MAX_PHOTOS
+      start = new Date().getTime()
 
-      .then (photos)->    
+      return snappiMessengerPluginService.mapAssetsLibraryP().then (mapped)->
+        ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
+        end = new Date().getTime()
+        moments = cameraRoll.loadCameraRoll( mapped ) # mapped -> moments
+
+        # returns: {2014-07-14:[{dateTaken: UUID: }, ]}
+        retval = {
+          title: "*** snappiMessengerPluginService.mapAssetsLibraryP() ***"
+          elapsed : (end-start)/1000
+          'moment[0].value' : cameraRoll.moments[0].value
+          'mapped[0..10]': mapped[0..10]
+        }
+        appConsole.show( retval )
+        return mapped
+      , (error)->
+        appConsole.show( JSON.stringify error)
+        return $q.reject(error)
+      .then (mapped)->   
+        # just fetch 5 photos for test purposes
+        console.log "\n\nabout to get getDataURLForAssetsByChunks_P(), 5 items\n\n" 
+        # now get DataURLS...
+        
+        if mapped.length > TEST_LIMIT
+          console.warn "\n\nWARNING: truncating assets, limit=" + TEST_LIMIT + "\n\n"
+          assets = mapped[0..TEST_LIMIT]
+        else assets = mapped
+
+        return snappiMessengerPluginService.getDataURLForAssetsByChunks_P( 
+          assets
+          , IMAGE_FORMAT                          
+          , snappiMessengerPluginService.SERIES_DELAY_MS 
+        )
+
+      .then (photos)->  
+
         # show results in AppConsole
         truncated = {
           "desc": "$scope.cameraRoll_DATA.dataUrls"
+          photos: cameraRoll.photos[0..TEST_LIMIT]
+          dataURLs: {}
         }
-        if "dataUrls" && true
-          _.each cameraRoll.dataURLs['preview'], (v,k)->
-            truncated[k] = v[0...40]
+        if deviceReady.isWebView()
+          _.each cameraRoll.dataURLs[IMAGE_FORMAT], (dataURL,uuid)->
+            truncated.dataURLs[uuid] = dataURL[0...40]
         else 
           _.each photos, (v,k)->
-            truncated[v.UUID] = v.data[0...40]
+            truncated.dataURLs[v.UUID] = v.data[0...40]
         
-        console.log truncated
-
-        # $scope.appConsole.log( truncated )
+        # console.log truncated # $$$
         $scope.appConsole.show( truncated )
-        # lookup dataUrls in cameraRoll.dataURLs 
-        return cameraRoll.dataURLs
+        return photos
 
 
     
@@ -710,9 +734,6 @@ angular
     _LOAD_DEBUG_TOOLS = ()->
       # currently testing
       $scope.MessengerPlugin = snappiMessengerPluginService
-      $rootScope.getDataUrlFromUUID = (uuid)->
-        console.log "\n\n\n\ ^^^^^^^^^^ REFACTOR $rootScope.getDataUrlFromUUID   ^^^^^^^^^^\N\N"
-        return snappiMessengerPluginService.getDataUrlFromUUID(uuid)
       $rootScope.appConsole = appConsole
 
 
@@ -783,9 +804,8 @@ angular
 
     window.debug = _.extend window.debug || {} , {
       user: $scope.user
-      moments: cameraRoll_DATA.moments
-      photos: cameraRoll_DATA.photos
       orders: $scope.orders
+      cameraRoll: cameraRoll
     }
 
   ]

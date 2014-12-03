@@ -303,7 +303,7 @@ var ImgCache = {
      */ 
     Private.getCachedFileFullPath = function (img_src, hash, ext) {
         var local_root = Helpers.EntryGetPath(ImgCache.attributes.dirEntry);
-        console.log("$$$ local_root="+local_root)
+        // console.log("$$$ local_root="+local_root)
         if (ext == null) {
             return (local_root ? local_root : '/') + Private.getCachedFileName(img_src, hash);
         } else {

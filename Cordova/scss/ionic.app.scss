@@ -241,7 +241,8 @@ ion-side-menu-content .item > * {
     max-width: $max-preview-dim;
     .photo-wrap {
       max-width: $max-preview-dim;
-      width: $max-preview-dim;
+      /*width: $max-preview-dim;*/
+      width: 100%;
     }
   }
   .workorder-card {

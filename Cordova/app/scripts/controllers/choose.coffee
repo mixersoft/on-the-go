@@ -10,21 +10,36 @@
 angular.module('ionBlankApp')
 # uses $q.promise to load src 
 .directive 'lazySrc', [
-  'deviceReady', 'cameraRoll', 'TEST_DATA'
-  (deviceReady, cameraRoll, TEST_DATA)->
+  'deviceReady', 'cameraRoll', 'imageCacheSvc', 'TEST_DATA'
+  (deviceReady, cameraRoll, imageCacheSvc, TEST_DATA)->
     return {
       restrict: 'A'
       scope: false
       link: (scope, element, attrs) ->
         UUID = attrs.lazySrc
+        UUID = UUID[0...36] # localStorage might balk at '/' in pathname
+        element.attr('uuid', UUID)
         options = scope.options
         # console.log "\n\n UUID=" + JSON.stringify UUID
-        src = cameraRoll.getDataURL(UUID, 'preview') ||scope.photo.getSrc || scope.photo.src
-        # console.log "\n\n $$$$$ dataurl[0..30]=" + src[0..30] + "\n\n" if src
-        if !src && deviceReady.isWebView() == false
-          src = TEST_DATA.lorempixel.getSrc(UUID, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
-        element.attr('src', src)
+        # check for cached image first
+        imageCacheSvc.useCachedFileP( element ).then (isCached)->
+            console.log "\n\nCACHE HIT!!!!, use ng-src??? \n\n"
+            return isCached
+          , (notCached)->
+            console.log "lazySrc reports notCached for UUID="+UUID
+            
+            src = cameraRoll.getDataURL(UUID, 'thumbnail') #  || scope.photo?.getSrc || scope.photo?.src
+            
+            if !src && deviceReady.isWebView() == false
+              src = TEST_DATA.lorempixel.getSrc(UUID, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
 
+            console.log "\n *** lazySrc="+ (src && src[0..30])
+            element.attr('src', src)  # use ng-src here???
+            if imageCacheSvc.isDataURL(src)
+              console.log "$$$ try to cache imageCacheSvc.cacheDataURLP, UUID=" + UUID
+              return imageCacheSvc.cacheDataURLP( element, UUID , false)
+            else 
+              return ImgCache.cacheFile(src)
         # scope.$watch scope.photo.src, (newVal, oldVal)->
         #   console.log "\n\n2 -  photo.src changed, src=" + newVal[0..40] if newVal
         #   element.attr('src', src) if newVal != oldVal
@@ -305,8 +320,12 @@ angular.module('ionBlankApp')
     );
 
     $scope.on = {
-      getDataUrlFromUUID: (uuid)->
-        return $scope.MessengerPlugin.getDataUrlFromUUID(uuid)
+      getSrc: (item)->
+        # NOTE: cameraRoll uses lazySrc directive instead
+        console.log "on.getSrc for item=" + item?.UUID
+        return '' if !item
+        return item.src if item.src
+        return cameraRoll.getDataURL(item.UUID, 'preview')
       hScrollable : ($ev)->
         console.log "hScrollable(): make camera-roll-date H scrollable"
         return

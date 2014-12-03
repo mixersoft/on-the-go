@@ -220,9 +220,9 @@ angular.module('ionBlankApp')
   '$scope', '$rootScope', '$state', 'otgData', 'otgParse', 
   '$timeout', '$window', '$q', '$filter', 
   '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', 
-  'snappiAssetsPickerService', 'snappiMessengerPluginService', 'cameraRoll'
+  'snappiMessengerPluginService', 'cameraRoll'
   'TEST_DATA', 'imageCacheSvc'
-  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, snappiAssetsPickerService, snappiMessengerPluginService, cameraRoll, TEST_DATA, imageCacheSvc) ->
+  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, snappiMessengerPluginService, cameraRoll, TEST_DATA, imageCacheSvc) ->
     $scope.label = {
       title: "Top Picks"
       header_card: 
@@ -266,9 +266,23 @@ angular.module('ionBlankApp')
     # use dot notation for prototypal inheritance in child scopes
     $scope.on  = {
       _info: true
+      getSrc: (item)->
+        return '' if !item
+        return item.src if item.src
+        found = cameraRoll.getDataURL(item.UUID, 'preview')
+        found = cameraRoll.getDataURL(item.UUID, 'thumbnail') if !found
+        return found
       getItemHeight : (item, index)->
-        # console.log "index="+index+", item.h="+item.height+" === index.h="+cameraRoll.photos[index].height+", index.id="+cameraRoll.photos[index].id
-        h = $scope.filteredPhotos[index].height + ( 2 * 6 ) # paddingV
+        if !item.scaledH
+          IMAGE_WIDTH = 300-2
+          if item.originalHeight
+            h = item.originalHeight/item.originalWidth * IMAGE_WIDTH
+          else h = 240
+          item.scaledH = h
+          console.log "index="+index+", scaledH="+h+" origH="+cameraRoll.photos[index].originalHeight+", index.id="+cameraRoll.photos[index].UUID
+        else 
+          h = item.scaledH
+        h += ( 2 * 6 ) # paddingV
         h += 90 if $scope.on.showInfo()
         return h
       showInfo: (value=null)->
@@ -342,8 +356,10 @@ angular.module('ionBlankApp')
             scope.swipeCard.swipeOver('right')
 
       test: ()->
-        _TEST_imageCacheSvc()
-        # $scope.loadCameraRollP()
+        # _TEST_imageCacheSvc()
+        $scope.loadCameraRollP().then ()->
+          $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks')
+          console.log "AFTER loading cameraRoll, filteredPhotos.length="+$scope.filteredPhotos.length
 
     }
 
@@ -379,7 +395,7 @@ angular.module('ionBlankApp')
       angular.element(container).append $img
       ImgCache.init()
       ImgCache.clearCache ()->
-        console.log "\n\n $$$ cache cleared!!! "
+        console.log "\n*** ImageCache cleared *** \n"
       imageCacheSvc.cacheDataURLP($img, null, true)
       window.isCached = imageCacheSvc.isCachedP
       # imageCacheSvc.raw $img
@@ -400,6 +416,7 @@ angular.module('ionBlankApp')
         # merge topPicks with photoRoll
         # HACK: replace_TEST_DATA() will NOT remove photo.from="PARSE"
         # TODO: save to local storage
+        # return "skip this for now"
         $scope.serverPhotos = o.photosColl.toJSON()
         _.each $scope.serverPhotos, (photo)->
           found = _.findWhere cameraRoll.photos, (UUID: photo.assetId)

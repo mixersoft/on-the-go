@@ -79,7 +79,11 @@
             <!-- body -->
             <div class="item item-image">
               <div class="photo-wrap">
-                <img ng-src="{{item.src}}">
+                <img uuid="{{ item.UUID }}" 
+                orig-w="{{item.originalWidth}}"
+                orig-h="{{item.originalHeight}}"
+                height="{{item.scaledH}}"
+                ng-src="{{ on.getSrc(item) }}">
               </div>
             </div>
 
