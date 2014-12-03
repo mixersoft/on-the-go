@@ -969,7 +969,7 @@ var ImgCache = {
         // borrowed from: Private.loadCachedFile($img, UUID , Private.setNewImgPath, success_callback, error_callback);
         var filePath = Private.getCachedFileFullPath(null, UUID, 'jpg');
 
-        console.log("\nImgCache.useCachedDataURL wants to load =" + filePath + "\n\n")
+        console.log("\nImgCache.useCachedDataURL wants to load =" + filePath.slice(-60) + "\n\n")
         if (Helpers.isCordovaAndroid()) {
             // This hack is probably only used for older versions of Cordova
             if (filePath.indexOf('file://') === 0) {

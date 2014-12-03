@@ -184,6 +184,7 @@ angular
         datetime.setHours(0,0,0,0)
         date = self._getAsLocalTime( datetime, true)
         return date.substring(0,10)  # like "2014-07-14"
+
       getDataURL: (UUID, size='preview')->
         if !/preview|thumbnail/.test size
           throw "ERROR: invalid dataURL size, size=" + size
@@ -195,6 +196,31 @@ angular
               return o if key[0...36] == UUID
         # console.log found
         return found
+
+      fetchDataURLP: (UUID, size='preview')->
+        # call snappiMessengerPluginService.getDataURLForAssets_P for 1 asset
+        return $q.reject("fetchDataURLP() not yet implemented")
+
+      getMomentPreviewAssets:(moments)->
+        moments = self.moments if !moments
+        # preload cameraRoll preview thumbnails
+        previewPhotos = []
+        PREVIEW_LIMIT = 5 # 5 thumbnails per moment/date
+        IMAGE_FORMAT = 'thumbnail'
+        _.each moments, (v,k,l)->
+          if v['type'] == 'moment'
+            _.each v['value'], (v2,k2,l2)->
+              if v2['type'] == 'date'
+                _.each v2['value'][0...PREVIEW_LIMIT], (UUID)->
+                  # check if already loaded
+                  if !(self.dataURLs[IMAGE_FORMAT]?[UUID]?)
+                    console.log "*** not yet loaded, UUID=" + UUID
+                    previewPhotos.push {
+                        UUID: UUID,
+                        # date: v2['key']
+                      }
+        return previewPhotos
+
       # array of moments
       moments: []
       # orders
@@ -352,6 +378,7 @@ angular
       ## @param assets array [UUID,] or [{UUID:},{}]
       ##
       getPhotosByIdP: (assets, size='preview')->
+        return $q.when([]) if _.isEmpty assets
         # takes asset OR array of assets
         options = {type: size} 
 

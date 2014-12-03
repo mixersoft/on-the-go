@@ -483,7 +483,7 @@ angular
               self.mostRecent.push(UUID)
               return deferred.resolve("success")
             , ($img)->
-              console.log "useCachedFileP, file not found in cache"
+              # console.log "useCachedFileP, file not found in cache"
               return deferred.reject("ImgCache.useCachedFileP, file not found")
           return deferred.promise
 
@@ -692,21 +692,16 @@ angular
       , (error)->
         appConsole.show( JSON.stringify error)
         return $q.reject(error)
-      .then (mapped)->   
-        # just fetch 5 photos for test purposes
-        console.log "\n\nabout to get getDataURLForAssetsByChunks_P(), 5 items\n\n" 
-        # now get DataURLS...
-        
-        if mapped.length > TEST_LIMIT
-          console.warn "\n\nWARNING: truncating assets, limit=" + TEST_LIMIT + "\n\n"
-          assets = mapped[0..TEST_LIMIT]
-        else assets = mapped
-
+      .then (mapped)->
+        # preload thumbnail DataURLs for cameraRoll moment previews
+        momentPreviewAssets = cameraRoll.getMomentPreviewAssets() # do this async
+        console.log "\n\n\n*** preloading moment thumbnails for UUIDs: " + JSON.stringify momentPreviewAssets
         return snappiMessengerPluginService.getDataURLForAssetsByChunks_P( 
-          assets
+          momentPreviewAssets
           , IMAGE_FORMAT                          
           , snappiMessengerPluginService.SERIES_DELAY_MS 
-        )
+        ).then ()->
+          console.log "*** preload complete "
 
       .then (photos)->  
 

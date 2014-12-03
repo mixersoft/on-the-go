@@ -26,14 +26,18 @@ angular.module('ionBlankApp')
             console.log "\n\nCACHE HIT!!!!, use ng-src??? \n\n"
             return isCached
           , (notCached)->
-            console.log "lazySrc reports notCached for UUID="+UUID
+            console.log "\n\nlazySrc reports notCached for UUID="+UUID
             
             src = cameraRoll.getDataURL(UUID, 'thumbnail') #  || scope.photo?.getSrc || scope.photo?.src
             
-            if !src && deviceReady.isWebView() == false
-              src = TEST_DATA.lorempixel.getSrc(UUID, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
+            if !src 
+              if deviceReady.isWebView()
+                # fetch photo? set up a $watch?? photo may not be loaded yet
+              else # browser uses lorempixel
+                src = TEST_DATA.lorempixel.getSrc(UUID, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
+              
 
-            console.log "\n *** lazySrc="+ (src && src[0..30])
+            console.log "\n*** lazySrc="+ (src && src[0..30])
             element.attr('src', src)  # use ng-src here???
             if imageCacheSvc.isDataURL(src)
               console.log "$$$ try to cache imageCacheSvc.cacheDataURLP, UUID=" + UUID
@@ -259,8 +263,8 @@ angular.module('ionBlankApp')
 
 ]
 .controller 'ChooseCtrl', [
-  '$scope', '$rootScope', '$state', '$stateParams', '$timeout', '$ionicModal', 'otgData', 'otgWorkOrder', 'cameraRoll', 'TEST_DATA',
-  ($scope, $rootScope, $state, $stateParams, $timeout, $ionicModal, otgData, otgWorkOrder, cameraRoll, TEST_DATA) ->
+  '$scope', '$rootScope', '$state', '$stateParams', '$timeout', '$ionicModal', 'otgData', 'otgWorkOrder', 'deviceReady', 'cameraRoll', 'snappiMessengerPluginService', 'TEST_DATA',
+  ($scope, $rootScope, $state, $stateParams, $timeout, $ionicModal, otgData, otgWorkOrder, deviceReady, cameraRoll, snappiMessengerPluginService,TEST_DATA) ->
     $scope.label = {
       title: "Choose Your Days"
       header_card: 
@@ -291,21 +295,34 @@ angular.module('ionBlankApp')
               # return
               return otgWorkOrder.on.clearSelected()
 
-         
+    _loadMomentThumbnailsP = ()->
+      return if !deviceReady.isWebView()
+      IMAGE_FORMAT = 'thumbnail'
+      # preload thumnail DataURLs for cameraRoll moment previews
+      momentPreviewAssets = cameraRoll.getMomentPreviewAssets() # do this async
+      console.log "\n\n\n*** preloading moment thumbnails for UUIDs: " + JSON.stringify momentPreviewAssets
+      return snappiMessengerPluginService.getDataURLForAssetsByChunks_P( 
+        momentPreviewAssets
+        , IMAGE_FORMAT                          
+        , snappiMessengerPluginService.SERIES_DELAY_MS 
+      ).then ()->
+        console.log "*** preload complete "
 
     
 
     init = ()->
       # console.log "init: state="+$state.current.name
+      console.log "\n\n*** ChooseCtrl init() ***"
+
+      _loadMomentThumbnailsP() 
+
       switch $state.current.name
         when 'app.choose.calendar'
           otgWorkOrder.on.clearSelected()
           return otgWorkOrder.on.selectByCalendar("2014-09-20", "2014-09-24")
 
 
-      window.debug = _.extend window.debug || {} , {
-        state: $state
-      }
+
       return
 
     # refactor to AppCtrl or service
@@ -320,12 +337,6 @@ angular.module('ionBlankApp')
     );
 
     $scope.on = {
-      getSrc: (item)->
-        # NOTE: cameraRoll uses lazySrc directive instead
-        console.log "on.getSrc for item=" + item?.UUID
-        return '' if !item
-        return item.src if item.src
-        return cameraRoll.getDataURL(item.UUID, 'preview')
       hScrollable : ($ev)->
         console.log "hScrollable(): make camera-roll-date H scrollable"
         return
