@@ -1,7 +1,7 @@
  <!-- div.thumb thumbnail template  -->
-<div id="{{photo.id}}" 
+<div id="{{photo.UUID}}" 
 class="thumb {{photo.orientationLabel}}" 
-ng-class="{remove: isMarkedForRemoval($index, photo.id)}"
+ng-class="{remove: isMarkedForRemoval($index, photo.UUID)}"
 ng-dblclick="markPhotoForRemoval(card, $event, $index, 'remove')"
 ng-longtap="markPhotoForRemoval(card, $event, $index, 'toggle')"
 ng-click="false"

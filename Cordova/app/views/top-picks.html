@@ -35,7 +35,7 @@
         {{label.header_card[$state.current.name].body}}
 
         <button class="button icon ion-image button-assertive button-full"
-        ng-click="on.test()"> Test Messenger Plugin</button>
+        ng-click="on.test()"> Test ImgCache</button>
       </div>
       <div class="item item-divider item-footer">
         <p class="fine cursor-pointer" ng-click="on.dontShowHint(this.$parent)"><i class="icon ion-close-circled"> Don't Show Me Again</i></p>
@@ -73,17 +73,17 @@
             <!-- header -->
             <div class="item item-divider item-stable padding-horizontal"
             ng-if="on.showInfo()">
-              <div class="caption capitalize">{{item.caption || item.id}}</div>
+              <div class="caption capitalize">{{item.caption || item.UUID}}</div>
             </div>
 
             <!-- body -->
             <div class="item item-image">
               <div class="photo-wrap">
-                <img uuid="{{ item.UUID }}" 
+                <img lazy-src="{{ item.UUID }}" 
+                format="preview"
                 orig-w="{{item.originalWidth}}"
                 orig-h="{{item.originalHeight}}"
-                height="{{item.scaledH}}"
-                ng-src="{{ on.getSrc(item) }}">
+                height="{{item.scaledH}}">
               </div>
             </div>
 

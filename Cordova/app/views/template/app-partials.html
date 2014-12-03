@@ -181,7 +181,7 @@
                 <div class="day">{{summaryMoment.dateRange.from | date:'EEE'}}</div>
               </button>
               <li ng-repeat="photo in summaryMoment.value[0]">
-                <img lazy-src="{{photo.id}}" title="Photo {{photo.date}}" 
+                <img lazy-src="{{photo.UUID}}" title="Photo {{photo.date}}" 
                   width="{{options.thumbnailSize}}" 
                   height="{{options.thumbnailSize}}">
               </li>
@@ -194,7 +194,7 @@
             <!-- dates -->
             <ul class="list-inline text-right" ng-if="options.rows==2">
               <li ng-repeat="photo in summaryMoment.value[1]">
-                <img lazy-src="{{photo.id}}" title="taken: {{photo.date}}" 
+                <img lazy-src="{{photo.UUID}}" title="taken: {{photo.date}}" 
                   width="{{options.thumbnailSize}}" 
                   height="{{options.thumbnailSize}}">
               </li>

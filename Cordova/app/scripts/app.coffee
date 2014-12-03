@@ -574,7 +574,6 @@ angular
 
     # config values read from localstorage, set in settings
     $scope.config = {
-      'isWebView' : true
       'no-view-headers' : true
       help: false
       privacy:
@@ -669,29 +668,35 @@ angular
         return promise.promise
     }
 
+    # start refresh listener for dataURL 
+    $rootScope.$on 'cameraRoll.queuedDataURL', ()->
+      snappiMessengerPluginService.fetchDataURLsFromQueue()
+
     $scope.loadCameraRollP = ()->  # on button click
 
       IMAGE_FORMAT = 'thumbnail'    # [thmbnail, preview, previewHD]
       TEST_LIMIT = 5 # snappiMessengerPluginService.MAX_PHOTOS
       start = new Date().getTime()
 
-      return snappiMessengerPluginService.mapAssetsLibraryP().then (mapped)->
-        ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
-        end = new Date().getTime()
-        moments = cameraRoll.loadCameraRoll( mapped ) # mapped -> moments
 
-        # returns: {2014-07-14:[{dateTaken: UUID: }, ]}
-        retval = {
-          title: "*** snappiMessengerPluginService.mapAssetsLibraryP() ***"
-          elapsed : (end-start)/1000
-          'moment[0].value' : cameraRoll.moments[0].value
-          'mapped[0..10]': mapped[0..10]
-        }
-        appConsole.show( retval )
-        return mapped
-      , (error)->
-        appConsole.show( JSON.stringify error)
-        return $q.reject(error)
+      return snappiMessengerPluginService.mapAssetsLibraryP().then (mapped)->
+          ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
+          end = new Date().getTime()
+          moments = cameraRoll.loadCameraRoll( mapped ) # mapped -> moments
+
+          # returns: {2014-07-14:[{dateTaken: UUID: }, ]}
+          retval = {
+            title: "*** snappiMessengerPluginService.mapAssetsLibraryP() ***"
+            elapsed : (end-start)/1000
+            'moment[0].value' : cameraRoll.moments[0].value
+            'mapped[0..10]': mapped[0..10]
+          }
+          # appConsole.show( retval )
+          return mapped
+        , (error)->
+          console.log error
+          # appConsole.show( error)
+          return $q.reject(error)
       .then (mapped)->
         # preload thumbnail DataURLs for cameraRoll moment previews
         momentPreviewAssets = cameraRoll.getMomentPreviewAssets() # do this async
@@ -703,24 +708,25 @@ angular
         ).then ()->
           console.log "*** preload complete "
 
-      .then (photos)->  
+      .then (photos)->
+        return photos  # DEBUG only
 
-        # show results in AppConsole
-        truncated = {
-          "desc": "$scope.cameraRoll_DATA.dataUrls"
-          photos: cameraRoll.photos[0..TEST_LIMIT]
-          dataURLs: {}
-        }
-        if deviceReady.isWebView()
-          _.each cameraRoll.dataURLs[IMAGE_FORMAT], (dataURL,uuid)->
-            truncated.dataURLs[uuid] = dataURL[0...40]
-        else 
-          _.each photos, (v,k)->
-            truncated.dataURLs[v.UUID] = v.data[0...40]
+        # # show results in AppConsole
+        # truncated = {
+        #   "desc": "$scope.cameraRoll_DATA.dataUrls"
+        #   photos: cameraRoll.photos[0..TEST_LIMIT]
+        #   dataURLs: {}
+        # }
+        # if deviceReady.isWebView()
+        #   _.each cameraRoll.dataURLs[IMAGE_FORMAT], (dataURL,uuid)->
+        #     truncated.dataURLs[uuid] = dataURL[0...40]
+        # else 
+        #   _.each photos, (v,k)->
+        #     truncated.dataURLs[v.UUID] = v.data[0...40]
         
-        # console.log truncated # $$$
-        $scope.appConsole.show( truncated )
-        return photos
+        # # console.log truncated # $$$
+        # $scope.appConsole.show( truncated )
+        # return photos
 
 
     
@@ -734,21 +740,17 @@ angular
 
     _LOAD_BROWSER_TOOLS = ()->
       # moment and photos loaded in cameraRoll service via deviceReady.waitP()
-      # cameraRoll.photos_ByDate = TEST_DATA.cameraRoll_byDate
-      # cameraRoll.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( cameraRoll.photos_ByDate ), 2
-      # cameraRoll.photos = otgData.parsePhotosFromMoments cameraRoll.moments
-
       # add some test data for favorite and shared
       TEST_DATA.addSomeTopPicks( cameraRoll.photos)
       TEST_DATA.addSomeFavorites( cameraRoll.photos)
       TEST_DATA.addSomeShared( cameraRoll.photos)
       # add item.height for collection-repeat
 
-      _.each $scope.cameraRoll.photos, (e,i,l)->
-        e.height = if e.id[-5...-4]<'4' then 400 else 240
+      _.each cameraRoll.photos, (e,i,l)->
+        e.height = if /^[EF]/.test(e.UUID) then 400 else 240
         # e.height = 240
-        # e.src = "http://lorempixel.com/"+(320)+"/"+(e.height)+"/"+lorempixelPhotos.shift()+"?"+e.id
-        e.src = TEST_DATA.lorempixel.getSrc(e.id, 320, e.height, TEST_DATA)
+        # e.src = "http://lorempixel.com/"+(320)+"/"+(e.height)+"/"+lorempixelPhotos.shift()+"?"+e.UUID
+        e.src = TEST_DATA.lorempixel.getSrc(e.UUID, 320, e.height, TEST_DATA)
         return
 
       # otgWorkOrder methods need access to library of moments
@@ -760,26 +762,18 @@ angular
       return
 
 
-
-
-    # placeholder for cameraRoll data from mapLibraryAssets()
-    $scope.cameraRoll_DATA = cameraRoll_DATA = {
-      photos_ByDate : null
-      moments : null
-      photos : null
-    }
     $scope.orders = [] # order history
 
     init = ()->
       _LOAD_DEBUG_TOOLS()
       
+      $scope.loadCameraRollP()
 
       deviceReady.waitP().then ()->
-        $rootScope.isWebView = $scope.config['isWebView'] = $ionicPlatform?.isWebView?()
-        $scope.config['no-view-headers'] = $scope.config['isWebView'] || false
+        $scope.config['no-view-headers'] = deviceReady.isWebView() && false
 
-        if $scope.config['isWebView'] == false
-          _LOAD_BROWSER_TOOLS()
+        if !deviceReady.isWebView()
+          _LOAD_BROWSER_TOOLS() 
           $scope.orders = TEST_DATA.orders 
         
         _prefs.load().then (config)->

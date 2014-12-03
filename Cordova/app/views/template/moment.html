@@ -22,9 +22,11 @@
                   <div class="day">{{day.key | date:'EEE'}}</div>
                 </button>
                 <li ng-repeat="photo in photos = getAsPhotos(day.value) | limitTo:options.thumbnailLimit ">
-                  <img lazy-src="{{photo.UUID}}" title="taken: {{photo.date}}" 
-                    width="{{options.thumbnailSize}}" 
-                    height="{{options.thumbnailSize}}">
+                  <img lazy-src="{{photo.UUID}}" 
+                  format='thumbnail' 
+                  title="taken: {{photo.date}}" 
+                  width="{{options.thumbnailSize}}" 
+                  height="{{options.thumbnailSize}}">
                 </li>
                 <button class="btn {{options.btnSize}} end-cap"
                 >

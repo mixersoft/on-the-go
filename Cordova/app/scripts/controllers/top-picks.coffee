@@ -61,7 +61,7 @@ angular.module('ionBlankApp')
               if v2['type'] == 'date'
                 _.each v2['value'], (pid)->
                   photos.push _.defaults {
-                      id: pid, 
+                      # id: pid, 
                       UUID: pid,
                       date: v2['key']
                     }, defaults_photo
@@ -138,10 +138,9 @@ angular.module('ionBlankApp')
             scope.$parent.options = _.defaults (scope.$parent.options || {}), default_options
           scope.crWidth = attrs['cr-width'] || '100%'
           options = _.clone scope.$parent.options 
-          if !scope.photo?.height && (scope.photo.id[-5...-4]<'4')
+          if !scope.photo?.height && (scope.photo.UUID[-5...-4]<'4')
             options.height = 400
-          # src = "http://lorempixel.com/"+(options.width)+"/"+(options.height)+"?"+scope.photo.id
-          src =  TEST_DATA.lorempixel.getSrc(scope.photo.id, options.width, options.height, TEST_DATA)
+          src =  TEST_DATA.lorempixel.getSrc(scope.photo.UUID, options.width, options.height, TEST_DATA)
           scope.photo.src = src
           # scope.photo.width = options.width
           scope.photo.height = options.height
@@ -220,9 +219,9 @@ angular.module('ionBlankApp')
   '$scope', '$rootScope', '$state', 'otgData', 'otgParse', 
   '$timeout', '$window', '$q', '$filter', 
   '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', 
-  'snappiMessengerPluginService', 'cameraRoll'
+  'deviceReady', 'snappiMessengerPluginService', 'cameraRoll'
   'TEST_DATA', 'imageCacheSvc'
-  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, snappiMessengerPluginService, cameraRoll, TEST_DATA, imageCacheSvc) ->
+  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, deviceReady, snappiMessengerPluginService, cameraRoll, TEST_DATA, imageCacheSvc) ->
     $scope.label = {
       title: "Top Picks"
       header_card: 
@@ -256,34 +255,40 @@ angular.module('ionBlankApp')
     setFilter = (toState)->
       switch toState.name
         when 'app.top-picks'
-          $scope.filteredPhotos = $filter('ownerPhotosByType')($scope.photos,'topPicks')
+          $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks')
         when 'app.top-picks.favorites'
-          $scope.filteredPhotos = $filter('ownerPhotosByType')($scope.photos,'favorites')
+          $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'favorites')
         when 'app.top-picks.shared'
-          $scope.filteredPhotos = $filter('ownerPhotosByType')($scope.photos,'shared')
+          $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'shared')
       return    
 
     # use dot notation for prototypal inheritance in child scopes
     $scope.on  = {
       _info: true
-      getSrc: (item)->
-        return '' if !item
-        return item.src if item.src
-        found = cameraRoll.getDataURL(item.UUID, 'preview')
-        found = cameraRoll.getDataURL(item.UUID, 'thumbnail') if !found
-        return found
+
+      # deprecate, use directive:lazy-src
+      # getSrc: (item)->
+      #   return '' if !item
+      #   return item.src if item.src
+      #   found = cameraRoll.getDataURL(item.UUID, 'preview')
+      #   found = cameraRoll.getDataURL(item.UUID, 'thumbnail') if !found 
+      #   return found
+
       getItemHeight : (item, index)->
-        if !item.scaledH
+        if !item.scaledH > 0
           IMAGE_WIDTH = 300-2
-          if item.originalHeight
+          if deviceReady.isWebView() && item.originalWidth && item.originalHeight
+            # console.log "index="+index+", UUID="+item.UUID+", origW="+item.originalWidth + " origH="+item.originalHeight
             h = item.originalHeight/item.originalWidth * IMAGE_WIDTH
-          else h = 240
+          else # browser/TEST_DATA
+                      h = item.height / 320 * IMAGE_WIDTH
           item.scaledH = h
-          console.log "index="+index+", scaledH="+h+" origH="+cameraRoll.photos[index].originalHeight+", index.id="+cameraRoll.photos[index].UUID
+          # console.log "index="+index+", scaledH="+h+" origH="+item.originalHeight+", index.UUID="+cameraRoll.photos[index].UUID
         else 
           h = item.scaledH
         h += ( 2 * 6 ) # paddingV
         h += 90 if $scope.on.showInfo()
+        # console.log "\n\n >>> height=" + h + "\n\n"
         return h
       showInfo: (value=null)->
         return $scope.on._info if value == null 
@@ -342,10 +347,10 @@ angular.module('ionBlankApp')
       cardReject: (item)->
         item.favorite = false
       cardSwiped: (item)->
-        # console.log "Swipe, item.id=" + item.id
+        # console.log "Swipe, item.UUID=" + item.UUID
         return
       cardClick: (scope, ev, item)->
-        return if $scope.config['isWebView']
+        return if deviceReady.isWebView()
         clickSide = ev.offsetX/ev.currentTarget.clientWidth
         clickSide = 'left' if clickSide < 0.33 
         clickSide = 'right' if clickSide > 0.67  
@@ -356,10 +361,10 @@ angular.module('ionBlankApp')
             scope.swipeCard.swipeOver('right')
 
       test: ()->
-        # _TEST_imageCacheSvc()
-        $scope.loadCameraRollP().then ()->
-          $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks')
-          console.log "AFTER loading cameraRoll, filteredPhotos.length="+$scope.filteredPhotos.length
+        _TEST_imageCacheSvc()
+        # $scope.loadCameraRollP().then ()->
+        #   $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks')
+        #   console.log "AFTER loading cameraRoll, filteredPhotos.length="+$scope.filteredPhotos.length
 
     }
 
@@ -367,19 +372,27 @@ angular.module('ionBlankApp')
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
       setFilter(toState)   
 
+    $scope.cameraRoll = cameraRoll
+    $scope.$watchCollection "cameraRoll.photos", (newV, oldV)->
+      # console.log "\n\n %%% watched cameraRoll.photos change, update filter %%% \n\n"
+      setFilter( $state.current )
+      # update menu banner
+      if $state.current.name == 'app.top-picks' 
+        $scope.menu.top_picks.count = $scope.filteredPhotos.length 
+      else 
+        $scope.menu.top_picks.count = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks').length
+      return
+
 
     parse = {
       _fetchPhotosByOwnerP : (options = {})->
         _options = options  # closure
         return otgParse.checkSessionUserP().then otgParse.checkSessionUserRoleP 
         .then ()->
-            $q.when(_options)
-        .then ()->
           return otgParse.fetchPhotosByOwnerP(_options)
         .then (photosColl)->
           _options.photosColl = photosColl
-
-          return $q.when(_options)
+          return _options
     }
 
     _testImg = new Image()
@@ -402,30 +415,29 @@ angular.module('ionBlankApp')
 
 
     init = ()->
-      $scope.photos = cameraRoll.photos
-
+      cameraRoll.photos = cameraRoll.photos
       setFilter( $state.current )
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info
 
+
       # return console.log "SKIPPING FETCH TOP PICKS FROM PARSE !!! "
+
       parse._fetchPhotosByOwnerP().then null, (err)->
-          conosle.warn "PARSE error, err=" + JSON.stringify err
+          console.warn "PARSE error, err=" + JSON.stringify err
           return {}
       .then (o)->
         
         # merge topPicks with photoRoll
-        # HACK: replace_TEST_DATA() will NOT remove photo.from="PARSE"
         # TODO: save to local storage
         # return "skip this for now"
         $scope.serverPhotos = o.photosColl.toJSON()
         _.each $scope.serverPhotos, (photo)->
-          found = _.findWhere cameraRoll.photos, (UUID: photo.assetId)
+          found = _.find cameraRoll.photos, (o)->return o.UUID[0...36] == photo.UUID
           if !found 
             # add to cameraRoll.photos
             # real workorder photos will NOT be found in TEST_DATA the FIRST time
             photo.UUID = photo.assetId
-            photo.id = photo.assetId    # deprecate, use UUID
-            photo.from = "PARSE"        # deprecate, TODO: keep track of server photos from workorders separately
+            photo.from = "PARSE"          # deprecate, TODO: keep track of server photos from workorders separately
             photo.date = cameraRoll.getDateFromLocalTime(photo.dateTaken)
             photo.topPick = !!photo.topPick
             cameraRoll.photos.push photo
@@ -435,11 +447,6 @@ angular.module('ionBlankApp')
             _.extend found, _.pick photo, ['topPick', 'favorite', 'shotId', 'isBestshot']
             console.log "\n\n**** COPY topPick from serverPhotos for uuid=" + photo.assetId
           return true
-
-        $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks')
-
-        # update menu banner
-        $scope.menu.top_picks.count = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks').length
         return 
 
       return

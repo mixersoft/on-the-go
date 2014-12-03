@@ -679,17 +679,17 @@ angular.module('ionBlankApp')
     addSomeShared: (list)->
         match = '2'       # match last char of id
         _.each list, (e)->
-            e.shared = true if match.indexOf(e.id[-5...-4]) > -1 
+            e.shared = true if match.indexOf(e.UUID[-5...-4]) > -1 
       
     addSomeFavorites: (list)->
         match = '24'       # match last char of id
         _.each list, (e)->
-            e.favorite = true if match.indexOf(e.id[-5...-4]) > -1 
+            e.favorite = true if match.indexOf(e.UUID[-5...-4]) > -1 
 
     addSomeTopPicks: (list)->
-        match = 'XXX'       # 4 match last char of id
+        match = 'B'       # 4 match last char of id
         _.each list, (e)->
-            e.topPick = true if match.indexOf(e.id[-5...-4]) > -1         
+            e.topPick = true if match.indexOf(e.UUID[-5...-4]) > -1         
 
 
 

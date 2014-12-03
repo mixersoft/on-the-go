@@ -111,9 +111,9 @@ angular
     return _deviceready
 ]
 .factory 'cameraRoll', [
-  '$q', '$timeout', 'deviceReady', 
+  '$q', '$timeout', '$rootScope', 'deviceReady', 
   'TEST_DATA', 'otgData', 'otgParse'
-  ($q, $timeout, deviceReady, TEST_DATA, otgData, otgParse)->
+  ($q, $timeout, $rootScope, deviceReady, TEST_DATA, otgData, otgParse)->
     _getAsLocalTime : (d, asJSON=true)->
         d = new Date() if !d    # now
         throw "_getAsLocalTimeJSON: expecting a Date param" if !_.isDate(d)
@@ -123,6 +123,8 @@ angular
 
 
     self = {
+      _queue: {}  # array of DataURLs to fetch, use with debounce
+      _mapAssetsLibrary: []  # stash in loadCameraRoll()
       # array of photos, use found = _.findWhere cameraRoll.photos, (UUID: uuid)
       # props: id->UUID, date, src, caption, rating, favorite, topPick, shared, exif
       #   plugin adds: dateTaken, origH, origW, height, width, crop, orientation,
@@ -135,11 +137,17 @@ angular
       addPhoto: (photo)->
         # console.warn "\n\nERROR: photo.UUID 40 chars, iOS style, uuid=" + photo.UUID if photo.UUID.length > 36
         self.patchPhoto(photo)
-        attrs =  _.omit photo, 'data'
+        attrs =  _.omit photo, ['data','elapsed','format','crop', 'targetWidth', 'targetHeight']
         # self.photos.push attrs
-        # console.log attrs
-        insertAt = _.sortedIndex self.photos, attrs, 'dateTaken'
-        self.photos.splice(insertAt, 0, attrs)
+        foundAt = _.findIndex self.photos, {UUID: attrs.UUID}
+        # console.log "**** foundAt=" + foundAt + ", UUID: " + self.photos[foundAt].UUID + " == " + attrs.UUID if foundAt > -1
+        if foundAt > -1  # update
+          # console.log "\n\n *** addPhoto() updating photo found in cameraRoll.photos, UUID=" +attrs.UUID+ "\n\n"
+          _.extend self.photos[foundAt], attrs
+        else 
+          insertAt = _.sortedIndex self.photos, attrs, 'dateTaken'
+          self.photos.splice(insertAt, 0, attrs)
+        # console.log "**** END addPhoto ****\n\n\n"  
         return attrs
 
       addDataURL: (size, photo)->
@@ -169,7 +177,8 @@ angular
 
       # for testing only  
       patchPhoto: (photo)->
-        photo.topPick = true
+        # photo.topPick = true 
+        photo.topPick = true if /^[AB]/.test(photo.UUID) 
         return
 
       getDateFromLocalTime : (dateTaken)->
@@ -194,12 +203,28 @@ angular
         if !found
           found = _.find self.dataURLs[size], (o,key)->
               return o if key[0...36] == UUID
-        # console.log found
+        # console.log JSON.stringify {
+        #   desc: "*** getDataURL ***"
+        #   UUID: UUID
+        #   size: size
+        #   dataURL: found?[0...40]
+        # }
+        if !found # still not found, add to queue for fetch
+          self.queueDataURL(UUID, size)
         return found
 
-      fetchDataURLP: (UUID, size='preview')->
-        # call snappiMessengerPluginService.getDataURLForAssets_P for 1 asset
-        return $q.reject("fetchDataURLP() not yet implemented")
+      queueDataURL : (UUID, size='preview')->
+        return if !deviceReady.isWebView()
+        self._queue[UUID] = { 
+          UUID: UUID
+          size: size, 
+        }
+        # debounce snappiMessengerPluginService.fetchDataURLsFromQueueP()
+        $rootScope.$broadcast 'cameraRoll.queuedDataURL'
+      queue: (clear)->
+        self._queue = {} if clear=='clear'
+        return _.clone self._queue
+
 
       getMomentPreviewAssets:(moments)->
         moments = self.moments if !moments
@@ -214,7 +239,7 @@ angular
                 _.each v2['value'][0...PREVIEW_LIMIT], (UUID)->
                   # check if already loaded
                   if !(self.dataURLs[IMAGE_FORMAT]?[UUID]?)
-                    console.log "*** not yet loaded, UUID=" + UUID
+                    # console.log "*** not yet loaded, UUID=" + UUID
                     previewPhotos.push {
                         UUID: UUID,
                         # date: v2['key']
@@ -463,50 +488,38 @@ angular
               remaining--
               return _resolveIfDone(remaining, retval, dfd)
 
-          return dfd.promise  
+          return dfd.promise
 
-      replace_TEST_DATA: (retval)->
-        photos_AsTestData = {} # COPY!!
-        _.each _.keys( retval.photos ) , (key)->
-          photos_AsTestData[key] = _.map retval.photos[key], (o)->
-            return o.UUID[0...36]
+      fetchDataURLsFromQueue : _.debounce ()->
+          # ???: can you debounce a promise???
+          queuedAssets = cameraRoll.queue()
+          cameraRoll.queue('clear')
+          chunks = {}
+          _.each ['preview', 'thumbnail'], (size)->
+            assets = _.filter queuedAssets, (o)->return o.size == size
+            chunks[size] = assets if assets.length
+          
+          promises = []
+          _.each chunks, (assets, size)->
+            console.log "\n\n *** fetchDataURLsFromQueueP START! size=" + size + ", count=" + assets.length + "\n"
+            promises.push _MessengerPLUGIN.getDataURLForAssetsByChunks_P(assets, size).then (photos)->
+              # update images with dataURLs by UUID
+              imageEls = document.getElementsByTagName('IMG')
+              imageLookup = _.indexBy imageEls, (img)->return img.getAttribute('uuid') + "-" + img.getAttribute('format')
+              dataURLLookup = _.indexBy photos, 'UUID'
 
-        serverPhotos = _.filter cameraRoll.photos, {from: "PARSE"}
-        console.log "\n\n****** keeping serverPhotos, count=" + serverPhotos.length + "\n\n"
+              _.each dataURLLookup, (photo, uuid)->
+                # console.log "\n\n *** fetchDataURLsFromQueueP: searching for UUID-size="+ photo.UUID + '-' + photo.format
+                imageKey =  photo.UUID[0...36] + '-' + photo.format 
+                if imageLookup[ imageKey ]?
+                  imageLookup[ imageKey ].src = dataURLLookup[photo.UUID].data 
+                  console.log "\n\n *** fetchDataURLsFromQueueP: updating img.src! UUID-size=" + imageKey
+              return photos
 
-        TEST_DATA.cameraRoll_byDate = photos_AsTestData  
-        cameraRoll.photos_ByDate = TEST_DATA.cameraRoll_byDate
-        cameraRoll.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( cameraRoll.photos_ByDate ), 2
-        cameraRoll.photos = otgData.parsePhotosFromMoments cameraRoll.moments
-        # TODO: MERGE o.dateTaken into photos !!!
 
-        console.log "\n\n****** merging serverPhotos, count=" + serverPhotos.length + "\n\n"
-        _.each serverPhotos, (o)->
-          found = _.find cameraRoll.photos, {id: o.id}
-          return console.log " ???  can't find id="+o.id if !found
-          _.extend found, _.pick o, ['topPick', 'favorite']
-          return console.log "\n\n !!!!! copy topPick, favorite for id="+o.id + ", found.topPick=" + found.topPick
-
-        'DEPRECATED' || otgWorkOrder.setMoments(cameraRoll.moments)
-
-         # add some test data for favorite and shared
-        TEST_DATA.addSomeTopPicks( cameraRoll.photos)
-        TEST_DATA.addSomeFavorites( cameraRoll.photos)
-        TEST_DATA.addSomeShared( cameraRoll.photos)
-        _.extend window.debug , cameraRoll
-
-      replace_TEST_DATA_SRC : (photos)->
-        return console.log "WARNING: replace_TEST_DATA_SRC DEPRECATED!!!"
-        _.each photos, (photo, i)-> 
-          UUID = photo.UUID[0...36]
-          e = _.find cameraRoll.photos, {id: UUID }
-          return console.log "  !!!!!!!!!!!!   replace_TEST_DATA_SRC: not found, UUID="+UUID if !e
-          e.height = if photo.crop then photo.targetHeight else 240
-          e.src = _MessengerPLUGIN.getDataUrlFromUUID(UUID)
-          # e.topPick = true          ## debug only !!!
-          e.getSrc = _MessengerPLUGIN.getDataUrlFromUUID
-          console.log "\n\n ##############   asset.id=" + e.id + "\ndataURL[0...20]=" + e.src[0...20]
-          return
+          return $q.all(promises).then (o)->
+            console.log "\n\n *** fetchDataURLsFromQueueP $q All Done! \n"
+        , 500
 
     }
     return _MessengerPLUGIN

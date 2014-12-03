@@ -44,9 +44,9 @@ angular.module('ionBlankApp')
 .controller 'WorkorderPhotosCtrl', [
   '$scope', '$rootScope', '$state', '$q', 
   '$ionicSideMenuDelegate', '$ionicScrollDelegate', '$ionicPopup', 
-  'otgData', 'otgParse', 
+  'otgData', 'otgParse', 'deviceReady'
   '$timeout', '$filter', '$window', 'TEST_DATA', 
-  ($scope, $rootScope, $state, $q, $ionicSideMenuDelegate, $ionicScrollDelegate, $ionicPopup, otgData, otgParse, $timeout, $filter, $window, TEST_DATA) ->
+  ($scope, $rootScope, $state, $q, $ionicSideMenuDelegate, $ionicScrollDelegate, $ionicPopup, otgData, otgParse, deviceReady, $timeout, $filter, $window, TEST_DATA) ->
     $scope.label = {
       title: "Workorder Photos"
       header_card: 
@@ -166,7 +166,7 @@ angular.module('ionBlankApp')
         # console.log "Swipe, item.id=" + item.id
         return  
       cardClick: (scope, ev, item)->
-        return if $scope.config['isWebView']
+        return if deviceReady.isWebView()
         clickSide = ev.offsetX/ev.currentTarget.clientWidth
         clickSide = 'left' if clickSide < 0.33 
         clickSide = 'right' if clickSide > 0.67  

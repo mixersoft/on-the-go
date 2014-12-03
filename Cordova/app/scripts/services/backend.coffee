@@ -328,8 +328,8 @@ angular
         return dfd.promise
 
       uploadFileP : (base64src, photo, belongsTo78)->
-        # filename = photo.id.substr(0, photo.id.lastIndexOf(".")) + ".jpg"
-        filename = photo.id + ".jpg"
+        # filename = photo.UUID.substr(0, photo.UUID.lastIndexOf(".")) + ".jpg"
+        filename = photo.UUID + ".jpg"
         # must end in '.jpg'
         parseFile = new Parse.File(filename, {
             base64: base64src
@@ -375,13 +375,13 @@ angular
           .then (parseFile)->
               console.log "\n\n *** parseFile uploaded, check url=" + parseFile.url()
               parseData = _.extend {
-                    assetId: photo.id
+                    assetId: photo.UUID
                     owner: $rootScope.sessionUser
                     workorder : workorder
                     deviceId: $rootScope.deviceId
                     src: parseFile.url()
                   }
-                , _.pick photo, ['dateTaken', 'rating', 'favorite', 'caption', 'exif']
+                , _.pick photo, ['dateTaken', 'originalWidth', 'originalHeight', 'rating', 'favorite', 'caption', 'exif']
               photoObj = new parseClass.PhotoObj(parseData)
               return photoObj.save()
             , (err)->

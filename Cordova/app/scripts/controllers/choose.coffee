@@ -12,33 +12,61 @@ angular.module('ionBlankApp')
 .directive 'lazySrc', [
   'deviceReady', 'cameraRoll', 'imageCacheSvc', 'TEST_DATA'
   (deviceReady, cameraRoll, imageCacheSvc, TEST_DATA)->
+
+    _setLazySrc = (element, UUID, format)->
+      return if !UUID
+      console.log "\n\nlazySrc reports notCached for UUID="+UUID
+      src = cameraRoll.getDataURL(UUID, format || 'thumbnail') #  || scope.photo?.getSrc || scope.photo?.src
+      
+      if !src && deviceReady.isWebView()
+        # fetch photo? set up a $watch?? photo may not be loaded yet
+        cameraRoll.queueDataURL(UUID, format)
+        return ''
+      if !src && !deviceReady.isWebView() # browser uses lorempixel
+        scope = element.scope()
+        switch format
+          when 'thumbnail'
+            options = scope.options  # set by otgMoment
+            src = TEST_DATA.lorempixel.getSrc(UUID, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
+          when 'preview'
+            height = scope.item.height
+            src = TEST_DATA.lorempixel.getSrc(UUID, 320, height, TEST_DATA)
+        
+      # console.log "\n*** lazySrc="+ (src && src[0..30])
+      element.attr('src', src)  # use ng-src here???
+      return src
+
     return {
       restrict: 'A'
       scope: false
       link: (scope, element, attrs) ->
-        UUID = attrs.lazySrc
-        UUID = UUID[0...36] # localStorage might balk at '/' in pathname
-        element.attr('uuid', UUID)
-        options = scope.options
-        # console.log "\n\n UUID=" + JSON.stringify UUID
-        # check for cached image first
+        format = attrs.format
+
+        attrs.$observe 'lazySrc', (UUID)->
+          UUID = UUID[0...36] # localStorage might balk at '/' in pathname
+          element.attr('uuid', UUID)
+          # item = element.scope().item
+          # updateAttrs = {
+          #   'uuid': UUID
+          #   'origW': item.originalWidth
+          #   'origH': item.originalHeight
+          # }
+          # updateAttrs['height'] = item.scaledH if item.scaledH
+          # console.log "\n\n\n *** lazySrc ***"
+          # console.log updateAttrs
+          # element.attr updateAttrs
+          # console.log "attrs.$observe, scope."
+          # console.log "\n\n UUID=" + JSON.stringify UUID
+          # check for cached image first
+          return src = _setLazySrc(element, UUID, format) 
+
+
+        return 'skip'
         imageCacheSvc.useCachedFileP( element ).then (isCached)->
             console.log "\n\nCACHE HIT!!!!, use ng-src??? \n\n"
             return isCached
           , (notCached)->
-            console.log "\n\nlazySrc reports notCached for UUID="+UUID
-            
-            src = cameraRoll.getDataURL(UUID, 'thumbnail') #  || scope.photo?.getSrc || scope.photo?.src
-            
-            if !src 
-              if deviceReady.isWebView()
-                # fetch photo? set up a $watch?? photo may not be loaded yet
-              else # browser uses lorempixel
-                src = TEST_DATA.lorempixel.getSrc(UUID, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
-              
-
-            console.log "\n*** lazySrc="+ (src && src[0..30])
-            element.attr('src', src)  # use ng-src here???
+            src = _setLazySrc(element, UUID, format, options)
             if imageCacheSvc.isDataURL(src)
               console.log "$$$ try to cache imageCacheSvc.cacheDataURLP, UUID=" + UUID
               return imageCacheSvc.cacheDataURLP( element, UUID , false)
@@ -68,7 +96,7 @@ angular.module('ionBlankApp')
 
     _setSizes = (element)->
       # also $window.on 'resize'  
-      w = element[0].parentNode.clientWidth
+      w = window.innerWidth
       # console.log w
       if w < options.breakpoint
         cfg = _.clone options['col-xs']
@@ -279,7 +307,6 @@ angular.module('ionBlankApp')
     }
 
     $scope.otgWorkOrder = otgWorkOrder
-    $scope.cameraRoll = cameraRoll
 
     $rootScope.$on '$stateChangeStart', (event, toState, toParams, fromState, fromParams)->
       if toState.name.indexOf('app.choose') == 0 
@@ -296,6 +323,7 @@ angular.module('ionBlankApp')
               return otgWorkOrder.on.clearSelected()
 
     _loadMomentThumbnailsP = ()->
+      ## refactor: already called in app.coffee, $scope.loadCameraRollP()
       return if !deviceReady.isWebView()
       IMAGE_FORMAT = 'thumbnail'
       # preload thumnail DataURLs for cameraRoll moment previews
@@ -308,7 +336,13 @@ angular.module('ionBlankApp')
       ).then ()->
         console.log "*** preload complete "
 
-    
+
+    $scope.cameraRoll = cameraRoll
+    $scope.$watchCollection 'cameraRoll.moments', (newV, oldV)->
+      console.log "\n\n %%% watched cameraRoll.moments change, update filter %%% \n\n"
+      _loadMomentThumbnailsP() 
+      # reload ??
+
 
     init = ()->
       # console.log "init: state="+$state.current.name
