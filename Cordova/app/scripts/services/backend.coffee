@@ -62,32 +62,34 @@ angular
 ]
 
 .factory 'otgParse', [
-  '$q', '$ionicPlatform', '$timeout', '$rootScope'
-  ($q, $ionicPlatform, $timeout, $rootScope)->
-
-    # wrap $ionicPlatoform ready in a promise
-    _deviceready = {
-      promise : null
-      cancel: null
-      timeout: 5000
-      check: ()->
-        return _deviceready.promise if _deviceready.promise
-        deferred = $q.defer()
-        _deviceready.cancel = $timeout ()->
-            return deferred.reject("ERROR: ionicPlatform.ready does not respond")
-          , _deviceready.timeout
-        $ionicPlatform.ready ()->
-          $timeout.cancel _deviceready.cancel
-          # $rootScope.deviceId = $cordovaDevice.getUUID()
-          device = ionic.Platform.device()
-          $rootScope.deviceId = device.uuid if device.uuid
-          console.log "$ionicPlatform reports deviceready, device.UUID=" + $rootScope.deviceId
-          return deferred.resolve("deviceready")
-        return _deviceready.promise = deferred.promise
-    }
+  '$q', '$ionicPlatform', '$timeout', '$rootScope', 'deviceReady', 'cameraRoll', 'snappiMessengerPluginService'
+  ($q, $ionicPlatform, $timeout, $rootScope, deviceReady, cameraRoll, snappiMessengerPluginService)->
 
     parseClass = {
-      PhotoObj : Parse.Object.extend('PhotoObj') 
+      PhotoObj : Parse.Object.extend('PhotoObj',  {
+          initialize: (attrs, options)->
+            if options?.initClass == true
+              console.log "\n\n\n >>>> PhotoObj initialize()\n"
+              console.log attrs
+              ## force PhotoObj attributes with first upload by adding classDefaults
+              classDefaults = {
+                dateTaken : new Date().toJSON()
+                originalWidth : 0
+                originalHeight : 0
+                rating : 0
+                favorite : false
+                topPick: false
+                caption : ''
+                exif : {}
+                shotId : '000'
+                isBestshot: false
+              }
+              self = this
+              _.each classDefaults, (v,k)->
+                self.set(k,v)
+              return self
+        }
+      ) 
       WorkorderObj : Parse.Object.extend('WorkorderObj') 
       
     }
@@ -99,7 +101,6 @@ angular
 
 
     self = {
-      deviceReadyP: _deviceready.check
       isAnonymousUser: ()->
         return true if _.isEmpty $rootScope.sessionUser
         return true if $rootScope.sessionUser.get('username').indexOf(ANON_PREFIX.username) == 0
@@ -130,7 +131,7 @@ angular
             username: $rootScope.user[userCred[0]]
             password: $rootScope.user[userCred[1]]
           }
-        return self.deviceReadyP().then ()->
+        return deviceReady.waitP().then ()->
           Parse.User.logIn( userCred.username.toLowerCase(), userCred.password )
         .then (user)->  
             $rootScope.sessionUser = Parse.User.current()
@@ -260,6 +261,15 @@ angular
           console.error "parse WorkorderObj save error, msg=" + JSON.stringify error
           throw error
 
+      _patchParsePhotos : (photosColl)->
+        photosColl.each (photoObj)->
+          photoObj.set('UUID', photoObj.get('assetId') )
+          photoObj.set('date', cameraRoll.getDateFromLocalTime( photoObj.get('dateTaken') ) )
+          photoObj.set('from', 'PARSE' )
+          return
+        return 
+
+
       fetchWorkordersByOwnerP : ()->
         query = new Parse.Query(parseClass.WorkorderObj)
         query.equalTo('owner', $rootScope.sessionUser)
@@ -275,11 +285,28 @@ angular
 
       fetchWorkorderPhotosByWoIdP : (options)-> 
         query = new Parse.Query(parseClass.PhotoObj)
-        query.equalTo('workorder', options.workorder)
+        
+        if options.workorder instanceof Parse.Object
+          workorderObj = options.workorder
+        else 
+          # TODO: options.workorder.id or .UUID?
+          # workorderObj.id == workorderObj.toJSON().objectId
+          workorderObj = new Parse.Object('WorkorderObj', {
+            id: options.workorder.objectId 
+          })
+
+        query.equalTo('workorder', workorderObj) 
+        query.equalTo('owner', $rootScope.sessionUser) if options.owner
+        if options.editor
+          console.warn "\n\n ***  WARNING: using workorder.owner as a proxy for workorder.editor for the moment\n"
+          query.equalTo('owner', options.editor) 
+
         collection = query.collection()
         # collection.comparator = (o)->
         #   return o.get('toDate')
-        return collection.fetch()
+        return collection.fetch().then (photosColl)->
+          self._patchParsePhotos(photosColl)
+          return photosColl
           
 
       savePhotoP : (item, collection, pick)->
@@ -299,7 +326,9 @@ angular
           return -1 if a.createdAt > b.createdAt 
           return 1 if a.createdAt < b.createdAt
           return 0
-        return collection.fetch()
+        return collection.fetch().then (photosColl)->
+          self._patchParsePhotos(photosColl)
+          return photosColl
 
 
       saveParseP : (obj, data)->
@@ -308,6 +337,7 @@ angular
         
 
       resampleP : (imgOrSrc, W=320, H=null)->
+        return $q.reject('Missing Image') if !imgOrSrc
         console.log "*** resize & convert to base64 using Resample.js ******* imgOrSrc=" + imgOrSrc
         dfd = $q.defer()
         done = (dataURL)->
@@ -327,17 +357,30 @@ angular
           dfd.reject(imgOrSrc)
         return dfd.promise
 
-      uploadFileP : (base64src, photo, belongsTo78)->
-        # filename = photo.UUID.substr(0, photo.UUID.lastIndexOf(".")) + ".jpg"
-        filename = photo.UUID + ".jpg"
-        # must end in '.jpg'
+      uploadFileP : (base64src, photo)->
+        if /^data:image/.test(base64src)
+          mimeType = base64src[10..20]
+          ext = 'jpg' if (/jpg|jpeg/i.test(mimeType))   
+          ext = 'png' if (/png/i.test(mimeType)) 
+          filename = photo.UUID[0...36] + '.' + ext
+
+          console.log "\n\n >>> Parse file save, filename=" + filename
+          console.log "\n\n >>> Parse file save, dataURL=" + base64src[0..50]
+
+          # get mimeType, then strip off mimeType, as necessary
+          base64src = base64src.split(',')[1] 
+        else 
+          ext = 'jpg' # just assume
+
+        # save DataURL as image file on Parse
         parseFile = new Parse.File(filename, {
             base64: base64src
           })
         return parseFile.save()
   
 
-      uploadPhotoP : (workorder, photo)->
+      uploadPhotoP : (workorder, photoOrMapItem)->
+        UPLOAD_IMAGE_SIZE = 'preview'
         # see otgData for Photo properties
         # if _.isEmpty($rootScope.sessionUser)
         #   if $rootScope.user.username? && $rootScope.user.password?
@@ -354,18 +397,37 @@ angular
         # if $rootScope.sessionUser.get('username') != $rootScope.user.username
         #   _.each ['username', 'password', 'email'], (key)->
         #     $rootScope.sessionUser.set(key, $rootScope.user[key])
+        photo = if photoOrMapItem?.UUID then photoOrMapItem else { UUID:photoOrMapItem}
         return throw "ERROR: cannot upload without valid workorder" if !workorder
-        return self.deviceReadyP()
-          .then self.checkSessionUserP() 
+        return deviceReady.waitP().then self.checkSessionUserP() 
           .then ()->
-            if /^data:image/.test( photo.src )
-              console.log "WARNING: skipping photo resample before upload !!!"
-              return photo.src
+            if deviceReady.isWebView()
+              # should be preloaded by otgUploader.queueP
+              found = cameraRoll.getDataURL(photo.UUID, UPLOAD_IMAGE_SIZE)
+              if found
+                photo = _.find cameraRoll.photos, {UUID: photo.UUID}
+                return found 
+
+              # fetch with promise
+              return snappiMessengerPluginService.getDataURLForAssets_P( [UUID], UPLOAD_IMAGE_SIZE ).then (dataURL)->
+              # return cameraRoll.getDataURLP( photo.UUID, UPLOAD_IMAGE_SIZE ).then (dataURL)->
+                console.log "\n\n*** .getDataURLForAssets_P() resolved with:" + dataURL[0...50]
+                
+                photo = _.find cameraRoll.photos, {UUID: photo.UUID}
+                throw "ERROR in uploadPhotoP, photo not found" if !photo 
+
+                return dataURL
+
+            if !deviceReady.isWebView() && /^data:image/.test( photo.src )
+              dataURL = photo.src
+              return $q.when( dataURL )
+
             return self.resampleP(photo.src, 320)
+            # should reject because of SecurityError
           .then (base64src)->
               return self.uploadFileP(base64src, photo)
             , (error)->
-              if error.name == "SecurityError" && _.isString error.src
+              if error == 'Missing Image' || error.name == "SecurityError" && _.isString error.src
                 fakeParseFile = {
                   url: ()-> return error.src
                 }
@@ -374,6 +436,10 @@ angular
                 throw error
           .then (parseFile)->
               console.log "\n\n *** parseFile uploaded, check url=" + parseFile.url()
+
+              extendedAttrs = _.pick photo, ['dateTaken', 'originalWidth', 'originalHeight', 'rating', 'favorite', 'caption', 'exif']
+              # console.log extendedAttrs
+
               parseData = _.extend {
                     assetId: photo.UUID
                     owner: $rootScope.sessionUser
@@ -381,8 +447,9 @@ angular
                     deviceId: $rootScope.deviceId
                     src: parseFile.url()
                   }
-                , _.pick photo, ['dateTaken', 'originalWidth', 'originalHeight', 'rating', 'favorite', 'caption', 'exif']
-              photoObj = new parseClass.PhotoObj(parseData)
+                , extendedAttrs # , classDefaults
+
+              photoObj = new parseClass.PhotoObj parseData , {initClass: false }
               return photoObj.save()
             , (err)->
               console.warn "ERROR: parseFile.save() JPG file, err=" + JSON.stringify err

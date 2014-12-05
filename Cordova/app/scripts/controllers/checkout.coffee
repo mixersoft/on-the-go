@@ -11,8 +11,8 @@ angular.module('ionBlankApp')
 .controller 'CheckoutCtrl', [
   '$scope', '$rootScope', '$state', '$q', 
   '$ionicNavBarDelegate', '$ionicModal', '$ionicScrollDelegate'
-  'otgData', 'otgWorkOrder', 'otgUploader', 'otgParse', 'otgProfile', 'TEST_DATA',
-  ($scope, $rootScope, $state, $q, $ionicNavBarDelegate, $ionicModal, $ionicScrollDelegate, otgData, otgWorkOrder, otgUploader, otgParse, otgProfile, TEST_DATA) ->
+  'otgData', 'otgWorkOrder', 'otgUploader', 'otgParse', 'otgProfile', 'cameraRoll',  'TEST_DATA',
+  ($scope, $rootScope, $state, $q, $ionicNavBarDelegate, $ionicModal, $ionicScrollDelegate, otgData, otgWorkOrder, otgUploader, otgParse, otgProfile, cameraRoll, TEST_DATA) ->
     $scope.label = {
       title: "Checkout"
       header_card: 
@@ -137,7 +137,7 @@ angular.module('ionBlankApp')
         switch $state.current.name
           when 'app.checkout.complete'
             # AFTER submit, queue photos
-            parse._queueSelectedMomentsP $scope.checkout, $scope.workorder
+            parse._queueSelectedMomentsP $scope.checkout, $scope.workorderObj
 
 
         # put on on $rootScope.$on '$stateChangeSuccess'
@@ -238,25 +238,37 @@ angular.module('ionBlankApp')
           , (error)->
             return otgParse.createWorkorderP(checkout, servicePlan)
         .then (workorderObj)->
-          $scope.workorder = workorderObj
-          return $q.when(workorderObj)
+          $scope.workorderObj = workorderObj
+          return workorderObj
 
 
-      _getPhotosFromMoments : (moments)->
+      DEPRECATED_getPhotosFromMoments : (moments)->
+        # using reduce with dateRange instead
         return moments if moments[0]?.type != 'moment' 
         photoList = otgData.parsePhotosFromMoments moments
-        lookup = $scope.cameraRoll_DATA.photos
+        lookup = cameraRoll.photos
         photos = _.map photoList, (o)->
           # map to lorempixel src
-          return _.findWhere lookup, {id : o.id}
+          return _.findWhere lookup, {UUID : o.UUID}
 
         return photos    # with photo.src as lorempixel  
           
 
-      _queueSelectedMomentsP : (checkout, workorder)->
-        workorder = $scope.workorder if !workorder
-        photos = parse._getPhotosFromMoments(checkout.selectedMoments)
-        return otgUploader.queueP(workorder, photos).then (queue)->
+      _queueSelectedMomentsP : (checkout, workorderObj)->
+        workorderObj = $scope.workorderObj if !workorderObj
+
+        # photos = parse.DEPRECATED_getPhotosFromMoments(checkout.selectedMoments)
+        # TODO: need to push from cameraRoll.map() because not all photos are in cameraRoll.photos
+        dateRange = checkout.dateRange
+        mappedPhotos = cameraRoll.map() 
+        mappedPhotos = cameraRoll.photos if _.isEmpty mappedPhotos
+        photos = _.reduce mappedPhotos, (result, o)->
+            o.date = cameraRoll.getDateFromLocalTime o.dateTaken if !o.date && o.dateTaken
+            result.push o if dateRange.from <= o.date <= dateRange.to
+            return result
+          , []
+
+        return otgUploader.queueP(workorderObj, photos).then (queue)->
           console.log "workorder created successfully and photos queued, length=" + queue.length
           return $q.when(queue)
     }

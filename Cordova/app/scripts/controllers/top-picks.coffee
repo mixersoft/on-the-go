@@ -12,7 +12,7 @@ angular.module('ionBlankApp')
   ()->
     DAY_MS = 24*60*60*1000
     defaults_photo = {
-        id: null
+        UUID: null
         dateTaken: null
         rating: null 
         favorite: false
@@ -53,18 +53,19 @@ angular.module('ionBlankApp')
             return result
           , {}
 
-      parsePhotosFromMoments : (moments)->
+      parsePhotosFromMoments : (moments, source)->
         photos = []
+        localDefaults = _.clone defaults_photo
+        localDefaults['from'] = source if source
         _.each moments, (v,k,l)->
           if v['type'] == 'moment'
             _.each v['value'], (v2,k2,l2)->
               if v2['type'] == 'date'
                 _.each v2['value'], (pid)->
                   photos.push _.defaults {
-                      # id: pid, 
                       UUID: pid,
                       date: v2['key']
-                    }, defaults_photo
+                    }, localDefaults
 
         # console.log photos 
         return photos
@@ -117,35 +118,6 @@ angular.module('ionBlankApp')
 
     }
     return self 
-  ]
-# otgPreview is currently unused  
-.directive 'otgPreview', [
-    'TEST_DATA'
-    (TEST_DATA)->
-      default_options = {
-        width: 320
-        height: 240
-      }
-      return {
-        # templateUrl: 'views/template/otg-preview.html'
-        template: '<img ng-src="{{photo.src}}" height="{{photo.height}}">'
-        restrict: 'EA'
-        scope : false
-          # photo: "=photo"
-        link: (scope, element, attrs) ->
-          # element.text 'this is the moment directive'
-          if !scope.$parent.options?.width
-            scope.$parent.options = _.defaults (scope.$parent.options || {}), default_options
-          scope.crWidth = attrs['cr-width'] || '100%'
-          options = _.clone scope.$parent.options 
-          if !scope.photo?.height && (scope.photo.UUID[-5...-4]<'4')
-            options.height = 400
-          src =  TEST_DATA.lorempixel.getSrc(scope.photo.UUID, options.width, options.height, TEST_DATA)
-          scope.photo.src = src
-          # scope.photo.width = options.width
-          scope.photo.height = options.height
-          return
-      }
   ]
 
 .factory 'otgImgCache', ['$q', '$ionicPlatform'
@@ -275,17 +247,8 @@ angular.module('ionBlankApp')
       #   return found
 
       getItemHeight : (item, index)->
-        if !item.scaledH > 0
-          IMAGE_WIDTH = 300-2
-          if deviceReady.isWebView() && item.originalWidth && item.originalHeight
-            # console.log "index="+index+", UUID="+item.UUID+", origW="+item.originalWidth + " origH="+item.originalHeight
-            h = item.originalHeight/item.originalWidth * IMAGE_WIDTH
-          else # browser/TEST_DATA
-                      h = item.height / 320 * IMAGE_WIDTH
-          item.scaledH = h
-          # console.log "index="+index+", scaledH="+h+" origH="+item.originalHeight+", index.UUID="+cameraRoll.photos[index].UUID
-        else 
-          h = item.scaledH
+        IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, 320)
+        h = cameraRoll.getCollectionRepeatHeight(item, IMAGE_WIDTH)
         h += ( 2 * 6 ) # paddingV
         h += 90 if $scope.on.showInfo()
         # console.log "\n\n >>> height=" + h + "\n\n"
@@ -362,7 +325,7 @@ angular.module('ionBlankApp')
 
       test: ()->
         _TEST_imageCacheSvc()
-        # $scope.loadCameraRollP().then ()->
+        # $scope.loadMomentsFromCameraRollP().then ()->
         #   $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks')
         #   console.log "AFTER loading cameraRoll, filteredPhotos.length="+$scope.filteredPhotos.length
 
@@ -415,7 +378,6 @@ angular.module('ionBlankApp')
 
 
     init = ()->
-      cameraRoll.photos = cameraRoll.photos
       setFilter( $state.current )
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info
 
@@ -436,16 +398,22 @@ angular.module('ionBlankApp')
           if !found 
             # add to cameraRoll.photos
             # real workorder photos will NOT be found in TEST_DATA the FIRST time
-            photo.UUID = photo.assetId
-            photo.from = "PARSE"          # deprecate, TODO: keep track of server photos from workorders separately
-            photo.date = cameraRoll.getDateFromLocalTime(photo.dateTaken)
+
+
+            # move to patch
+            # photo.UUID = photo.assetId
+            # photo.from = "PARSE"          # deprecate, TODO: keep track of server photos from workorders separately
+            # photo.date = cameraRoll.getDateFromLocalTime(photo.dateTaken)
+
+
             photo.topPick = !!photo.topPick
             cameraRoll.photos.push photo
+            console.log "\n\n**** NEW serverPhoto, uuid=" + photo.UUID
           else 
             # merge values set by Editor
             # merge shotId
             _.extend found, _.pick photo, ['topPick', 'favorite', 'shotId', 'isBestshot']
-            console.log "\n\n**** COPY topPick from serverPhotos for uuid=" + photo.assetId
+            console.log "\n\n**** MERGE topPick from serverPhotos for uuid=" + photo.UUID
           return true
         return 
 

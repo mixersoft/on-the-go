@@ -56,20 +56,20 @@ angular.module('ionBlankApp')
           return otgParse.checkSessionUserRoleP(o)
         .then (o)->
           return otgParse.fetchWorkordersByOwnerP(options)
-        .then (results)->
-          $scope.workorders = results.toJSON()      # .toJSON() -> readonly
-          $rootScope.workorderColl = results     # access from app.workorders.photos
+        .then (workorderColl)->
+          $scope.workorders = workorderColl.toJSON()      # .toJSON() -> readonly
+          $rootScope.workorderColl = workorderColl     # access from app.workorders.photos
           _.each $scope.workorders, (o)->
             # DEMO: recreate selectedMoments from dates
             otgWorkOrder.on.selectByCalendar(o.fromDate, o.toDate)
             o.selectedMoments = otgWorkOrder.checkout.getSelectedAsMoments().selectedMoments
             return
-          return results
-        .then (results)->
-          return otgParse.fetchWorkorderPhotosByWoIdP( _.pluck $scope.workorders, 'objectId' )
-        .then (retval)->
-          #merge workorder photos into cameraRoll_DATA
-          return retval
+          return workorderColl
+        # .then (workorderColl)->
+        #   return otgParse.fetchWorkorderPhotosByWoIdP( _.pluck $scope.workorders, 'objectId' )
+        # .then (photos)->
+        #   #merge workorder photos into cameraRoll.photos
+        #   return photos
  
     }
 

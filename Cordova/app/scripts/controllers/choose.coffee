@@ -29,8 +29,8 @@ angular.module('ionBlankApp')
             options = scope.options  # set by otgMoment
             src = TEST_DATA.lorempixel.getSrc(UUID, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
           when 'preview'
-            height = scope.item.height
-            src = TEST_DATA.lorempixel.getSrc(UUID, 320, height, TEST_DATA)
+            src = scope.item?.src
+            src = TEST_DATA.lorempixel.getSrc(UUID, scope.item.originalWidth, scope.item.originalHeight, TEST_DATA) if !src
         
       # console.log "\n*** lazySrc="+ (src && src[0..30])
       element.attr('src', src)  # use ng-src here???
@@ -151,7 +151,8 @@ angular.module('ionBlankApp')
         return
       }
 ]
-.factory 'otgWorkOrder', [ 'cameraRoll', 'otgData'
+.factory 'otgWorkOrder', [ 
+  'cameraRoll', 'otgData'
   (cameraRoll, otgData)->
     _moments = cameraRoll.moments
     _data = []
@@ -236,7 +237,7 @@ angular.module('ionBlankApp')
           self.countContiguousPhotos()
           # cache statistics
           return {
-            selectedMoments : _selected.moments
+            selectedMoments : _selected.moments 
             dateRange: _selected.dateRange
             count:
               photos : _selected.contiguousPhotos
@@ -323,7 +324,7 @@ angular.module('ionBlankApp')
               return otgWorkOrder.on.clearSelected()
 
     _loadMomentThumbnailsP = ()->
-      ## refactor: already called in app.coffee, $scope.loadCameraRollP()
+      ## refactor: already called in app.coffee, $scope.loadMomentsFromCameraRollP()
       return if !deviceReady.isWebView()
       IMAGE_FORMAT = 'thumbnail'
       # preload thumnail DataURLs for cameraRoll moment previews

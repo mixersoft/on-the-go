@@ -84,7 +84,8 @@ angular
     _promise = null
     _timeout = 2000
     _device = null
-    _isWebView = null 
+    _isWebView = null
+    _contentWidth = null 
     _deviceready = {
       deviceId: ()->
         return "browser" if !_deviceready.isWebView()
@@ -92,6 +93,11 @@ angular
 
       isWebView: ()->
         return _isWebView
+
+      contentWidth: (force)->
+        return _contentWidth if _contentWidth && !force
+        return _contentWidth = document.getElementsByTagName('ion-side-menu-content')[0]?.clientWidth
+          
       waitP: ()->
         return _promise if _promise
         deferred = $q.defer()
@@ -112,10 +118,11 @@ angular
 ]
 .factory 'cameraRoll', [
   '$q', '$timeout', '$rootScope', 'deviceReady', 
-  'TEST_DATA', 'otgData', 'otgParse'
-  ($q, $timeout, $rootScope, deviceReady, TEST_DATA, otgData, otgParse)->
-    _getAsLocalTime : (d, asJSON=true)->
+  'TEST_DATA', 'otgData'
+  ($q, $timeout, $rootScope, deviceReady, TEST_DATA, otgData)->
+    _getAsLocalTime = (d, asJSON=true)->
         d = new Date() if !d    # now
+        d = new Date(d) if !_.isDate(d)
         throw "_getAsLocalTimeJSON: expecting a Date param" if !_.isDate(d)
         d.setHours(d.getHours() - d.getTimezoneOffset() / 60)
         return d.toJSON() if asJSON
@@ -124,7 +131,7 @@ angular
 
     self = {
       _queue: {}  # array of DataURLs to fetch, use with debounce
-      _mapAssetsLibrary: []  # stash in loadCameraRoll()
+      _mapAssetsLibrary: []  # stash in loadMomentsFromCameraRoll()
       # array of photos, use found = _.findWhere cameraRoll.photos, (UUID: uuid)
       # props: id->UUID, date, src, caption, rating, favorite, topPick, shared, exif
       #   plugin adds: dateTaken, origH, origW, height, width, crop, orientation,
@@ -134,10 +141,12 @@ angular
         preview: {}     # indexBy UUID
         thumbnail: {}   # indexBy UUID
       }
+      map: ()->
+        return self._mapAssetsLibrary
       addPhoto: (photo)->
         # console.warn "\n\nERROR: photo.UUID 40 chars, iOS style, uuid=" + photo.UUID if photo.UUID.length > 36
         self.patchPhoto(photo)
-        attrs =  _.omit photo, ['data','elapsed','format','crop', 'targetWidth', 'targetHeight']
+        attrs =  _.omit photo, ['data', 'elapsed', 'format', 'crop', 'targetWidth', 'targetHeight']
         # self.photos.push attrs
         foundAt = _.findIndex self.photos, {UUID: attrs.UUID}
         # console.log "**** foundAt=" + foundAt + ", UUID: " + self.photos[foundAt].UUID + " == " + attrs.UUID if foundAt > -1
@@ -160,9 +169,13 @@ angular
         # console.log "\n\n added!! ************* " 
         return self
 
-      loadCameraRoll: (mapped)->
+      # load moments, but not photos
+      loadMomentsFromCameraRoll: (mapped)->
         ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
-        self._mapAssetsLibrary = mapped
+        if mapped
+          self._mapAssetsLibrary = mapped 
+        else 
+          mapped = self._mapAssetsLibrary
         # cameraRoll._mapAssetsLibrary -> cameraRoll.moments
         photosByDate = otgData.mapDateTakenByDays(self._mapAssetsLibrary, "like TEST_DATA")
         # replace cameraRoll.moments
@@ -191,8 +204,14 @@ angular
           datetime = _getAsLocalTime(dateTaken, false) 
 
         datetime.setHours(0,0,0,0)
-        date = self._getAsLocalTime( datetime, true)
+        date = _getAsLocalTime( datetime, true)
         return date.substring(0,10)  # like "2014-07-14"
+
+      getDataURLP :  (UUID, size='preview')->
+        found = self.getDataURL(UUID, size)
+        return $q.when(found) if found
+        # load from cameraRoll
+        return snappiMessengerPluginService.getDataURLForAssets_P( [UUID], size )
 
       getDataURL: (UUID, size='preview')->
         if !/preview|thumbnail/.test size
@@ -212,6 +231,25 @@ angular
         if !found # still not found, add to queue for fetch
           self.queueDataURL(UUID, size)
         return found
+
+      # IMAGE_WIDTH should be computedWidth - 2 for borders
+      getCollectionRepeatHeight : (photo, IMAGE_WIDTH)->
+        if !IMAGE_WIDTH
+          MAX_WIDTH = if deviceReady.isWebView() then 320 else 640
+          IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, MAX_WIDTH)
+        if !photo.scaledH > 0
+          if photo.originalWidth && photo.originalHeight
+            aspectRatio = photo.originalHeight/photo.originalWidth 
+            # console.log "index="+index+", UUID="+photo.UUID+", origW="+photo.originalWidth + " origH="+photo.originalHeight
+            h = aspectRatio * IMAGE_WIDTH
+          else # browser/TEST_DATA
+            throw "ERROR: original photo dimensions are missing"
+          photo.scaledW = IMAGE_WIDTH  
+          photo.scaledH = h
+          # console.log "index="+index+", scaledH="+h+" origH="+photo.originalHeight+", index.UUID="+cameraRoll.photos[index].UUID
+        else 
+          h = photo.scaledH
+        return h
 
       queueDataURL : (UUID, size='preview')->
         return if !deviceReady.isWebView()
@@ -268,7 +306,8 @@ angular
         self.orders = TEST_DATA.orders
         photos_ByDateUUID = TEST_DATA.cameraRoll_byDate
         self.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( photos_ByDateUUID ), 2
-        self.photos = otgData.parsePhotosFromMoments self.moments
+        self.photos = otgData.parsePhotosFromMoments self.moments, 'TEST_DATA'
+
         return
 
     return self
@@ -278,14 +317,7 @@ angular
   'deviceReady', 'appConsole', 'otgData'
   ($rootScope, $q, $timeout, cameraRoll, deviceReady, appConsole, otgData)->
 
-    _getAsLocalTimeJSON = (d)->
-        d = new Date() if !d
-        throw "_getAsLocalTimeJSON: expecting a Date param" if !_.isDate(d)
-        d.setHours(d.getHours() - d.getTimezoneOffset() / 60)
-        return d.toJSON()
-
-      # wrap $ionicPlatform ready in a promise, borrowed from otgParse   
-
+    # wrap $ionicPlatform ready in a promise, borrowed from otgParse   
     _MessengerPLUGIN = {
       MAX_PHOTOS: 200
       CHUNK_SIZE : 30
@@ -300,11 +332,10 @@ angular
           toDate: null
         }
         options = _.defaults options, defaults
-        options.fromDate = _getAsLocalTimeJSON(options.fromDate) if _.isDate(options.fromDate)
-        options.toDate = _getAsLocalTimeJSON(options.toDate) if _.isDate(options.toDate)
+        options.fromDate = cameraRoll.getDateFromLocalTime(options.fromDate) if _.isDate(options.fromDate)
+        options.toDate = cameraRoll.getDateFromLocalTime(options.toDate) if _.isDate(options.toDate)
 
         return deviceReady.waitP().then (retval)->
-          # console.log "deviceReadyP, retval="+retval
           dfd = $q.defer()
           return $q.reject "ERROR: window.Messenger Plugin not available" if !(window.Messenger?.mapAssetsLibrary)
           console.log "about to call Messenger.mapAssetsLibrary(), Messenger.properties=" + JSON.stringify _.keys window.Messenger.prototype 
@@ -469,8 +500,14 @@ angular
               end = new Date().getTime()
               # photo keys: [data,UUID,dateTaken,originalWidth,originalHeight]
               photo.elapsed = (end-start)/1000
+              photo.from = 'cameraRoll'
+              photo.date = cameraRoll.getDateFromLocalTime(photo.dateTaken)
               photo.autoRotate = options.autoRotate
               photo.orientation = 'unknown'    # missing
+              if (photo.autoRotate)
+                # originalHeight/Width is not swapping
+                console.log "\n\n Messenger Plugin.getPhotosByIdP(): WARNING originalH/W not swapping on autoRotate"
+
 
               # plugin method options              
               photo.format = options.type  # thumbnail, preview, previewHD

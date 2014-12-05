@@ -44,9 +44,9 @@ angular.module('ionBlankApp')
 .controller 'WorkorderPhotosCtrl', [
   '$scope', '$rootScope', '$state', '$q', 
   '$ionicSideMenuDelegate', '$ionicScrollDelegate', '$ionicPopup', 
-  'otgData', 'otgParse', 'deviceReady'
+  'otgData', 'otgParse', 'deviceReady', 'cameraRoll'
   '$timeout', '$filter', '$window', 'TEST_DATA', 
-  ($scope, $rootScope, $state, $q, $ionicSideMenuDelegate, $ionicScrollDelegate, $ionicPopup, otgData, otgParse, deviceReady, $timeout, $filter, $window, TEST_DATA) ->
+  ($scope, $rootScope, $state, $q, $ionicSideMenuDelegate, $ionicScrollDelegate, $ionicPopup, otgData, otgParse, deviceReady, cameraRoll, $timeout, $filter, $window, TEST_DATA) ->
     $scope.label = {
       title: "Workorder Photos"
       header_card: 
@@ -71,7 +71,9 @@ angular.module('ionBlankApp')
     # HACK: directive:workorderInProgressCard is NOT watching updates to
     # SideMenuSwitcher.watch.workorder (parent scope) from promise
     # so force redirect to working 'path', need a $apply() somewhere????
-    return $state.transitionTo("app.workorders.all") if true && !$rootScope.workorderColl?
+    mode = 'DEBUG'
+    if mode!="DEBUG" && !$rootScope.workorderColl?
+      return $state.transitionTo("app.workorders.all") 
 
 
     # filter photos based on $state.current
@@ -89,11 +91,14 @@ angular.module('ionBlankApp')
     $scope.on  = {
       _info: true
       getItemHeight : (item, index)->
-        # console.log "index="+index+", item.h="+item.height+" === index.h="+$scope.cameraRoll_DATA.photos[index].height+", index.id="+$scope.cameraRoll_DATA.photos[index].id
-        h = item.height || $scope.filteredPhotos[index].height * 2 
+        IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, 640)
+        scaledDim = cameraRoll.getCollectionRepeatHeight(item, IMAGE_WIDTH)
+        h = item.scaledH
         h += ( 2 * 6 ) # paddingV
         h += 90 if $scope.on.showInfo()
+        # console.log "\n\n >>> height=" + h + "\n\n"
         return h
+
       showInfo: (value=null)->
         return $scope.on._info if value == null 
         revert = $scope.on._info
@@ -102,7 +107,8 @@ angular.module('ionBlankApp')
         else if value != null 
           $scope.on._info = value
         $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() if $scope.on._info != revert
-        return $scope.on._info     
+        return $scope.on._info  
+
       notTopPick: (event, item)->
         event.preventDefault() if event
         revert = item.topPick
@@ -189,20 +195,20 @@ angular.module('ionBlankApp')
         return otgParse.checkSessionUserP().then (o)->
           return otgParse.checkSessionUserRoleP(o)
         .then ()->
-          _options.editor = $rootScope.sessionUser.get('id')
+          _options.editor = $rootScope.sessionUser
           if _.isEmpty _options.workorder
-            return otgParse.getWorkorderByIdP(_options.woid).then (workorder)->
-              _options.workorder = workorder
+            return otgParse.getWorkorderByIdP(_options.woid).then (workorderObj)->
+              _options.workorder = workorderObj
           else 
             $q.when(_options)
         .then ()->
           return otgParse.fetchWorkorderPhotosByWoIdP(_options)
         .then (photosColl)->
           _options.photosColl = photosColl
-          $q.when(_options)
+          return _options
         .then (o)->  
           $scope.photos = o.photosColl.toJSON()
-          $scope.workorder = o.workorder
+          $scope.workorderObj = o.workorder # << this is a workorderObj
 
           return $q.when(o)  
     }
@@ -224,17 +230,9 @@ angular.module('ionBlankApp')
         $scope.parse_raw = o
 
         # add to sideMenu
-        $scope.SideMenuSwitcher.watch['workorder'] = $scope.workorderAttr =  $scope.workorder.toJSON()
+        $scope.SideMenuSwitcher.watch['workorder'] = $scope.workorderAttr =  $scope.workorderObj.toJSON()
         window.debug.sms = $scope.SideMenuSwitcher.watch
         window.debug.root = $rootScope
-
-        # add fake height for collecton-repeat on TEST_DATA from lookup
-        _.each $scope.photos, (item)->
-          found = _.findWhere( $scope.cameraRoll_DATA.photos, {id:item.assetId} )
-          #################################################################
-          # TODO: we need to get imgHeight from server or from img.EXIF!!!
-          #################################################################
-          item.height = found?.height || 480
 
         # update work in progress counts
         woProgress = _.reduce $scope.photos, (result, item)->
@@ -246,7 +244,7 @@ angular.module('ionBlankApp')
             picks: 0 
           }
 
-        $scope.workorder.save({progress: woProgress})
+        $scope.workorderObj.save({progress: woProgress})
 
         setFilter( $state.current )
         $scope.on.showInfo(true) if $scope.config['workorder.photos']?.info

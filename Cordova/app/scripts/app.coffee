@@ -615,11 +615,11 @@ angular
       # email: 'this@that'
       # emailVerified: true
 
-      tos: false
+      tos: true
       rememberMe: false
     } 
     # get GUID
-    $rootScope.deviceId = "1234567890" # updated in otgParse.deviceReadyP()
+    $rootScope.deviceId = "1234567890" # updated after deviceReady.waitP()
 
     $scope.$watch 'config', (newVal, oldVal)->
         return _prefs.store newVal, oldVal
@@ -672,7 +672,7 @@ angular
     $rootScope.$on 'cameraRoll.queuedDataURL', ()->
       snappiMessengerPluginService.fetchDataURLsFromQueue()
 
-    $scope.loadCameraRollP = ()->  # on button click
+    $scope.loadMomentsFromCameraRollP = ()->  # on button click
 
       IMAGE_FORMAT = 'thumbnail'    # [thmbnail, preview, previewHD]
       TEST_LIMIT = 5 # snappiMessengerPluginService.MAX_PHOTOS
@@ -682,7 +682,7 @@ angular
       return snappiMessengerPluginService.mapAssetsLibraryP().then (mapped)->
           ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
           end = new Date().getTime()
-          moments = cameraRoll.loadCameraRoll( mapped ) # mapped -> moments
+          moments = cameraRoll.loadMomentsFromCameraRoll( mapped ) # mapped -> moments
 
           # returns: {2014-07-14:[{dateTaken: UUID: }, ]}
           retval = {
@@ -713,7 +713,7 @@ angular
 
         # # show results in AppConsole
         # truncated = {
-        #   "desc": "$scope.cameraRoll_DATA.dataUrls"
+        #   "desc": "cameraRoll.dataURLs"
         #   photos: cameraRoll.photos[0..TEST_LIMIT]
         #   dataURLs: {}
         # }
@@ -747,10 +747,10 @@ angular
       # add item.height for collection-repeat
 
       _.each cameraRoll.photos, (e,i,l)->
-        e.height = if /^[EF]/.test(e.UUID) then 400 else 240
-        # e.height = 240
-        # e.src = "http://lorempixel.com/"+(320)+"/"+(e.height)+"/"+lorempixelPhotos.shift()+"?"+e.UUID
-        e.src = TEST_DATA.lorempixel.getSrc(e.UUID, 320, e.height, TEST_DATA)
+        e.originalHeight = if /^[EF]/.test(e.UUID) then 400 else 240
+        e.originalWidth = 320
+        e.dateTaken = e.date
+        e.src = TEST_DATA.lorempixel.getSrc(e.UUID, e.originalWidth, e.originalHeight, TEST_DATA)
         return
 
       # otgWorkOrder methods need access to library of moments
@@ -767,10 +767,11 @@ angular
     init = ()->
       _LOAD_DEBUG_TOOLS()
       
-      $scope.loadCameraRollP()
+      $scope.loadMomentsFromCameraRollP()
 
       deviceReady.waitP().then ()->
         $scope.config['no-view-headers'] = deviceReady.isWebView() && false
+        $rootScope.deviceId = deviceReady.deviceId()
 
         if !deviceReady.isWebView()
           _LOAD_BROWSER_TOOLS() 

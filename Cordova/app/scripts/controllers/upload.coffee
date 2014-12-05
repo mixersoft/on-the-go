@@ -9,13 +9,13 @@
 ###
 angular.module('ionBlankApp')
 .factory 'otgUploader', [
-  '$timeout', '$q', 'otgData', 'otgParse',
-  ($timeout, $q, otgData, otgParse)->
+  '$timeout', '$q', 'otgData', 'otgParse', 'cameraRoll', 'snappiMessengerPluginService'
+  ($timeout, $q, otgData, otgParse, cameraRoll, snappiMessengerPluginService)->
 
     self = {
-      _lastUpload: 0  # just for testing purposes
       _queue : []
       _workorder: null
+      UPLOAD_IMAGE_SIZE: 'preview'
       state :
         isActive : false
         isEnabled : null
@@ -28,31 +28,37 @@ angular.module('ionBlankApp')
           return this.state.isEnabled
       isActive: ()->
         return self.state.isActive    
-      startUploadingP: (workorder, count=0, photos)->
-        if count && _.isNumber(count)
-          end = self._lastUpload + count
-          self._queue.push(photos[i]) for i in [self._lastUpload..end]
-          self._lastUpload = end
-          self._workorder = workorder
+      startUploadingP: ()->
 
         if self.state.isEnabled && self._queue.length
-          self.state.isActive = true if count!='toggle'
-          index = self._queue.length
+          item = self._queue.shift()
+          workorderObj = item.workorderObj
+          photo = item.photo
 
-          photo = self._queue.shift()
+          # find the photo, if we have it
+          found = _.find cameraRoll.photos, {UUID: photo.UUID || photo } 
+          # get from cameraRoll.map() if not in cameraRoll.photo
+          found = _.find cameraRoll.map(), {UUID: photo.UUID || photo } if !found
+          if !found
+            console.error '\n\nERROR: queued photo is not found, UUID=' + photo.UUID || photo
+            return $q.when() 
+
+          console.log "\n\nuploadQueue will upload photo="+JSON.stringify photo
+
+
           # test upload to parse
           self.state.isActive = true
-          otgParse.uploadPhotoP(self._workorder, photo).then ()->
+          otgParse.uploadPhotoP( workorderObj, photo).then ()->
               self.state.isActive = false
-              self._workorder.increment('count_received')
-              return self._workorder.save()
+              workorderObj.increment('count_received')
+              return workorderObj.save()
             , (error)->
               # check for duplicate assetId using cloud code
               # https://www.parse.com/questions/unique-fields--2
               if error == "Duplicate Photo.assetId Detected"
-                self._workorder.increment('count_received')
-                self._workorder.increment('count_duplicate')
-                return self._workorder.save()
+                workorderObj.increment('count_received')
+                workorderObj.increment('count_duplicate')
+                return workorderObj.save()
               else 
                 return $q.when()
             .then ()->
@@ -68,10 +74,28 @@ angular.module('ionBlankApp')
         return !!self.queueLength() 
       queueLength: ()->
         return self._queue?.length || 0
-      queueP: (workorder, photos)->
-        self._workorder = workorder
-        _.each photos, (photo)->
-          self._queue.push photo
+      ## @param photos array of photo Objects or UUIDs  
+      queueP: (workorderObj, photos)->
+        # need to queue photo by UUID because it might not be loaded from cameraRoll
+        alreadyQueued = _ .reduce self._queue, (result, item)->
+            result.push item.photo if _.isString item.photo
+            result.push item.photo.UUID if item.photo.UUID
+            return result
+          , []
+
+        _.each photos, (photoOrUUID)->
+          UUID = if photoOrUUID.UUID then photoOrUUID.UUID else photoOrUUID
+          return if alreadyQueued.indexOf( UUID ) > -1
+          item = {
+            photo: photoOrUUID
+            workorderObj: workorderObj
+          }
+          self._queue.push item
+          
+          # preload DataURLs using cameraRoll.queue(), preloading is debounced
+          cameraRoll.getDataURL UUID, self.UPLOAD_IMAGE_SIZE
+          return
+        
         return $q.when(self._queue)
 
     }
@@ -102,24 +126,6 @@ angular.module('ionBlankApp')
         target.removeClass('activated')
         target.removeClass('enabled') if otgUploader.enable()
         return 
-
-
-      # deprecate: use checkout instead   
-      demo: (ev)->
-        return 
-        otgUploader.enable(true)
-        otgParse.checkSessionUserP().then ()->
-          return otgParse.findWorkorderP({status:'new'})
-        .then (results)->
-            return otgParse.createWorkorderP() if _.isEmpty(results)
-            return results
-          , (error)->
-            return otgParse.createWorkorderP()
-        .then (workorderObj)->
-          $scope.workorderObj = workorderObj
-          return otgUploader.startUploadingP(workorderObj, 2, $scope.cameraRoll_DATA.photos)
-        .then ()->
-          console.log "UPLOAD COMPLETE!!!"
 
     }
 
