@@ -75,7 +75,13 @@ angular.module('ionBlankApp')
       queueLength: ()->
         return self._queue?.length || 0
       ## @param photos array of photo Objects or UUIDs  
+
       queueP: (workorderObj, photos)->
+        # DEPRECATE, not async
+        self.queue(workorderObj, photos)
+        return $q.when(self._queue)
+
+      queue: (workorderObj, photos)->
         # need to queue photo by UUID because it might not be loaded from cameraRoll
         alreadyQueued = _ .reduce self._queue, (result, item)->
             result.push item.photo if _.isString item.photo
@@ -96,7 +102,7 @@ angular.module('ionBlankApp')
           cameraRoll.getDataURL UUID, self.UPLOAD_IMAGE_SIZE
           return
         
-        return $q.when(self._queue)
+        return self._queue
 
     }
 

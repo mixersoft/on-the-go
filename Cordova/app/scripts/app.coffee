@@ -519,11 +519,12 @@ angular
 .controller 'AppCtrl', [
   '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', '$ionicPlatform', 
   'SideMenuSwitcher', '$ionicSideMenuDelegate'
-  'otgData', 'otgWorkorder', 
+  'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgUploader'
   'snappiMessengerPluginService', 
   'deviceReady', 'cameraRoll', 'appConsole'
   'TEST_DATA', 'imageCacheSvc'
-  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, otgData, otgWorkorder, 
+  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, 
+    otgData, otgWorkorder, otgWorkorderSync, otgUploader
     snappiMessengerPluginService, 
     deviceReady, cameraRoll, appConsole,
     TEST_DATA, imageCacheSvc  )->
@@ -567,8 +568,12 @@ angular
 
     $scope.menu = {
       top_picks: 
-        count: '?'   # get cached value from localstorage
+        count: 0
+      orders:
+        count: 0
       archived:
+        count: 0
+      uploader:
         count: 0
     }
 
@@ -728,6 +733,30 @@ angular
         # $scope.appConsole.show( truncated )
         # return photos
 
+    _SYNC_WORKORDERS = ()->
+      # run AFTER cameraRoll loaded
+      return if _.isEmpty $rootScope.sessionUser
+      return if deviceReady.isWebView() && _.isEmpty cameraRoll.map()
+      $timeout ()->
+          console.log "\n\n*** BEGIN Workorder Sync\n"
+          otgWorkorderSync.fetchWorkordersP('force').then (workorderColl)->
+              promises = []
+              openOrders = 0
+              workorderColl.each (workorderObj)->
+                return if workorderObj.get('status') == 'complete'
+                openOrders++
+                promises.push otgWorkorderSync.fetchWorkorderPhotosP(workorderObj, 'force').then (photosColl)->
+                  queue = otgWorkorderSync.queueMissingPhotos( workorderObj, photosColl )
+                  $scope.menu.uploader.count = otgUploader.queueLength()
+
+                $scope.menu.orders.count = openOrders
+                return
+              $q.all( promises ).then (o)->
+                console.log "\n\n*** all missing assets for workorder queued\n"
+        , 100
+
+
+      
 
     
 
@@ -753,11 +782,6 @@ angular
         e.src = TEST_DATA.lorempixel.getSrc(e.UUID, e.originalWidth, e.originalHeight, TEST_DATA)
         return
 
-      # otgWorkorder methods need access to library of moments
-      'skip' || otgWorkorder.setMoments(cameraRoll.moments)
-
-
-
       # imageCacheSvc.cacheDataURLP()
       return
 
@@ -766,8 +790,10 @@ angular
 
     init = ()->
       _LOAD_DEBUG_TOOLS()
-      
-      $scope.loadMomentsFromCameraRollP()
+
+      $scope.loadMomentsFromCameraRollP().finally ()->
+        _SYNC_WORKORDERS()
+
 
       deviceReady.waitP().then ()->
         $scope.config['no-view-headers'] = deviceReady.isWebView() && false

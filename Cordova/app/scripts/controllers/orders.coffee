@@ -116,8 +116,8 @@ angular.module('ionBlankApp')
     return self
 ]
 .controller 'OrdersCtrl', [
-  '$scope', '$q', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'otgParse', 'otgUploader', 'cameraRoll','TEST_DATA',
-  ($scope, $q, $ionicTabsDelegate, otgData, otgWorkorder, otgParse, otgUploader, cameraRoll, TEST_DATA) ->
+  '$scope', '$q', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgParse', 'otgUploader', 'cameraRoll','TEST_DATA',
+  ($scope, $q, $ionicTabsDelegate, otgData, otgWorkorder, otgWorkorderSync, otgParse, otgUploader, cameraRoll, TEST_DATA) ->
     $scope.label = {
       title: "Order History"
       subtitle: "Share something great today!"
@@ -136,91 +136,13 @@ angular.module('ionBlankApp')
       if o.className == 'WorkorderObj'
         return o if o.get('status') !='complete'
 
-    parse = {
-      _fetchWorkordersP : ()->
-        return otgParse.checkSessionUserP().then ()->
-          return otgParse.fetchWorkordersByOwnerP()
-        .then (workorderColl)->
-          $scope.workorders = workorderColl.toJSON()      # .toJSON() -> readonly
-          return workorderColl
-
-      _fetchWorkorderPhotosP : (workorderObj)->
-        return otgParse.checkSessionUserP().then ()->
-          options = {
-            workorder: workorderObj
-            owner: true
-          }
-          return otgParse.fetchWorkorderPhotosByWoIdP(options)
-        .then (photosColl)->
-          return photosColl.toJSON()
-  
-      _queueSelectedMomentsP : (workorderObj)->
-
-        # get workorderPhotosP() by UUID
-        parse._fetchWorkorderPhotosP(workorderObj).then (photos)->
-          # merge into cameraRoll, copied from top-picks.init(), refactor to otgParse
-          _.each photos, (photo)->
-            found = _.find cameraRoll.photos, (o)->return o.UUID[0...36] == photo.UUID
-            if !found 
-              # DONT add to cameraRoll.photos until after queue??
-              photo.topPick = !!photo.topPick
-              cameraRoll.photos.push photo
-              console.log "\n\n**** NEW serverPhoto, uuid=" + photo.UUID
-            else 
-              # merge values set by Editor
-              # merge shotId
-              _.extend found, _.pick photo, ['topPick', 'favorite', 'shotId', 'isBestshot']
-              console.log "\n\n**** MERGE topPick from serverPhotos for uuid=" + photo.UUID
-            return true
-          return photos
-
-        .then (photos)->  
-          console.log "\n\n workorder photo assetIds, length=" + photos.length
-          assetIds = _.pluck photos, 'assetId'
-          console.log assetIds
-          return assetIds
-        .then (workorderAssetIds)->
-          # compare against selectedMoment UUIDs
-          dateRange = otgWorkorder.on.selectByCalendar workorderObj.get('fromDate'), workorderObj.get('toDate')
-          console.log dateRange # $$$
-          # dateRange.from = '2014-09-03'
-          # compare vs. map because cameraRoll.photos is incomplete
-          mappedPhotos = cameraRoll.map() 
-          mappedPhotos = cameraRoll.photos if _.isEmpty mappedPhotos
-          cameraRollAssetIds = _.reduce mappedPhotos, (result, o)->
-              o.date = cameraRoll.getDateFromLocalTime o.dateTaken if !o.date
-              result.push o.UUID if dateRange.from <= o.date <= dateRange.to
-              return result
-            , []
-
-          console.log "expected cameraRoll photos found="+cameraRollAssetIds.length
-
-          missingPhotos = _.difference cameraRollAssetIds, workorderAssetIds
-
-          return otgUploader.queueP(workorderObj, missingPhotos).then (queue)->
-            console.log "workorder found and missing photos queued, length=" + queue.length
-            return queue
-    }
     $scope.workorders = []
 
     init = ()->
-      $scope.orders = TEST_DATA.orders
-
-      # from parse
       # show loading
-      # TODO: move to appCtrl and check for missing assets on startup
-      parse._fetchWorkordersP().then (workorderColl)->
-        promises = []
-        workorderColl.each (woObj)->
-          wo = woObj.toJSON()
-          missing = wo.count_expected - wo.count_duplicate - wo.count_received
-          return if missing == 0
-          console.log "\n\n workorder found with missing photos:"
-          console.log wo
-          promises.push parse._queueSelectedMomentsP( woObj ).then (queuedPhotos)->
-            return
+      otgWorkorderSync.fetchWorkordersP().then (workorderColl)->
+        $scope.workorders = workorderColl.toJSON()
 
-        return $q.all(promises)
 
     init()  
 

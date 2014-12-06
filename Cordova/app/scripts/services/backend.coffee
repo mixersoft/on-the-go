@@ -61,6 +61,94 @@ angular
     return self
 ]
 
+.factory 'otgWorkorderSync', [
+  '$q', '$rootScope', 'deviceReady', 'otgParse', 'otgWorkorder', 'otgUploader', 'cameraRoll', 'snappiMessengerPluginService'
+  ($q,  $rootScope, deviceReady, otgParse, otgWorkorder, otgUploader, cameraRoll, snappiMessengerPluginService)->
+
+    self = {
+      _workorderColl : []
+      _workorderPhotosColl: {}
+
+      fetchWorkordersP : (force)->
+        return $q.when( self._workorderColl ) if self._workorderColl && !force
+
+        return otgParse.checkSessionUserP().then ()->
+          return otgParse.fetchWorkordersByOwnerP()
+        .then (workorderColl)->
+          self._workorderColl = workorderColl
+          return workorderColl
+
+      fetchWorkorderPhotosP : (workorderObj, force)->
+        cached = self._workorderPhotosColl[workorderObj.id ] 
+        return $q.when( cached ) if cached && !force
+
+        return otgParse.checkSessionUserP().then ()->
+          options = {
+            workorder: workorderObj
+            owner: true
+          }
+          return otgParse.fetchWorkorderPhotosByWoIdP(options)
+        .then (photosColl)->
+          self._workorderPhotosColl[ workorderObj.id ] 
+
+          # add/patch server Photos into cameraRoll
+          photos = photosColl.toJSON()
+          # merge into cameraRoll, copied from top-picks.init(), refactor to otgParse
+          _.each photos, (photo)->
+            found = _.find cameraRoll.photos, (o)->return o.UUID[0...36] == photo.UUID
+            if !found 
+              # photo.topPick = !!photo.topPick
+              cameraRoll.photos.push photo
+              console.log "\n\n**** NEW workorder photo from Server, uuid=" + photo.UUID
+            else 
+              # merge values set by Editor
+              _.extend found, _.pick photo, ['topPick', 'favorite', 'shotId', 'isBestshot']
+              console.log "\n\n**** MERGE server Editor actions into cameraRoll for uuid=" + photo.UUID
+            return
+
+          return photosColl
+
+      # TODO: move to otgUploader???
+      queueMissingPhotos : (workorderObj, photosColl)->
+        photos = photosColl.toJSON()
+
+        console.log "\n\n workorder photo assetIds, length=" + photos.length
+        uploadedAssetIds = _.pluck photos, 'assetId'
+
+        # compare against selectedMoment UUIDs
+        dateRange = otgWorkorder.on.selectByCalendar workorderObj.get('fromDate'), workorderObj.get('toDate')
+        console.log dateRange # $$$
+        # compare vs. map because cameraRoll.photos is incomplete
+        mappedPhotos = cameraRoll.map() 
+        mappedPhotos = cameraRoll.photos if _.isEmpty mappedPhotos
+
+        mappedAssetIdsFromWorkorderDateRange = _.reduce mappedPhotos, (result, o)->
+            o.date = cameraRoll.getDateFromLocalTime o.dateTaken if !o.date
+            result.push o.UUID if dateRange.from <= o.date <= dateRange.to
+            return result
+          , []
+
+        console.log "expected cameraRoll photos found="+mappedAssetIdsFromWorkorderDateRange.length
+
+        missingPhotos = _.difference mappedAssetIdsFromWorkorderDateRange, uploadedAssetIds
+
+        queue = otgUploader.queueP(workorderObj, missingPhotos)
+        console.log "workorder found and missing photos queued, length=" + queue.length
+        return queue
+
+
+  
+      queueSelectedMomentsP : (workorderObj)->
+        # get workorderPhotosP() by UUID
+        self.fetchWorkorderPhotosP(workorderObj, 'force').then (photosColl)->
+          return self.queueMissingPhotos(workorderObj, photosColl)
+
+
+    }
+    return self
+
+]
+
 .factory 'otgParse', [
   '$q', '$ionicPlatform', '$timeout', '$rootScope', 'deviceReady', 'cameraRoll', 'snappiMessengerPluginService'
   ($q, $ionicPlatform, $timeout, $rootScope, deviceReady, cameraRoll, snappiMessengerPluginService)->
@@ -266,6 +354,7 @@ angular
           photoObj.set('UUID', photoObj.get('assetId') )
           photoObj.set('date', cameraRoll.getDateFromLocalTime( photoObj.get('dateTaken') ) )
           photoObj.set('from', 'PARSE' )
+          # photoObj.set('topPick', !!photoObj.get('topPick') ) 
           return
         return 
 

@@ -24,19 +24,24 @@
         <ion-item class="item-icon-left item-icon-right" nav-clear menu-close href="#/app/top-picks">
         <i class="icon ion-images positive"></i>
           Top Picks
-          <span class="badge badge-balanced">{{menu.top_picks.count}}</span>
+          <span class="badge badge-balanced" ng-show="menu.uploader.count"
+          >{{menu.top_picks.count}}</span>
         </ion-item>
         <ion-item class="item-icon-left" nav-clear menu-close ui-sref="app.choose.calendar">
           <i class="icon ion-calendar positive"></i>
           Choose Your Days
         </ion-item>
-        <ion-item class="item-icon-left" nav-clear menu-close href="#/app/orders">
+        <ion-item class="item-icon-left item-icon-right" nav-clear menu-close href="#/app/orders">
           <i class="icon ion-archive positive"></i>
           My Orders
+          <span class="badge badge-balanced" ng-show="menu.orders.count"
+          >{{menu.orders.count}}</span>
         </ion-item>
-        <ion-item class="item-icon-left" nav-clear menu-close href="#/app/uploader">
+        <ion-item class="item-icon-left  item-icon-right" nav-clear menu-close href="#/app/uploader">
           <i class="icon ion-ios7-cloud-upload positive"></i>
           Uploader
+          <span class="badge badge-assertive" ng-show="menu.uploader.count"
+          >{{menu.uploader.count}}</span>
         </ion-item>
         <ion-item class="item-icon-left" nav-clear menu-close href="#/app/settings">
           <i class="icon ion-gear-b positive"></i>
