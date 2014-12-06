@@ -11,8 +11,8 @@ angular.module('ionBlankApp')
 .controller 'CheckoutCtrl', [
   '$scope', '$rootScope', '$state', '$q', 
   '$ionicNavBarDelegate', '$ionicModal', '$ionicScrollDelegate'
-  'otgData', 'otgWorkOrder', 'otgUploader', 'otgParse', 'otgProfile', 'cameraRoll',  'TEST_DATA',
-  ($scope, $rootScope, $state, $q, $ionicNavBarDelegate, $ionicModal, $ionicScrollDelegate, otgData, otgWorkOrder, otgUploader, otgParse, otgProfile, cameraRoll, TEST_DATA) ->
+  'otgData', 'otgWorkorder', 'otgUploader', 'otgParse', 'otgProfile', 'cameraRoll',  'TEST_DATA',
+  ($scope, $rootScope, $state, $q, $ionicNavBarDelegate, $ionicModal, $ionicScrollDelegate, otgData, otgWorkorder, otgUploader, otgParse, otgProfile, cameraRoll, TEST_DATA) ->
     $scope.label = {
       title: "Checkout"
       header_card: 
@@ -43,7 +43,7 @@ angular.module('ionBlankApp')
           footer: ""   
     }
 
-    $scope.otgWorkOrder = otgWorkOrder
+    $scope.otgWorkorder = otgWorkorder
 
     # checkout wizard navigation
     _wizard = {
@@ -179,7 +179,7 @@ angular.module('ionBlankApp')
     # $rootScope.$on '$stateChangeStart', (event, toState, toParams, fromState, fromParams)->
     #   if toState.name.indexOf('app.checkout') == 0 
     #     if fromState.name.indexOf('app.payment') == 0
-    #       # otgWorkOrder.on.clearSelected()
+    #       # otgWorkorder.on.clearSelected()
         
 
     _getTotal = (checkout)->
@@ -287,7 +287,7 @@ angular.module('ionBlankApp')
         return 
 
       console.log "init: state="+$state.current.name
-      $scope.checkout = otgWorkOrder.checkout.getSelectedAsMoments()
+      $scope.checkout = otgWorkorder.checkout.getSelectedAsMoments()
       $scope.watch.servicePlan = _getTotal($scope.checkout)
       _wizard.validateSteps()
       $scope.$state = $state
@@ -295,7 +295,7 @@ angular.module('ionBlankApp')
       # initialize the wizard steps      
       if $state.params.from?
         _wizard.from($state.params.from)
-      if !otgWorkOrder.isSelected()
+      if !otgWorkorder.isSelected()
         target = 'app.choose.' + $scope.on.getOrderType()
         console.log "WARNING: checkout with no days selected!! redirecting, from="+target
         return $state.transitionTo(target)

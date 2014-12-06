@@ -26,8 +26,8 @@ angular.module('ionBlankApp')
     }
 ]
 .controller 'WorkordersCtrl', [
-  '$scope', '$rootScope', '$q', 'SideMenuSwitcher', '$ionicTabsDelegate', 'otgData', 'otgWorkOrder', 'otgParse', 'TEST_DATA',
-  ($scope, $rootScope, $q, SideMenuSwitcher, $ionicTabsDelegate, otgData, otgWorkOrder, otgParse, TEST_DATA) ->
+  '$scope', '$rootScope', '$q', 'SideMenuSwitcher', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'otgParse', 'TEST_DATA',
+  ($scope, $rootScope, $q, SideMenuSwitcher, $ionicTabsDelegate, otgData, otgWorkorder, otgParse, TEST_DATA) ->
     $scope.label = {
       title: "Workorders"
       subtitle: "Workorder Management System"
@@ -61,8 +61,8 @@ angular.module('ionBlankApp')
           $rootScope.workorderColl = workorderColl     # access from app.workorders.photos
           _.each $scope.workorders, (o)->
             # DEMO: recreate selectedMoments from dates
-            otgWorkOrder.on.selectByCalendar(o.fromDate, o.toDate)
-            o.selectedMoments = otgWorkOrder.checkout.getSelectedAsMoments().selectedMoments
+            otgWorkorder.on.selectByCalendar(o.fromDate, o.toDate)
+            o.selectedMoments = otgWorkorder.checkout.getSelectedAsMoments().selectedMoments
             return
           return workorderColl
         # .then (workorderColl)->

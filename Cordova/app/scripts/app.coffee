@@ -519,11 +519,11 @@ angular
 .controller 'AppCtrl', [
   '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', '$ionicPlatform', 
   'SideMenuSwitcher', '$ionicSideMenuDelegate'
-  'otgData', 'otgWorkOrder', 
+  'otgData', 'otgWorkorder', 
   'snappiMessengerPluginService', 
   'deviceReady', 'cameraRoll', 'appConsole'
   'TEST_DATA', 'imageCacheSvc'
-  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, otgData, otgWorkOrder, 
+  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, otgData, otgWorkorder, 
     snappiMessengerPluginService, 
     deviceReady, cameraRoll, appConsole,
     TEST_DATA, imageCacheSvc  )->
@@ -753,8 +753,8 @@ angular
         e.src = TEST_DATA.lorempixel.getSrc(e.UUID, e.originalWidth, e.originalHeight, TEST_DATA)
         return
 
-      # otgWorkOrder methods need access to library of moments
-      'skip' || otgWorkOrder.setMoments(cameraRoll.moments)
+      # otgWorkorder methods need access to library of moments
+      'skip' || otgWorkorder.setMoments(cameraRoll.moments)
 
 
 

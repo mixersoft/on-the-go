@@ -116,8 +116,8 @@ angular.module('ionBlankApp')
     return self
 ]
 .controller 'OrdersCtrl', [
-  '$scope', '$q', '$ionicTabsDelegate', 'otgData', 'otgWorkOrder', 'otgParse', 'otgUploader', 'cameraRoll','TEST_DATA',
-  ($scope, $q, $ionicTabsDelegate, otgData, otgWorkOrder, otgParse, otgUploader, cameraRoll, TEST_DATA) ->
+  '$scope', '$q', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'otgParse', 'otgUploader', 'cameraRoll','TEST_DATA',
+  ($scope, $q, $ionicTabsDelegate, otgData, otgWorkorder, otgParse, otgUploader, cameraRoll, TEST_DATA) ->
     $scope.label = {
       title: "Order History"
       subtitle: "Share something great today!"
@@ -181,7 +181,7 @@ angular.module('ionBlankApp')
           return assetIds
         .then (workorderAssetIds)->
           # compare against selectedMoment UUIDs
-          dateRange = otgWorkOrder.on.selectByCalendar workorderObj.get('fromDate'), workorderObj.get('toDate')
+          dateRange = otgWorkorder.on.selectByCalendar workorderObj.get('fromDate'), workorderObj.get('toDate')
           console.log dateRange # $$$
           # dateRange.from = '2014-09-03'
           # compare vs. map because cameraRoll.photos is incomplete

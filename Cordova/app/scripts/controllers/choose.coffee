@@ -80,8 +80,8 @@ angular.module('ionBlankApp')
 ]
 .directive 'otgMoment', [
   # renders moment as a list of days
-  '$window', 'otgWorkOrder', 'cameraRoll', 'otgData'
-  ($window, otgWorkOrder, cameraRoll, otgData)->
+  '$window', 'otgWorkorder', 'cameraRoll', 'otgData'
+  ($window, otgWorkorder, cameraRoll, otgData)->
     options = defaults = {
       breakpoint: 480
       'col-xs': 
@@ -146,12 +146,12 @@ angular.module('ionBlankApp')
         _lookupPhoto = otgData.parsePhotosFromMoments cameraRoll.moments if !_lookupPhoto
         scope.getMomentHeight = _getMomentHeight
         scope.getOverflowPhotos = _getOverflowPhotos
-        scope.otgWorkOrder = otgWorkOrder
+        scope.otgWorkorder = otgWorkorder
         scope.ClassSelected = scope.$parent.ClassSelected
         return
       }
 ]
-.factory 'otgWorkOrder', [ 
+.factory 'otgWorkorder', [ 
   'cameraRoll', 'otgData'
   (cameraRoll, otgData)->
     _moments = cameraRoll.moments
@@ -199,7 +199,7 @@ angular.module('ionBlankApp')
 
 
       countContiguousPhotos: ()->
-        return console.warn "WARNING: _moments not set, call otgWorkOrder.setMoments()" if !_.isArray(_moments)
+        return console.warn "WARNING: _moments not set, call otgWorkorder.setMoments()" if !_.isArray(_moments)
         dateRange = self.getDateRange()
         _selected.days = (new Date(dateRange.to) - new Date(dateRange.from))/(24*60*60*1000) + 1
 
@@ -292,8 +292,8 @@ angular.module('ionBlankApp')
 
 ]
 .controller 'ChooseCtrl', [
-  '$scope', '$rootScope', '$state', '$stateParams', '$timeout', '$ionicModal', 'otgData', 'otgWorkOrder', 'deviceReady', 'cameraRoll', 'snappiMessengerPluginService', 'TEST_DATA',
-  ($scope, $rootScope, $state, $stateParams, $timeout, $ionicModal, otgData, otgWorkOrder, deviceReady, cameraRoll, snappiMessengerPluginService,TEST_DATA) ->
+  '$scope', '$rootScope', '$state', '$stateParams', '$timeout', '$ionicModal', 'otgData', 'otgWorkorder', 'deviceReady', 'cameraRoll', 'snappiMessengerPluginService', 'TEST_DATA',
+  ($scope, $rootScope, $state, $stateParams, $timeout, $ionicModal, otgData, otgWorkorder, deviceReady, cameraRoll, snappiMessengerPluginService,TEST_DATA) ->
     $scope.label = {
       title: "Choose Your Days"
       header_card: 
@@ -307,7 +307,7 @@ angular.module('ionBlankApp')
           footer: ""  
     }
 
-    $scope.otgWorkOrder = otgWorkOrder
+    $scope.otgWorkorder = otgWorkorder
 
     $rootScope.$on '$stateChangeStart', (event, toState, toParams, fromState, fromParams)->
       if toState.name.indexOf('app.choose') == 0 
@@ -317,11 +317,11 @@ angular.module('ionBlankApp')
           console.log "state.transitionTo: " + fromState.name + ' > ' + toState.name
           switch toState.name
             when 'app.choose.calendar', 'app.choose.TEST'
-              otgWorkOrder.on.clearSelected()
-              return otgWorkOrder.on.selectByCalendar("2014-09-20", "2014-09-24")
+              otgWorkorder.on.clearSelected()
+              return otgWorkorder.on.selectByCalendar("2014-09-20", "2014-09-24")
             when 'app.choose.camera-roll'
               # return
-              return otgWorkOrder.on.clearSelected()
+              return otgWorkorder.on.clearSelected()
 
     _loadMomentThumbnailsP = ()->
       ## refactor: already called in app.coffee, $scope.loadMomentsFromCameraRollP()
@@ -353,8 +353,8 @@ angular.module('ionBlankApp')
 
       switch $state.current.name
         when 'app.choose.calendar'
-          otgWorkOrder.on.clearSelected()
-          return otgWorkOrder.on.selectByCalendar("2014-09-20", "2014-09-24")
+          otgWorkorder.on.clearSelected()
+          return otgWorkorder.on.selectByCalendar("2014-09-20", "2014-09-24")
 
 
 
