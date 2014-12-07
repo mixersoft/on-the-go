@@ -739,10 +739,11 @@ angular
       return if deviceReady.isWebView() && _.isEmpty cameraRoll.map()
       $timeout ()->
           console.log "\n\n*** BEGIN Workorder Sync\n"
-          otgWorkorderSync.fetchWorkordersP('force').then (workorderColl)->
+          otgWorkorderSync.fetchWorkordersP(null, 'force').then (workorderColl)->
               promises = []
               openOrders = 0
               workorderColl.each (workorderObj)->
+
                 return if workorderObj.get('status') == 'complete'
                 openOrders++
                 promises.push otgWorkorderSync.fetchWorkorderPhotosP(workorderObj, 'force').then (photosColl)->

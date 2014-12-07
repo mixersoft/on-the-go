@@ -66,20 +66,33 @@ angular
   ($q,  $rootScope, deviceReady, otgParse, otgWorkorder, otgUploader, cameraRoll, snappiMessengerPluginService)->
 
     self = {
-      _workorderColl : []
-      _workorderPhotosColl: {}
+      _workorderColl : {
+        owner: []
+        editor: []
+      }
+      _workorderPhotosColl: {
+        # workorderObj.id: photosColl
+      }
 
-      fetchWorkordersP : (force)->
-        return $q.when( self._workorderColl ) if self._workorderColl && !force
+      fetchWorkordersP : (options={}, force)->
+        role = if options.editor then 'editor' else 'owner'
+        cached = self._workorderColl[role]
+        return $q.when( cached ) if cached.length && !force
 
         return otgParse.checkSessionUserP().then ()->
-          return otgParse.fetchWorkordersByOwnerP()
+          return otgParse.fetchWorkordersByOwnerP(options)
         .then (workorderColl)->
-          self._workorderColl = workorderColl
+          self._workorderColl[role] = workorderColl
+          # patch selectedMoments
+          workorderColl.each (workorderObj)->
+            wo = workorderObj.toJSON()
+            # TODO: don't want to save to Parse, add to workorderObj.toJSON()???
+            otgWorkorder.on.selectByCalendar(wo.fromDate, wo.toDate)
+            workorderObj.set('selectedMoments', otgWorkorder.checkout.getSelectedAsMoments().selectedMoments)
           return workorderColl
 
       fetchWorkorderPhotosP : (workorderObj, force)->
-        cached = self._workorderPhotosColl[workorderObj.id ] 
+        cached = self._workorderPhotosColl[ workorderObj.id ] 
         return $q.when( cached ) if cached && !force
 
         return otgParse.checkSessionUserP().then ()->
@@ -359,9 +372,13 @@ angular
         return 
 
 
-      fetchWorkordersByOwnerP : ()->
+      fetchWorkordersByOwnerP : (options={})->
         query = new Parse.Query(parseClass.WorkorderObj)
         query.equalTo('owner', $rootScope.sessionUser)
+        if options.editor
+          options.editor = $rootScope.sessionUser if options.editor == true
+          console.warn "\n\n ***  WARNING: using workorder.owner as a proxy for workorder.editor for the moment\n"
+          query.equalTo('owner', options.editor) 
         collection = query.collection()
         collection.comparator = (o)->
           return o.get('toDate')
@@ -387,6 +404,7 @@ angular
         query.equalTo('workorder', workorderObj) 
         query.equalTo('owner', $rootScope.sessionUser) if options.owner
         if options.editor
+          options.editor = $rootScope.sessionUser if options.editor == true
           console.warn "\n\n ***  WARNING: using workorder.owner as a proxy for workorder.editor for the moment\n"
           query.equalTo('owner', options.editor) 
 

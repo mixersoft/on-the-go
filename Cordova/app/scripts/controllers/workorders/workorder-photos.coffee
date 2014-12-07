@@ -44,9 +44,9 @@ angular.module('ionBlankApp')
 .controller 'WorkorderPhotosCtrl', [
   '$scope', '$rootScope', '$state', '$q', 
   '$ionicSideMenuDelegate', '$ionicScrollDelegate', '$ionicPopup', 
-  'otgData', 'otgParse', 'deviceReady', 'cameraRoll'
+  'otgData', 'otgParse', 'otgWorkorderSync', 'deviceReady', 'cameraRoll'
   '$timeout', '$filter', '$window', 'TEST_DATA', 
-  ($scope, $rootScope, $state, $q, $ionicSideMenuDelegate, $ionicScrollDelegate, $ionicPopup, otgData, otgParse, deviceReady, cameraRoll, $timeout, $filter, $window, TEST_DATA) ->
+  ($scope, $rootScope, $state, $q, $ionicSideMenuDelegate, $ionicScrollDelegate, $ionicPopup, otgData, otgParse, otgWorkorderSync, deviceReady, cameraRoll, $timeout, $filter, $window, TEST_DATA) ->
     $scope.label = {
       title: "Workorder Photos"
       header_card: 
@@ -189,66 +189,38 @@ angular.module('ionBlankApp')
       }
     }
 
-    parse = {
-      _fetchWorkorderPhotosP : (options = {})->
-        _options = options  # closure
-        return otgParse.checkSessionUserP().then (o)->
-          return otgParse.checkSessionUserRoleP(o)
-        .then ()->
-          _options.editor = $rootScope.sessionUser
-          if _.isEmpty _options.workorder
-            return otgParse.getWorkorderByIdP(_options.woid).then (workorderObj)->
-              _options.workorder = workorderObj
-          else 
-            $q.when(_options)
-        .then ()->
-          return otgParse.fetchWorkorderPhotosByWoIdP(_options)
-        .then (photosColl)->
-          _options.photosColl = photosColl
-          return _options
-        .then (o)->  
-          $scope.photos = o.photosColl.toJSON()
-          $scope.workorderObj = o.workorder # << this is a workorderObj
-
-          return $q.when(o)  
-    }
-
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
       setFilter(toState)   
 
 
     init = ()->
-      options = {
-        woid: $state.params['woid']
-      }
+      woid = $state.params['woid']
+      $scope.on.showInfo(true) if $scope.config['workorder.photos']?.info
+      # add options.Editor, use sessionUser == owner for now
+      otgWorkorderSync.fetchWorkordersP({editor: $rootScope.sessionUser }, 'force').then (workorderColl)->
+        workorderObj = _.findWhere workorderColl.models, { id: woid } 
+        otgWorkorderSync.fetchWorkorderPhotosP(workorderObj).then (photosColl)->
+          $scope.photos = photosColl.toJSON()
+          # add to sideMenu
+          $scope.workorderAttr = workorderObj.toJSON()
+          $scope.SideMenuSwitcher.watch['workorder'] = $scope.workorderAttr 
+          window.debug.sms = $scope.SideMenuSwitcher.watch
+          window.debug.root = $rootScope
 
-      if $rootScope.workorderColl?
-        options.workorder = _.findWhere $rootScope.workorderColl.models, { id: options.woid } 
+          # update work in progress counts
+          woProgress = _.reduce $scope.photos, (result, item)->
+              result.picks += 1 if item.topPick == true
+              result.todo +=1 if !item.topPick && item.topPick != false
+              return result
+            , {
+              todo: 0
+              picks: 0 
+            }
 
-      parse._fetchWorkorderPhotosP(options).then (o)->
-        $scope.parse_raw = o
+          workorderObj.save({progress: woProgress})
 
-        # add to sideMenu
-        $scope.SideMenuSwitcher.watch['workorder'] = $scope.workorderAttr =  $scope.workorderObj.toJSON()
-        window.debug.sms = $scope.SideMenuSwitcher.watch
-        window.debug.root = $rootScope
-
-        # update work in progress counts
-        woProgress = _.reduce $scope.photos, (result, item)->
-            result.picks += 1 if item.topPick == true
-            result.todo +=1 if !item.topPick && item.topPick != false
-            return result
-          , {
-            todo: 0
-            picks: 0 
-          }
-
-        $scope.workorderObj.save({progress: woProgress})
-
-        setFilter( $state.current )
-        $scope.on.showInfo(true) if $scope.config['workorder.photos']?.info
-
+          setFilter( $state.current )
 
       return
 

@@ -26,8 +26,8 @@ angular.module('ionBlankApp')
     }
 ]
 .controller 'WorkordersCtrl', [
-  '$scope', '$rootScope', '$q', 'SideMenuSwitcher', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'otgParse', 'TEST_DATA',
-  ($scope, $rootScope, $q, SideMenuSwitcher, $ionicTabsDelegate, otgData, otgWorkorder, otgParse, TEST_DATA) ->
+  '$scope', '$rootScope', '$q', 'SideMenuSwitcher', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgParse', 'TEST_DATA',
+  ($scope, $rootScope, $q, SideMenuSwitcher, $ionicTabsDelegate, otgData, otgWorkorder, otgWorkorderSync, otgParse, TEST_DATA) ->
     $scope.label = {
       title: "Workorders"
       subtitle: "Workorder Management System"
@@ -50,28 +50,6 @@ angular.module('ionBlankApp')
       if o.className == 'WorkorderObj'
         return o if o.get('status') !='complete'
 
-    parse = {
-      _fetchWorkordersP : (options = {})->
-        return otgParse.checkSessionUserP().then (o)->
-          return otgParse.checkSessionUserRoleP(o)
-        .then (o)->
-          return otgParse.fetchWorkordersByOwnerP(options)
-        .then (workorderColl)->
-          $scope.workorders = workorderColl.toJSON()      # .toJSON() -> readonly
-          $rootScope.workorderColl = workorderColl     # access from app.workorders.photos
-          _.each $scope.workorders, (o)->
-            # DEMO: recreate selectedMoments from dates
-            otgWorkorder.on.selectByCalendar(o.fromDate, o.toDate)
-            o.selectedMoments = otgWorkorder.checkout.getSelectedAsMoments().selectedMoments
-            return
-          return workorderColl
-        # .then (workorderColl)->
-        #   return otgParse.fetchWorkorderPhotosByWoIdP( _.pluck $scope.workorders, 'objectId' )
-        # .then (photos)->
-        #   #merge workorder photos into cameraRoll.photos
-        #   return photos
- 
-    }
 
     $scope.watch = _watch = {
       ngClass_UploadStatus: (order, prefix='badge')->
@@ -88,12 +66,9 @@ angular.module('ionBlankApp')
 
     init = ()->
       $scope.orders = TEST_DATA.orders
-
-      # from parse
-      # show loading
-      parse._fetchWorkordersP().then ()->
-        # hide loading
-        return
+      otgWorkorderSync.fetchWorkordersP({editor: $rootScope.sessionUser }).then (workorderColl)->
+        $scope.workorders = workorderColl.toJSON()
+      return
 
     init()  
 

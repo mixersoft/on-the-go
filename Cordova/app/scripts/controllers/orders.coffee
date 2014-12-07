@@ -143,7 +143,6 @@ angular.module('ionBlankApp')
       otgWorkorderSync.fetchWorkordersP().then (workorderColl)->
         $scope.workorders = workorderColl.toJSON()
 
-
     init()  
 
 ]
