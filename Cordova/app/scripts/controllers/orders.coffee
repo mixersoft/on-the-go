@@ -116,8 +116,8 @@ angular.module('ionBlankApp')
     return self
 ]
 .controller 'OrdersCtrl', [
-  '$scope', '$q', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgParse', 'otgUploader', 'cameraRoll','TEST_DATA',
-  ($scope, $q, $ionicTabsDelegate, otgData, otgWorkorder, otgWorkorderSync, otgParse, otgUploader, cameraRoll, TEST_DATA) ->
+  '$scope', '$timeout', '$q', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgParse', 'otgUploader', 'cameraRoll','TEST_DATA',
+  ($scope, $timeout, $q, $ionicTabsDelegate, otgData, otgWorkorder, otgWorkorderSync, otgParse, otgUploader, cameraRoll, TEST_DATA) ->
     $scope.label = {
       title: "Order History"
       subtitle: "Share something great today!"
@@ -140,8 +140,32 @@ angular.module('ionBlankApp')
 
     init = ()->
       # show loading
-      otgWorkorderSync.fetchWorkordersP().then (workorderColl)->
+      force = !otgWorkorderSync._workorderColl['owner'].length
+      otgWorkorderSync.fetchWorkordersP({owner: true}, force ).then (workorderColl)->
+        console.log " \n\n 2: &&&&& fetchWorkordersP from orders.coffee "
         $scope.workorders = workorderColl.toJSON()
+
+        return if !force
+
+        # continue to fetch photos so we can create selectedMoments
+        # same as app.coffee: _SYNC_WORKORDERS
+        promises = []
+        openOrders = 0
+        workorderColl.each (workorderObj)->
+
+          return if workorderObj.get('status') == 'complete'
+          openOrders++
+          promises.push otgWorkorderSync.fetchWorkorderPhotosP(workorderObj, 'force').then (photosColl)->
+            queue = otgWorkorderSync.queueMissingPhotos( workorderObj, photosColl )
+            $scope.menu.uploader.count = otgUploader.queueLength()
+
+          $scope.menu.orders.count = openOrders
+          return
+
+        $q.all( promises ).then (o)->
+          $scope.workorders = workorderColl.toJSON()   
+          console.log "\n\n*** all missing assets for workorder queued\n"
+
 
     init()  
 

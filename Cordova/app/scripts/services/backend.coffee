@@ -76,6 +76,7 @@ angular
 
       fetchWorkordersP : (options={}, force)->
         role = if options.editor then 'editor' else 'owner'
+        
         cached = self._workorderColl[role]
         return $q.when( cached ) if cached.length && !force
 
@@ -83,12 +84,7 @@ angular
           return otgParse.fetchWorkordersByOwnerP(options)
         .then (workorderColl)->
           self._workorderColl[role] = workorderColl
-          # patch selectedMoments
-          workorderColl.each (workorderObj)->
-            wo = workorderObj.toJSON()
-            # TODO: don't want to save to Parse, add to workorderObj.toJSON()???
-            otgWorkorder.on.selectByCalendar(wo.fromDate, wo.toDate)
-            workorderObj.set('selectedMoments', otgWorkorder.checkout.getSelectedAsMoments().selectedMoments)
+          console.log " \n\n 1a: &&&&& fetchWorkordersP from backend.coffee, role=" + role
           return workorderColl
 
       fetchWorkorderPhotosP : (workorderObj, force)->
@@ -104,20 +100,44 @@ angular
         .then (photosColl)->
           self._workorderPhotosColl[ workorderObj.id ] 
 
-          # add/patch server Photos into cameraRoll
-          photos = photosColl.toJSON()
-          # merge into cameraRoll, copied from top-picks.init(), refactor to otgParse
-          _.each photos, (photo)->
-            found = _.find cameraRoll.photos, (o)->return o.UUID[0...36] == photo.UUID
-            if !found 
-              # photo.topPick = !!photo.topPick
-              cameraRoll.photos.push photo
-              console.log "\n\n**** NEW workorder photo from Server, uuid=" + photo.UUID
-            else 
-              # merge values set by Editor
-              _.extend found, _.pick photo, ['topPick', 'favorite', 'shotId', 'isBestshot']
-              console.log "\n\n**** MERGE server Editor actions into cameraRoll for uuid=" + photo.UUID
-            return
+          wo = workorderObj.toJSON()
+          # patch workorder.selectedMoment AFTER workorder photos fetched
+          # SKIP otgWorkorder.on.selectByCalendar(wo.fromDate, wo.toDate)
+          # path MANUALLY because we don't have cameraRoll.moments
+          # moments normally set in snappiMessengerPluginService.mapAssetsLibraryP()
+
+          ### expecting:
+          workorderMoment = {
+            type:'moment'
+            key:[date]
+            value: [
+              {
+                type: 'date'
+                key:[date]
+                value: [
+                  UUID, UUID
+                ]
+              }
+            ]
+          }
+          ###
+          
+          workorderMoment = {
+            type:'moment'
+            key: wo.fromDate
+            value: [
+              {
+                type: 'date'
+                key: wo.fromDate
+                value: _.pluck photosColl.toJSON(), 'UUID'
+              }
+            ]
+          }
+
+          workorderObj.set('selectedMoments', [ workorderMoment ] )
+          console.log " \n\n 1b: &&&&& fetchWorkorderPhotosP from backend.coffee "
+          console.log "\n\n*** inspect workorderMoment for Workorder: " 
+          console.log workorderObj.toJSON()
 
           return photosColl
 
@@ -130,6 +150,10 @@ angular
 
         # compare against selectedMoment UUIDs
         dateRange = otgWorkorder.on.selectByCalendar workorderObj.get('fromDate'), workorderObj.get('toDate')
+        dateRange = {
+          from: workorderObj.get('fromDate')
+          to: workorderObj.get('toDate')
+        }
         console.log dateRange # $$$
         # compare vs. map because cameraRoll.photos is incomplete
         mappedPhotos = cameraRoll.map() 
@@ -141,11 +165,11 @@ angular
             return result
           , []
 
-        console.log "expected cameraRoll photos found="+mappedAssetIdsFromWorkorderDateRange.length
+        console.log "workorder.count_expected="+mappedAssetIdsFromWorkorderDateRange.length
 
         missingPhotos = _.difference mappedAssetIdsFromWorkorderDateRange, uploadedAssetIds
 
-        queue = otgUploader.queueP(workorderObj, missingPhotos)
+        queue = otgUploader.queue(workorderObj, missingPhotos)
         console.log "workorder found and missing photos queued, length=" + queue.length
         return queue
 
@@ -367,7 +391,10 @@ angular
           photoObj.set('UUID', photoObj.get('assetId') )
           photoObj.set('date', cameraRoll.getDateFromLocalTime( photoObj.get('dateTaken') ) )
           photoObj.set('from', 'PARSE' )
-          # photoObj.set('topPick', !!photoObj.get('topPick') ) 
+          # photoObj.set('topPick', !!photoObj.get('topPick') )
+
+          cameraRoll.addOrUpdatePhoto_FromWorkorder photoObj.toJSON()
+
           return
         return 
 

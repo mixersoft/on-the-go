@@ -15,7 +15,8 @@ angular.module('ionBlankApp')
 
     _setLazySrc = (element, UUID, format)->
       return if !UUID
-      console.log "\n\nlazySrc reports notCached for UUID="+UUID
+      console.log "\nlazySrc reports notCached for format=" + format + ", UUID="+UUID
+
       src = cameraRoll.getDataURL(UUID, format || 'thumbnail') #  || scope.photo?.getSrc || scope.photo?.src
       
       if !src && deviceReady.isWebView()

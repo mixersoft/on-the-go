@@ -33,6 +33,13 @@ angular
     # deprecate?
     $rootScope.$state = $state;
     $rootScope.$stateParams = $stateParams;  
+
+    _alreadyLogged = {}
+    window._logOnce = (id, message)->
+      return if _alreadyLogged[id]
+      message = JSON.stringify message if !_.isString message
+      console.log ["\n\n _logOnce:", message, " \n\n"].join(' &&& ')
+      return _alreadyLogged[id] = message
 ]
 .factory 'SideMenuSwitcher', ['$window',
 ($window)->
@@ -372,13 +379,13 @@ angular
   ($q, $timeout, deviceReady)->
     _promise = null
     _timeout = 2000
-    _defaults = {
-      chromeQuota: 50*1024*1024
-      debug: true
+    _IMAGE_CACHE_defaults = {
+      chromeQuota: 50*1024*1024 # HTML5 FILE API not available for Safari, check cordova???
+      debug: false
       skipURIencoding: true    # required for dataURLs
-      usePersistentCache: true
+      usePersistentCache: false
     }
-    _.extend ImgCache.options, _defaults
+    _.extend ImgCache.options, _IMAGE_CACHE_defaults
 
     deviceReady.waitP().then ()->
       ImgCache.init()
@@ -622,7 +629,16 @@ angular
 
       tos: true
       rememberMe: false
+      isRegistered: false 
     } 
+    if $rootScope.sessionUser instanceof Parse.Object
+      # merge from cookie into $rootScope.user
+      userCred = _.pick( $rootScope.sessionUser.toJSON(), ['username', 'email', 'emailVerified'] )
+      userCred.password = 'HIDDEN'
+      isGuest = /^anonymous/.test(userCred.username) || /^browser/i.test(userCred.username)
+      userCred.isRegistered = !isGuest
+      _.extend $rootScope.user, userCred
+
     # get GUID
     $rootScope.deviceId = "1234567890" # updated after deviceReady.waitP()
 
@@ -737,27 +753,24 @@ angular
       # run AFTER cameraRoll loaded
       return if _.isEmpty $rootScope.sessionUser
       return if deviceReady.isWebView() && _.isEmpty cameraRoll.map()
+
       $timeout ()->
-          console.log "\n\n*** BEGIN Workorder Sync\n"
-          otgWorkorderSync.fetchWorkordersP(null, 'force').then (workorderColl)->
-              promises = []
-              openOrders = 0
-              workorderColl.each (workorderObj)->
+        console.log "\n\n*** BEGIN Workorder Sync\n"
+        otgWorkorderSync.fetchWorkordersP({ owner: true }, 'force').then (workorderColl)->
+            promises = []
+            openOrders = 0
+            workorderColl.each (workorderObj)->
 
-                return if workorderObj.get('status') == 'complete'
-                openOrders++
-                promises.push otgWorkorderSync.fetchWorkorderPhotosP(workorderObj, 'force').then (photosColl)->
-                  queue = otgWorkorderSync.queueMissingPhotos( workorderObj, photosColl )
-                  $scope.menu.uploader.count = otgUploader.queueLength()
+              return if workorderObj.get('status') == 'complete'
+              openOrders++
+              promises.push otgWorkorderSync.fetchWorkorderPhotosP(workorderObj, 'force').then (photosColl)->
+                queue = otgWorkorderSync.queueMissingPhotos( workorderObj, photosColl )
+                $scope.menu.uploader.count = otgUploader.queueLength()
 
-                $scope.menu.orders.count = openOrders
-                return
-              $q.all( promises ).then (o)->
-                console.log "\n\n*** all missing assets for workorder queued\n"
-        , 100
-
-
-      
+              $scope.menu.orders.count = openOrders
+              return
+            $q.all( promises ).then (o)->
+              console.log "\n\n*** all missing assets for workorder queued\n"
 
     
 
@@ -787,12 +800,11 @@ angular
       return
 
 
-    $scope.orders = [] # order history
-
     init = ()->
       _LOAD_DEBUG_TOOLS()
 
       $scope.loadMomentsFromCameraRollP().finally ()->
+        console.log "\n\n*** cameraRoll mapped\n"
         _SYNC_WORKORDERS()
 
 
@@ -821,8 +833,8 @@ angular
 
     window.debug = _.extend window.debug || {} , {
       user: $scope.user
-      orders: $scope.orders
       cameraRoll: cameraRoll
+      workorders: otgWorkorderSync._workorderColl
     }
 
   ]

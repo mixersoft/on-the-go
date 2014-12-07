@@ -143,7 +143,12 @@ angular
       }
       map: ()->
         return self._mapAssetsLibrary
-      addPhoto: (photo)->
+
+      _addOrUpdatePhoto_FromCameraRoll: (photo)->
+
+        note = "called by getDataURLForAssets_P, which assumes UUID in map, but not in photos"
+        note = "   includes cameraRoll attrs from Messenger Plugin"
+
         # console.warn "\n\nERROR: photo.UUID 40 chars, iOS style, uuid=" + photo.UUID if photo.UUID.length > 36
         self.patchPhoto(photo)
         attrs =  _.omit photo, ['data', 'elapsed', 'format', 'crop', 'targetWidth', 'targetHeight']
@@ -151,19 +156,61 @@ angular
         foundAt = _.findIndex self.photos, {UUID: attrs.UUID}
         # console.log "**** foundAt=" + foundAt + ", UUID: " + self.photos[foundAt].UUID + " == " + attrs.UUID if foundAt > -1
         if foundAt > -1  # update
-          # console.log "\n\n *** addPhoto() updating photo found in cameraRoll.photos, UUID=" +attrs.UUID+ "\n\n"
+          # console.log "\n\n *** _addOrUpdatePhoto_FromCameraRoll() updating photo found in cameraRoll.photos, UUID=" +attrs.UUID+ "\n\n"
           _.extend self.photos[foundAt], attrs
         else 
           insertAt = _.sortedIndex self.photos, attrs, 'dateTaken'
           self.photos.splice(insertAt, 0, attrs)
-        # console.log "**** END addPhoto ****\n\n\n"  
+
+        # console.log "**** END _addOrUpdatePhoto_FromCameraRoll ****\n\n\n"  
         return attrs
+
+
+      addOrUpdatePhoto_FromWorkorder: (photo)->
+        # typically called from Editor Workstation in Browser, in this case, there is no local CameraRoll
+        # called from otgWorkorderSync._patchParsePhotos() after patching with ParseObj attrs
+
+        # cameraRoll.getDataURL only works if UID in map()
+        # foundInMap = _.find cameraRoll._mapAssetsLibrary, (o)->return o.UUID[0...36] == photo.UUID[0...36]
+        foundInMap = _.find self._mapAssetsLibrary, {UUID: photo.UUID}
+        if !foundInMap 
+          # photo.topPick = !!photo.topPick
+          self._mapAssetsLibrary.push _.pick photo, ['UUID', 'dateTaken', 'from']
+          # if its not in map() it cannot be in photos, so add
+          self._addOrUpdatePhoto_FromCameraRoll photo
+          # add to DataURLs, as necessary
+          self.dataURLs['preview'][photo.UUID] = photo.src if photo.src
+          console.log "\n**** NEW photo from WORKORDER added to map() & photos, uuid=" + photo.UUID
+          return  
+
+
+
+        # note = "for browser, workorder photos will NOT be in map OR photos"
+        # note = "for device, workorder photos will be in map unless deleted , but may NOT be in photos"
+
+        # not found in map, but still check if photos, WORKORDER_SYNC may update Editor attrs
+        # foundInPhotos = _.find self.photos, (o)->return o.UUID[0...36] == photo.UUID[0...36]
+        foundInPhotos = _.find self.photos, {UUID: photo.UUID}
+        if !foundInPhotos 
+          # notFound because a) dataURL not yet retrieved, or b) not in map() (added above)
+          self._addOrUpdatePhoto_FromCameraRoll photo
+          console.log "\n**** NEW photo from WORKORDER added to photos, uuid=" + photo.UUID
+
+        else 
+          # merge values set by Editor
+          _.extend foundInPhotos, _.pick photo, ['topPick', 'favorite', 'shotId', 'isBestshot']
+          console.log "\n\n**** MERGE photo from WORKORDER into cameraRoll for uuid=" + photo.UUID
+        return
+
+
+
+
 
       addDataURL: (size, photo)->
         # console.log "\n\n adding for size=" + size
         if !/preview|thumbnail/.test( size )
           return console.log "ERROR: invalid dataURL size, size=" + size
-        console.log "WARNING: NOT truncating to UUID(36), UUID="+photo.UUID if photo.UUID.length > 36
+        _logOnce "sdkhda", "WARNING: NOT truncating to UUID(36), UUID="+photo.UUID if photo.UUID.length > 36
         # console.log _.keys photo
         self.dataURLs[size][photo.UUID] = photo.data
         # console.log "\n\n added!! ************* " 
@@ -191,7 +238,7 @@ angular
       # for testing only  
       patchPhoto: (photo)->
         # photo.topPick = true 
-        photo.topPick = true if /^[AB]/.test(photo.UUID) 
+        # photo.topPick = true if /^[AB]/.test(photo.UUID) 
         return
 
       getDateFromLocalTime : (dateTaken)->
@@ -259,9 +306,27 @@ angular
         }
         # debounce snappiMessengerPluginService.fetchDataURLsFromQueueP()
         $rootScope.$broadcast 'cameraRoll.queuedDataURL'
-      queue: (clear)->
+      queue: (clear, LIMIT = 100 )->
+        
         self._queue = {} if clear=='clear'
-        return _.clone self._queue
+
+        thumbnails = _.filter self._queue, {size: 'thumbnail'}
+        previews = _.filter self._queue, {size: 'preview'}
+
+        keys = _.keys thumbnails
+        if previews.length > LIMIT
+          _logOnce 'iegd', "cameraRoll.queue() 'preview' LIMIT="+LIMIT
+          previews = previews[0..LIMIT]
+        _.each previews, (v, key)->
+          keys.push key
+
+        batch = {}
+        _.map keys, (key)->
+          batch[key] = self._queue[key]
+          delete self._queue[key]
+          return
+          
+        return batch
 
 
       getMomentPreviewAssets:(moments)->
@@ -300,13 +365,18 @@ angular
         # workorder: otgParse.fetchWorkorderPhotosByWoIdP()
         # top-picks: otgParse.fetchPhotosByOwnerP
         return
-      else 
+      else if $rootScope.user?.isRegistered
+        # skip
+        return
+      else  
         # load TEST_DATA
-        console.log "\n\n *** loading TEST_DATA ***\n\n"
+        console.log "\n\n *** loading TEST_DATA: TODO: MOVE TO _LOAD_BROWSER_TOOLS ***\n\n"
         self.orders = TEST_DATA.orders
         photos_ByDateUUID = TEST_DATA.cameraRoll_byDate
         self.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( photos_ByDateUUID ), 2
         self.photos = otgData.parsePhotosFromMoments self.moments, 'TEST_DATA'
+        self._mapAssetsLibrary = _.map self.photos, (TEST_DATA_photo)->
+          return {UUID: TEST_DATA_photo.UUID, dateTaken: TEST_DATA_photo.date}
 
         return
 
@@ -338,10 +408,10 @@ angular
         return deviceReady.waitP().then (retval)->
           dfd = $q.defer()
           return $q.reject "ERROR: window.Messenger Plugin not available" if !(window.Messenger?.mapAssetsLibrary)
-          console.log "about to call Messenger.mapAssetsLibrary(), Messenger.properties=" + JSON.stringify _.keys window.Messenger.prototype 
+          # console.log "about to call Messenger.mapAssetsLibrary(), Messenger.properties=" + JSON.stringify _.keys window.Messenger.prototype 
           window.Messenger.mapAssetsLibrary (mapped)->
               ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
-              console.log "\n *** mapAssetsLibrary Got it!!! length=" + mapped.length
+              # console.log "\n *** mapAssetsLibrary Got it!!! length=" + mapped.length
               return dfd.resolve ( mapped )
             , (error)->
               return dfd.reject("ERROR: MessengermapAssetsLibrary(), msg=" + JSON.stringify error)
@@ -360,7 +430,7 @@ angular
               # keys:  UUID,data,elapsed, and more...
               # console.log "\n\n>>>>>>>  getPhotosByIdP(" + photo.UUID + "), DataURL[0..80]=" + photo.data[0..80]
               # cameraRoll.dataUrls[photo.format][ photo.UUID[0...36] ] = photo.data
-              cameraRoll.addPhoto(photo)
+              cameraRoll._addOrUpdatePhoto_FromCameraRoll(photo)
               cameraRoll.addDataURL(photo.format, photo)
               console.log "\n*****************************\n"
 
@@ -382,14 +452,14 @@ angular
         chunks = []
         chunkable = _.clone tooManyAssets
         chunks.push chunkable.splice(0, _MessengerPLUGIN.CHUNK_SIZE ) while chunkable.length
-        console.log "\n ********** chunk count=" + chunks.length
+        # console.log "\n ********** chunk count=" + chunks.length
 
         
         ## in Parallel, overloads device
         if !delayMS
           promises = []
           _.each chunks, (assets, i, l)->
-            console.log "\n\n>>> chunk="+i+ " of length=" + assets.length
+            # console.log "\n\n>>> chunk="+i+ " of length=" + assets.length
             promise = _MessengerPLUGIN.getDataURLForAssets_P( assets, size )
             promises.push(promise)
           return $q.all(promises).then (photos)->
@@ -482,7 +552,9 @@ angular
             # console.log "***  _resolveIfDone ****, remaining=" + remaining
             return if remaining
             if retval.errors.length == 0
-              console.log "\n>>>>>>>> window.Messenger.getPhotoById()  complete, count=" + retval.photos.length + " \n\n"
+              end = new Date().getTime()
+              elapsed = (end-start)/1000
+              console.log "\n>>>>>>>> window.Messenger.getPhotoById()  complete, count=" + retval.photos.length + " , elapsed=" + elapsed + "\n\n"
               return dfd.resolve ( retval.photos ) 
             else if retval.photos.length && retval.errors.length 
               console.log "WARNING: SOME errors occurred in Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
@@ -498,16 +570,15 @@ angular
 
               # one callback for each element in assetIds
               end = new Date().getTime()
-              # photo keys: [data,UUID,dateTaken,originalWidth,originalHeight]
-              photo.elapsed = (end-start)/1000
+              ## expecting photo keys: [data,UUID,dateTaken,originalWidth,originalHeight]
+              # photo.elapsed = (end-start)/1000
               photo.from = 'cameraRoll'
               photo.date = cameraRoll.getDateFromLocalTime(photo.dateTaken)
               photo.autoRotate = options.autoRotate
               photo.orientation = 'unknown'    # missing
               if (photo.autoRotate)
                 # originalHeight/Width is not swapping
-                console.log "\n\n Messenger Plugin.getPhotosByIdP(): WARNING originalH/W not swapping on autoRotate"
-
+                _logOnce '4j9', "Messenger Plugin.getPhotosByIdP(): WARNING originalH/W not swapping on autoRotate" 
 
               # plugin method options              
               photo.format = options.type  # thumbnail, preview, previewHD
@@ -515,7 +586,7 @@ angular
               photo.targetWidth = options.targetWidth
               photo.targetHeight = options.targetHeight
               
-              console.log "*** window.Messenger.getPhotoById success!! *** elapsed=" + (end-start)/1000
+              # console.log "*** window.Messenger.getPhotoById success!! *** elapsed=" + (end-start)/1000
 
               retval.photos.push photo
               remaining--
@@ -528,8 +599,8 @@ angular
           return dfd.promise
 
       fetchDataURLsFromQueue : _.debounce ()->
-          # ???: can you debounce a promise???
           queuedAssets = cameraRoll.queue()
+
           cameraRoll.queue('clear')
           chunks = {}
           _.each ['preview', 'thumbnail'], (size)->
@@ -555,7 +626,7 @@ angular
 
 
           return $q.all(promises).then (o)->
-            console.log "\n\n *** fetchDataURLsFromQueueP $q All Done! \n"
+            console.log "*** fetchDataURLsFromQueueP $q All Done! \n"
         , 500
 
     }
