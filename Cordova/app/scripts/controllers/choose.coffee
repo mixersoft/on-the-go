@@ -10,8 +10,8 @@
 angular.module('ionBlankApp')
 # uses $q.promise to load src 
 .directive 'lazySrc', [
-  'deviceReady', 'cameraRoll', 'imageCacheSvc', 'TEST_DATA'
-  (deviceReady, cameraRoll, imageCacheSvc, TEST_DATA)->
+  'deviceReady', 'cameraRoll', 'imageCacheSvc', '$rootScope', 'TEST_DATA'
+  (deviceReady, cameraRoll, imageCacheSvc, $rootScope, TEST_DATA)->
 
     _setLazySrc = (element, UUID, format)->
       return if !UUID
@@ -22,26 +22,36 @@ angular.module('ionBlankApp')
       src = cameraRoll.getDataURL(UUID, IMAGE_SIZE)
       return element.attr('src', src) if src  # use ng-src here???
 
-      if deviceReady.isWebView()
+      isWorkorderMoment = IMAGE_SIZE=='thumbnail' && 
+        ($rootScope.$state.includes('app.workorders') || $rootScope.$state.includes('app.orders'))
+
+      if deviceReady.isWebView() || isWorkorderMoment
         # get with promise
         return cameraRoll.getDataURL_P( UUID, IMAGE_SIZE ).then (photo)->
-          if element.attr('lazy-src') == photo.UUID
-            element.attr('src', photo.data)
-          else
-            console.warn "\n\n*** WARNING: did collection repeat change the element before getDataURL_P returned?"  
-          return
+            if element.attr('lazy-src') == photo.UUID
+              element.attr('src', photo.data)
+            else
+              console.warn "\n\n*** WARNING: did collection repeat change the element before getDataURL_P returned?"  
+            return
+          , (error)->
+            if error == 'photo not available'
+              _useLoremPixel(element, UUID, format)
+
 
       
-      if !deviceReady.isWebView()
-        scope = element.scope()
-        switch format
-          when 'thumbnail'
-            options = scope.options  # set by otgMoment`
-            src = TEST_DATA.lorempixel.getSrc(UUID, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
-          when 'preview'
-            src = scope.item?.src
-            src = TEST_DATA.lorempixel.getSrc(UUID, scope.item.originalWidth, scope.item.originalHeight, TEST_DATA) if !src
-        return element.attr('src', src)  # use ng-src here???
+      if !deviceReady.isWebView() 
+        _useLoremPixel(element, UUID, format)
+
+    _useLoremPixel = (element, UUID, format)->
+      scope = element.scope()
+      switch format
+        when 'thumbnail'
+          options = scope.options  # set by otgMoment`
+          src = TEST_DATA.lorempixel.getSrc(UUID, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
+        when 'preview'
+          src = scope.item?.src
+          src = TEST_DATA.lorempixel.getSrc(UUID, scope.item.originalWidth, scope.item.originalHeight, TEST_DATA) if !src
+      return element.attr('src', src)  # use ng-src here???
 
 
     return {

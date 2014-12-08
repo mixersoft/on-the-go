@@ -342,12 +342,59 @@ angular
         found = self.getDataURL(UUID, size)
         return $q.when(found) if found
         # load from cameraRoll
-        return snappiMessengerPluginService.getDataURLForAssets_P( 
-          [UUID], 
-          size, 
-          self.patchPhoto 
-        ).then (photos)->
-            return photos[0]   # resolve( photo )
+        role = if deviceReady.isWebView() then 'owner' else 'editor'
+        switch role
+          when 'owner'
+            return snappiMessengerPluginService.getDataURLForAssets_P( 
+              [UUID], 
+              size, 
+              self.patchPhoto 
+            ).then (photos)->
+                return photos[0]   # resolve( photo )
+          when 'editor'
+            # using Parse URLs instead of cameraRoll dataURLs
+            preview = self.getDataURL(UUID, 'preview')
+            if preview && /^http/.test( preview )
+              return self.resampleP(preview, 64, 64).then (dataURL)->
+                  photo = {
+                      UUID: UUID
+                      data: dataURL
+                    }
+                  self.addDataURL('thumbnail', photo )
+                  return photo
+                , (error)->
+                  console.log error
+                  console.log "\n\n *** getDataURL_P: Resample.js error: just use preview URL for thumbnail UUID=" + UUID
+                  photo = {
+                    UUID: UUID
+                    data: preview
+                  }
+                  self.addDataURL('thumbnail', photo )
+                  return photo
+            else 
+              $q.reject('photo not available')
+
+
+      resampleP : (imgOrSrc, W=320, H=null)->
+        return $q.reject('Missing Image') if !imgOrSrc
+        console.log "*** resize & convert to base64 using Resample.js ******* imgOrSrc=" + imgOrSrc
+        dfd = $q.defer()
+        done = (dataURL)->
+          console.log "resampled data=" + JSON.stringify {
+            size: dataURL.length
+            data: dataURL[0..60]
+          }
+          dfd.resolve(dataURL)
+          return
+        try 
+          Resample.one()?.resample imgOrSrc
+            ,   W
+            ,   H    # targetHeight
+            ,   dfd
+            ,   "image/jpeg"
+        catch ex  
+          dfd.reject(imgOrSrc)
+        return dfd.promise
 
       getDataURL: (UUID, size='preview')->
         if !/preview|thumbnail/.test size

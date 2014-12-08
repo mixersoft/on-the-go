@@ -144,7 +144,7 @@ angular
             ]
           }
 
-          workorderObj.set('selectedMoments', [ workorderMoment ] )
+          workorderObj.set('workorderMoment', [ workorderMoment ] )
           # console.log " \n\n 1b: &&&&& fetchWorkorderPhotosP from backend.coffee "
           # console.log "\n\n*** inspect workorderMoment for Workorder: " 
           console.log workorderObj.toJSON()
@@ -241,7 +241,7 @@ angular
                   openOrders++
                   $timeout ()->
                       promises.push self.fetchWorkorderPhotosP(workorderObj, options, force ).then (photosColl)->
-                        # fetch all workorder photos to set selectedMoments
+                        # fetch all workorder photos to set workorderMoment
                         # update workorder.selecteMoments
                         # TODO: save workorderMoment to workorderObj os we don't have to repeat
                         scope.workorders = workorderColl.toJSON()  

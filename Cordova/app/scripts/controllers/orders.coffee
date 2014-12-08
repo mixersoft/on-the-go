@@ -53,11 +53,12 @@ angular.module('ionBlankApp')
       # console.log "directive:otgMoment thumbnailLimit=" + cfg.thumbnailLimit
       return cfg
 
-    summarize = (selectedMoments, options)->
+    ## @param moments either checkout.selectedMoments or workorderMoment
+    summarize = (moments, options)->
       # sample photos from dateRange
-      # selectedMoments sorted by mostRecent
-      first = selectedMoments[selectedMoments.length-1]
-      last = selectedMoments[0]
+      # moments sorted by mostRecent
+      first = moments[moments.length-1]
+      last = moments[0]
       summary = {
         key: last.key
         dateRange: {}
@@ -73,7 +74,7 @@ angular.module('ionBlankApp')
 
 
 
-      photos = otgData.parsePhotosFromMoments selectedMoments  # mostRecent first
+      photos = otgData.parsePhotosFromMoments moments  # mostRecent first
       # orders have only 1 selectedMoment, unlike choose
       # TODO:  use reduce with dateRange instead
 

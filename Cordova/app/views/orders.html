@@ -131,7 +131,7 @@
     </div>
     <div class="item item-complex" 
     ng-if="order.count_expected">
-      <otg-moment-date-range otg-model="order.selectedMoments"></otg-moment-date-range>
+      <otg-moment-date-range otg-model="order.workorderMoment"></otg-moment-date-range>
     </div>
     <div class="item item-divider item-assertive">
     <!-- footer  -->
@@ -170,7 +170,7 @@
     </div>
     <div class="item item-complex" 
     ng-if="order.checkout.count.photos">
-      <otg-moment-date-range otg-model="order.checkout.selectedMoments"></otg-moment-date-range>
+      <otg-moment-date-range otg-model="order.checkout.workorderMoment"></otg-moment-date-range>
     </div>
     <div class="item item-divider item-assertive">
     <!-- footer  -->
