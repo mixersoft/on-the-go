@@ -74,6 +74,14 @@ angular
         # workorderObj.id: photosColl
       }
 
+      clear: ()->
+        self._workorderColl = {
+          owner: []
+          editor: []
+        }
+        self._workorderPhotosColl = {}
+        return
+
       fetchWorkordersP : (options={}, force)->
 
         role = if options.editor then 'editor' else 'owner'
@@ -345,7 +353,7 @@ angular
             password: $rootScope.user[userCred[1]]
           }
         return deviceReady.waitP().then ()->
-          Parse.User.logIn( userCred.username.toLowerCase(), userCred.password )
+          return Parse.User.logIn( userCred.username.toLowerCase(), userCred.password )
         .then (user)->  
             $rootScope.sessionUser = Parse.User.current()
             $rootScope.user.isRegistered = true
@@ -603,23 +611,12 @@ angular
 
       uploadPhotoP : (workorder, photoOrMapItem)->
         UPLOAD_IMAGE_SIZE = 'preview'
-        # see otgData for Photo properties
-        # if _.isEmpty($rootScope.sessionUser)
-        #   if $rootScope.user.username? && $rootScope.user.password?
-        #     authPromise = self.loginP($rootScope.user).then null
-        #         , (error)->
-        #           userCred = error
-        #           return self.signUpP($rootScope.user)
-        #   else 
-        #     authPromise = self.anonSignUpP()
-        #   return authPromise.then (userCred)->
-        #       self.uploadPhotoP(photo) if $rootScope.sessionUser
 
         # # upgrade to named user
         # if $rootScope.sessionUser.get('username') != $rootScope.user.username
         #   _.each ['username', 'password', 'email'], (key)->
         #     $rootScope.sessionUser.set(key, $rootScope.user[key])
-        photo = if photoOrMapItem?.UUID then photoOrMapItem else { UUID:photoOrMapItem}
+        photo = if photoOrMapItem?.UUID then photoOrMapItem else { UUID:photoOrMapItem }
         return throw "ERROR: cannot upload without valid workorder" if !workorder
         return deviceReady.waitP().then self.checkSessionUserP() 
           .then ()->
@@ -628,25 +625,31 @@ angular
               found = cameraRoll.getDataURL(photo.UUID, UPLOAD_IMAGE_SIZE)
               if found
                 photo = _.find cameraRoll.photos, {UUID: photo.UUID}
-                return found 
+                # photo is set by closure
+                return found # is a dataURL
 
               # fetch with promise
-              return snappiMessengerPluginService.getDataURLForAssets_P( [UUID], UPLOAD_IMAGE_SIZE ).then (dataURL)->
-              # return cameraRoll.getDataURLP( photo.UUID, UPLOAD_IMAGE_SIZE ).then (dataURL)->
-                console.log "\n\n*** .getDataURLForAssets_P() resolved with:" + dataURL[0...50]
+              return snappiMessengerPluginService.getDataURLForAssets_P( [photo.UUID], UPLOAD_IMAGE_SIZE ).then (photos)->
+                dataURL = cameraRoll.getDataURL(photo.UUID, UPLOAD_IMAGE_SIZE)
+                console.log "\n*** snappiMessengerPluginService.getDataURLForAssets_P() resolved with:" + dataURL[0...50]
                 
                 photo = _.find cameraRoll.photos, {UUID: photo.UUID}
+                # photo is set by closure
                 throw "ERROR in uploadPhotoP, photo not found" if !photo 
 
                 return dataURL
 
-            if !deviceReady.isWebView() && /^data:image/.test( photo.src )
+            # browser with dataURL
+            photo = _.find cameraRoll.photos, {UUID: photo.UUID}
+            if /^data:image/.test( photo.src )
               dataURL = photo.src
               return $q.when( dataURL )
 
             return self.resampleP(photo.src, 320)
             # should reject because of SecurityError
           .then (base64src)->
+              # console.log "\n\n *** base64src=" + base64src[0...50]
+              # console.log photo # $$$
               return self.uploadFileP(base64src, photo)
             , (error)->
               if error == 'Missing Image' || error.name == "SecurityError" && _.isString error.src
@@ -657,7 +660,7 @@ angular
               else 
                 throw error
           .then (parseFile)->
-              console.log "\n\n *** parseFile uploaded, check url=" + parseFile.url()
+              console.log "\n *** parseFile uploaded, check url=" + parseFile.url()
 
               extendedAttrs = _.pick photo, ['dateTaken', 'originalWidth', 'originalHeight', 'rating', 'favorite', 'caption', 'exif']
               # console.log extendedAttrs

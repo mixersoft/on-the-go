@@ -254,28 +254,27 @@ angular
         date = _getAsLocalTime( datetime, true)
         return date.substring(0,10)  # like "2014-07-14"
 
+      # promise version should use lazySrc
+      # but it requires cameraRoll to have circular reference to snappiMessengerPluginService
+      # TODO: !!! refactor to remove snappiMessengerPluginService dependency on cameraRoll
       getDataURLP :  (UUID, size='preview')->
+        console.error "\n\n\nWARNING: do not use this method unless circular dependency removed !!!\n\n\n"
         found = self.getDataURL(UUID, size)
         return $q.when(found) if found
         # load from cameraRoll
-        return snappiMessengerPluginService.getDataURLForAssets_P( [UUID], size )
+        return snappiMessengerPluginService.getDataURLForAssets_P( [UUID], size ) # resolve( photos )
 
       getDataURL: (UUID, size='preview')->
         if !/preview|thumbnail/.test size
           throw "ERROR: invalid dataURL size, size=" + size
-        # console.log "$$$ camera.dataURLs lookup for UUID="+UUID+size
+        console.log "$$$ camera.dataURLs lookup for UUID="+UUID+', size='+size
         # console.log self.dataURLs[size][UUID]
         found = self.dataURLs[size][UUID]
         if !found
           found = _.find self.dataURLs[size], (o,key)->
               return o if key[0...36] == UUID
-        # console.log JSON.stringify {
-        #   desc: "*** getDataURL ***"
-        #   UUID: UUID
-        #   size: size
-        #   dataURL: found?[0...40]
-        # }
         if !found # still not found, add to queue for fetch
+          console.log "STILL NOT FOUND in self.dataURLs for UUID=" + UUID
           self.queueDataURL(UUID, size)
         return found
 
@@ -586,7 +585,7 @@ angular
               photo.targetWidth = options.targetWidth
               photo.targetHeight = options.targetHeight
               
-              # console.log "*** window.Messenger.getPhotoById success!! *** elapsed=" + (end-start)/1000
+              _logOnce '4jsdf9',  "*** window.Messenger.getPhotoById success!! *** elapsed=" + (end-start)/1000
 
               retval.photos.push photo
               remaining--
@@ -604,7 +603,7 @@ angular
           cameraRoll.queue('clear')
           chunks = {}
           _.each ['preview', 'thumbnail'], (size)->
-            assets = _.filter queuedAssets, (o)->return o.size == size
+            assets = _.filter queuedAssets, (o)->return o?.size == size
             chunks[size] = assets if assets.length
           
           promises = []

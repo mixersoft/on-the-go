@@ -213,8 +213,6 @@ angular.module('ionBlankApp')
 
     $scope.SideMenuSwitcher.leftSide.src = 'partials/left-side-menu'
 
-    window.$state = $scope.$state = $state;
-
     $scope.state = {
       showDelete: false
       showReorder: false
@@ -294,7 +292,7 @@ angular.module('ionBlankApp')
 
       dontShowHint : (hide, keep)->
         # check config['dont-show-again'] to see if we should hide hint card
-        current = $scope.$state.current.name.split('.').pop()
+        current = $rootScope.$state.current.name.split('.').pop()
         if hide?.swipeCard
           property = $scope.config['dont-show-again']['top-picks']
           property[current] = true

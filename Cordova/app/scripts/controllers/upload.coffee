@@ -28,7 +28,7 @@ angular.module('ionBlankApp')
           return this.state.isEnabled
       isActive: ()->
         return self.state.isActive    
-      startUploadingP: ()->
+      startUploadingP: (onProgress)->
 
         if self.state.isEnabled && self._queue.length
           item = self._queue.shift()
@@ -51,7 +51,9 @@ angular.module('ionBlankApp')
           otgParse.uploadPhotoP( workorderObj, photo).then ()->
               self.state.isActive = false
               workorderObj.increment('count_received')
+
               return workorderObj.save()
+
             , (error)->
               # check for duplicate assetId using cloud code
               # https://www.parse.com/questions/unique-fields--2
@@ -62,6 +64,7 @@ angular.module('ionBlankApp')
               else 
                 return $q.when()
             .then ()->
+              onProgress() if onProgress
               return self.startUploadingP()  if self._queue.length # repeat recursively
               return $q.when() # finish
 
@@ -115,6 +118,9 @@ angular.module('ionBlankApp')
       title: "Upload"
     }
 
+    onProgress = ()->
+      $scope.menu.uploader.count = otgUploader.queueLength()
+
     $scope.otgUploader = otgUploader
 
     $scope.redButton = {
@@ -123,19 +129,23 @@ angular.module('ionBlankApp')
         target.addClass('activated')
         if otgUploader.enable('toggle')
           target.addClass('enabled') 
-          otgUploader.startUploadingP()
+          otgUploader.startUploadingP(onProgress)
         else 
           target.removeClass('enabled') 
+        
         return
       release: (ev)-> 
         target = angular.element(ev.currentTarget)
         target.removeClass('activated')
         target.removeClass('enabled') if otgUploader.enable()
+        
+        $scope.menu.uploader.count = otgUploader.queueLength()
         return 
 
     }
 
     init =()->
+      $scope.menu.uploader.count = otgUploader.queueLength()
       if otgUploader.enable()==null
         otgUploader.enable($scope.config.upload['auto-upload'])
 

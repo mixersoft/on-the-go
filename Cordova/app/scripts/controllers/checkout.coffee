@@ -120,15 +120,8 @@ angular.module('ionBlankApp')
           when 'app.checkout.submit'
             # return false on error by promise
             return parse._createWorkorderP( $scope.checkout, $scope.watch.servicePlan ).then (workorderObj)->
-                # deprecate: /orders should fetch from parse instead of $scope.orders
-                $scope.orders.push {
-                  datetime: new Date()
-                  status: 'new'
-                  checkout: $scope.checkout
-                  servicePlan: $scope.watch.servicePlan
-                }
                 $ionicNavBarDelegate.showBackButton(false)
-                return $q.when(workorderObj)
+                return
           when 'app.checkout.complete'
             return true
             
@@ -281,7 +274,8 @@ angular.module('ionBlankApp')
 
 
     init = ()->
-      # TODO: move to AppCtrl
+      $scope.orders = []
+
       otgParse.checkSessionUserP().then ()->  
         check = $rootScope.user 
         return 
@@ -290,7 +284,6 @@ angular.module('ionBlankApp')
       $scope.checkout = otgWorkorder.checkout.getSelectedAsMoments()
       $scope.watch.servicePlan = _getTotal($scope.checkout)
       _wizard.validateSteps()
-      $scope.$state = $state
 
       # initialize the wizard steps      
       if $state.params.from?

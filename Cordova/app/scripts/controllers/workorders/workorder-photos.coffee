@@ -114,8 +114,7 @@ angular.module('ionBlankApp')
         revert = item.topPick
         return if revert==false
         item.topPick = false
-        coll = $scope.parse_raw.photosColl
-        otgParse.savePhotoP(item, coll, 'topPick').then ()->
+        otgParse.savePhotoP(item, $scope.photosColl, 'topPick').then ()->
             $scope.workorderAttr.progress.todo -= 1 if !revert && revert != false
             $scope.workorderAttr.progress.picks -= 1 if revert==true
             return $scope.$apply()
@@ -134,8 +133,7 @@ angular.module('ionBlankApp')
         revert = item.topPick
         return if revert==true
         item.topPick = true
-        coll = $scope.parse_raw.photosColl
-        otgParse.savePhotoP(item, coll, 'topPick').then ()->
+        otgParse.savePhotoP(item, $scope.photosColl, 'topPick').then ()->
             $scope.workorderAttr.progress.todo -= 1 if !revert && revert != false
             $scope.workorderAttr.progress.picks += 1 if revert==false
             return $scope.$apply()
@@ -152,7 +150,7 @@ angular.module('ionBlankApp')
 
       dontShowHint : (hide, keep)->
         # check config['dont-show-again'] to see if we should hide hint card
-        current = $scope.$state.current.name.split('.').pop()
+        current = $rootScope.$state.current.name.split('.').pop()
         if hide?.swipeCard
           property = $scope.config['dont-show-again']['workorders']
           property[current] = true
@@ -203,6 +201,8 @@ angular.module('ionBlankApp')
       _whenDoneP = (workorderColl)->
         workorderObj = _.findWhere workorderColl.models, { id: woid } 
         otgWorkorderSync.fetchWorkorderPhotosP(workorderObj).then (photosColl)->
+
+          $scope.photosColl = photosColl
           $scope.photos = photosColl.toJSON()
           # add to sideMenu
           $scope.workorderAttr = workorderObj.toJSON()

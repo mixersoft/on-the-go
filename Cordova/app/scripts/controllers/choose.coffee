@@ -10,20 +10,30 @@
 angular.module('ionBlankApp')
 # uses $q.promise to load src 
 .directive 'lazySrc', [
-  'deviceReady', 'cameraRoll', 'imageCacheSvc', 'TEST_DATA'
-  (deviceReady, cameraRoll, imageCacheSvc, TEST_DATA)->
+  'deviceReady', 'cameraRoll', 'imageCacheSvc', 'snappiMessengerPluginService', 'TEST_DATA'
+  (deviceReady, cameraRoll, imageCacheSvc, snappiMessengerPluginService, TEST_DATA)->
 
     _setLazySrc = (element, UUID, format)->
       return if !UUID
-      console.log "\nlazySrc reports notCached for format=" + format + ", UUID="+UUID
+      # NOTE: UUID is truncated to 36
+      IMAGE_SIZE = format || 'thumbnail'
+      # console.log "\nlazySrc reports notCached for format=" + format + ", UUID="+UUID
 
-      src = cameraRoll.getDataURL(UUID, format || 'thumbnail') #  || scope.photo?.getSrc || scope.photo?.src
+      src = cameraRoll.getDataURL(UUID, IMAGE_SIZE)
+      return element.attr('src', src) if src  # use ng-src here???
+
+      if deviceReady.isWebView()
+        # get with promise
+        return snappiMessengerPluginService.getDataURLForAssets_P( [UUID], IMAGE_SIZE ) .then (photos)->
+          src = cameraRoll.getDataURL(UUID, IMAGE_SIZE)
+          console.log "\n*** lazySrc getDataURLP() resolved! dataURL=" + src[0...50]
+          if element.attr('uuid') != UUID
+            return console.warn "\n\n*** WARNING: did collection repeat change the element before getDataURLP returned?"  
+          element.attr('src', src)  # use ng-src here???
+          return
+
       
-      if !src && deviceReady.isWebView()
-        # fetch photo? set up a $watch?? photo may not be loaded yet
-        cameraRoll.queueDataURL(UUID, format)
-        return ''
-      if !src && !deviceReady.isWebView() # browser uses lorempixel
+      if !deviceReady.isWebView()
         scope = element.scope()
         switch format
           when 'thumbnail'
@@ -32,10 +42,8 @@ angular.module('ionBlankApp')
           when 'preview'
             src = scope.item?.src
             src = TEST_DATA.lorempixel.getSrc(UUID, scope.item.originalWidth, scope.item.originalHeight, TEST_DATA) if !src
-        
-      # console.log "\n*** lazySrc="+ (src && src[0..30])
-      element.attr('src', src)  # use ng-src here???
-      return src
+        return element.attr('src', src)  # use ng-src here???
+
 
     return {
       restrict: 'A'
@@ -44,38 +52,11 @@ angular.module('ionBlankApp')
         format = attrs.format
 
         attrs.$observe 'lazySrc', (UUID)->
-          UUID = UUID[0...36] # localStorage might balk at '/' in pathname
+          # UUID = UUID[0...36] # localStorage might balk at '/' in pathname
+          console.log "\n\n $$$ attrs.$observe 'lazySrc', UUID+" + UUID
           element.attr('uuid', UUID)
-          # item = element.scope().item
-          # updateAttrs = {
-          #   'uuid': UUID
-          #   'origW': item.originalWidth
-          #   'origH': item.originalHeight
-          # }
-          # updateAttrs['height'] = item.scaledH if item.scaledH
-          # console.log "\n\n\n *** lazySrc ***"
-          # console.log updateAttrs
-          # element.attr updateAttrs
-          # console.log "attrs.$observe, scope."
-          # console.log "\n\n UUID=" + JSON.stringify UUID
-          # check for cached image first
           return src = _setLazySrc(element, UUID, format) 
 
-
-        return 'skip'
-        imageCacheSvc.useCachedFileP( element ).then (isCached)->
-            console.log "\n\nCACHE HIT!!!!, use ng-src??? \n\n"
-            return isCached
-          , (notCached)->
-            src = _setLazySrc(element, UUID, format, options)
-            if imageCacheSvc.isDataURL(src)
-              console.log "$$$ try to cache imageCacheSvc.cacheDataURLP, UUID=" + UUID
-              return imageCacheSvc.cacheDataURLP( element, UUID , false)
-            else 
-              return ImgCache.cacheFile(src)
-        # scope.$watch scope.photo.src, (newVal, oldVal)->
-        #   console.log "\n\n2 -  photo.src changed, src=" + newVal[0..40] if newVal
-        #   element.attr('src', src) if newVal != oldVal
         return
   }
 ]
@@ -378,7 +359,7 @@ angular.module('ionBlankApp')
         return
       dontShowHint : (hide, keep)->
         # check config['dont-show-again'] to see if we should hide hint card
-        current = $scope.$state.current.name.split('.').pop()
+        current = $rootScope.$state.current.name.split('.').pop()
         if hide?.swipeCard
           property = $scope.config['dont-show-again']['choose']
           property[current] = true
