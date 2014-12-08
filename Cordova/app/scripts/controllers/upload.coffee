@@ -76,7 +76,7 @@ angular.module('ionBlankApp')
         return self._queue?.length || 0
       ## @param photos array of photo Objects or UUIDs  
 
-      queueP: (workorderObj, photos)->
+      XXXqueueP: (workorderObj, photos)->
         # DEPRECATE, not async
         self.queue(workorderObj, photos)
         return $q.when(self._queue)

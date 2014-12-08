@@ -191,9 +191,9 @@ angular.module('ionBlankApp')
   '$scope', '$rootScope', '$state', 'otgData', 'otgParse', 
   '$timeout', '$window', '$q', '$filter', 
   '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', 
-  'deviceReady', 'snappiMessengerPluginService', 'cameraRoll'
+  'deviceReady', 'snappiMessengerPluginService', 'cameraRoll', 'otgWorkorderSync'
   'TEST_DATA', 'imageCacheSvc'
-  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, deviceReady, snappiMessengerPluginService, cameraRoll, TEST_DATA, imageCacheSvc) ->
+  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, deviceReady, snappiMessengerPluginService, cameraRoll, otgWorkorderSync, TEST_DATA, imageCacheSvc) ->
     $scope.label = {
       title: "Top Picks"
       header_card: 
@@ -381,41 +381,10 @@ angular.module('ionBlankApp')
       setFilter( $state.current )
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info
 
-
-      return console.log "SKIPPING FETCH TOP PICKS FROM PARSE !!! should be done in appCtrl "
-
-      # parse._fetchPhotosByOwnerP().then null, (err)->
-      #     console.warn "PARSE error, err=" + JSON.stringify err
-      #     return {}
-      # .then (o)->
-        
-      #   # merge topPicks with photoRoll
-      #   # TODO: save to local storage
-      #   # return "skip this for now"
-      #   $scope.serverPhotos = o.photosColl.toJSON()
-      #   _.each $scope.serverPhotos, (photo)->
-      #     found = _.find cameraRoll.photos, (o)->return o.UUID[0...36] == photo.UUID
-      #     if !found 
-      #       # add to cameraRoll.photos
-      #       # real workorder photos will NOT be found in TEST_DATA the FIRST time
-
-
-      #       # move to patch
-      #       # photo.UUID = photo.assetId
-      #       # photo.from = "PARSE"          # deprecate, TODO: keep track of server photos from workorders separately
-      #       # photo.date = cameraRoll.getDateFromLocalTime(photo.dateTaken)
-
-
-      #       photo.topPick = !!photo.topPick
-      #       cameraRoll.photos.push photo
-      #       console.log "\n\n**** NEW serverPhoto, uuid=" + photo.UUID
-      #     else 
-      #       # merge values set by Editor
-      #       # merge shotId
-      #       _.extend found, _.pick photo, ['topPick', 'favorite', 'shotId', 'isBestshot']
-      #       console.log "\n\n**** MERGE topPick from serverPhotos for uuid=" + photo.UUID
-      #     return true
-      #   return 
+      # show loading
+      force = !otgWorkorderSync._workorderColl['owner'].length
+      if force
+        otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force')
 
       return
 

@@ -137,7 +137,7 @@ angular.module('ionBlankApp')
         switch $state.current.name
           when 'app.checkout.complete'
             # AFTER submit, queue photos
-            parse._queueSelectedMomentsP $scope.checkout, $scope.workorderObj
+            parse._queueSelectedMoments $scope.checkout, $scope.workorderObj
 
 
         # put on on $rootScope.$on '$stateChangeSuccess'
@@ -254,7 +254,7 @@ angular.module('ionBlankApp')
         return photos    # with photo.src as lorempixel  
           
 
-      _queueSelectedMomentsP : (checkout, workorderObj)->
+      _queueSelectedMoments : (checkout, workorderObj)->
         workorderObj = $scope.workorderObj if !workorderObj
 
         # photos = parse.DEPRECATED_getPhotosFromMoments(checkout.selectedMoments)
@@ -268,9 +268,9 @@ angular.module('ionBlankApp')
             return result
           , []
 
-        return otgUploader.queueP(workorderObj, photos).then (queue)->
-          console.log "workorder created successfully and photos queued, length=" + queue.length
-          return $q.when(queue)
+        queue = otgUploader.queue(workorderObj, photos)
+        console.log "workorder created successfully and photos queued, length=" + queue.length
+        return $q.when(queue)
     }
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams)->

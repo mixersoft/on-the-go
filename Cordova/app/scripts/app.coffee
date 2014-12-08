@@ -87,13 +87,7 @@ angular
         'workorderPartials':
           templateUrl: "views/workorders/workorder-partials.html"
     })
-    .state('nav-menu', {
-      url: "/nav-menu",
-      views:
-        'appContent':
-          templateUrl: "views/menu-only.html",
-          controller: 'AppCtrl'
-    })
+
 
     # directive:gallery
     # view:top-picks
@@ -526,12 +520,12 @@ angular
 .controller 'AppCtrl', [
   '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', '$ionicPlatform', 
   'SideMenuSwitcher', '$ionicSideMenuDelegate'
-  'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgUploader'
+  'otgData', 'otgParse', 'otgWorkorder', 'otgWorkorderSync', 'otgUploader'
   'snappiMessengerPluginService', 
   'deviceReady', 'cameraRoll', 'appConsole'
   'TEST_DATA', 'imageCacheSvc'
   ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, 
-    otgData, otgWorkorder, otgWorkorderSync, otgUploader
+    otgData, otgParse, otgWorkorder, otgWorkorderSync, otgUploader
     snappiMessengerPluginService, 
     deviceReady, cameraRoll, appConsole,
     TEST_DATA, imageCacheSvc  )->
@@ -614,7 +608,9 @@ angular
           'picks' : false
 
     }
-    $rootScope.user = $scope.user = {
+
+    $rootScope.deviceId = "1234567890" # updated after deviceReady.waitP()
+    $rootScope.user = $scope.XXXuser = {
       id: null
 
       username: null
@@ -631,16 +627,9 @@ angular
       rememberMe: false
       isRegistered: false 
     } 
-    if $rootScope.sessionUser instanceof Parse.Object
-      # merge from cookie into $rootScope.user
-      userCred = _.pick( $rootScope.sessionUser.toJSON(), ['username', 'email', 'emailVerified'] )
-      userCred.password = 'HIDDEN'
-      isGuest = /^anonymous/.test(userCred.username) || /^browser/i.test(userCred.username)
-      userCred.isRegistered = !isGuest
-      _.extend $rootScope.user, userCred
+    otgParse.mergeSessionUser()
 
-    # get GUID
-    $rootScope.deviceId = "1234567890" # updated after deviceReady.waitP()
+
 
     $scope.$watch 'config', (newVal, oldVal)->
         return _prefs.store newVal, oldVal
@@ -748,30 +737,6 @@ angular
         # # console.log truncated # $$$
         # $scope.appConsole.show( truncated )
         # return photos
-
-    _SYNC_WORKORDERS = ()->
-      # run AFTER cameraRoll loaded
-      return if _.isEmpty $rootScope.sessionUser
-      return if deviceReady.isWebView() && _.isEmpty cameraRoll.map()
-
-      $timeout ()->
-        console.log "\n\n*** BEGIN Workorder Sync\n"
-        otgWorkorderSync.fetchWorkordersP({ owner: true }, 'force').then (workorderColl)->
-            promises = []
-            openOrders = 0
-            workorderColl.each (workorderObj)->
-
-              return if workorderObj.get('status') == 'complete'
-              openOrders++
-              promises.push otgWorkorderSync.fetchWorkorderPhotosP(workorderObj, 'force').then (photosColl)->
-                queue = otgWorkorderSync.queueMissingPhotos( workorderObj, photosColl )
-                $scope.menu.uploader.count = otgUploader.queueLength()
-
-              $scope.menu.orders.count = openOrders
-              return
-            $q.all( promises ).then (o)->
-              console.log "\n\n*** all missing assets for workorder queued\n"
-
     
 
     # Dev/Debug tools
@@ -805,7 +770,7 @@ angular
 
       $scope.loadMomentsFromCameraRollP().finally ()->
         console.log "\n\n*** cameraRoll mapped\n"
-        _SYNC_WORKORDERS()
+        otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.$state.includes('app.workorders')
 
 
       deviceReady.waitP().then ()->

@@ -63,38 +63,11 @@ angular.module('ionBlankApp')
     $scope.workorders = []
     $scope.workorder = null
 
-    _SYNC_EDITOR_WORKORDERS = ()->
-      # run AFTER cameraRoll loaded
-      return if _.isEmpty $rootScope.sessionUser
-      return if deviceReady.isWebView() && _.isEmpty cameraRoll.map()
-
-      
-      console.log "\n\n*** BEGIN Workorder Sync\n"
-      otgWorkorderSync.fetchWorkordersP({ editor: true }, 'force').then (workorderColl)->
-          promises = []
-          openOrders = 0
-          workorderColl.each (workorderObj)->
-
-            return if workorderObj.get('status') == 'complete'
-            openOrders++
-            promises.push otgWorkorderSync.fetchWorkorderPhotosP(workorderObj, 'force').then (photosColl)->
-              # queue = otgWorkorderSync.queueMissingPhotos( workorderObj, photosColl )
-              # $scope.menu.uploader.count = otgUploader.queueLength()
-              $scope.workorders = workorderColl.toJSON()  
-
-            $scope.menu.orders.count = openOrders
-            return
-          $q.all( promises ).then (o)->
-            $scope.workorders = workorderColl.toJSON()
-            console.log "\n\n*** all workorders loaded\n"
-
 
     init = ()->
-      ## use a $watch instead?
-      $timeout ()->
-        _SYNC_EDITOR_WORKORDERS()
+      otgWorkorderSync.SYNC_WORKORDERS($scope, 'editor', 'force')
+      return 
 
-      return
 
     init()  
 

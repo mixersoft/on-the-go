@@ -62,8 +62,8 @@ angular
 ]
 
 .factory 'otgWorkorderSync', [
-  '$q', '$rootScope', 'deviceReady', 'otgParse', 'otgWorkorder', 'otgUploader', 'cameraRoll', 'snappiMessengerPluginService'
-  ($q,  $rootScope, deviceReady, otgParse, otgWorkorder, otgUploader, cameraRoll, snappiMessengerPluginService)->
+  '$q', '$rootScope', '$timeout', 'deviceReady', 'otgParse', 'otgWorkorder', 'otgUploader', 'cameraRoll', 'snappiMessengerPluginService'
+  ($q, $rootScope, $timeout, deviceReady, otgParse, otgWorkorder, otgUploader, cameraRoll, snappiMessengerPluginService)->
 
     self = {
       _workorderColl : {
@@ -75,6 +75,7 @@ angular
       }
 
       fetchWorkordersP : (options={}, force)->
+
         role = if options.editor then 'editor' else 'owner'
         
         cached = self._workorderColl[role]
@@ -87,7 +88,9 @@ angular
           console.log " \n\n 1a: &&&&& fetchWorkordersP from backend.coffee, role=" + role
           return workorderColl
 
-      fetchWorkorderPhotosP : (workorderObj, force)->
+      fetchWorkorderPhotosP : (workorderObj,  options={}, force)->
+        options = {owner: true} if _.isEmpty options
+
         cached = self._workorderPhotosColl[ workorderObj.id ] 
         return $q.when( cached ) if cached && !force
 
@@ -141,7 +144,6 @@ angular
 
           return photosColl
 
-      # TODO: move to otgUploader???
       queueMissingPhotos : (workorderObj, photosColl)->
         photos = photosColl.toJSON()
 
@@ -154,7 +156,6 @@ angular
           from: workorderObj.get('fromDate')
           to: workorderObj.get('toDate')
         }
-        console.log dateRange # $$$
         # compare vs. map because cameraRoll.photos is incomplete
         mappedPhotos = cameraRoll.map() 
         mappedPhotos = cameraRoll.photos if _.isEmpty mappedPhotos
@@ -173,11 +174,86 @@ angular
         console.log "workorder found and missing photos queued, length=" + queue.length
         return queue
 
+      # wrap in timeouts 
+      SYNC_ORDERS : (scope, force, DELAY=10, whenDoneP)->
+        # run AFTER cameraRoll loaded
+        return if _.isEmpty $rootScope.sessionUser
+        return if deviceReady.isWebView() && _.isEmpty cameraRoll.map()
+
+        options = {
+          role: 'owner'
+          owner: true
+        }
+
+        $timeout ()->
+            console.log "\n\n*** BEGIN Workorder Sync for role=" + options.role + "\n"
+            self.fetchWorkordersP( options , force ).then (workorderColl)->
+
+                promises = []
+                openOrders = 0
+                workorderColl.each (workorderObj)->
+
+                  return if workorderObj.get('status') == 'complete'
+                  openOrders++
+                  $timeout ()->
+                      promises.push self.fetchWorkorderPhotosP(workorderObj, options, force ).then (photosColl)->
+
+                        queue = self.queueMissingPhotos( workorderObj, photosColl )
+                        scope.menu.uploader.count = otgUploader.queueLength()
+
+                        scope.workorders = workorderColl.toJSON()
+                    , DELAY
+
+                  scope.menu.orders.count = openOrders 
+                  return
+                $q.all( promises ).then (o)->
+                  console.log "\n\n*** Workorder SYNC complete for role=" + options.role + "\n"
+                  return whenDoneP(workorderColl) if whenDoneP
+          , DELAY
+
+      # wrap in timeouts 
+      SYNC_WORKORDERS : (scope, force, DELAY=10, whenDoneP)->
+        # run AFTER cameraRoll loaded
+        return if _.isEmpty $rootScope.sessionUser
+        return if deviceReady.isWebView() && _.isEmpty cameraRoll.map()
+
+        options = {
+          role: 'editor'
+          editor: true
+        }
+
+        $timeout ()->
+            console.log "\n\n*** BEGIN Workorder Sync for role=" + options.role + "\n"
+            self.fetchWorkordersP( options , force ).then (workorderColl)->
+
+                promises = []
+                openOrders = 0
+                workorderColl.each (workorderObj)->
+
+                  return if workorderObj.get('status') == 'complete'
+                  openOrders++
+                  $timeout ()->
+                      promises.push self.fetchWorkorderPhotosP(workorderObj, options, force ).then (photosColl)->
+                        # fetch all workorder photos to set selectedMoments
+                        # update workorder.selecteMoments
+                        # TODO: save workorderMoment to workorderObj os we don't have to repeat
+                        scope.workorders = workorderColl.toJSON()  
+                        return photosColl
+                    , DELAY
+
+                  scope.menu.orders.count = openOrders 
+                  return
+                $q.all( promises ).then (o)->
+                  scope.workorders = workorderColl.toJSON()  
+                  console.log "\n\n*** Workorder SYNC complete for role=" + options.role + "\n"
+                  return whenDoneP(workorderColl) if whenDoneP
+          , DELAY
 
   
-      queueSelectedMomentsP : (workorderObj)->
+      XXXqueueSelectedMomentsP : (workorderObj)->
+        options = {owner: true}   # required
         # get workorderPhotosP() by UUID
-        self.fetchWorkorderPhotosP(workorderObj, 'force').then (photosColl)->
+        self.fetchWorkorderPhotosP(workorderObj, options, 'force').then (photosColl)->
           return self.queueMissingPhotos(workorderObj, photosColl)
 
 
@@ -229,7 +305,19 @@ angular
       isAnonymousUser: ()->
         return true if _.isEmpty $rootScope.sessionUser
         return true if $rootScope.sessionUser.get('username').indexOf(ANON_PREFIX.username) == 0
+        return true if $rootScope.sessionUser.get('username') == 'browser'
         return false
+
+      mergeSessionUser: ()->
+        # merge from cookie into $rootScope.user
+        $rootScope.sessionUser = Parse.User.current()
+        return if !($rootScope.sessionUser instanceof Parse.Object)
+
+        userCred = _.pick( $rootScope.sessionUser.toJSON(), ['username', 'email', 'emailVerified'] )
+        userCred.password = 'HIDDEN'
+        userCred.isRegistered = !self.isAnonymousUser()
+        return _.extend $rootScope.user, userCred
+
 
 
       signUpP: (userCred)->
@@ -536,7 +624,7 @@ angular
         return deviceReady.waitP().then self.checkSessionUserP() 
           .then ()->
             if deviceReady.isWebView()
-              # should be preloaded by otgUploader.queueP
+              # should be preloaded by otgUploader.queue
               found = cameraRoll.getDataURL(photo.UUID, UPLOAD_IMAGE_SIZE)
               if found
                 photo = _.find cameraRoll.photos, {UUID: photo.UUID}

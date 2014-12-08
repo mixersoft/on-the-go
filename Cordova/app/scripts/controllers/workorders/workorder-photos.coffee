@@ -197,16 +197,20 @@ angular.module('ionBlankApp')
     init = ()->
       woid = $state.params['woid']
       $scope.on.showInfo(true) if $scope.config['workorder.photos']?.info
-      # add options.Editor, use sessionUser == owner for now
-      otgWorkorderSync.fetchWorkordersP({editor: $rootScope.sessionUser }, 'force').then (workorderColl)->
+
+      # show loading
+      force = !otgWorkorderSync._workorderColl['editor'].length
+      _whenDoneP = (workorderColl)->
         workorderObj = _.findWhere workorderColl.models, { id: woid } 
         otgWorkorderSync.fetchWorkorderPhotosP(workorderObj).then (photosColl)->
           $scope.photos = photosColl.toJSON()
           # add to sideMenu
           $scope.workorderAttr = workorderObj.toJSON()
           $scope.SideMenuSwitcher.watch['workorder'] = $scope.workorderAttr 
-          window.debug.sms = $scope.SideMenuSwitcher.watch
-          window.debug.root = $rootScope
+
+          # # debug
+          # window.debug.sms = $scope.SideMenuSwitcher.watch
+          # window.debug.root = $rootScope
 
           # update work in progress counts
           woProgress = _.reduce $scope.photos, (result, item)->
@@ -219,8 +223,18 @@ angular.module('ionBlankApp')
             }
 
           workorderObj.save({progress: woProgress})
-
           setFilter( $state.current )
+          return
+        return
+
+
+
+      if force
+        # only for TESTING when we load 'app.workorders.photos' as initial state!!!
+        otgWorkorderSync.SYNC_WORKORDERS($scope, 'editor', 'force', _whenDoneP)
+      else 
+        workorderColl = otgWorkorderSync._workorderColl['editor']
+        _whenDoneP workorderColl
 
       return
 

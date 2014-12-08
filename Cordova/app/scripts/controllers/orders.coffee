@@ -141,30 +141,14 @@ angular.module('ionBlankApp')
     init = ()->
       # show loading
       force = !otgWorkorderSync._workorderColl['owner'].length
-      otgWorkorderSync.fetchWorkordersP({owner: true}, force ).then (workorderColl)->
-        console.log " \n\n 2: &&&&& fetchWorkordersP from orders.coffee "
-        $scope.workorders = workorderColl.toJSON()
-
-        return if !force
-
-        # continue to fetch photos so we can create selectedMoments
-        # same as app.coffee: _SYNC_WORKORDERS
-        promises = []
-        openOrders = 0
-        workorderColl.each (workorderObj)->
-
-          return if workorderObj.get('status') == 'complete'
-          openOrders++
-          promises.push otgWorkorderSync.fetchWorkorderPhotosP(workorderObj, 'force').then (photosColl)->
-            queue = otgWorkorderSync.queueMissingPhotos( workorderObj, photosColl )
-            $scope.menu.uploader.count = otgUploader.queueLength()
-
-          $scope.menu.orders.count = openOrders
+      if force
+        otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force')
+      else 
+        options = { owner: true }
+        otgWorkorderSync.fetchWorkordersP( options ).then (workorderColl)->
+          console.log " \n\n 2: &&&&& REFRESH fetchWorkordersP from orders.coffee "
+          $scope.workorders = workorderColl.toJSON()
           return
-
-        $q.all( promises ).then (o)->
-          $scope.workorders = workorderColl.toJSON()   
-          console.log "\n\n*** all missing assets for workorder queued\n"
 
 
     init()  
