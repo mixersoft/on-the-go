@@ -191,9 +191,9 @@ angular.module('ionBlankApp')
   '$scope', '$rootScope', '$state', 'otgData', 'otgParse', 
   '$timeout', '$window', '$q', '$filter', 
   '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', 
-  'deviceReady', 'snappiMessengerPluginService', 'cameraRoll', 'otgWorkorderSync'
+  'deviceReady', 'cameraRoll', 'otgWorkorderSync'
   'TEST_DATA', 'imageCacheSvc'
-  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, deviceReady, snappiMessengerPluginService, cameraRoll, otgWorkorderSync, TEST_DATA, imageCacheSvc) ->
+  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, deviceReady, cameraRoll, otgWorkorderSync, TEST_DATA, imageCacheSvc) ->
     $scope.label = {
       title: "Top Picks"
       header_card: 

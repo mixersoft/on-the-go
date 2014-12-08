@@ -9,8 +9,8 @@
 ###
 angular.module('ionBlankApp')
 .factory 'otgUploader', [
-  '$timeout', '$q', 'otgData', 'otgParse', 'cameraRoll', 'snappiMessengerPluginService'
-  ($timeout, $q, otgData, otgParse, cameraRoll, snappiMessengerPluginService)->
+  '$timeout', '$q', 'otgData', 'otgParse', 'cameraRoll'
+  ($timeout, $q, otgData, otgParse, cameraRoll)->
 
     self = {
       _queue : []

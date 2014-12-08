@@ -10,8 +10,8 @@
 angular.module('ionBlankApp')
 # uses $q.promise to load src 
 .directive 'lazySrc', [
-  'deviceReady', 'cameraRoll', 'imageCacheSvc', 'snappiMessengerPluginService', 'TEST_DATA'
-  (deviceReady, cameraRoll, imageCacheSvc, snappiMessengerPluginService, TEST_DATA)->
+  'deviceReady', 'cameraRoll', 'imageCacheSvc', 'TEST_DATA'
+  (deviceReady, cameraRoll, imageCacheSvc, TEST_DATA)->
 
     _setLazySrc = (element, UUID, format)->
       return if !UUID
@@ -24,12 +24,11 @@ angular.module('ionBlankApp')
 
       if deviceReady.isWebView()
         # get with promise
-        return snappiMessengerPluginService.getDataURLForAssets_P( [UUID], IMAGE_SIZE ) .then (photos)->
-          src = cameraRoll.getDataURL(UUID, IMAGE_SIZE)
-          console.log "\n*** lazySrc getDataURLP() resolved! dataURL=" + src[0...50]
-          if element.attr('uuid') != UUID
-            return console.warn "\n\n*** WARNING: did collection repeat change the element before getDataURLP returned?"  
-          element.attr('src', src)  # use ng-src here???
+        return cameraRoll.getDataURL_P( UUID, IMAGE_SIZE ).then (photo)->
+          if element.attr('lazy-src') == photo.UUID
+            element.attr('src', photo.data)
+          else
+            console.warn "\n\n*** WARNING: did collection repeat change the element before getDataURL_P returned?"  
           return
 
       
@@ -37,7 +36,7 @@ angular.module('ionBlankApp')
         scope = element.scope()
         switch format
           when 'thumbnail'
-            options = scope.options  # set by otgMoment
+            options = scope.options  # set by otgMoment`
             src = TEST_DATA.lorempixel.getSrc(UUID, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
           when 'preview'
             src = scope.item?.src
@@ -305,33 +304,20 @@ angular.module('ionBlankApp')
               # return
               return otgWorkorder.on.clearSelected()
 
-    _loadMomentThumbnailsP = ()->
-      ## refactor: already called in app.coffee, $scope.loadMomentsFromCameraRollP()
-      return if !deviceReady.isWebView()
-      IMAGE_FORMAT = 'thumbnail'
-      # preload thumnail DataURLs for cameraRoll moment previews
-      momentPreviewAssets = cameraRoll.getMomentPreviewAssets() # do this async
-      console.log "\n\n\n*** preloading moment thumbnails for UUIDs: " + JSON.stringify momentPreviewAssets
-      return snappiMessengerPluginService.getDataURLForAssetsByChunks_P( 
-        momentPreviewAssets
-        , IMAGE_FORMAT                          
-        , snappiMessengerPluginService.SERIES_DELAY_MS 
-      ).then ()->
-        console.log "*** preload complete "
-
 
     $scope.cameraRoll = cameraRoll
     $scope.$watchCollection 'cameraRoll.moments', (newV, oldV)->
       console.log "\n\n %%% watched cameraRoll.moments change, update filter %%% \n\n"
-      _loadMomentThumbnailsP() 
-      # reload ??
+      return if !deviceReady.isWebView()
+      return cameraRoll.loadMomentThumbnailsP()
+      "skip" || _loadMomentThumbnailsP()
 
 
     init = ()->
       # console.log "init: state="+$state.current.name
       console.log "\n\n*** ChooseCtrl init() ***"
 
-      _loadMomentThumbnailsP() 
+      return cameraRoll.loadMomentThumbnailsP() 
 
       switch $state.current.name
         when 'app.choose.calendar'

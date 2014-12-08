@@ -62,8 +62,8 @@ angular
 ]
 
 .factory 'otgWorkorderSync', [
-  '$q', '$rootScope', '$timeout', 'deviceReady', 'otgParse', 'otgWorkorder', 'otgUploader', 'cameraRoll', 'snappiMessengerPluginService'
-  ($q, $rootScope, $timeout, deviceReady, otgParse, otgWorkorder, otgUploader, cameraRoll, snappiMessengerPluginService)->
+  '$q', '$rootScope', '$timeout', 'deviceReady', 'otgParse', 'otgWorkorder', 'otgUploader', 'cameraRoll'
+  ($q, $rootScope, $timeout, deviceReady, otgParse, otgWorkorder, otgUploader, cameraRoll )->
 
     self = {
       _workorderColl : {
@@ -113,7 +113,6 @@ angular
 
           wo = workorderObj.toJSON()
           # patch workorder.selectedMoment AFTER workorder photos fetched
-          # SKIP otgWorkorder.on.selectByCalendar(wo.fromDate, wo.toDate)
           # path MANUALLY because we don't have cameraRoll.moments
           # moments normally set in snappiMessengerPluginService.mapAssetsLibraryP()
 
@@ -146,8 +145,8 @@ angular
           }
 
           workorderObj.set('selectedMoments', [ workorderMoment ] )
-          console.log " \n\n 1b: &&&&& fetchWorkorderPhotosP from backend.coffee "
-          console.log "\n\n*** inspect workorderMoment for Workorder: " 
+          # console.log " \n\n 1b: &&&&& fetchWorkorderPhotosP from backend.coffee "
+          # console.log "\n\n*** inspect workorderMoment for Workorder: " 
           console.log workorderObj.toJSON()
 
           return photosColl
@@ -271,8 +270,8 @@ angular
 ]
 
 .factory 'otgParse', [
-  '$q', '$ionicPlatform', '$timeout', '$rootScope', 'deviceReady', 'cameraRoll', 'snappiMessengerPluginService'
-  ($q, $ionicPlatform, $timeout, $rootScope, deviceReady, cameraRoll, snappiMessengerPluginService)->
+  '$q', '$ionicPlatform', '$timeout', '$rootScope', 'deviceReady', 'cameraRoll', 
+  ($q, $ionicPlatform, $timeout, $rootScope, deviceReady, cameraRoll)->
 
     parseClass = {
       PhotoObj : Parse.Object.extend('PhotoObj',  {
@@ -629,11 +628,11 @@ angular
                 return found # is a dataURL
 
               # fetch with promise
-              return snappiMessengerPluginService.getDataURLForAssets_P( [photo.UUID], UPLOAD_IMAGE_SIZE ).then (photos)->
-                dataURL = cameraRoll.getDataURL(photo.UUID, UPLOAD_IMAGE_SIZE)
-                console.log "\n*** snappiMessengerPluginService.getDataURLForAssets_P() resolved with:" + dataURL[0...50]
+              return cameraRoll.getDataURL_P( photo.UUID, UPLOAD_IMAGE_SIZE ).then (oPhoto)->
+                dataURL = oPhoto.data
+                console.log "\n*** cameraRoll.getDataURL_P() resolved with:" + dataURL[0...50]
                 
-                photo = _.find cameraRoll.photos, {UUID: photo.UUID}
+                photo = _.find cameraRoll.photos, {UUID: oPhoto.UUID}
                 # photo is set by closure
                 throw "ERROR in uploadPhotoP, photo not found" if !photo 
 
