@@ -232,7 +232,7 @@ angular
         # note = "   includes cameraRoll attrs from Messenger Plugin"
 
         # console.warn "\n\nERROR: photo.UUID 40 chars, iOS style, uuid=" + photo.UUID if photo.UUID.length > 36
-        attrs =  _.omit photo, ['data', 'elapsed', 'format', 'crop', 'targetWidth', 'targetHeight']
+        attrs =  _.omit photo, ['data', 'elapsed', 'format', 'crop', 'targetWidth', 'targetHeight', 'from', 'date', 'assetId']
         # self.photos.push attrs
         foundAt = _.findIndex self.photos, {UUID: attrs.UUID}
         # console.log "**** foundAt=" + foundAt + ", UUID: " + self.photos[foundAt].UUID + " == " + attrs.UUID if foundAt > -1

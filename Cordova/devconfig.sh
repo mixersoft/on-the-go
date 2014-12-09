@@ -57,7 +57,10 @@ ionic plugin add org.apache.cordova.device
 ionic plugin add org.apache.cordova.file
 ionic plugin add com.ionic.keyboard 
 ionic plugin add me.apla.cordova.app-preferences 
+ionic plugin add https://github.com/EddyVerbruggen/SocialSharing-PhoneGap-Plugin.git
+#ionic plugin rm com.snaphappi.native-messenger.Messenger
 ionic plugin add ../CordovaNativeMessenger
+# ionic plugin add org.apache.cordova.file-transfer
 
 
 ### install ionic libs to ./www/lib

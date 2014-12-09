@@ -316,6 +316,7 @@ angular
                 rating : 0
                 favorite : false
                 topPick: false
+                shared: false
                 caption : ''
                 exif : {}
                 shotId : '000'
@@ -574,6 +575,16 @@ angular
         photoObj.set(data)
         return photoObj.save()
 
+      updatePhotoP: (photo, pick)->
+        # find photoObj   
+        query = new Parse.Query( parseClass.PhotoObj )
+        query.equalTo 'assetId', photo.UUID
+        query.first().then (photoObj)->
+          update = _.pick photo, pick
+          photoObj.save(update).then ()->
+            update.UUID = photo.UUID
+            console.log "\n\n ### PARSE: photoObj saved, attrs=" + JSON.stringify pick
+
       fetchPhotosByOwnerP : (owner)->
         owner = $rootScope.sessionUser if !owner
         query = new Parse.Query(parseClass.PhotoObj)
@@ -694,7 +705,8 @@ angular
               # console.log extendedAttrs
 
               parseData = _.extend {
-                    assetId: photo.UUID
+                    assetId: photo.UUID  # deprecate
+                    UUID: photo.UUID
                     owner: $rootScope.sessionUser
                     workorder : workorder
                     deviceId: $rootScope.deviceId

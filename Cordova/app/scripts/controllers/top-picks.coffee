@@ -190,10 +190,10 @@ angular.module('ionBlankApp')
 .controller 'TopPicksCtrl', [
   '$scope', '$rootScope', '$state', 'otgData', 'otgParse', 
   '$timeout', '$window', '$q', '$filter', 
-  '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', 
+  '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', '$cordovaSocialSharing'
   'deviceReady', 'cameraRoll', 'otgWorkorderSync'
   'TEST_DATA', 'imageCacheSvc'
-  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, deviceReady, cameraRoll, otgWorkorderSync, TEST_DATA, imageCacheSvc) ->
+  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, $cordovaSocialSharing, deviceReady, cameraRoll, otgWorkorderSync, TEST_DATA, imageCacheSvc) ->
     $scope.label = {
       title: "Top Picks"
       header_card: 
@@ -271,13 +271,39 @@ angular.module('ionBlankApp')
       addShare: (event, item)->
         event.preventDefault();
         event.stopPropagation()
-        confirmPopup = $ionicPopup.confirm {
-          title: "Share Photo"
-          template: "Are you sure you want to share this photo?"
-        }
-        confirmPopup.then (res)->
-          item.shared = true if res
-        return item  
+        if !deviceReady.isWebView()
+          confirmPopup = $ionicPopup.alert {
+            title: "Sharing Not Available"
+            template: "Sorry, sharing is only available from a mobile device."
+          }
+          confirmPopup.then (res)->
+          return item 
+
+        selected = [item] # get Selected
+        deviceReady.waitP().then ()->
+          # return $scope.on.socialShare()
+          options={
+            message: 'shared from Snaphappi On-the-Go'
+            image: _.pluck selected, 'src'
+            link: null
+          }
+          $cordovaSocialSharing
+            .shareViaFacebook(options.message, options.image, options.link)
+            .then (result)->
+                item.shared = true
+                # save to Parse
+                otgParse.updatePhotoP(item, 'shared').then ()->
+                  console.log "\n\n*** Success socialSharing"
+              , (error)->
+                cancelled = error == false
+                return console.log "\n*** socialSharing CANCELLED"  if cancelled
+                console.log "\n*** ERROR socialSharing:"  
+                console.log error
+
+
+
+
+
       addCaption: (event, item)->
         event.preventDefault()
         event.stopPropagation()
