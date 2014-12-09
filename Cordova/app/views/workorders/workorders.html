@@ -124,11 +124,9 @@
         ng-class="watch.ngClass_UploadStatus(order)" 
         ng-bind="watch.ngBind_UploadStatus(order)" ></span>
 
-        <ul class="padding-horizontal"><li class="badge badge-light">Expected: {{ order.count_expected }}</li>
-        <li class="badge badge-light">Received: {{ order.count_received }}</li>
-        <li class="badge badge-light">Duplicates: {{ order.count_duplicate}}</li></ul>
-
-        
+        <ul class="padding text-center"><li class="badge badge-positive">Expected: {{ order.count_expected }}</li>
+        <li class="badge badge-positive">Received: {{ order.count_received }}</li>
+        <li class="badge badge-positive">Duplicates: {{ order.count_duplicate}}</li></ul>
 
       </div>
     </div>

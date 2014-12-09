@@ -82,6 +82,17 @@ angular
         self._workorderPhotosColl = {}
         return
 
+      ## @param: options, {type:[workorderObj, photosColl], role:[owner,editor], id: workorderObj.id:}
+      getFromCache: (options)->
+        switch options.type
+          when 'workorderObj'
+            role = options.role || 'owner'
+            return self._workorderColl[role] if !option.id 
+            return _.find self._workorderColl[role], {id: id}
+          when 'photosColl'
+            return _.find self._workorderPhotosColl, {id: id}
+
+
       fetchWorkordersP : (options={}, force)->
 
         role = if options.editor then 'editor' else 'owner'
@@ -145,6 +156,8 @@ angular
           }
 
           workorderObj.set('workorderMoment', [ workorderMoment ] )
+          # self.updateWorkorderCounts(woObj, workorderMoment) # do after resolve()
+
           # console.log " \n\n 1b: &&&&& fetchWorkorderPhotosP from backend.coffee "
           # console.log "\n\n*** inspect workorderMoment for Workorder: " 
           console.log workorderObj.toJSON()
@@ -174,6 +187,14 @@ angular
           , []
 
         console.log "workorder.count_expected="+mappedAssetIdsFromWorkorderDateRange.length
+
+        if workorderObj.get('count_expected') != mappedAssetIdsFromWorkorderDateRange
+          $timeout ()->return workorderObj.save {
+                count_expected: mappedAssetIdsFromWorkorderDateRange.length
+              }
+            , 100
+
+
 
         missingPhotos = _.difference mappedAssetIdsFromWorkorderDateRange, uploadedAssetIds
 
@@ -206,6 +227,7 @@ angular
                       promises.push self.fetchWorkorderPhotosP(workorderObj, options, force ).then (photosColl)->
 
                         queue = self.queueMissingPhotos( workorderObj, photosColl )
+                        self.updateWorkorderCounts(workorderObj, queue) # expect workorderObj.workorderMoment to be set
                         scope.menu.uploader.count = otgUploader.queueLength()
 
                         scope.workorders = workorderColl.toJSON()
@@ -241,6 +263,7 @@ angular
                   openOrders++
                   $timeout ()->
                       promises.push self.fetchWorkorderPhotosP(workorderObj, options, force ).then (photosColl)->
+                        self.updateWorkorderCounts(workorderObj) # expect workorderObj.workorderMoment to be set
                         # fetch all workorder photos to set workorderMoment
                         # update workorder.selecteMoments
                         # TODO: save workorderMoment to workorderObj os we don't have to repeat
@@ -256,13 +279,19 @@ angular
                   return whenDoneP(workorderColl) if whenDoneP
           , DELAY
 
-  
-      XXXqueueSelectedMomentsP : (workorderObj)->
-        options = {owner: true}   # required
-        # get workorderPhotosP() by UUID
-        self.fetchWorkorderPhotosP(workorderObj, options, 'force').then (photosColl)->
-          return self.queueMissingPhotos(workorderObj, photosColl)
+      updateWorkorderCounts: (woObj, missing)->
+        updates = {}
+        woMoment = woObj.get('workorderMoment') 
+        received = woMoment[0].value[0].value.length if !_.isEmpty woMoment
+        updates['count_received'] = received if woObj.get('count_received') != received
+        updates['count_expected'] = missing.length + (updates['count_received'] || 0)  if missing?.length
 
+        # count_duplicate: query(photosObj) by Owner and indexBy workorderObj.id
+
+        return if _.isEmpty updates
+        $timeout ()->
+            return woObj.save( updates ) 
+          , 100
 
     }
     return self

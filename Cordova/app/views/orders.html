@@ -124,11 +124,22 @@
         </div>
       </div>
     </div>
+
     <div class="item item-text-wrap item-icon-left">
       <i class="icon ion-clock"></i>
       <div>Status: {{order.status}}</div>
-      <div>Photos Received: {{ order.count_received }}</div>
+      <div>Photos: 
+        <span class="badge" 
+        ng-class="watch.ngClass_UploadStatus(order)" 
+        ng-bind="watch.ngBind_UploadStatus(order)" ></span>
+
+        <ul class="padding text-center"><li class="badge badge-positive">Expected: {{ order.count_expected }}</li>
+        <li class="badge badge-positive">Received: {{ order.count_received }}</li>
+        <li class="badge badge-positive">Duplicates: {{ order.count_duplicate}}</li></ul>
+
+      </div>
     </div>
+
     <div class="item item-complex" 
     ng-if="order.count_expected">
       <otg-moment-date-range otg-model="order.workorderMoment"></otg-moment-date-range>

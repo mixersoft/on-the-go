@@ -137,6 +137,16 @@ angular.module('ionBlankApp')
       if o.className == 'WorkorderObj'
         return o if o.get('status') !='complete'
 
+    $scope.watch = _watch = {
+      ngClass_UploadStatus: (order, prefix='badge')->
+        return prefix + '-balanced' if order.count_expected == (order.count_received + order.count_duplicate)
+        return prefix + '-energized'
+      ngBind_UploadStatus: (order)->
+        return 'ready' if order.count_expected == (order.count_received + order.count_duplicate)  
+        return 'pending'
+
+    }        
+
     $scope.workorders = []
 
     init = ()->
@@ -149,6 +159,14 @@ angular.module('ionBlankApp')
         otgWorkorderSync.fetchWorkordersP( options ).then (workorderColl)->
           console.log " \n\n 2: &&&&& REFRESH fetchWorkordersP from orders.coffee "
           $scope.workorders = workorderColl.toJSON()
+
+          # update workorder Photo counts
+          workorderColl.each (woObj)->
+            return if woObj.get('status') == 'complete'
+            otgWorkorderSync.updateWorkorderCounts(woObj)
+
+
+            return
           return
 
 
