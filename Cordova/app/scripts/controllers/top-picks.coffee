@@ -282,13 +282,15 @@ angular.module('ionBlankApp')
         selected = [item] # get Selected
         deviceReady.waitP().then ()->
           # return $scope.on.socialShare()
-          options={
+          options = {
+            subject: 'from Snaphappi On-the-Go'
             message: 'shared from Snaphappi On-the-Go'
             image: _.pluck selected, 'src'
             link: null
           }
           $cordovaSocialSharing
-            .shareViaFacebook(options.message, options.image, options.link)
+            # .shareViaFacebook(options.message, options.image, options.link)
+            .share(options.message, options.subject, options.image, options.link)
             .then (result)->
                 item.shared = true
                 # save to Parse
