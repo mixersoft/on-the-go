@@ -396,9 +396,9 @@ angular
 
       dataView = new DataView(arrayBuffer)
       try 
-        console.log("$$$ Private.dataURItoBlob BEFORE new Blob")
+        # console.log("$$$ Private.dataURItoBlob BEFORE new Blob")
         blob = new Blob([dataView], { type: mimeString })
-        console.log("$$$ Private.dataURItoBlob AFTER new Blob")
+        # console.log("$$$ Private.dataURItoBlob AFTER new Blob")
         return blob;
       catch error
         console.log('ERROR: Blob support not available for dataURItoBlob')
@@ -439,7 +439,7 @@ angular
               return deferred.reject("ERROR: ImgCache.init TIMEOUT")
         return _promise = deferred.promise
 
-      cacheDataURLP: ($targetOrDataURL, UUID, useCached=true)->
+      XXXcacheDataURLP: ($targetOrDataURL, UUID, useCached=true)->
         hashKey = self.getHashKey($targetOrDataURL) 
         UUID = hashKey if hashKey
         UUID = UUID[0...36] # localStorage might balk at '/' in pathname
@@ -463,7 +463,7 @@ angular
             return $q.reject(error)
 
 
-      getHashKey: ($targetOrUUID)->
+      XXXgetHashKey: ($targetOrUUID)->
         # priority: $target.attr('uuid') > UUID > $target.attr(src)
         $targetOrUUID = angular.element($targetOrUUID) if $targetOrUUID instanceof HTMLElement
         UUID = $targetOrUUID.attr('uuid') if $targetOrUUID.attr
@@ -485,7 +485,10 @@ angular
         # NOTE: we don't know the extention when we check isStashed
         hashKey = [ UUID[0...36] ,size].join(':') 
         src = self.cacheIndex[hashKey]?.fileURL || false
-        console.log "\n\n >>> STASH HIT !!!  file=" + src if src
+        if src
+          console.log "\n\n >>> STASH HIT !!!  file=" + src 
+          self.mostRecent.unshift(hashKey)
+          self.mostRecent = _.unique(self.mostRecent)
         return src
 
       stashFile: (UUID, size, fileURL, fileSize)->
@@ -495,8 +498,6 @@ angular
           fileURL: fileURL
           fileSize: fileSize
         }
-        self.mostRecent.unshift(hashKey)
-        self.mostRecent = _.unique(self.mostRecent)
 
       stashSize: ()->
         total = _.reduce self.cacheIndex, (total, o)->
@@ -531,7 +532,7 @@ angular
             "nativeURL":"file:///Users/michael/Library/Developer/CoreSimulator/Devices/596BAB03-FCAE-46C4-B3C8-8100ECD66EDF/data/Containers/Data/Application/B95C85A8-0D75-4AEE-94B0-BA79525C71B3/Library/files/AC072879-DA36-4A56-8A04-4D467C878877-thumbnail.jpg"
           ###
           console.log file  # _.keys == {name: fullPath: filesystem: nativeURL: }
-          console.log "$ngCordovaFile.checkFile() says file EXISTS file=" + file.nativeURL + "\n\n"
+          # console.log "$ngCordovaFile.checkFile() says file EXISTS file=" + file.nativeURL + "\n\n"
           return file.nativeURL
         .catch (error)->
           console.log error
@@ -548,13 +549,13 @@ angular
         return $cordovaFile.writeFile(filePath, blob, {'append': false} )
         .then (ProgressEvent)->
             # check ProgressEvent.target.length, ProgressEvent.target.localURL
-            console.log "$ngCordovaFile writeFile SUCCESS"
+            # console.log "$ngCordovaFile writeFile SUCCESS"
             retval = {
               filePath: filePath
               fileSize: ProgressEvent.target.length
               localURL: ProgressEvent.target.localURL
             }
-            console.log retval
+            console.log retval # $$$
             return retval
         .catch (error)->
             console.log "$ngCordovaFile writeFile ERROR"
@@ -564,8 +565,8 @@ angular
           fileSize = retval.fileSize
           filePath = retval.filePath
           return $cordovaFile.checkFile(filePath).then (file)->
-            console.log file  # _.keys == {name:, fullPath:, filesystem:, nativeURL: }
-            console.log "$ngCordovaFile.checkFile() says file EXISTS file=" + file.nativeURL + "\n\n"
+            # console.log file  # $$$ _.keys == {name:, fullPath:, filesystem:, nativeURL: }
+            # console.log "$ngCordovaFile.checkFile() says file EXISTS file=" + file.nativeURL + "\n\n"
             return {
               fileURL: file.nativeURL
               fileSize: fileSize
@@ -575,7 +576,7 @@ angular
       # will overwrite cached file, use cordovaFile_CHECK_P() if not desired
       # @param UUIDs array, will convert single UUID to array
       cordovaFile_CACHE_P: (UUID, size, dataURL)->
-        console.log "\n\n$$$ cordovaFile_CACHE_P, UUID="+UUID
+        # console.log "\n\n$$$ cordovaFile_CACHE_P, UUID="+UUID
         return self.cordovaFile_WRITE_P(UUID, size, dataURL)
         .then (retval)->
           console.log retval # $$$
@@ -583,7 +584,7 @@ angular
           return retval.fileURL
         .catch (error)->
           console.log "$ngCordovaFile cordovaFile_CACHE_P ERROR"
-          console.log error
+          console.log error   # $$$
           return $q.reject(error)
 
       cordovaFile_USE_CACHED_P: ($target, UUID, dataURL)->
@@ -602,7 +603,7 @@ angular
 
 
 
-      useCachedFileP: ($target)->
+      XXXuseCachedFileP: ($target)->
         UUID = self.getHashKey($target) 
         UUID = UUID[0...36] if UUID
         return self.waitP().then ()->
@@ -620,7 +621,7 @@ angular
           return deferred.promise
 
 
-      isCachedP: ($targetOrUUID)->
+      XXXisCachedP: ($targetOrUUID)->
         hashKey = self.getHashKey($targetOrUUID)
 
         return self.waitP().then ()->
@@ -636,7 +637,7 @@ angular
             self.cacheIndex[hashKey] = src # cache in localStorage
             return deferred.resolve isCached
           return deferred.promise
-      raw: (target)->
+      XXXraw: (target)->
         target = angular.element(target)
         return ImgCache.cacheFile target.attr('src'), ()->
           return ImgCache.useCachedFile target, ()->
@@ -841,7 +842,6 @@ angular
         e.src = TEST_DATA.lorempixel.getSrc(e.UUID, e.originalWidth, e.originalHeight, TEST_DATA)
         return
 
-      # imageCacheSvc.cacheDataURLP()
       return
 
 

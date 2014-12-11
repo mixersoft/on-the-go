@@ -413,9 +413,6 @@ angular.module('ionBlankApp')
         console.log "\n\n imageCacheSvc has cached dataURL, path=" + fileURL
 
 
-      window.isCached = imageCacheSvc.isCachedP
-      # imageCacheSvc.raw $img
-
 
     init = ()->
       setFilter( $state.current )

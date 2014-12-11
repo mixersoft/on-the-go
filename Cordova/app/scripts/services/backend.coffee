@@ -188,11 +188,12 @@ angular
 
         console.log "workorder.count_expected="+mappedAssetIdsFromWorkorderDateRange.length
 
-        if workorderObj.get('count_expected') != mappedAssetIdsFromWorkorderDateRange
-          $timeout ()->return workorderObj.save {
-                count_expected: mappedAssetIdsFromWorkorderDateRange.length
-              }
-            , 100
+        ## move to self.updateWorkorderCounts(workorderObj, queue) 
+        # if workorderObj.get('count_expected') != mappedAssetIdsFromWorkorderDateRange
+        #   $timeout ()->return workorderObj.save {
+        #         count_expected: mappedAssetIdsFromWorkorderDateRange.length
+        #       }
+        #     , 100
 
 
 
@@ -513,12 +514,16 @@ angular
 
       _patchParsePhotos : (photosColl)->
         photosColl.each (photoObj)->
-          photoObj.set('UUID', photoObj.get('assetId') )
-          photoObj.set('date', cameraRoll.getDateFromLocalTime( photoObj.get('dateTaken') ) )
-          photoObj.set('from', 'PARSE' )
-          # photoObj.set('topPick', !!photoObj.get('topPick') )
-
-          cameraRoll.addOrUpdatePhoto_FromWorkorder photoObj.toJSON()
+          # otgParse._patchParsePhotos(): patched attrs will be saved back to PARSE
+          # cameraRoll.patchPhoto(): will just patch local attrs
+          photoObj.set('UUID', photoObj.get('assetId') ) # DEPRECATE, use UUID on PARSE
+          # photoObj.set('date', cameraRoll.getDateFromLocalTime( photoObj.get('dateTaken') ) )
+          # photoObj.set('from', 'PARSE' )
+          photo = photoObj.toJSON()
+          photo.date = cameraRoll.getDateFromLocalTime(photo.dateTaken)
+          photo.from = "PARSE"
+          photo.UUID = photo.assetId if !photo.UUID
+          cameraRoll.addOrUpdatePhoto_FromWorkorder photo
 
           return
         return 
@@ -564,6 +569,8 @@ angular
         # collection.comparator = (o)->
         #   return o.get('toDate')
         return collection.fetch().then (photosColl)->
+          # ???: patch photoObj means it will save to server
+          # patch .toJSON() instead?
           self._patchParsePhotos(photosColl)
           return photosColl
           

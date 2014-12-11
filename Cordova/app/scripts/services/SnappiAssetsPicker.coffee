@@ -220,11 +220,12 @@ angular
       # standard eachPhoto callback
       patchPhoto: (photo)->
 
-        photo.topPick = true 
+        # photo.topPick = true 
         # photo.topPick = true if /^[AB]/.test(photo.UUID) 
 
-        # patch photo.attrs in self.photo, NOT photoObj
-        "# WARNING: must be clear when we get attrs from self.photos vs photoObj.toJSON()"
+        # otgParse._patchParsePhotos(): patched attrs will be saved back to PARSE
+        # cameraRoll.patchPhoto(): will just patch local attrs
+        # ???: where do we want to patch photo.from???
         photo.date = self.getDateFromLocalTime(photo.dateTaken)
         self._addOrUpdatePhoto_FromCameraRoll(photo)
         self.addDataURL(photo.format, photo)    
@@ -236,7 +237,7 @@ angular
         # note = "   includes cameraRoll attrs from Messenger Plugin"
 
         # console.warn "\n\nERROR: photo.UUID 40 chars, iOS style, uuid=" + photo.UUID if photo.UUID.length > 36
-        attrs =  _.omit photo, ['data', 'elapsed', 'format', 'crop', 'targetWidth', 'targetHeight', 'from', 'date', 'assetId']
+        attrs =  _.omit photo, ['data', 'elapsed', 'format', 'crop', 'targetWidth', 'targetHeight', 'assetId']
         # self.photos.push attrs
         foundAt = _.findIndex self.photos, {UUID: attrs.UUID}
         # console.log "**** foundAt=" + foundAt + ", UUID: " + self.photos[foundAt].UUID + " == " + attrs.UUID if foundAt > -1

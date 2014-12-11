@@ -30,7 +30,7 @@ angular.module('ionBlankApp')
         return cameraRoll.getDataURL_P( UUID, IMAGE_SIZE ).then (photo)->
             if element.attr('lazy-src') == photo.UUID
               element.attr('src', photo.data)
-              imageCacheSvc.cacheDataURLP(element, UUID, true) if IMAGE_SIZE == 'preview'
+              imageCacheSvc.cordovaFile_USE_CACHED_P(element, photo.UUID, photo.data) if IMAGE_SIZE == 'preview'
               
             else
               console.warn "\n\n*** WARNING: did collection repeat change the element before getDataURL_P returned?"  
