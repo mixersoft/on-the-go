@@ -228,7 +228,12 @@ angular
         # ???: where do we want to patch photo.from???
         photo.date = self.getDateFromLocalTime(photo.dateTaken)
         self._addOrUpdatePhoto_FromCameraRoll(photo)
-        self.addDataURL(photo.format, photo)    
+        if photo.from == 'PARSE'
+          # add src directly
+          self.dataURLs['preview'][photo.UUID] = photo.src
+          "NOTE: use imgCache.js to cache PARSE URLs"
+        else
+          self.addDataURL(photo.format, photo)    
         return
 
       _addOrUpdatePhoto_FromCameraRoll: (photo)->
@@ -268,7 +273,7 @@ angular
 
           # add to DataURLs, as necessary
           exists = self.dataURLs['preview'][photo.UUID]
-          if exists && cameraRoll.isDataURL(exists)
+          if exists && self.isDataURL(exists)
             # keep dataURL or replace with remote parsefile?
           else if photo.src
             self.dataURLs['preview'][photo.UUID] = photo.src 
@@ -291,7 +296,7 @@ angular
         else 
           # merge values set by Editor
           _.extend foundInPhotos, _.pick photo, ['topPick', 'favorite', 'shotId', 'isBestshot']
-          console.log "\n\n**** MERGE photo from WORKORDER into cameraRoll for uuid=" + photo.UUID
+          console.log "\n**** MERGE photo from WORKORDER into cameraRoll for uuid=" + photo.UUID
         return
 
 
@@ -314,9 +319,7 @@ angular
         imgSrc = options.data || options.dataURL
         self.dataURLs[size][options.UUID] = imgSrc
 
-        if "cacheDataURLs" && self.isDataURL(imgSrc)
-          console.log "\n\nWARNING: possible race condition, may not finish write to imageCache BEFORE lazySrc. problem?"
-
+        if self.isDataURL(imgSrc) # cacheDataURLs
           $timeout ()->
               promise = imageCacheSvc.cordovaFile_CACHE_P( options.UUID, size, imgSrc).then (fileURL)->
                 console.log "\n\n imageCacheSvc has cached dataURL, path=" + fileURL
@@ -324,6 +327,11 @@ angular
             , 10 
         # console.log "\n\n added!! ************* " 
         return self
+
+      addParseURL : (parsePhoto, size)->
+        self.dataURLs[size][parsePhoto.UUID] = parsePhoto.src
+        return parsePhoto.src
+
 
       # load moments, but not photos
       loadMomentsFromCameraRoll: (mapped)->
@@ -384,8 +392,8 @@ angular
                   self.addDataURL('thumbnail', photo )
                   return photo
                 , (error)->
-                  console.log error
-                  console.log "\n\n *** getDataURL_P: Resample.js error: just use previewURL URL for thumbnail UUID=" + UUID
+                  # console.log error # $$$
+                  _logOnce 'yj38d', "\n\n *** getDataURL_P: Resample.js error: just use previewURL URL for thumbnail UUID=" + UUID + "\n\n"
                   photo = {
                     UUID: UUID
                     data: previewURL
@@ -424,7 +432,7 @@ angular
       getDataURL: (UUID, size='preview')->
         if !/preview|thumbnail/.test size
           throw "ERROR: invalid dataURL size, size=" + size
-        console.log "$$$ camera.dataURLs lookup for UUID="+UUID+', size='+size
+        # console.log "$$$ camera.dataURLs lookup for UUID="+UUID+', size='+size
 
        
 
@@ -442,7 +450,7 @@ angular
 
       
         if !found # still not found, add to queue for fetch
-          console.log "STILL NOT FOUND in self.dataURLs for UUID=" + UUID
+          console.log "STILL NOT FOUND queueDataURL(UUID)=" + UUID
           self.queueDataURL(UUID, size)
         return found
 

@@ -66,7 +66,18 @@ angular.module('ionBlankApp')
           # UUID = UUID[0...36] # localStorage might balk at '/' in pathname
           console.log "\n\n $$$ attrs.$observe 'lazySrc', UUID+" + UUID
           element.attr('uuid', UUID)
-          return src = _setLazySrc(element, UUID, format) 
+
+          photo = element.scope().item
+          if photo?.src?[0...4] == 'http'
+            # NOTE: parse URLs are not cached, use imgCache.js
+            url = cameraRoll.addParseURL(photo, format)
+            return element.attr('src', url)
+
+          return imageCacheSvc.isStashed_P(UUID, format)
+          .then (fileURL)->
+            element.attr('src', fileURL)
+          .catch (error)->
+            return src = _setLazySrc(element, UUID, format) 
 
         return
   }
