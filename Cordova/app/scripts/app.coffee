@@ -415,7 +415,8 @@ angular
     self = {
       cacheIndex : {} # index of cached files by UUID
       mostRecent : [] # stack for garbage collection, mostRecently used UUID on the 'top'
-      cacheTemplate: 'imgcache/{uuid}.jpg'
+      CACHE_DIR : '/'  # ./Library/files/  it seems $cordovaFile requires this as root
+      cacheRoot : null
       isDataURL : (src)->
         throw "isDataURL() ERROR: expecting string" if typeof src != 'string'
         return /^data:image/.test( src )
@@ -427,7 +428,7 @@ angular
         return 'png' if /png/i.test(mimeType)
         return 
 
-      waitP: ()->
+      XXXwaitP: ()->
         return _promise if _promise
         deferred = $q.defer()
         _cancel = $timeout ()->
@@ -481,6 +482,55 @@ angular
         "???: how do we delete from cameraRoll.dataURLs without a circular reference???"
         "NOTE: image.src may need to detect a missing cache URL"
 
+      cordovaFile_LOAD_CACHED_P : (dirEntry)->
+        # cordova.file.cacheDirectory : ./Library/Caches
+        # cordova.file.documentsDirectory : ./Library/Documents
+
+        dirEntry = self.cacheRoot if !dirEntry
+
+        dfd = $q.defer()
+        fsReader = dirEntry.createReader()
+        fsReader.readEntries (entries)->
+            filenames = []
+            promises = []
+            _.each entries, (file)->
+              return if !file.isFile
+
+              parts = file.name.split('-')
+              tail = parts.pop()
+              size = 'preview' if tail.indexOf('preview') == 0
+              size = 'thumbnail' if tail.indexOf('thumbnail') == 0
+              console.error "ERROR: cannot parse size from fileURL, name=" + file.name if !size
+              UUID = parts.join('-')
+
+              fileURL = file.nativeURL || file.toURL()
+              promises.push self.getMetaData_P(file).then (meta)->
+                fileSize = meta.size
+                self.stashFile UUID, size, fileURL, fileSize
+                return fileSize
+
+              filenames.push file.name
+              return
+            console.log "\n\n *** cordovaFile_LOAD_CACHED_P cached. file count=" + filenames.length
+            console.log filenames # $$$  
+            return $q.all(promises).then (sizes)->
+              return dfd.resolve(filenames)
+          , (error)->
+            console.log error # $$$
+            dfd.reject( "ERROR: reading directory entries")
+
+        return dfd.promise
+
+      getMetaData_P: (file)->
+        throw "ERROR: expecting fileEntry" if !file.file
+        dfd = $q.defer()
+        file.file ( metaData )->
+            return dfd.resolve _.pick metaData, ['name', 'size', 'lastModified', 'localURL']
+          , (errors)->
+            console.log error # $$$
+            dfd.reject( "ERROR: reading fileEntry metaData")
+        return dfd.promise
+
 
       cordovaFile_CHECK_P: (UUID, size, dataURL)->
         filePath = self.isStashed UUID, size
@@ -492,13 +542,17 @@ angular
 
         # filePath = result['target']['localURL']
         console.log "\n\n >>> $ngCordovaFile.checkFile() for file=" + filePath
-        return $cordovaFile.checkFile(filePath)
+        return $cordovaFile.checkFile( self.CACHE_DIR + filePath )
+        .catch (error)->
+          # console.log error # $$$
+          console.log "$ngCordovaFile.checkFile() says DOES NOT EXIST, file=" + filePath + "\n\n"
+          return $q.reject(error)
         .then (file)->
           ### example {
             "name":"AC072879-DA36-4A56-8A04-4D467C878877-thumbnail.jpg",
             "fullPath":"/AC072879-DA36-4A56-8A04-4D467C878877-thumbnail.jpg",
             "filesystem":"<FileSystem: persistent>",
-            "nativeURL":"file:///Users/michael/Library/Developer/CoreSimulator/Devices/596BAB03-FCAE-46C4-B3C8-8100ECD66EDF/data/Containers/Data/Application/B95C85A8-0D75-4AEE-94B0-BA79525C71B3/Library/files/AC072879-DA36-4A56-8A04-4D467C878877-thumbnail.jpg"
+            "nativeURL":"file:///Users/.../Library/Developer/CoreSimulator/Devices/596BAB03-FCAE-46C4-B3C8-8100ECD66EDF/data/Containers/Data/Application/B95C85A8-0D75-4AEE-94B0-BA79525C71B3/Library/files/AC072879-DA36-4A56-8A04-4D467C878877-thumbnail.jpg"
           ###
           # console.log file  # $$$ _.keys == {name: fullPath: filesystem: nativeURL: }
           # console.log "$ngCordovaFile.checkFile() says file EXISTS file=" + file.nativeURL + "\n\n"
@@ -532,22 +586,24 @@ angular
           ###
 
           fileURL = file.nativeURL || file.toURL()
-          fileSize = -1 # TODO: found in FS, but notstashFile() readFile and get size
-          self.stashFile UUID, size, fileURL, fileSize
-          return fileURL
+          return self.getMetaData_P(file).then (meta)->
+            fileSize = meta.size
+            self.stashFile UUID, size, fileURL, fileSize
+            return fileURL
         .catch (error)->
-          # console.log error # $$$
-          console.log "$ngCordovaFile.checkFile() says DOES NOT EXIST, file=" + filePath + "\n\n"
+          console.log error # $$$
+          console.log "$ngCordovaFile.checkFile() some OTHER error, file=" + filePath + "\n\n"
           return $q.reject(error)
 
 
       cordovaFile_WRITE_P: (UUID, size, dataURL)->
+        
         filePath = self.getFilename(UUID, size, dataURL)
         return $q.reject('ERROR: unable to get valid Filename') if !filePath
         blob = _dataURItoBlob(dataURL)
 
         console.log "\n >>> $ngCordovaFile.writeFile() for file=" + filePath
-        return $cordovaFile.writeFile(filePath, blob, {'append': false} )
+        return $cordovaFile.writeFile( self.CACHE_DIR + filePath, blob, {'append': false} )
         .then (ProgressEvent)->
             # check ProgressEvent.target.length, ProgressEvent.target.localURL
             # console.log "$ngCordovaFile writeFile SUCCESS"
@@ -565,7 +621,7 @@ angular
         .then (retval)->
           fileSize = retval.fileSize
           filePath = retval.filePath
-          return $cordovaFile.checkFile(filePath).then (file)->
+          return $cordovaFile.checkFile( self.CACHE_DIR + filePath ).then (file)->
             # console.log file  # $$$ _.keys == {name:, fullPath:, filesystem:, nativeURL: }
             # console.log "$ngCordovaFile.checkFile() says file EXISTS file=" + file.nativeURL + "\n\n"
             return {
@@ -604,6 +660,31 @@ angular
 
 
     }
+    deviceReady.waitP()
+    .then ()->
+      # self.CACHE_DIR = cordova.file.cacheDirectory if cordova?.file
+      # self.CACHE_DIR = cordova.file.documentsDirectory if cordova?.file
+      self.CACHE_DIR = '/' # ./Library/files/  it seems $cordovaFile requires this as root
+      $cordovaFile.checkDir( self.CACHE_DIR ).then (dirEntry)->
+          console.log "$ngCordovaFile.checkDir()"
+          console.log dirEntry # $$$
+          return self.cacheRoot = dirEntry
+      .then (dirEntry)->
+        self.cordovaFile_LOAD_CACHED_P()
+      .catch (error)->
+          console.log error # $$$
+          console.log "$ngCordovaFile.checkDir() error, file=" + self.CACHE_DIR + "\n\n"
+      # .then ()->
+      #   return $cordovaFile.createDir( 'CACHE_DIR' )
+      # .then (dirEntry)->
+      #     console.log "$ngCordovaFile.createDir()"
+      #     console.log dirEntry # $$$
+      #     self.fs_CACHE_DIR = dirEntry
+      # .catch (error)->
+      #     console.log error # $$$
+      #     console.log "$ngCordovaFile.createDir() error, file=" + self.CACHE_DIR + "\n\n"
+
+
     return self
 ]
 .controller 'AppCtrl', [

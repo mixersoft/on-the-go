@@ -173,7 +173,9 @@ angular
 
           return mapped
         .then (mapped)->
-          promise = self.loadMomentThumbnailsP()
+          $timeout ()->
+              return self.loadMomentThumbnailsP()
+            , 1000
           # don't wait for promise
           return mapped
 
@@ -188,10 +190,16 @@ angular
 
         # preload thumbnail DataURLs for self moment previews
         momentPreviewAssets = self.getMomentPreviewAssets() # do this async
+        # check against imageCacheSvc
+        notCached = _.reduce momentPreviewAssets, (result, photo)->
+            result.push photo.UUID if !imageCacheSvc.isStashed( photo.UUID, 'thumbnail')
+            return result
+          , []
+
         console.log "\n\n\n*** preloading moment thumbnails for UUIDs: " 
-        console.log momentPreviewAssets
+        console.log notCached
         return snappiMessengerPluginService.getDataURLForAssetsByChunks_P( 
-          momentPreviewAssets
+          notCached
           , 'thumbnail'                          
           , self.patchPhoto
           , snappiMessengerPluginService.SERIES_DELAY_MS 
