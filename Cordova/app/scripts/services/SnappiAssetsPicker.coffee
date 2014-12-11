@@ -117,9 +117,9 @@ angular
     return _deviceready
 ]
 .factory 'cameraRoll', [
-  '$q', '$timeout', '$rootScope', 'deviceReady', 'snappiMessengerPluginService'
+  '$q', '$timeout', '$rootScope', 'deviceReady', 'snappiMessengerPluginService', 'imageCacheSvc'
   'TEST_DATA', 'otgData', 'appConsole'
-  ($q, $timeout, $rootScope, deviceReady, snappiMessengerPluginService, TEST_DATA, otgData, appConsole)->
+  ($q, $timeout, $rootScope, deviceReady, snappiMessengerPluginService, imageCacheSvc, TEST_DATA, otgData, appConsole)->
     _getAsLocalTime = (d, asJSON=true)->
         d = new Date() if !d    # now
         d = new Date(d) if !_.isDate(d)
@@ -219,11 +219,15 @@ angular
 
       # standard eachPhoto callback
       patchPhoto: (photo)->
+
+        photo.topPick = true 
+        # photo.topPick = true if /^[AB]/.test(photo.UUID) 
+
+        # patch photo.attrs in self.photo, NOT photoObj
+        "# WARNING: must be clear when we get attrs from self.photos vs photoObj.toJSON()"
         photo.date = self.getDateFromLocalTime(photo.dateTaken)
         self._addOrUpdatePhoto_FromCameraRoll(photo)
         self.addDataURL(photo.format, photo)    
-        # photo.topPick = true 
-        # photo.topPick = true if /^[AB]/.test(photo.UUID) 
         return
 
       _addOrUpdatePhoto_FromCameraRoll: (photo)->
@@ -292,15 +296,31 @@ angular
 
 
       isDataURL : (src)->
-        return /^data:image/.test src[10..20]
+        throw "isDataURL() ERROR: expecting string" if typeof src != 'string'
+        return /^data:image/.test( src )
 
-      addDataURL: (size, photo)->
+      ## @param options = {UUID: data: or dataURL:}
+      ## options.data, options.dataURL:
+      ##    dataURL from cameraRoll.addDataURL(),
+      ##    fileURL from imageCacheSvc.cordovaFile_USE_CACHED_P, or 
+      ##    PARSE URL from workorders
+      addDataURL: (size, options)->
         # console.log "\n\n adding for size=" + size
         if !/preview|thumbnail/.test( size )
           return console.log "ERROR: invalid dataURL size, size=" + size
-        _logOnce "sdkhda", "WARNING: NOT truncating to UUID(36), UUID="+photo.UUID if photo.UUID.length > 36
-        # console.log _.keys photo
-        self.dataURLs[size][photo.UUID] = photo.data
+        _logOnce "sdkhda", "WARNING: NOT truncating to UUID(36), UUID="+options.UUID if options.UUID.length > 36
+
+        imgSrc = options.data || options.dataURL
+        self.dataURLs[size][options.UUID] = imgSrc
+
+        if "cacheDataURLs" && self.isDataURL(imgSrc)
+          console.log "\n\nWARNING: possible race condition, may not finish write to imageCache BEFORE lazySrc. problem?"
+
+          $timeout ()->
+              promise = imageCacheSvc.cordovaFile_CACHE_P( options.UUID, size, imgSrc).then (fileURL)->
+                console.log "\n\n imageCacheSvc has cached dataURL, path=" + fileURL
+                self.dataURLs[size][options.UUID] = fileURL
+            , 10 
         # console.log "\n\n added!! ************* " 
         return self
 
@@ -353,9 +373,9 @@ angular
                 return photos[0]   # resolve( photo )
           when 'editor'
             # using Parse URLs instead of cameraRoll dataURLs
-            preview = self.getDataURL(UUID, 'preview')
-            if preview && /^http/.test( preview )
-              return self.resampleP(preview, 64, 64).then (dataURL)->
+            previewURL = self.getDataURL(UUID, 'preview')
+            if previewURL && /^http/.test( previewURL )
+              return self.resampleP(previewURL, 64, 64).then (dataURL)->
                   photo = {
                       UUID: UUID
                       data: dataURL
@@ -364,10 +384,10 @@ angular
                   return photo
                 , (error)->
                   console.log error
-                  console.log "\n\n *** getDataURL_P: Resample.js error: just use preview URL for thumbnail UUID=" + UUID
+                  console.log "\n\n *** getDataURL_P: Resample.js error: just use previewURL URL for thumbnail UUID=" + UUID
                   photo = {
                     UUID: UUID
-                    data: preview
+                    data: previewURL
                   }
                   self.addDataURL('thumbnail', photo )
                   return photo
@@ -396,15 +416,30 @@ angular
           dfd.reject(imgOrSrc)
         return dfd.promise
 
+      ## @return string
+      ##    dataURL from cameraRoll.addDataURL(),
+      ##    fileURL from imageCacheSvc.cordovaFile_USE_CACHED_P, or 
+      ##    PARSE URL from workorders
       getDataURL: (UUID, size='preview')->
         if !/preview|thumbnail/.test size
           throw "ERROR: invalid dataURL size, size=" + size
         console.log "$$$ camera.dataURLs lookup for UUID="+UUID+', size='+size
+
+       
+
+        # ??? 2nd check cordovaFile cache, works if we save to localStorage
+        # because workorder URLs take precedence over fileURLS ??? 
+        
+        found = imageCacheSvc.isStashed(UUID, size)
+        # self.dataURLs[size][UUID] = found.fileURL  if found # for localStorage
+
         # console.log self.dataURLs[size][UUID]
-        found = self.dataURLs[size][UUID]
+        found = self.dataURLs[size][UUID] if !found
         if !found && UUID.length == 36
           found = _.find self.dataURLs[size], (o,key)->
               return o if key[0...36] == UUID
+
+      
         if !found # still not found, add to queue for fetch
           console.log "STILL NOT FOUND in self.dataURLs for UUID=" + UUID
           self.queueDataURL(UUID, size)
@@ -582,12 +617,15 @@ angular
 
       ##
       ## @param assets array [UUID,] or [{UUID:},{}]
+      ## @param eachPhoto is a callback, usually supplied by cameraRoll
       ##
       getDataURLForAssets_P: (assets, size , eachPhoto)->
         # call getPhotosByIdP() with array
         return _MessengerPLUGIN.getPhotosByIdP( assets , size).then (photos)->
             _.each photos, (photo)->
+
               eachPhoto(photo) if _.isFunction eachPhoto
+
               return 
 
               # # # merge into cameraRoll.dataUrls
@@ -599,6 +637,7 @@ angular
               # console.log "\n*****************************\n"
 
             console.log "\n********** updated cameraRoll.dataURLs for this batch ***********\n"
+
             return photos
           , (errors)->
             console.log errors

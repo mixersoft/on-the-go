@@ -17,10 +17,10 @@ angular.module('ionBlankApp')
       return if !UUID
       # NOTE: UUID is truncated to 36
       IMAGE_SIZE = format || 'thumbnail'
-      # console.log "\nlazySrc reports notCached for format=" + format + ", UUID="+UUID
-
-      src = cameraRoll.getDataURL(UUID, IMAGE_SIZE)
+      src = cameraRoll.getDataURL(UUID, IMAGE_SIZE) 
       return element.attr('src', src) if src  # use ng-src here???
+
+      console.log "\nlazySrc reports notCached  in cameraRoll.dataURLs for format=" + format + ", UUID="+UUID
 
       isWorkorderMoment = IMAGE_SIZE=='thumbnail' && 
         ($rootScope.$state.includes('app.workorders') || $rootScope.$state.includes('app.orders'))
@@ -30,6 +30,8 @@ angular.module('ionBlankApp')
         return cameraRoll.getDataURL_P( UUID, IMAGE_SIZE ).then (photo)->
             if element.attr('lazy-src') == photo.UUID
               element.attr('src', photo.data)
+              imageCacheSvc.cacheDataURLP(element, UUID, true) if IMAGE_SIZE == 'preview'
+              
             else
               console.warn "\n\n*** WARNING: did collection repeat change the element before getDataURL_P returned?"  
             return

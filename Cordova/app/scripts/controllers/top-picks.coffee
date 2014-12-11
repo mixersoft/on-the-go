@@ -292,6 +292,8 @@ angular.module('ionBlankApp')
             # .shareViaFacebook(options.message, options.image, options.link)
             .share(options.message, options.subject, options.image, options.link)
             .then (result)->
+                console.log "\n\n*** Success socialSharing check for cancel, SocialPlugin.share result"
+                console.log result
                 item.shared = true
                 # save to Parse
                 otgParse.updatePhotoP(item, 'shared').then ()->
@@ -393,12 +395,24 @@ angular.module('ionBlankApp')
       # img.src = "img/ionic.png"
       img.width = 320
       $img = angular.element(img)
-      $img.attr('uuid', '12345')
+      $img.attr('uuid', '12345678')
+      $img.attr('format', 'preview')
       angular.element(container).append $img
       ImgCache.init()
-      ImgCache.clearCache ()->
-        console.log "\n*** ImageCache cleared *** \n"
-      imageCacheSvc.cacheDataURLP($img, null, true)
+      # ImgCache.clearCache ()->
+      #   console.log "\n*** ImageCache cleared *** \n"
+
+
+      # imageCacheSvc.cacheDataURLP($img, null, true).then (o)->
+      #     console.log "\n\n >>> cacheDataURLP success"
+      #     console.log o 
+      #   , (filePath)->
+      #     console.log "\n\n >>> cacheDataURLP FAILED, try $ngCordovaFile for file="+filePath
+
+      promise = imageCacheSvc.cordovaFile_USE_CACHED_P( $img ).then (fileURL)->
+        console.log "\n\n imageCacheSvc has cached dataURL, path=" + fileURL
+
+
       window.isCached = imageCacheSvc.isCachedP
       # imageCacheSvc.raw $img
 

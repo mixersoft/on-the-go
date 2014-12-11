@@ -370,27 +370,63 @@ angular
   # $urlRouterProvider.otherwise('/app/settings');  
 
 .factory 'imageCacheSvc', [
-  '$q', '$timeout',  'deviceReady'
-  ($q, $timeout, deviceReady)->
+  '$q', '$timeout',  'deviceReady', '$cordovaFile'
+  ($q, $timeout, deviceReady, $cordovaFile)->
     _promise = null
     _timeout = 2000
     _IMAGE_CACHE_defaults = {
       chromeQuota: 50*1024*1024 # HTML5 FILE API not available for Safari, check cordova???
-      debug: false
+      debug: true
       skipURIencoding: true    # required for dataURLs
       usePersistentCache: false
     }
+
+    _dataURItoBlob = (dataURI)-> 
+      #convert base64 to raw binary data held in a string
+      byteString = atob(dataURI.split(',')[1])
+
+      #separate out the mime component
+      mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
+
+      #write the bytes of the string to an ArrayBuffer
+      arrayBuffer = new ArrayBuffer(byteString.length)
+      _ia = new Uint8Array(arrayBuffer);
+      
+      _ia[i] = byteString.charCodeAt(i) for i in [0..byteString.length]
+
+      dataView = new DataView(arrayBuffer)
+      try 
+        console.log("$$$ Private.dataURItoBlob BEFORE new Blob")
+        blob = new Blob([dataView], { type: mimeString })
+        console.log("$$$ Private.dataURItoBlob AFTER new Blob")
+        return blob;
+      catch error
+        console.log('ERROR: Blob support not available for dataURItoBlob')
+      return false
+
+
     _.extend ImgCache.options, _IMAGE_CACHE_defaults
 
     deviceReady.waitP().then ()->
       ImgCache.init()
+
+
 
     self = {
       cacheIndex : {} # index of cached files by UUID
       mostRecent : [] # stack for garbage collection, mostRecently used UUID on the 'top'
       cacheTemplate: 'imgcache/{uuid}.jpg'
       isDataURL : (src)->
-        return /^data:image/.test src[10..20]
+        throw "isDataURL() ERROR: expecting string" if typeof src != 'string'
+        return /^data:image/.test( src )
+
+      getExt: (dataURL)->
+        return if !self.isDataURL(dataURL)
+        mimeType = dataURL[10..20]
+        return 'jpg' if /jpg|jpeg/i.test(mimeType)
+        return 'png' if /png/i.test(mimeType)
+        return 
+
       waitP: ()->
         return _promise if _promise
         deferred = $q.defer()
@@ -404,58 +440,28 @@ angular
         return _promise = deferred.promise
 
       cacheDataURLP: ($targetOrDataURL, UUID, useCached=true)->
-        hashkey = self.getHashKey($targetOrDataURL) 
-        UUID = hashkey if hashkey
+        hashKey = self.getHashKey($targetOrDataURL) 
+        UUID = hashKey if hashKey
         UUID = UUID[0...36] # localStorage might balk at '/' in pathname
         isTarget = $targetOrDataURL.src? || $targetOrDataURL.attr?
         if isTarget
           $target = $targetOrDataURL
           dataURL = $targetOrDataURL.attr('src') 
         else 
+          $target = false
           dataURL = $targetOrDataURL
 
 
         return $q.reject "ERROR: dataURL is missing!" if !dataURL && !UUID
 
-        return self.waitP().then ()->
-            return self.useCachedFileP($target) if useCached
-            return $q.reject()
-          .then (found)->
-            return $q.reject() if !found
-            console.log "\n\nCACHE HIT!!!!\n\n"
-            # return self.useCachedFileP( $target, UUID) 
-            
-          .catch ()->
-            deferred = $q.defer()
-            return $q.reject('dataURL is missing: load from MessengerPlugin?') if !dataURL
+        return self.cordovaFile_USE_CACHED_P($target, UUID, dataURL)
 
-            ImgCache.cacheDataURL dataURL
-              , UUID
-              , (filepath, fileEntry)-> 
-                
-                if !filepath
-                  ImgCache.useCachedFile($target)
-                  return deferred.resolve("success") 
-
-                console.log "\n *** right here 2 filepath=" + filepath
-                console.log "ImgCache.cacheDataURL(): UUID="+UUID+", fileEntry=" + fileEntry?.toURL()
-                self.cacheIndex[UUID] = filepath.slice(1) # fileEntry.toURL()
-
-                console.log self.cacheIndex  # $$$
-
-                return deferred.resolve("success")
-              , (error)->
-                console.log "\n *** right here 3"
-                console.log error
-                return deferred.reject("ImgCache.cacheFile() errors. see log")
-            return deferred.promise.then ()->
-                if $target && useCached
-                  return self.useCachedFileP($target, UUID)
-              , (error)->
-                console.log error
           .catch (error)->
+            console.log "\n *** right here 5"
             console.log error
+
             return $q.reject(error)
+
 
       getHashKey: ($targetOrUUID)->
         # priority: $target.attr('uuid') > UUID > $target.attr(src)
@@ -470,6 +476,130 @@ angular
 
         throw "ERROR: cannot find Hashkey for imageCacheSvc!!!"
 
+      getFilename: (UUID, size, dataURL)->
+        ext = self.getExt(dataURL)
+        return false if !ext || !UUID
+        return filePath = UUID[0...36] + '-' + size + '.' + ext
+
+      isStashed:  (UUID, size)->
+        # NOTE: we don't know the extention when we check isStashed
+        hashKey = [ UUID[0...36] ,size].join(':') 
+        src = self.cacheIndex[hashKey]?.fileURL || false
+        console.log "\n\n >>> STASH HIT !!!  file=" + src if src
+        return src
+
+      stashFile: (UUID, size, fileURL, fileSize)->
+        hashKey = [ UUID[0...36] ,size].join(':') 
+        console.log "\n\n >>> STASH file=" + hashKey + fileURL
+        self.cacheIndex[hashKey] = {
+          fileURL: fileURL
+          fileSize: fileSize
+        }
+        self.mostRecent.unshift(hashKey)
+        self.mostRecent = _.unique(self.mostRecent)
+
+      stashSize: ()->
+        total = _.reduce self.cacheIndex, (total, o)->
+            return total += o.fileSize
+          , 0
+        return total
+
+      unstashFile: (UUID, size)->
+        hashKey = if size then hashKey = [ UUID[0...36] ,size].join(':') else UUID
+        "delete from locaslStorage, then remove from stash"
+        "make sure you check UUID && UUID[0...36]"
+        "???: how do we delete from cameraRoll.dataURLs without a circular reference???"
+        "NOTE: image.src may need to detect a missing cache URL"
+
+
+      cordovaFile_CHECK_P: (UUID, size, dataURL)->
+        filePath = self.isStashed UUID, size
+        return $q.when (filePath) if filePath
+
+
+        filePath = self.getFilename(UUID, size, dataURL)
+        return $q.reject('ERROR: unable to get valid Filename') if !filePath
+
+        # filePath = result['target']['localURL']
+        console.log "\n\n >>> $ngCordovaFile.checkFile() for file=" + filePath
+        return $cordovaFile.checkFile(filePath)
+        .then (file)->
+          ### example {
+            "name":"AC072879-DA36-4A56-8A04-4D467C878877-thumbnail.jpg",
+            "fullPath":"/AC072879-DA36-4A56-8A04-4D467C878877-thumbnail.jpg",
+            "filesystem":"<FileSystem: persistent>",
+            "nativeURL":"file:///Users/michael/Library/Developer/CoreSimulator/Devices/596BAB03-FCAE-46C4-B3C8-8100ECD66EDF/data/Containers/Data/Application/B95C85A8-0D75-4AEE-94B0-BA79525C71B3/Library/files/AC072879-DA36-4A56-8A04-4D467C878877-thumbnail.jpg"
+          ###
+          console.log file  # _.keys == {name: fullPath: filesystem: nativeURL: }
+          console.log "$ngCordovaFile.checkFile() says file EXISTS file=" + file.nativeURL + "\n\n"
+          return file.nativeURL
+        .catch (error)->
+          console.log error
+          console.log "$ngCordovaFile.checkFile() says DOES NOT EXIST, file=" + filePath + "\n\n"
+          return $q.reject(error)
+
+
+      cordovaFile_WRITE_P: (UUID, size, dataURL)->
+        filePath = self.getFilename(UUID, size, dataURL)
+        return $q.reject('ERROR: unable to get valid Filename') if !filePath
+        blob = _dataURItoBlob(dataURL)
+
+        console.log "\n\n >>> $ngCordovaFile.writeFile() for file=" + filePath
+        return $cordovaFile.writeFile(filePath, blob, {'append': false} )
+        .then (ProgressEvent)->
+            # check ProgressEvent.target.length, ProgressEvent.target.localURL
+            console.log "$ngCordovaFile writeFile SUCCESS"
+            retval = {
+              filePath: filePath
+              fileSize: ProgressEvent.target.length
+              localURL: ProgressEvent.target.localURL
+            }
+            console.log retval
+            return retval
+        .catch (error)->
+            console.log "$ngCordovaFile writeFile ERROR"
+            console.log error
+            return $q.reject(error)
+        .then (retval)->
+          fileSize = retval.fileSize
+          filePath = retval.filePath
+          return $cordovaFile.checkFile(filePath).then (file)->
+            console.log file  # _.keys == {name:, fullPath:, filesystem:, nativeURL: }
+            console.log "$ngCordovaFile.checkFile() says file EXISTS file=" + file.nativeURL + "\n\n"
+            return {
+              fileURL: file.nativeURL
+              fileSize: fileSize
+            }
+
+
+      # will overwrite cached file, use cordovaFile_CHECK_P() if not desired
+      # @param UUIDs array, will convert single UUID to array
+      cordovaFile_CACHE_P: (UUID, size, dataURL)->
+        console.log "\n\n$$$ cordovaFile_CACHE_P, UUID="+UUID
+        return self.cordovaFile_WRITE_P(UUID, size, dataURL)
+        .then (retval)->
+          console.log retval # $$$
+          self.stashFile(UUID, size, retval.fileURL, retval.fileSize)
+          return retval.fileURL
+        .catch (error)->
+          console.log "$ngCordovaFile cordovaFile_CACHE_P ERROR"
+          console.log error
+          return $q.reject(error)
+
+      cordovaFile_USE_CACHED_P: ($target, UUID, dataURL)->
+        IMAGE_SIZE = $target.attr('format') if $target
+        UUID = $target.attr('UUID') if !UUID
+        dataURL = $target.attr('src') if !dataURL
+        throw "ERROR: cannot get format from image" if !IMAGE_SIZE
+
+        self.cordovaFile_CHECK_P(UUID, IMAGE_SIZE, dataURL)
+        .catch ()->
+          self.cordovaFile_CACHE_P(UUID, IMAGE_SIZE, dataURL)
+        .then (fileURL)->
+          console.log "\n\n >>> $ngCordovaFile.cordovaFile_USE_CACHED_P() should be cached by now, fileURL=" + fileURL
+          $target.attr('src', fileURL) if $target
+          return fileURL
+
 
 
       useCachedFileP: ($target)->
@@ -483,26 +613,27 @@ angular
             , ()->
               self.mostRecent.splice self.mostRecent.indexOf(UUID), 1
               self.mostRecent.push(UUID)
-              return deferred.resolve("success")
+              return deferred.resolve( self.cacheIndex[UUID] )
             , ($img)->
               # console.log "useCachedFileP, file not found in cache"
               return deferred.reject("ImgCache.useCachedFileP, file not found")
           return deferred.promise
 
+
       isCachedP: ($targetOrUUID)->
-        hashkey = self.getHashKey($targetOrUUID)
+        hashKey = self.getHashKey($targetOrUUID)
 
         return self.waitP().then ()->
           deferred = $q.defer()
-          filepath = self.cacheIndex[hashkey]
-          filepath =  self.cacheTemplate.replace('{uuid}', hashkey) if !filepath
+          filepath = self.cacheIndex[hashKey]
+          filepath =  self.cacheTemplate.replace('{uuid}', hashKey) if !filepath
           console.log "\n\n *** checking cache for file=" + filepath
           # return deferred.resolve(!!filepath)
 
           ImgCache.isDataURLCached filepath, (src, isCached)->
             console.log "ImgCache isCached() says isCached=" + !!isCached + " for src=" + src
             return deferred.reject false if !isCached
-            self.cacheIndex[hashkey] = src # cache in localStorage
+            self.cacheIndex[hashKey] = src # cache in localStorage
             return deferred.resolve isCached
           return deferred.promise
       raw: (target)->
@@ -749,6 +880,7 @@ angular
       user: $scope.user
       cameraRoll: cameraRoll
       workorders: otgWorkorderSync._workorderColl
+      imgCache: imageCacheSvc
     }
 
   ]
