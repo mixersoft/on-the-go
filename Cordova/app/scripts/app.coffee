@@ -533,12 +533,9 @@ angular
         return promise.promise
     }
 
-    $scope.loadMomentsFromCameraRollP = ()->  # on button click
-
+    _LOAD_MOMENTS_FROM_CAMERA_ROLL_P = ()->  # on button click
       IMAGE_FORMAT = 'thumbnail'    # [thmbnail, preview, previewHD]
       # TEST_LIMIT = 5 # snappiMessengerPluginService.MAX_PHOTOS
-      start = new Date().getTime()
-
       return cameraRoll.loadCameraRollP( {size: IMAGE_FORMAT} ) 
 
 
@@ -550,7 +547,14 @@ angular
 
 
     _LOAD_BROWSER_TOOLS = ()->
-      # moment and photos loaded in cameraRoll service via deviceReady.waitP()
+      # load TEST_DATA
+      console.log "\n\n *** loading TEST_DATA: TODO: MOVE TO _LOAD_BROWSER_TOOLS ***\n\n"
+      cameraRoll.orders = TEST_DATA.orders
+      photos_ByDateUUID = TEST_DATA.cameraRoll_byDate
+      cameraRoll.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( photos_ByDateUUID ), 2
+      cameraRoll.photos = otgData.parsePhotosFromMoments cameraRoll.moments, 'TEST_DATA'
+      cameraRoll._mapAssetsLibrary = _.map cameraRoll.photos, (TEST_DATA_photo)->
+        return {UUID: TEST_DATA_photo.UUID, dateTaken: TEST_DATA_photo.date}
       # add some test data for favorite and shared
       TEST_DATA.addSomeTopPicks( cameraRoll.photos)
       TEST_DATA.addSomeFavorites( cameraRoll.photos)
@@ -569,14 +573,16 @@ angular
 
     init = ()->
       _LOAD_DEBUG_TOOLS()
-      $scope.loadMomentsFromCameraRollP().finally ()->
-        console.log "\n\n*** cameraRoll mapped\n"
-        otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.$state.includes('app.workorders')
-
 
       deviceReady.waitP().then ()->
         $scope.config['no-view-headers'] = deviceReady.isWebView() && false
         $rootScope.deviceId = deviceReady.deviceId()
+
+        _LOAD_MOMENTS_FROM_CAMERA_ROLL_P()
+        .finally ()->
+          $timeout ()->
+              otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.$state.includes('app.workorders')
+            , 3000  
 
         if !deviceReady.isWebView()
           _LOAD_BROWSER_TOOLS() 

@@ -105,7 +105,7 @@ angular
           return otgParse.fetchWorkordersByOwnerP(options)
         .then (workorderColl)->
           self._workorderColl[role] = workorderColl
-          console.log " \n\n 1a: &&&&& fetchWorkordersP from backend.coffee, role=" + role
+          console.log "\n *** fetchWorkordersP from backend.coffee, role=" + role
           return workorderColl
 
       fetchWorkorderPhotosP : (workorderObj,  options={}, force)->

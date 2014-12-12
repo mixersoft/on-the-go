@@ -140,9 +140,7 @@ angular
 
           return mapped
         .then (mapped)->
-          $timeout ()->
-              return self.loadMomentThumbnailsP()
-            , 1000
+          promise = self.loadMomentThumbnailsP(5000)
           # don't wait for promise
           return mapped
 
@@ -152,44 +150,54 @@ angular
           return $q.reject(error)
 
 
-      loadMomentThumbnailsP: ()->
-        start = new Date().getTime()
-
-        # preload thumbnail DataURLs for self moment previews
-        momentPreviewAssets = self.getMomentPreviewAssets() # do this async
-        # check against imageCacheSvc
-        notCached = _.reduce momentPreviewAssets, (result, photo)->
-            result.push photo.UUID if !imageCacheSvc.isStashed( photo.UUID, 'thumbnail')
-            return result
-          , []
-
-        console.log "\n\n\n*** preloading moment thumbnails for UUIDs: " 
-        console.log notCached
-        return snappiMessengerPluginService.getDataURLForAssetsByChunks_P( 
-          notCached
-          , 'thumbnail'                          
-          , self.patchPhoto
-          , snappiMessengerPluginService.SERIES_DELAY_MS 
-        ).then ()->
-          end = new Date().getTime()
-          console.log "\n*** thumbnail preload complete, elapsed=" + (end-start)/1000
-
-          # # show results in AppConsole
-          # if false && "appConsole"
-          #   truncated = {
-          #     "desc": "cameraRoll.dataURLs"
-          #     photos: cameraRoll.photos[0..TEST_LIMIT]
-          #     dataURLs: {}
-          #   }
-          #   if deviceReady.isWebView()
-          #     _.each cameraRoll.dataURLs[IMAGE_FORMAT], (dataURL,uuid)->
-          #       truncated.dataURLs[uuid] = dataURL[0...40]
-          #   else 
-          #     _.each photos, (v,k)->
-          #       truncated.dataURLs[v.UUID] = v.data[0...40]
-          #   # console.log truncated # $$$
-          #   $scope.appConsole.show( truncated )
-          #   return photos        
+      loadMomentThumbnailsP: (delay=10)->
+        dfd = $q.defer()
+        _fn = ()->
+            start = new Date().getTime()
+            # preload thumbnail DataURLs for self moment previews
+            momentPreviewAssets = self.getMomentPreviewAssets() # do this async
+            # check against imageCacheSvc
+            notCached = _.reduce( 
+              momentPreviewAssets
+              , (result, photo)->
+                result.push photo.UUID if !imageCacheSvc.isStashed( photo.UUID, 'thumbnail')
+                return result
+              , []
+            )
+            console.log "\n\n\n*** preloading moment thumbnails for UUIDs: " 
+            console.log notCached
+            return snappiMessengerPluginService.getDataURLForAssetsByChunks_P( 
+              notCached
+              , 'thumbnail'                          
+              , self.patchPhoto
+              , snappiMessengerPluginService.SERIES_DELAY_MS 
+            )
+            .then ()->
+              end = new Date().getTime()
+              console.log "\n*** thumbnail preload complete, elapsed=" + (end-start)/1000
+              dfd.resolve('success')
+            .then ()->
+              return
+              # show results in AppConsole
+              if false && "appConsole"
+                truncated = {
+                  "desc": "cameraRoll.dataURLs"
+                  photos: cameraRoll.photos[0..TEST_LIMIT]
+                  dataURLs: {}
+                }
+                if deviceReady.isWebView()
+                  _.each cameraRoll.dataURLs[IMAGE_FORMAT], (dataURL,uuid)->
+                    truncated.dataURLs[uuid] = dataURL[0...40]
+                else 
+                  _.each photos, (v,k)->
+                    truncated.dataURLs[v.UUID] = v.data[0...40]
+                # console.log truncated # $$$
+                $scope.appConsole.show( truncated )
+                return photos 
+        $timeout ()-> 
+            _fn()     
+          , delay  
+        return dfd.promise   
 
       clearPhotos_PARSE : ()->
         # on logout
@@ -554,15 +562,6 @@ angular
         # skip
         return
       else  
-        # load TEST_DATA
-        console.log "\n\n *** loading TEST_DATA: TODO: MOVE TO _LOAD_BROWSER_TOOLS ***\n\n"
-        self.orders = TEST_DATA.orders
-        photos_ByDateUUID = TEST_DATA.cameraRoll_byDate
-        self.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( photos_ByDateUUID ), 2
-        self.photos = otgData.parsePhotosFromMoments self.moments, 'TEST_DATA'
-        self._mapAssetsLibrary = _.map self.photos, (TEST_DATA_photo)->
-          return {UUID: TEST_DATA_photo.UUID, dateTaken: TEST_DATA_photo.date}
-
         return
 
     return self

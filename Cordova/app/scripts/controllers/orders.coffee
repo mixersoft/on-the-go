@@ -157,15 +157,13 @@ angular.module('ionBlankApp')
       else 
         options = { owner: true }
         otgWorkorderSync.fetchWorkordersP( options ).then (workorderColl)->
-          console.log " \n\n 2: &&&&& REFRESH fetchWorkordersP from orders.coffee "
+          # console.log " \n\n 2: &&&&& REFRESH fetchWorkordersP from orders.coffee "
           $scope.workorders = workorderColl.toJSON()
 
           # update workorder Photo counts
           workorderColl.each (woObj)->
             return if woObj.get('status') == 'complete'
             otgWorkorderSync.updateWorkorderCounts(woObj)
-
-
             return
           return
 

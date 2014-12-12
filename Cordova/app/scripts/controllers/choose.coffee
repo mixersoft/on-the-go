@@ -333,7 +333,6 @@ angular.module('ionBlankApp')
       console.log "\n\n %%% watched cameraRoll.moments change, update filter %%% \n\n"
       return if !deviceReady.isWebView()
       return cameraRoll.loadMomentThumbnailsP()
-      "skip" || _loadMomentThumbnailsP()
 
 
     init = ()->
@@ -342,13 +341,11 @@ angular.module('ionBlankApp')
 
       return cameraRoll.loadMomentThumbnailsP() 
 
+      # skip DEBUG
       switch $state.current.name
         when 'app.choose.calendar'
           otgWorkorder.on.clearSelected()
           return otgWorkorder.on.selectByCalendar("2014-09-20", "2014-09-24")
-
-
-
       return
 
     # refactor to AppCtrl or service
