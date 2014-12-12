@@ -146,8 +146,8 @@ angular.module('ionBlankApp')
 
 ]
 .controller 'SettingsCtrl', [
-  '$scope', '$rootScope', '$state','$timeout', '$ionicPopup', '$ionicNavBarDelegate', 'otgParse', 'otgProfile', 'otgWorkorderSync'
-  ($scope, $rootScope, $state, $timeout, $ionicPopup, $ionicNavBarDelegate, otgParse, otgProfile, otgWorkorderSync) ->
+  '$scope', '$rootScope', '$state','$timeout', '$ionicPopup', '$ionicNavBarDelegate', 'otgParse', 'otgProfile', 'otgWorkorderSync', 'otgUploader'
+  ($scope, $rootScope, $state, $timeout, $ionicPopup, $ionicNavBarDelegate, otgParse, otgProfile, otgWorkorderSync, otgUploader) ->
     $scope.label = {
       title: "Settings"
       subtitle: "Share something great today!"
@@ -161,6 +161,7 @@ angular.module('ionBlankApp')
       otgProfile.signOut()
       $state.transitionTo('app.settings.sign-in')
       otgWorkorderSync.clear()
+      $scope.menu.uploader.count = otgUploader.clear()
       return     
     
     $scope.signIn = (ev)->

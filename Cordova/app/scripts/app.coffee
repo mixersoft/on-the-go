@@ -677,7 +677,7 @@ angular
         # console.log "\n\n$$$ cordovaFile_CACHE_P, UUID="+UUID
         return self.cordovaFile_WRITE_P(UUID, size, dataURL)
         .then (retval)->
-          console.log retval # $$$
+          # console.log retval # $$$
           self.stashFile(UUID, size, retval.fileURL, retval.fileSize)
           return retval.fileURL
         .catch (error)->
@@ -791,6 +791,7 @@ angular
 
     # config values read from localstorage, set in settings
     $scope.config = {
+      'app-bootstrap' : true
       'no-view-headers' : true
       help: false
       privacy:
@@ -925,7 +926,6 @@ angular
 
     init = ()->
       _LOAD_DEBUG_TOOLS()
-
       $scope.loadMomentsFromCameraRollP().finally ()->
         console.log "\n\n*** cameraRoll mapped\n"
         otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.$state.includes('app.workorders')

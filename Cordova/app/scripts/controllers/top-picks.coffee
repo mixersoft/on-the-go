@@ -395,6 +395,7 @@ angular.module('ionBlankApp')
 
     init = ()->
       setFilter( $state.current )
+
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info
 
       # show loading
@@ -402,6 +403,7 @@ angular.module('ionBlankApp')
       if force
         otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force')
 
+      $scope.config['app-bootstrap'] = false
       return
 
     init()

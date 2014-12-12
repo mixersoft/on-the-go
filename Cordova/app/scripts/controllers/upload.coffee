@@ -14,7 +14,6 @@ angular.module('ionBlankApp')
 
     self = {
       _queue : []
-      _workorder: null
       UPLOAD_IMAGE_SIZE: 'preview'
       state :
         isActive : false
@@ -106,6 +105,10 @@ angular.module('ionBlankApp')
           return
         
         return self._queue
+
+      clear : ()->
+        self._queue = []
+        return self._queue.length
 
     }
 

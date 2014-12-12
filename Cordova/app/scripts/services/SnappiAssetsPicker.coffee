@@ -224,6 +224,10 @@ angular
           #   $scope.appConsole.show( truncated )
           #   return photos        
 
+      clearPhotos_PARSE : ()->
+        # on logout
+        self.photos = _.filter self.photos, (photo)->
+            return photo.from != 'PARSE'
 
       # standard eachPhoto callback
       patchPhoto: (photo)->

@@ -80,6 +80,7 @@ angular
           editor: []
         }
         self._workorderPhotosColl = {}
+        cameraRoll.clearPhotos_PARSE()
         return
 
       ## @param: options, {type:[workorderObj, photosColl], role:[owner,editor], id: workorderObj.id:}
@@ -206,7 +207,7 @@ angular
       # wrap in timeouts 
       SYNC_ORDERS : (scope, force, DELAY=10, whenDoneP)->
         # run AFTER cameraRoll loaded
-        return if _.isEmpty $rootScope.sessionUser
+        # return if _.isEmpty $rootScope.sessionUser
         return if deviceReady.isWebView() && _.isEmpty cameraRoll.map()
 
         options = {
@@ -219,7 +220,7 @@ angular
             self.fetchWorkordersP( options , force ).then (workorderColl)->
 
                 promises = []
-                openOrders = 0
+                scope.menu.orders.count = openOrders = 0
                 workorderColl.each (workorderObj)->
 
                   return if workorderObj.get('status') == 'complete'
