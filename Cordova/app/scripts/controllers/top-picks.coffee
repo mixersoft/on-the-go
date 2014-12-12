@@ -192,8 +192,8 @@ angular.module('ionBlankApp')
   '$timeout', '$window', '$q', '$filter', 
   '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', '$cordovaSocialSharing'
   'deviceReady', 'cameraRoll', 'otgWorkorderSync'
-  'TEST_DATA', 'imageCacheSvc'
-  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, $cordovaSocialSharing, deviceReady, cameraRoll, otgWorkorderSync, TEST_DATA, imageCacheSvc) ->
+  'TEST_DATA', 'imageCacheSvc', '$cordovaFile'
+  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, $cordovaSocialSharing, deviceReady, cameraRoll, otgWorkorderSync, TEST_DATA, imageCacheSvc, $cordovaFile) ->
     $scope.label = {
       title: "Top Picks"
       header_card: 
@@ -352,7 +352,7 @@ angular.module('ionBlankApp')
             scope.swipeCard.swipeOver('right')
 
       test: ()->
-        _TEST_imageCacheSvc()
+        # _TEST_imageCacheSvc()
         # $scope.loadMomentsFromCameraRollP().then ()->
         #   $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks')
         #   console.log "AFTER loading cameraRoll, filteredPhotos.length="+$scope.filteredPhotos.length
@@ -386,31 +386,10 @@ angular.module('ionBlankApp')
           return _options
     }
 
-    _testImg = new Image()
-    _TEST_imageCacheSvc = ()->
-      # test imgCache
-      container = document.getElementsByClassName('item-text-wrap')[0]
-      img =_testImg
-      img.src = window.testDataURL
-      # img.src = "img/ionic.png"
-      img.width = 320
-      $img = angular.element(img)
-      $img.attr('uuid', '12345678')
-      $img.attr('format', 'preview')
-      angular.element(container).append $img
-      ImgCache.init()
-      # ImgCache.clearCache ()->
-      #   console.log "\n*** ImageCache cleared *** \n"
+
+      
 
 
-      # imageCacheSvc.cacheDataURLP($img, null, true).then (o)->
-      #     console.log "\n\n >>> cacheDataURLP success"
-      #     console.log o 
-      #   , (filePath)->
-      #     console.log "\n\n >>> cacheDataURLP FAILED, try $ngCordovaFile for file="+filePath
-
-      promise = imageCacheSvc.cordovaFile_USE_CACHED_P( $img ).then (fileURL)->
-        console.log "\n\n imageCacheSvc has cached dataURL, path=" + fileURL
 
 
 

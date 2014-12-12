@@ -417,6 +417,9 @@ angular
       mostRecent : [] # stack for garbage collection, mostRecently used UUID on the 'top'
       CACHE_DIR : '/'  # ./Library/files/  it seems $cordovaFile requires this as root
       cacheRoot : null
+      LIMITS:
+        MAX_PREVIEW: 500
+        MOST_RECENT: 1000 # apply _.unique on reaching limit
       isDataURL : (src)->
         throw "isDataURL() ERROR: expecting string" if typeof src != 'string'
         return /^data:image/.test( src )
@@ -446,14 +449,18 @@ angular
         return false if !ext || !UUID
         return filePath = UUID[0...36] + '-' + size + '.' + ext
 
-      isStashed:  (UUID, size)->
-        # NOTE: we don't know the extention when we check isStashed
+      # NOTE: this 'fast' version called by camera.getDataURL
+      # if not stashed, the UUID will be queued with cameraRoll.queueDataURL()
+      isStashed:  (UUID, size)-> 
+        # NOTE: we don't know the extension when we check isStashed
         hashKey = [ UUID[0...36] ,size].join(':') 
         src = self.cacheIndex[hashKey]?.fileURL || false
         if src
-          console.log "\n\n >>> STASH HIT !!!  file=" + src 
+          console.log "\n\n >>> STASH HIT !!!  file=" + src.slice(-60) 
           self.mostRecent.unshift(hashKey)
-          self.mostRecent = _.unique(self.mostRecent)
+          if self.mostRecent.length >  self.LIMITS.MOST_RECENT
+            self.mostRecent = _.unique(self.mostRecent) 
+            self.clearStashedP('preview', self.LIMITS.MAX_PREVIEW)
         return src
 
       isStashed_P:  (UUID, size, dataURL)->
@@ -463,7 +470,7 @@ angular
 
       stashFile: (UUID, size, fileURL, fileSize)->
         hashKey = [ UUID[0...36] ,size].join(':') 
-        console.log "\n\n >>> STASH file=" + hashKey + ", url=" + fileURL
+        # console.log "\n\n >>> STASH file=" + hashKey + ", url=" + fileURL
         self.cacheIndex[hashKey] = {
           fileURL: fileURL
           fileSize: fileSize
@@ -475,12 +482,51 @@ angular
           , 0
         return total
 
-      unstashFile: (UUID, size)->
+      unstashFileP: (UUID, size)->
         hashKey = if size then hashKey = [ UUID[0...36] ,size].join(':') else UUID
-        "delete from locaslStorage, then remove from stash"
-        "make sure you check UUID && UUID[0...36]"
-        "???: how do we delete from cameraRoll.dataURLs without a circular reference???"
-        "NOTE: image.src may need to detect a missing cache URL"
+        o = self.cacheIndex[hashKey]
+        return $q.reject("stashFile not found") if !o
+        filename = self.CACHE_DIR + o.fileURL.split('/').pop()
+        return $cordovaFile.removeFile(filename).then (retval)->
+          console.log "\n %%% $cordovaFile.removeFile complete, filename=" + filename.slice(-60)
+          console.log retval # $$$
+          delete self.cacheIndex[ hashKey ]
+          return
+        
+
+      ## @param type string, [preview|thumbnail], keep = count 
+      clearStashedP: (type, keep)->
+        $timeout ()->
+            console.log "\n\n *** clearStashedP() begin, size="+self.stashSize()
+            promises = []
+
+            if keep && type
+              keyOfType = _.filter self.mostRecent, (hashKey)->
+                return hashKey.indexOf(type) > -1
+              hashKeys = keyOfType.slice keep
+            else if keep
+              hashKeys = self.mostRecent.slice keep
+            else 
+              hashKeys = _.keys self.cacheIndex
+
+            _.each hashKeys, (hashKey)->
+              return if type && hashKey.indexOf(type) == -1
+              promises.push self.unstashFileP(hashKey)
+            return $q.all(promises).then ()->
+              self.mostRecent = self.mostRecent.slice(0,keep) if keep
+              console.log "*** clearStashedP() END, size="+self.stashSize()
+          , 100
+
+      getCacheKeyFromFilename: (filename)->
+        parts = filename.split('-')
+        tail = parts.pop()
+        size = 'preview' if tail.indexOf('preview') == 0
+        size = 'thumbnail' if tail.indexOf('thumbnail') == 0
+        console.error "WARNING: cannot parse size from fileURL, name=" + filename if !size
+        UUID = parts.join('-')
+        return [UUID] if !size
+        return [UUID, size]
+
 
       cordovaFile_LOAD_CACHED_P : (dirEntry)->
         # cordova.file.cacheDirectory : ./Library/Caches
@@ -496,12 +542,7 @@ angular
             _.each entries, (file)->
               return if !file.isFile
 
-              parts = file.name.split('-')
-              tail = parts.pop()
-              size = 'preview' if tail.indexOf('preview') == 0
-              size = 'thumbnail' if tail.indexOf('thumbnail') == 0
-              console.error "ERROR: cannot parse size from fileURL, name=" + file.name if !size
-              UUID = parts.join('-')
+              [UUID, size] = self.getCacheKeyFromFilename(file.name)
 
               fileURL = file.nativeURL || file.toURL()
               promises.push self.getMetaData_P(file).then (meta)->
@@ -612,11 +653,11 @@ angular
               fileSize: ProgressEvent.target.length
               localURL: ProgressEvent.target.localURL
             }
-            console.log retval # $$$
+            # console.log retval # $$$
             return retval
         .catch (error)->
             console.log "$ngCordovaFile writeFile ERROR"
-            console.log error
+            console.log error # $$$
             return $q.reject(error)
         .then (retval)->
           fileSize = retval.fileSize

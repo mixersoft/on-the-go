@@ -64,7 +64,7 @@ angular.module('ionBlankApp')
 
         attrs.$observe 'lazySrc', (UUID)->
           # UUID = UUID[0...36] # localStorage might balk at '/' in pathname
-          console.log "\n\n $$$ attrs.$observe 'lazySrc', UUID+" + UUID
+          # console.log "\n\n $$$ attrs.$observe 'lazySrc', UUID+" + UUID
           element.attr('uuid', UUID)
 
           photo = element.scope().item
