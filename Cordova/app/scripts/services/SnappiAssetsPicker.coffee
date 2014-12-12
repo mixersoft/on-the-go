@@ -44,40 +44,7 @@ angular
     thumbnail: 'cacheDirectory'
     archive: 'dataDirectory' 
 }
-.factory 'appConsole', [
-  '$ionicModal', '$q'
-  ($ionicModal, $q)->
 
-    self = {
-      _modal: null
-      _message: null
-      log: (message)->
-        self._message = message if _.isString message
-        self._message = JSON.stringify message, null, 2 if _.isObject message
-      show: (message)->
-        self.log(message) if message
-        return self._modal.show() if self._modal
-        return _readyP.then ()->
-          self._modal.show()
-      hide: ()->
-        self._modal?.hide()
-        self._message = ''
-      readyP: null
-    }
-
-    _readyP = $ionicModal.fromTemplateUrl 'partials/modal/console', {
-        appConsole: self
-        animation: 'slide-in-up'
-      }
-    .then (modal)->
-        console.log "modal ready"
-        self._modal = modal
-      , (error)->
-        console.log "Error: $ionicModal.fromTemplate"
-        console.log error
-
-    return self
-]
 .factory 'deviceReady', [
   '$q', '$timeout',  '$ionicPlatform'
   ($q, $timeout, $ionicPlatform)->
