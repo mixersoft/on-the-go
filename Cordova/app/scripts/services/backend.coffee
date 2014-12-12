@@ -668,15 +668,15 @@ angular
         return deviceReady.waitP().then self.checkSessionUserP() 
           .then ()->
             if deviceReady.isWebView()
-              # should be preloaded by otgUploader.queue
-              found = cameraRoll.getDataURL(photo.UUID, UPLOAD_IMAGE_SIZE)
-              if found
-                photo = _.find cameraRoll.photos, {UUID: photo.UUID}
-                # photo is set by closure
-                return found # is a dataURL
+              # FORCE dataURL, do NOT use stashed File
+              # found = cameraRoll.getDataURL(photo.UUID, UPLOAD_IMAGE_SIZE)
+              # if found
+              #   photo = _.find cameraRoll.photos, {UUID: photo.UUID}
+              #   # photo is set by closure
+              #   return found # is a dataURL
 
               # fetch with promise
-              return cameraRoll.getDataURL_P( photo.UUID, UPLOAD_IMAGE_SIZE ).then (oPhoto)->
+              return cameraRoll.getDataURL_P( photo.UUID, UPLOAD_IMAGE_SIZE, 'dataURL' ).then (oPhoto)->
                 dataURL = oPhoto.data
                 console.log "\n*** cameraRoll.getDataURL_P() resolved with:" + dataURL[0...50]
                 

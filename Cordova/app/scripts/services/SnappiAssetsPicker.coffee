@@ -379,8 +379,8 @@ angular
         return date.substring(0,10)  # like "2014-07-14"
 
       # promise version, used by lazySrc
-      getDataURL_P :  (UUID, size='preview')->
-        found = self.getDataURL(UUID, size)
+      getDataURL_P :  (UUID, size='preview', noCache)->
+        found = self.getDataURL(UUID, size) if !noCache
         return $q.when(found) if found
         # load from cameraRoll
         role = if deviceReady.isWebView() then 'owner' else 'editor'
