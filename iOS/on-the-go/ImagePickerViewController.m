@@ -8,65 +8,26 @@
 
 #import "ImagePickerViewController.h"
 #import "ImagePickerTableViewCell.h"
+#import "PhotosSource.h"
 
 @import Photos;
 
 
 @interface ImagePickerViewController () <UITableViewDataSource, UITableViewDelegate>
-@property (nonatomic, strong) NSMutableArray *collections;
-@property (nonatomic, strong) NSMutableArray *collectionTitles;
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
+
+
+
 @end
 
-@implementation ImagePickerViewController
+@implementation ImagePickerViewController {
+    PhotosSource *_source;
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     [self.tableView setRowHeight:80];
-    self.collections = nil;
-    self.collectionTitles = nil;
-    
-    void (^block)(void) = ^{
-        PHFetchOptions *options = [PHFetchOptions new];
-        [options setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"startDate" ascending:NO]]];
-        PHFetchResult * collections = [PHCollectionList fetchMomentListsWithSubtype:PHCollectionListSubtypeMomentListCluster options:options];
-        self.collections = [NSMutableArray arrayWithCapacity:collections.count];
-        self.collectionTitles = [NSMutableArray arrayWithCapacity:collections.count];
-        
-        for (PHCollectionList * collection in collections) {
-            NSMutableArray *momentAssets = [NSMutableArray new];
-            PHFetchOptions *options = [PHFetchOptions new];
-            [options setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"startDate" ascending:NO]]];
-            PHFetchResult * momentsInCollection = [PHCollection fetchCollectionsInCollectionList:collection options:options];
-            
-            [momentsInCollection enumerateObjectsUsingBlock:^(PHAssetCollection * obj, NSUInteger idx, BOOL *stop) {
-               
-                PHFetchResult *result = [PHAsset fetchAssetsInAssetCollection:obj options:nil];
-                [momentAssets addObject:result];
-            }];
-            [self.collections addObject:momentAssets];
-            [self.collectionTitles addObject:collection.localizedTitle?:@""];
-        }
-        [[NSOperationQueue mainQueue] addOperationWithBlock:^{
-            [self.tableView reloadData];
-        }];
-    };
-    
-    
-    [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
-        switch (status) {
-            case PHAuthorizationStatusAuthorized: {
-                block();
-                break;
-            }
-            case PHAuthorizationStatusRestricted:
-                break;
-            case PHAuthorizationStatusDenied:
-                break;
-            default:
-                break;
-        }
-    }];
+    _source = [PhotosSource sharedInstance];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -77,19 +38,21 @@
 #pragma mark UITableView
 
 -(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return self.collections.count;
+    NSInteger count = [_source numberOfCollections];
+    return count;
 }
 
 -(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    
-    return [self.collections[section] count];
+    NSUInteger count = [_source numberOfMomentsInCollectionAtIndex:section];
+    return count;
 }
 
 
 -(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    PHFetchResult *moment = self.collections[indexPath.section][indexPath.row];
+    PHFetchResult *assets = [_source assetsForIndexPath:indexPath];
     ImagePickerTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"Cell"];
-    [cell setAssets:moment];
+    [cell setAssets:assets];
+    [cell setDate:[assets.firstObject creationDate]];
     return cell;
 }
 
@@ -98,7 +61,8 @@
 }
 
 -(NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-    return self.collectionTitles[section];
+    PHCollectionList *list = [_source collectionListAtIndex:section];
+    return list.localizedTitle;
 }
 
 @end

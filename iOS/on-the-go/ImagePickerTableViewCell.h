@@ -11,5 +11,6 @@
 @interface ImagePickerTableViewCell : UITableViewCell
 
 @property (nonatomic, strong) PHFetchResult *assets;
+@property (nonatomic, strong) NSDate *date;
 
 @end

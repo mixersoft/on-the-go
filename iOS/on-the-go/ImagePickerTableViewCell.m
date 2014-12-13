@@ -16,13 +16,23 @@
 
 @end
 
-@implementation ImagePickerTableViewCell
+@implementation ImagePickerTableViewCell {
+}
 
 -(void)setAssets:(PHFetchResult *)assets {
+    if (_assets == assets) {
+        return;
+    }
     _assets = assets;
+    
+
+    
+    
     [self.collectionView reloadData];
     [self.collectionView.collectionViewLayout invalidateLayout];
-    [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0] atScrollPosition:UICollectionViewScrollPositionLeft animated:NO];
+    if (_assets.count) {
+        [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:0 inSection:0] atScrollPosition:UICollectionViewScrollPositionNone animated:NO];
+    }
 }
 
 - (void)awakeFromNib {
@@ -33,6 +43,13 @@
     [super setSelected:selected animated:animated];
 
     // Configure the view for the selected state
+}
+
+-(void)prepareForReuse {
+    [super prepareForReuse];
+    _assets = nil;
+    [self.collectionView reloadData];
+    [self.collectionView scrollRectToVisible:CGRectMake(0, 0, 0, 0) animated:NO];
 }
 
 -(NSAttributedString *)headerDayStringForDate:(NSDate *)date {
@@ -51,16 +68,15 @@
     return str;
 }
 
-
 -(NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
-    return self.assets.count;
+    return _assets.count;
 }
 
 -(UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"Cell" forIndexPath:indexPath];
     UIImageView *imgView = (UIImageView *)[cell viewWithTag:1];
     [imgView setImage:nil];
-    PHAsset *asset = self.assets[indexPath.row];
+    PHAsset *asset = _assets[indexPath.row];
     CGFloat side = 80 * [UIScreen.mainScreen scale];
     [PHImageManager.defaultManager requestImageForAsset:asset targetSize:CGSizeMake(side, side) contentMode:PHImageContentModeAspectFit options:nil resultHandler:^(UIImage *result, NSDictionary *info) {
         [imgView setImage:result];
@@ -76,8 +92,7 @@
     
     UICollectionReusableView *header = [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:@"Header" forIndexPath:indexPath];
     UILabel *titleLabel = (UILabel *)[header viewWithTag:1];
-    PHAsset *asset = [self.assets firstObject];
-    titleLabel.attributedText = [self headerDayStringForDate:asset.creationDate];
+    titleLabel.attributedText = [self headerDayStringForDate:self.date];
     return header;
 }
 

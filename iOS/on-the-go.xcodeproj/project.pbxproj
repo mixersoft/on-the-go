@@ -23,6 +23,7 @@
 		BF38109E1A125CA100915183 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = BF38109D1A125CA100915183 /* config.xml */; };
 		BF3E9BA11A1A450600588C13 /* ImagePickerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF3E9BA01A1A450600588C13 /* ImagePickerViewController.m */; };
 		BF3E9BA51A1A4D7C00588C13 /* ImagePickerTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = BF3E9BA41A1A4D7C00588C13 /* ImagePickerTableViewCell.m */; };
+		BF94AB841A3C756900B7ADA5 /* PhotosSource.m in Sources */ = {isa = PBXBuildFile; fileRef = BF94AB831A3C756900B7ADA5 /* PhotosSource.m */; };
 		BFB94CFA1A1628EE004BDB1C /* Kal.bundle in Resources */ = {isa = PBXBuildFile; fileRef = BFB94CF91A1628EE004BDB1C /* Kal.bundle */; };
 		BFB94D011A162B3A004BDB1C /* EventKitDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = BFB94D001A162B3A004BDB1C /* EventKitDataSource.m */; };
 		BFB94D031A162BF2004BDB1C /* EventKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BFB94D021A162BF2004BDB1C /* EventKitUI.framework */; };
@@ -100,6 +101,8 @@
 		BF3E9BA01A1A450600588C13 /* ImagePickerViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImagePickerViewController.m; sourceTree = "<group>"; };
 		BF3E9BA31A1A4D7C00588C13 /* ImagePickerTableViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImagePickerTableViewCell.h; sourceTree = "<group>"; };
 		BF3E9BA41A1A4D7C00588C13 /* ImagePickerTableViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImagePickerTableViewCell.m; sourceTree = "<group>"; };
+		BF94AB821A3C756900B7ADA5 /* PhotosSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotosSource.h; sourceTree = "<group>"; };
+		BF94AB831A3C756900B7ADA5 /* PhotosSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PhotosSource.m; sourceTree = "<group>"; };
 		BFB94CF91A1628EE004BDB1C /* Kal.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; name = Kal.bundle; path = "Kal-Master/src/Kal.bundle"; sourceTree = "<group>"; };
 		BFB94CFF1A162B3A004BDB1C /* EventKitDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EventKitDataSource.h; sourceTree = "<group>"; };
 		BFB94D001A162B3A004BDB1C /* EventKitDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EventKitDataSource.m; sourceTree = "<group>"; };
@@ -265,6 +268,8 @@
 			isa = PBXGroup;
 			children = (
 				BFBA28121A1B334000FF5E71 /* Categories */,
+				BF94AB821A3C756900B7ADA5 /* PhotosSource.h */,
+				BF94AB831A3C756900B7ADA5 /* PhotosSource.m */,
 			);
 			name = Shared;
 			sourceTree = "<group>";
@@ -433,6 +438,7 @@
 				BF38103A1A125A3400915183 /* main.m in Sources */,
 				BFD7519B1A1391F00008664A /* MainMenuViewController.m in Sources */,
 				BFD751961A1391390008664A /* DrawerOverlayViewController.m in Sources */,
+				BF94AB841A3C756900B7ADA5 /* PhotosSource.m in Sources */,
 				BF3E9BA51A1A4D7C00588C13 /* ImagePickerTableViewCell.m in Sources */,
 				BFD751A11A1394AE0008664A /* DrawerContentSegue.m in Sources */,
 				BF365C5E1A162385006EE290 /* ChooseYourDaysViewController.m in Sources */,
