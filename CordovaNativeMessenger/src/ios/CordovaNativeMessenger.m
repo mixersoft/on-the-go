@@ -173,10 +173,15 @@ NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeM
                     jsonResult[@"UUID"] = identifier;
                     jsonResult[@"data"] = withMIME;
                     jsonResult[@"dateTaken"] = [dateFormatter stringFromDate:[asset creationDate]];
+                    // return UIImageOrientation property
+                    jsonResult[@"UIImageOrientation"] = @(result.imageOrientation);
                     
                     if(autoRotate && [weakself isPortraitImage:result]) {
-                        jsonResult[@"originalWidth"] = @(asset.pixelHeight);
-                        jsonResult[@"originalHeight"] = @(asset.pixelWidth);
+                        // jsonResult[@"originalWidth"] = @(asset.pixelHeight);
+                        // jsonResult[@"originalHeight"] = @(asset.pixelWidth);
+                        // asset dimensions are correct after autoRotate
+                        jsonResult[@"originalWidth"] = @(asset.pixelWidth);
+                        jsonResult[@"originalHeight"] = @(asset.pixelHeight);
                     } else {
                         jsonResult[@"originalWidth"] = @(asset.pixelWidth);
                         jsonResult[@"originalHeight"] = @(asset.pixelHeight);

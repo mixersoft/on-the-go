@@ -751,6 +751,17 @@ angular
             else if retval.errors.length 
               return dfd.reject "ERROR: Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
 
+
+          _patchOrientation = (photo)->
+            # http://cloudintouch.it/2014/04/03/exif-pain-orientation-ios/
+            lookup = [1,3,6,8,2,4,5,7]
+            if photo.UIImageOrientation?
+              photo.orientation == 'unknown' 
+            else 
+              photo.orientation = lookup[ photo.UIImageOrientation ] 
+              delete photo.UIImageOrientation
+            return 
+
           window.Messenger.getPhotoById assetIds, options, (photo)->
               # dupe = _.clone photo
               # dupe.data = dupe.data[0..40]
@@ -762,7 +773,8 @@ angular
               # photo.elapsed = (end-start)/1000
               photo.from = 'cameraRoll'
               photo.autoRotate = options.autoRotate
-              photo.orientation = 'unknown'    # missing
+              photo.orientation = _patchOrientation( photo )  # should be EXIF orientation
+
               if (photo.autoRotate)
                 # originalHeight/Width is not swapping
                 _logOnce '4j9', "Messenger Plugin.getPhotosByIdP(): WARNING originalH/W not swapping on autoRotate" 
@@ -772,7 +784,7 @@ angular
               photo.crop = options.resizeMode == 'aspectFill'
               photo.targetWidth = options.targetWidth
               photo.targetHeight = options.targetHeight
-              
+
               _logOnce '4jsdf9',  "*** window.Messenger.getPhotoById success!! *** elapsed=" + (end-start)/1000
 
               retval.photos.push photo
