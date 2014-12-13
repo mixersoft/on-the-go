@@ -344,18 +344,22 @@ angular
       isAnonymousUser: ()->
         return true if _.isEmpty $rootScope.sessionUser
         return true if $rootScope.sessionUser.get('username').indexOf(ANON_PREFIX.username) == 0
-        return true if $rootScope.sessionUser.get('username') == 'browser'
+        # return true if $rootScope.sessionUser.get('username') == 'browser'
         return false
 
-      mergeSessionUser: ()->
+      mergeSessionUser: (anonUser)->
         # merge from cookie into $rootScope.user
         $rootScope.sessionUser = Parse.User.current()
         return if !($rootScope.sessionUser instanceof Parse.Object)
 
-        userCred = _.pick( $rootScope.sessionUser.toJSON(), ['username', 'email', 'emailVerified'] )
+        isRegistered = !self.isAnonymousUser()
+        return anonUser if !isRegistered
+        
+        userCred = _.pick( $rootScope.sessionUser.toJSON(), ['username', 'email', 'emailVerified', 'tos', 'rememberMe'] )
         userCred.password = 'HIDDEN'
-        userCred.isRegistered = !self.isAnonymousUser()
-        return _.extend $rootScope.user, userCred
+        userCred.isRegistered = true
+        return _.extend anonUser, userCred
+
 
 
 
@@ -709,7 +713,7 @@ angular
           .then (parseFile)->
               console.log "\n *** parseFile uploaded, check url=" + parseFile.url()
 
-              extendedAttrs = _.pick photo, ['dateTaken', 'originalWidth', 'originalHeight', 'rating', 'favorite', 'caption', 'exif']
+              extendedAttrs = _.pick photo, ['dateTaken', 'originalWidth', 'originalHeight', 'rating', 'favorite', 'caption', 'exif', 'orientation']
               # console.log extendedAttrs
 
               parseData = _.extend {

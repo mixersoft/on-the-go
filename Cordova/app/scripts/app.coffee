@@ -465,7 +465,7 @@ angular
     }
 
     $rootScope.deviceId = "1234567890" # updated after deviceReady.waitP()
-    $rootScope.user = $scope.XXXuser = {
+    anonUser = {
       id: null
 
       username: null
@@ -478,11 +478,11 @@ angular
       # email: 'this@that'
       # emailVerified: true
 
-      tos: true
+      tos: false
       rememberMe: false
       isRegistered: false 
     } 
-    otgParse.mergeSessionUser()
+    $rootScope.user = otgParse.mergeSessionUser(anonUser)
 
 
 
