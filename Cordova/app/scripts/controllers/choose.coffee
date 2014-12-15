@@ -14,35 +14,66 @@ angular.module('ionBlankApp')
   (deviceReady, cameraRoll, imageCacheSvc, $rootScope, TEST_DATA)->
 
     _setLazySrc = (element, UUID, format)->
-      return if !UUID
-      # NOTE: UUID is truncated to 36
+      throw "ERROR: asset is missing UUID" if !UUID
       IMAGE_SIZE = format || 'thumbnail'
-      src = cameraRoll.getDataURL(UUID, IMAGE_SIZE) 
-      return element.attr('src', src) if src  # use ng-src here???
 
-      console.log "\nlazySrc reports notCached  in cameraRoll.dataURLs for format=" + format + ", UUID="+UUID
-
-      isWorkorderMoment = IMAGE_SIZE=='thumbnail' && 
-        ($rootScope.$state.includes('app.workorders') || $rootScope.$state.includes('app.orders'))
-
-      if deviceReady.isWebView() || isWorkorderMoment
-        # get with promise
-        return cameraRoll.getDataURL_P( UUID, IMAGE_SIZE ).then (photo)->
-            if element.attr('lazy-src') == photo.UUID
-              element.attr('src', photo.data)
-              imageCacheSvc.cordovaFile_USE_CACHED_P(element, photo.UUID, photo.data) if IMAGE_SIZE == 'preview'
-              
-            else
-              console.warn "\n\n*** WARNING: did collection repeat change the element before getDataURL_P returned?"  
-            return
-          , (error)->
-            if error == 'photo not available'
-              _useLoremPixel(element, UUID, format)
-
-
+      # priorities: stashed FileURL > cameraRoll.dataURL > photo.src
+      photo = element.scope().item
+      isWorkorder = $rootScope.$state.includes('app.workorders') || $rootScope.$state.includes('app.orders')
+      isWorkorderMoment = IMAGE_SIZE=='thumbnail' && isWorkorder
+      isBrowser = !deviceReady.isWebView()
       
-      if !deviceReady.isWebView() 
-        _useLoremPixel(element, UUID, format)
+      # special condition, Editor Workstation with no local photos
+      if isBrowser && photo?.from == 'PARSE' 
+        # orders or workorders from PARSE, use photo.src
+        if format == 'thumbnail'
+          # TODO: workorder thumbnails should be resampled.
+          "skip"
+        url = cameraRoll.addParseURL(photo, format) # cache photo.src into dataURL
+        return element.attr('src', url)  
+
+      if isBrowser && photo && photo.from != 'PARSE' 
+        # DEBUG mode on browser
+        return _useLoremPixel(element, UUID, format)
+
+      if isBrowser
+        throw "ERROR: expecting browser src to be handled already"
+
+
+
+      return imageCacheSvc.isStashed_P(UUID, format)
+      .then (fileURL)->
+        # 1. use isStashed FileURL
+        element.attr('src', fileURL)
+        return 
+      .catch (error)->
+
+        # NOTE: UUID is truncated to 36
+        src = cameraRoll.getDataURL(UUID, IMAGE_SIZE) 
+        if src  
+          # 2. use cached cameraRoll.dataURLs
+          # already cached in cameraRoll.dataURLs, but not yet stashed because of $timeout
+          element.attr('src', src) 
+          return 
+        
+        console.log "\nlazySrc reports notCached in cameraRoll.dataURLs for format=" + format + ", UUID="+UUID
+        if !isBrowser || isWorkorder
+          # get with promise
+          return cameraRoll.getDataURL_P( UUID, IMAGE_SIZE ).then (photo)->
+              if element.attr('lazy-src') == photo.UUID
+                # confirm that collection-repeat has not reused the element
+                # 3. fetch dataURL from cameraRoll, cache and stash
+                element.attr('src', photo.data)
+                if IMAGE_SIZE == 'preview'
+                  imageCacheSvc.cordovaFile_USE_CACHED_P(element, photo.UUID, photo.data) 
+                # ???: are thumbnails cached in preload?
+              else
+                console.warn "\n\n*** WARNING: did collection repeat change the element before getDataURL_P returned?"  
+              return
+          .catch (error)->
+            console.error "_setLazySrc"
+            console.error error # $$$
+        
 
     _useLoremPixel = (element, UUID, format)->
       scope = element.scope()
@@ -66,18 +97,7 @@ angular.module('ionBlankApp')
           # UUID = UUID[0...36] # localStorage might balk at '/' in pathname
           # console.log "\n\n $$$ attrs.$observe 'lazySrc', UUID+" + UUID
           element.attr('uuid', UUID)
-
-          photo = element.scope().item
-          if photo?.src?[0...4] == 'http'
-            # NOTE: parse URLs are not cached, use imgCache.js
-            url = cameraRoll.addParseURL(photo, format)
-            return element.attr('src', url)
-
-          return imageCacheSvc.isStashed_P(UUID, format)
-          .then (fileURL)->
-            element.attr('src', fileURL)
-          .catch (error)->
-            return src = _setLazySrc(element, UUID, format) 
+          return src = _setLazySrc(element, UUID, format) 
 
         return
   }

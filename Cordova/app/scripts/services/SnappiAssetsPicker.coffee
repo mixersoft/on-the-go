@@ -123,7 +123,16 @@ angular
         # options.toDate = self.getDateFromLocalTime(options.toDate) if _.isDate(options.toDate)
 
         start = new Date().getTime()
-        return snappiMessengerPluginService.mapAssetsLibraryP(options).then ( mapped )->
+        return snappiMessengerPluginService.mapAssetsLibraryP(options)
+        .then ( mapped )->
+          if _.isEmpty self._mapAssetsLibrary
+            self._mapAssetsLibrary = mapped 
+          else 
+            throw "WARNING: we should be merging into _mapAssetsLibrary"
+            self._mapAssetsLibrary = mapped 
+          return mapped
+
+        .then ( mapped )->
 
           end = new Date().getTime()
           console.log "\n*** mapAssetsLibraryP() complete, elapsed=" + (end-start)/1000
@@ -252,6 +261,7 @@ angular
         # foundInMap = _.find cameraRoll._mapAssetsLibrary, (o)->return o.UUID[0...36] == photo.UUID[0...36]
         foundInMap = _.find self._mapAssetsLibrary, {UUID: photo.UUID}
         if !foundInMap 
+          # WARNING: UUID might still be in cameraRoll, but not cached
           # photo.topPick = !!photo.topPick
           self._mapAssetsLibrary.push _.pick photo, ['UUID', 'dateTaken', 'from']
           # if its not in map() it cannot be in photos, so add
@@ -275,7 +285,12 @@ angular
         # not found in map, but still check if photos, WORKORDER_SYNC may update Editor attrs
         # foundInPhotos = _.find self.photos, (o)->return o.UUID[0...36] == photo.UUID[0...36]
         foundInPhotos = _.find self.photos, {UUID: photo.UUID}
-        if !foundInPhotos 
+
+
+        if !foundInPhotos && foundInMap 
+          photo = _.extend foundInMap, photo
+          photo.from = 'CameraRoll<PARSE'
+
           # notFound because a) dataURL not yet retrieved, or b) not in map() (added above)
           self.patchPhoto photo
           console.log "\n**** NEW photo from WORKORDER added to photos, uuid=" + photo.UUID
@@ -323,12 +338,10 @@ angular
       # load moments, but not photos
       loadMomentsFromCameraRoll: (mapped)->
         ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
-        if mapped
-          self._mapAssetsLibrary = mapped 
-        else 
-          mapped = self._mapAssetsLibrary
+        mapped = self._mapAssetsLibrary if !mapped
+
         # cameraRoll._mapAssetsLibrary -> cameraRoll.moments
-        photosByDate = otgData.mapDateTakenByDays(self._mapAssetsLibrary, "like TEST_DATA")
+        photosByDate = otgData.mapDateTakenByDays(mapped, "like TEST_DATA")
         # replace cameraRoll.moments
         justUUIDsByDate = {} # JUST [{date:[UUID,]},{}]
         _.each _.keys( photosByDate) , (key)->
@@ -415,7 +428,7 @@ angular
       ## @return string
       ##    dataURL from cameraRoll.addDataURL(),
       ##    fileURL from imageCacheSvc.cordovaFile_USE_CACHED_P, or 
-      ##    PARSE URL from workorders
+      ##    PARSE URL from workorders, photo.src
       getDataURL: (UUID, size='preview')->
         if !/preview|thumbnail/.test size
           throw "ERROR: invalid dataURL size, size=" + size
@@ -440,6 +453,7 @@ angular
           console.log "STILL NOT FOUND queueDataURL(UUID)=" + UUID
           self.queueDataURL(UUID, size)
         return found
+
 
       # IMAGE_WIDTH should be computedWidth - 2 for borders
       getCollectionRepeatHeight : (photo, IMAGE_WIDTH)->

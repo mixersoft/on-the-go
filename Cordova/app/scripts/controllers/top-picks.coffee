@@ -264,6 +264,8 @@ angular.module('ionBlankApp')
         event.preventDefault();
         event.stopPropagation()
         item.favorite = !item.favorite
+        otgParse.updatePhotoP(item, 'favorite').then ()->
+                  console.log "\n\n*** Success updated favorite"
         if item.favorite == false && $state.current.name == 'app.top-picks.favorites'
           # ???: how do we remove from/refresh collection repeat??
           setFilter( $state.current )

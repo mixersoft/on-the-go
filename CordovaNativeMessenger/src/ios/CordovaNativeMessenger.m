@@ -43,8 +43,22 @@ NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeM
         
         
         for(PHAsset *asset in assets) {
-            [resultArray addObject:@{@"UUID":asset.localIdentifier,
-                                     @"dateTaken":[dateFormatter stringFromDate:asset.creationDate]}];
+            // [resultArray addObject:@{@"UUID":asset.localIdentifier,
+            //                          @"dateTaken":[dateFormatter stringFromDate:asset.creationDate]}];
+            [resultArray addObject:@{
+                    @"UUID":asset.localIdentifier,
+                    @"dateTaken":[dateFormatter stringFromDate:asset.creationDate],
+                    // @"UIImageOrientation":@(asset.imageOrientation),
+                    @"mediaType":@(asset.mediaType),
+                    @"mediaSubTypes":@(asset.mediaSubtypes),
+                    @"hidden":@(asset.hidden),
+                    @"favorite":@(asset.favorite),
+                    @"originalWidth":@(asset.pixelWidth),
+                    @"originalHeight":@(asset.pixelHeight),
+                    @"burstIdentifier":@(asset.burstIdentifier),
+                    @"burstSelectionTypes":@(asset.burstSelectionTypes),
+                    @"representsBurst"@(asset.representsBurst)
+                }];
         }
         
         CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultArray];

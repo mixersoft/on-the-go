@@ -204,6 +204,22 @@ angular
         console.log "workorder found and missing photos queued, length=" + queue.length
         return queue
 
+
+      _PATCH_WorkorderAssets:(parsePhotosColl, patchKeys)->
+        PATCH_KEYS =  patchKeys  # ['originalWidth', 'originalHeight', 'date']
+        parsePhotosColl.each ( phObj )->
+          crPhoto = _.findWhere cameraRoll.photos, { UUID: phObj.get('UUID') }
+          return if !crPhoto || crPhoto.from=='PARSE'
+          updateFromCameraRoll = _.pick crPhoto, PATCH_KEYS
+          return if _.isEmpty updateFromCameraRoll 
+          phObj.save( updateFromCameraRoll ).then ()->
+              updateFromCameraRoll.UUID = crPhoto.UUID
+              console.log "\n\n *** _PATCH_WorkorderAssets, patched:" + JSON.stringify updateFromCameraRoll
+            , (error)->
+              console.log "\n\n *** _PATCH_WorkorderAssets, error:"
+              return console.log error
+        return
+
       # wrap in timeouts 
       SYNC_ORDERS : (scope, force, DELAY=10, whenDoneP)->
         # run AFTER cameraRoll loaded
@@ -214,6 +230,11 @@ angular
           role: 'owner'
           owner: true
         }
+
+        PATCH_WorkorderAssetKeys =  false # ['originalWidth', 'originalHeight', 'date']
+        if PATCH_WorkorderAssetKeys
+          imageCacheSvc.clearStashedP('preview') # force cameraRoll fetch
+
 
         $timeout ()->
             console.log "\n\n*** BEGIN Workorder Sync for role=" + options.role + "\n"
@@ -227,6 +248,10 @@ angular
                   openOrders++
                   $timeout ()->
                       promises.push self.fetchWorkorderPhotosP(workorderObj, options, force ).then (photosColl)->
+
+                        # see also: otgParse._patchParsePhotos()
+                        if PATCH_WorkorderAssetKeys
+                          self._PATCH_WorkorderAssets( photosColl , PATCH_WorkorderAssetKeys)
 
                         queue = self.queueMissingPhotos( workorderObj, photosColl )
                         self.updateWorkorderCounts(workorderObj, queue) # expect workorderObj.workorderMoment to be set
