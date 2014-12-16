@@ -1,4 +1,4 @@
-<ion-view class="dark-bg" title="{{label.title}}" hide-back-button="true" >
+<ion-view class="dark-bg" title="{{i18n.tr('title')}}" hide-back-button="true" >
   <ion-nav-buttons side="left">
     <button menu-toggle="left"class="button button-icon icon ion-navicon"></button>
   </ion-nav-buttons>
@@ -28,11 +28,11 @@
     ng-hide="on.dontShowHint()"
     >
       <div class="item item-divider item-header">
-        {{label.header_card[$state.current.name].header}}
+        {{i18n.tr('header-card').header}}
         <span class="badge badge-positive">{{filteredPhotos.length}} Photos</span>
       </div>
       <div class="item item-text-wrap" ng-if="filteredPhotos.length">
-        {{label.header_card[$state.current.name].body}}
+        {{i18n.tr('header-card').body}}
 
         <button class="button icon ion-image button-assertive button-full"
         ng-if='0'
@@ -41,20 +41,20 @@
       <div class="empty-list" ng-if="filteredPhotos.length==0 && $state.$current.name=='app.top-picks'"> 
           <div class="item item-text-wrap">
             <div class="text-center">
-              <h2>You have no Top Picks</h2>
+              <h2>{{i18n.tr('empty-list').header}}</h2>
                 <div class="text-left">
-                  <div>Why don't you get started by sending us some old vacation photos?</div>
+                  <div>{{i18n.tr('empty-list').body}}</div>
                 </div>
                 <br />
                 <div>
                   <button class="button button-balanced button-large" style="white-space: nowrap;"
-                  ui-sref="app.choose.camera-roll">Choose Your Days</button> 
+                  ui-sref="app.choose.camera-roll">{{i18n.tr('empty-list').buttonLabel}}</button> 
                 </div>
             </div>
         </div>
       </div>      
       <div class="item item-divider item-footer">
-        <p class="fine cursor-pointer" ng-click="on.dontShowHint(this.$parent)"><i class="icon ion-close-circled"> Don't Show Me Again</i></p>
+        <p class="fine cursor-pointer" ng-click="on.dontShowHint(this.$parent)"><i class="icon ion-close-circled"> {{i18n.tr('dont-show','app')}}</i></p>
       </div>
     </swipe-card></swipe-cards>
 

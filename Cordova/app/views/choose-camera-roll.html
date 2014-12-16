@@ -6,15 +6,15 @@
     ng-hide="on.dontShowHint()"
   >
     <div class="item item-divider">
-      {{label.header_card[$state.current.name].header}}
+      {{i18n.tr('header-card').header}}
       <!-- <span class="badge badge-positive">{{filteredPhotos.length}} Photos</span> -->
     </div>
     <div class="item item-text-wrap"
     >
-      {{label.header_card[$state.current.name].body}}
+      {{i18n.tr('header-card').body}}
     </div>
     <div class="item item-divider">
-      <p class="fine cursor-pointer" ng-click="on.dontShowHint(this.$parent)"><i class="icon ion-close-circled"> Don't Show Me Again</i></p>
+      <p class="fine cursor-pointer" ng-click="on.dontShowHint(this.$parent)"><i class="icon ion-close-circled"> {{i18n.tr('dont-show','app')}}</i></p>
     </div>
   </swipe-card></swipe-cards>
   <!-- collection-repeat of moments -->

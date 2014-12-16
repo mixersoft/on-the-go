@@ -194,22 +194,6 @@ angular.module('ionBlankApp')
   'deviceReady', 'cameraRoll', 'otgWorkorderSync'
   'TEST_DATA', 'imageCacheSvc', '$cordovaFile'
   ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, $cordovaSocialSharing, deviceReady, cameraRoll, otgWorkorderSync, TEST_DATA, imageCacheSvc, $cordovaFile) ->
-    $scope.label = {
-      title: "Top Picks"
-      header_card: 
-        'app.top-picks': 
-          header: "Top Picks"
-          body: "A selection of Top Picks from our Curators to help you re-live your favorite Moments"
-          footer: ""
-        'app.top-picks.favorites':
-          header: "Favorites"
-          body: "A selection of your Favorite Shots to help you re-live your favorite Moments"
-          footer: ""  
-        'app.top-picks.shared':
-          header: "Shared"
-          body: "A selection of Top Picks and Favorite Shots you have Shared from this App"
-          footer: ""  
-    }
 
     $scope.SideMenuSwitcher.leftSide.src = 'partials/left-side-menu'
 
@@ -305,9 +289,6 @@ angular.module('ionBlankApp')
                 return console.log "\n*** socialSharing CANCELLED"  if cancelled
                 console.log "\n*** ERROR socialSharing:"  
                 console.log error
-
-
-
 
 
       addCaption: (event, item)->

@@ -14,8 +14,9 @@ angular
   'ngCordova',
   'onTheGo.backend',
   'onTheGo.snappiAssetsPicker'
-  'onTheGo.localStorage'
+  'onTheGo.localStorage',
   'ionic.contrib.ui.cards',
+  'onTheGo.i18n'
 ])
 .constant('version', '0.0.1')
 .run [
@@ -375,12 +376,12 @@ angular
   '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', '$ionicPlatform', 
   'SideMenuSwitcher', '$ionicSideMenuDelegate'
   'otgData', 'otgParse', 'otgWorkorder', 'otgWorkorderSync', 'otgUploader'
-  'snappiMessengerPluginService', 
+  'snappiMessengerPluginService', 'i18n'
   'deviceReady', 'cameraRoll', 'appConsole'
   'TEST_DATA', 'imageCacheSvc'
   ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, 
     otgData, otgParse, otgWorkorder, otgWorkorderSync, otgUploader
-    snappiMessengerPluginService, 
+    snappiMessengerPluginService, i18n
     deviceReady, cameraRoll, appConsole,
     TEST_DATA, imageCacheSvc  )->
 
@@ -420,6 +421,7 @@ angular
       $scope.config.help = !$scope.config.help  
       console.log "help="+ if $scope.config.help then 'ON' else 'OFF'
 
+    window.i18n = $rootScope.i18n = $scope.i18n = i18n;
 
     $scope.menu = {
       top_picks: 
