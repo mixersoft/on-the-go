@@ -264,12 +264,12 @@
     _doDragStart: function(e) {
       var width = this.el.offsetWidth;
       var point = window.innerWidth / 2 + this.rotationDirection * (width / 2)
-      var distance = Math.abs(point - e.gesture.touches[0].pageY);// - window.innerWidth/2);
+      var distance = Math.abs(point - e.gesture.touches[0].pageY) || 0;// - window.innerWidth/2);
       // console.log(distance);
 
       this.touchDistance = distance * 10;
 
-      console.log('Touch distance', this.touchDistance);//this.touchDistance, width);
+      // console.log('Touch distance', this.touchDistance);  //this.touchDistance, width);
     },
 
     _doDrag: function(e) {
@@ -294,7 +294,7 @@
     _doDragEnd: function(e) {
       if ((Math.abs(e.gesture.deltaX) < 75) || (Math.abs(e.gesture.deltaY) > 75)) {
         this.el.style[ionic.CSS.TRANSFORM] = 'translate3d(0px, 0px, 0)';
-        console.log('cancel swipe, deltaX=' +  e.gesture.deltaX)
+        // console.log('cancel swipe, deltaX=' +  e.gesture.deltaX)
       }
       else 
        this.transitionOut(e);

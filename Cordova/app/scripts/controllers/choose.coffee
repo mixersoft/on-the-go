@@ -19,10 +19,11 @@ angular.module('ionBlankApp')
 
       # priorities: stashed FileURL > cameraRoll.dataURL > photo.src
       photo = element.scope().item
+
       isWorkorder = $rootScope.$state.includes('app.workorders') || $rootScope.$state.includes('app.orders')
       isWorkorderMoment = IMAGE_SIZE=='thumbnail' && isWorkorder
       isBrowser = !deviceReady.isWebView()
-      
+
       # special condition, Editor Workstation with no local photos
       if isBrowser && photo?.from == 'PARSE' 
         # orders or workorders from PARSE, use photo.src
@@ -32,13 +33,14 @@ angular.module('ionBlankApp')
         url = cameraRoll.addParseURL(photo, format) # cache photo.src into dataURL
         return element.attr('src', url)  
 
-      if isBrowser && photo && photo.from != 'PARSE' 
+      if isBrowser && photo && photo.from == 'PARSE' 
         # DEBUG mode on browser
-        return _useLoremPixel(element, UUID, format)
+        return element.attr('src', photo.src)  
+
+      # return if isBrowser && !photo # digest cycle not ready yet  
 
       if isBrowser
-        throw "ERROR: expecting browser src to be handled already"
-
+        return _useLoremPixel(element, UUID, format)
 
 
       return imageCacheSvc.isStashed_P(UUID, format)
