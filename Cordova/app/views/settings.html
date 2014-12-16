@@ -18,6 +18,9 @@
       <li class="item item-icon-right" ui-sref="app.settings.terms-of-service">Terms of Service
         <i class="icon ion-chevron-right"></i>
       </li>
+      <li class="item item-icon-right" ui-sref="app.settings.privacy">Privacy Policy
+        <i class="icon ion-chevron-right"></i>
+      </li>
       <li class="item item-icon-left item-icon-right hide">Payment
         <i class="icon ion-card"></i>
         <i class="icon ion-chevron-right"></i>
@@ -25,9 +28,9 @@
 
 
       <li class="item item-divider">Service > Privacy</li>
-      <li class="item item-toggle">Use Verified Mothers
+      <li class="item item-toggle disabled">Use Verified Mothers
         <label class="toggle toggle-balanced">
-          <input type="checkbox" ng-model="config.privacy['only-mothers']">
+          <input type="checkbox disabled" ng-model="config.privacy['only-mothers']">
           <div class="track">
             <div class="handle"></div>
           </div>

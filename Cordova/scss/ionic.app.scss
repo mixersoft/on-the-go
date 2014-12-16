@@ -415,13 +415,38 @@ otg-moment-date-range {
       overflow: visible;
       white-space: normal;
     }
+    &.disabled {
+      color: #888;
+      background-color: #ddd;
+    }
   }
   &:not(.help) {
     p.fine {
       display: none;
     }
   }
+
 }
+
+
+#privacy-policy, #terms-of-service {
+  .scroll-content > .scroll, .iframe-wrap {
+    height: 100%;
+  }
+  .iframe-wrap > iframe {
+    min-height: 100%;
+  }
+}
+
+
+
+
+#terms-of-service .bar-footer {
+  .item-checkbox .item-content {
+    margin-top: -10px;
+  }
+}
+
 
 .inverse {
   color: $light;

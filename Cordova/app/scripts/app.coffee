@@ -279,7 +279,15 @@ angular
         }
       }
     })
-
+    .state('app.settings.privacy', {
+      url: "/privacy-policy",
+      views: {
+        'settingsContent' : {
+          templateUrl: "views/settings-privacy.html"
+          controller: 'SettingsCtrl'
+        }
+      }
+    })
 
     .state('app.help', {
       url: "/help",

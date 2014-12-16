@@ -1,33 +1,18 @@
-<ion-view title="Terms Of Service" >
+<ion-view id='terms-of-service' title="Terms Of Service" >
   <ion-nav-buttons>
   </ion-nav-buttons>
   <ion-content class="has-header">
 
-    <div class="list card header-card">
-      <div class="item item-divider item-calm">
-        Terms of Service
-      </div>
-      <div class="item item-text-wrap">
-        <div ng-include="'views/template/terms-of-service.html'"></div>
-      </div>
-    </div>
-
-    <ion-checkbox class='checkbox-positive item-calm' ng-model="user.tos">
-    I agree to the Terms of Service
-    </ion-checkbox>
-<!--     <li class="item item-checkbox item-calm">
-      <label class="checkbox">
-        <input type="checkbox">
-      </label>
-      I agree to the Terms of Service
-    </li> -->
-
+      <div class="iframe-wrap" ng-include="'views/template/terms-of-service.html'"></div>
 
   </ion-content>
 
 
-<!--   <div class="bar bar-footer bar-calm">
-  </div> -->
+  <div class="bar bar-footer bar-calm">
+    <ion-checkbox class='checkbox-positive item-calm' ng-model="user.tos">
+      I agree to the Terms of Service
+    </ion-checkbox>
+  </div>
 
 </ion-view>
 
