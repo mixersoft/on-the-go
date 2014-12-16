@@ -26,7 +26,8 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    [self.tableView setRowHeight:80];
+    [self.tableView setRowHeight:UITableViewAutomaticDimension];
+    [self.tableView setEstimatedRowHeight:80];
     _source = [PhotosSource sharedInstance];
 }
 
@@ -47,12 +48,27 @@
     return count;
 }
 
-
 -(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    PHFetchResult *assets = [_source assetsForIndexPath:indexPath];
+    NSArray *assets = [_source assetsForIndexPath:indexPath];
     ImagePickerTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"Cell"];
     [cell setAssets:assets];
-    [cell setDate:[assets.firstObject creationDate]];
+    [cell setDate:[[assets.firstObject firstObject] creationDate]];
+    [cell setClipsToBounds:YES];
+    
+    // Remove seperator inset
+    if ([cell respondsToSelector:@selector(setSeparatorInset:)]) {
+        [cell setSeparatorInset:UIEdgeInsetsZero];
+    }
+    
+    // Prevent the cell from inheriting the Table View's margin settings
+    if ([cell respondsToSelector:@selector(setPreservesSuperviewLayoutMargins:)]) {
+        [cell setPreservesSuperviewLayoutMargins:NO];
+    }
+    
+    // Explictly set your cell's layout margins
+    if ([cell respondsToSelector:@selector(setLayoutMargins:)]) {
+        [cell setLayoutMargins:UIEdgeInsetsZero];
+    }
     return cell;
 }
 
@@ -64,5 +80,17 @@
     PHCollectionList *list = [_source collectionListAtIndex:section];
     return list.localizedTitle;
 }
+
+-(void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    [self.tableView.visibleCells enumerateObjectsUsingBlock:^(ImagePickerTableViewCell *obj, NSUInteger idx, BOOL *stop) {
+        CGPoint offset = [obj convertPoint:CGPointZero toView:self.tableView];
+        if (offset.y < 0) {
+            return;
+        }
+        [obj setOffsetToTableView:scrollView.contentOffset.y-offset.y];
+    }];
+    //setOffsetToTableView
+}
+
 
 @end

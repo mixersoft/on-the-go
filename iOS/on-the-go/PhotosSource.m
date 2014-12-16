@@ -59,7 +59,23 @@
             if (!result.count) {
                 return;
             }
-            [assets addObject:result];
+            
+            NSMutableArray *last = [assets lastObject];
+            if (last) {
+                PHFetchResult *lastResult = [last firstObject];
+                NSDate *date = [[lastResult firstObject] creationDate];
+                NSDateComponents *cLast = [NSCalendar.currentCalendar components:NSCalendarUnitEra|NSCalendarUnitYear|NSCalendarUnitMonth|NSCalendarUnitDay fromDate:date];
+                NSDateComponents *cCurrent = [NSCalendar.currentCalendar components:NSCalendarUnitEra|NSCalendarUnitYear|NSCalendarUnitMonth|NSCalendarUnitDay fromDate:[[result firstObject]  creationDate]];
+                if (cLast.year==cCurrent.year && cLast.month==cCurrent.month && cLast.day==cCurrent.day) {
+                    [last addObject:result];
+                }
+                else {
+                    [assets addObject:[NSMutableArray arrayWithObject:result]];
+                }
+            }
+            else {
+                [assets addObject:[NSMutableArray arrayWithObject:result]];
+            }
         }];
         if (assets.count) {
             [_moments addObject:assets];
@@ -68,7 +84,7 @@
     }
 }
 
--(PHFetchResult *)assetsForIndexPath:(NSIndexPath *)path {
+-(NSArray *)assetsForIndexPath:(NSIndexPath *)path {
     return _moments[path.section][path.row];
 }
 

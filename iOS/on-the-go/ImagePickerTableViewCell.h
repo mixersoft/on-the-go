@@ -10,7 +10,9 @@
 @class PHFetchResult;
 @interface ImagePickerTableViewCell : UITableViewCell
 
-@property (nonatomic, strong) PHFetchResult *assets;
+@property (nonatomic, strong) NSArray *assets;
 @property (nonatomic, strong) NSDate *date;
+
+@property (nonatomic, assign) CGFloat offsetToTableView;
 
 @end

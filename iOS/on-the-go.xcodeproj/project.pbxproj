@@ -23,6 +23,7 @@
 		BF38109E1A125CA100915183 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = BF38109D1A125CA100915183 /* config.xml */; };
 		BF3E9BA11A1A450600588C13 /* ImagePickerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF3E9BA01A1A450600588C13 /* ImagePickerViewController.m */; };
 		BF3E9BA51A1A4D7C00588C13 /* ImagePickerTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = BF3E9BA41A1A4D7C00588C13 /* ImagePickerTableViewCell.m */; };
+		BF8284AF1A3F2E500063163D /* ImagePickerCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = BF8284AE1A3F2E500063163D /* ImagePickerCell.xib */; };
 		BF94AB841A3C756900B7ADA5 /* PhotosSource.m in Sources */ = {isa = PBXBuildFile; fileRef = BF94AB831A3C756900B7ADA5 /* PhotosSource.m */; };
 		BFB94CFA1A1628EE004BDB1C /* Kal.bundle in Resources */ = {isa = PBXBuildFile; fileRef = BFB94CF91A1628EE004BDB1C /* Kal.bundle */; };
 		BFB94D011A162B3A004BDB1C /* EventKitDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = BFB94D001A162B3A004BDB1C /* EventKitDataSource.m */; };
@@ -101,6 +102,7 @@
 		BF3E9BA01A1A450600588C13 /* ImagePickerViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImagePickerViewController.m; sourceTree = "<group>"; };
 		BF3E9BA31A1A4D7C00588C13 /* ImagePickerTableViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImagePickerTableViewCell.h; sourceTree = "<group>"; };
 		BF3E9BA41A1A4D7C00588C13 /* ImagePickerTableViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImagePickerTableViewCell.m; sourceTree = "<group>"; };
+		BF8284AE1A3F2E500063163D /* ImagePickerCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ImagePickerCell.xib; sourceTree = "<group>"; };
 		BF94AB821A3C756900B7ADA5 /* PhotosSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotosSource.h; sourceTree = "<group>"; };
 		BF94AB831A3C756900B7ADA5 /* PhotosSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PhotosSource.m; sourceTree = "<group>"; };
 		BFB94CF91A1628EE004BDB1C /* Kal.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; name = Kal.bundle; path = "Kal-Master/src/Kal.bundle"; sourceTree = "<group>"; };
@@ -260,6 +262,7 @@
 				BF3E9BA41A1A4D7C00588C13 /* ImagePickerTableViewCell.m */,
 				BFBA28161A1B4F5700FF5E71 /* ImagePickerFlowLayout.h */,
 				BFBA28171A1B4F5700FF5E71 /* ImagePickerFlowLayout.m */,
+				BF8284AE1A3F2E500063163D /* ImagePickerCell.xib */,
 			);
 			name = "Image Picker";
 			sourceTree = "<group>";
@@ -409,6 +412,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BF3810431A125A3400915183 /* Main.storyboard in Resources */,
+				BF8284AF1A3F2E500063163D /* ImagePickerCell.xib in Resources */,
 				BF3810481A125A3400915183 /* LaunchScreen.xib in Resources */,
 				BFB94CFA1A1628EE004BDB1C /* Kal.bundle in Resources */,
 				BF38109E1A125CA100915183 /* config.xml in Resources */,

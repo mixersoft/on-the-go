@@ -21,6 +21,6 @@
 
 -(NSUInteger)numberOfMomentsInCollectionAtIndex:(NSUInteger)index;
 
--(PHFetchResult *)assetsForIndexPath:(NSIndexPath *)path;
+-(NSArray *)assetsForIndexPath:(NSIndexPath *)path;
 
 @end
