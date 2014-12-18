@@ -595,7 +595,7 @@ angular
     }
 
         # refactor to AppCtrl or service
-    $ionicModal.fromTemplateUrl('/views/settings-legal.html', {
+    $ionicModal.fromTemplateUrl('views/settings-legal.html', {
         scope: $scope,
         animation: 'slide-in-up'
       }).then( (modal)-> 
