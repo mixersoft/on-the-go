@@ -55,9 +55,9 @@ NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeM
                     @"favorite":@(asset.favorite),
                     @"originalWidth":@(asset.pixelWidth),
                     @"originalHeight":@(asset.pixelHeight),
-                    @"burstIdentifier":@(asset.burstIdentifier),
+                    @"burstIdentifier":asset.burstIdentifier,
                     @"burstSelectionTypes":@(asset.burstSelectionTypes),
-                    @"representsBurst"@(asset.representsBurst)
+                    @"representsBurst":@(asset.representsBurst)
                 }];
         }
         
