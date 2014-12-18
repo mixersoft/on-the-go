@@ -478,6 +478,9 @@ otg-moment-date-range {
         &.enabled {
           color: $balanced;
         }
+        &.warning {
+          color: $energized;
+        }
       }
       .fine {
         font-size: 14px;

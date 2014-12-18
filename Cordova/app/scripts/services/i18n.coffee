@@ -59,7 +59,10 @@ angular.module('onTheGo.i18n', [])
       'app.checkout.complete': {}
       'app.orders': {}
       'app.orders-detail': {}
-      'app.uploader': {}
+      'app.uploader': 
+        warning:
+          offline: "Please connect to a network."
+          cellular: "Upload by cellular data is disabled."
       'app.settings.main': {}
       'app.settings.profile': {}
       'app.settings.sign-in': {}

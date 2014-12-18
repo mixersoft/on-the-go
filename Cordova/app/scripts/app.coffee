@@ -438,6 +438,12 @@ angular
       $scope.config.help = !$scope.config.help  
       console.log "help="+ if $scope.config.help then 'ON' else 'OFF'
 
+    $scope.hideSplash = ()->
+      deviceReady.waitP()
+      .then ()->
+        navigator.splashscreen.hide() if deviceReady.isWebView()
+        return
+
     window.i18n = $rootScope.i18n = $scope.i18n = i18n;
 
     $scope.menu = {

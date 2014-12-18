@@ -151,7 +151,7 @@ angular.module('ionBlankApp')
 
     init = ()->
       # show loading
-      force = !otgWorkorderSync._workorderColl['owner'].length
+      force = true || !otgWorkorderSync._workorderColl['owner'].length
       if force
         otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force')
       else 

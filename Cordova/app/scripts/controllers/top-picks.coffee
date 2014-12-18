@@ -358,23 +358,7 @@ angular.module('ionBlankApp')
       return
 
 
-    parse = {
-      _fetchPhotosByOwnerP : (options = {})->
-        _options = options  # closure
-        return otgParse.checkSessionUserP().then otgParse.checkSessionUserRoleP 
-        .then ()->
-          return otgParse.fetchPhotosByOwnerP(_options)
-        .then (photosColl)->
-          _options.photosColl = photosColl
-          return _options
-    }
-
-
-      
-
-
-
-
+    
 
     init = ()->
       setFilter( $state.current )
@@ -385,6 +369,9 @@ angular.module('ionBlankApp')
       force = !otgWorkorderSync._workorderColl['owner'].length
       if force
         otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force')
+        .then ()->
+          $scope.hideSplash()
+      else $scope.hideSplash()
 
       $scope.config['app-bootstrap'] = false
       return

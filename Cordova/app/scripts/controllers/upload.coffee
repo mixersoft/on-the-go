@@ -43,7 +43,7 @@ angular.module('ionBlankApp')
         isCellular = [Connection.CELL, Connection.CELL_2G, Connection.CELL_3G, Connection.CELL_4G].indexOf(type) > -1
         return isCellular
 
-      networkOK: ()->
+      connectionOK: ()->
         return true if !deviceReady.isWebView()
         if $cordovaNetwork.isOffline()
           return false
@@ -53,7 +53,7 @@ angular.module('ionBlankApp')
 
       startUploadingP: (onProgress)->
 
-        return self.networkOK()
+        return if !self.connectionOK()
 
         if self.state.isEnabled && self._queue.length
           item = self._queue.shift()
@@ -186,9 +186,9 @@ angular.module('ionBlankApp')
       return deviceReady.waitP()
       .then ()->
         if otgUploader.isOffline()
-          return $scope.warnings = "Please connect to the network."
+          return $scope.warnings = i18n.tr('warning').offline
         if otgUploader.isCellularNetwork() && !otgUploader.allowCellularNetwork()
-          return $scope.warnings = "Uploading is disabled over Cellular Data."
+          return $scope.warnings = i18n.tr('warning').cellular
         return $scope.warnings = null
 
 
