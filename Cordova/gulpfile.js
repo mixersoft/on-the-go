@@ -10,7 +10,8 @@ var sh = require('shelljs');
 var paths = {
   sass: ['./scss/**/*.scss'],
   coffee: ['./app/scripts/**/*.coffee'],
-  views: ['./app/views/**/*.html']
+  views: ['./app/views/**/*.html'],
+  legal: ['./app/legal/**/*.html']
 };
 
 gulp.task('default', ['sass', 'coffee', 'copy:html']);
@@ -65,6 +66,12 @@ gulp.task('coffee', function() {
 gulp.task('copy:html', function(){
   gulp.src(paths.views)
     .pipe(gulp.dest('./www/views/'));
-
-
 })
+
+gulp.task('copy:more', function(){
+  gulp.src(paths.legal)
+    .pipe(gulp.dest('./www/legal/'));
+  gulp.src('./index.html')
+    .pipe(gulp.dest('./www/index.html'));
+})
+

@@ -77,14 +77,19 @@
 
 <script type="text/ng-template" id="partials/checkout/payment">
   <ion-view title="Payment"  hide-back-button="true"><ion-content>
-    <div class="card">
-      <ion-item class="item-divider item-balanced">
+
+    <swipe-cards 
+    ng-if="watch.servicePlan.total" 
+    ><swipe-card class="card header-card"
+    fly='left' 
+    on-destroy="on.hide(this.swipeCard)">
+      <div class="item item-divider item-balanced">
         Special Promo Codes
-      </ion-item>
-      <ion-item class="item-text-wrap">
+      </div>
+      <div class="item item-text-wrap">
         It&rsquo;s your lucky day! For a limited time, all the cool kids can get a special promo code!
-        <button class="button button-full button-balanced"
-        ng-click="on.getPromoCode()">
+        <button id="promo-code-button" class="button button-full button-balanced"
+        ng-click="on.getPromoCode($event); this.swipeCard.swipeOut()">
           I&rsquo;m Cool, Gimme a Code
         </button>
         <div class="list list-inset hide">
@@ -92,9 +97,28 @@
           <input type="text" class="text-center" placeholder="Promo Code" ng-value="watch.promoCode">
         </label>
       </div>
+      </div>
+    </swipe-card></swipe-cards>
+
+    <div class="card">
+      <ion-item class="item-divider item-calm">
+        Legal
+      </ion-item>
+      <ion-item class="item-text-wrap">
+        <div class='button button-positive button-full' 
+        ng-click="modal.legal.showTab('terms-of-service')">
+          Read our Terms of Use
+        </div>
+        <ion-checkbox id='tos-checkbox' class="item-calm checkbox-balanced" 
+        ng-model="user.tos" 
+        ng-click="on.tosClick($event)">
+          {{i18n.tr('tos-agree', 'app.settings.legal')}}
+        </ion-checkbox>
       </ion-item>
     </div>
+
     <ng-include src="'partials/checkout/header-card'"></ng-include>
+
   </ion-content></ion-view>
 </script>
 

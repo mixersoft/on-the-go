@@ -440,14 +440,6 @@ otg-moment-date-range {
 
 
 
-
-#terms-of-service .bar-footer {
-  .item-checkbox .item-content {
-    margin-top: -10px;
-  }
-}
-
-
 .inverse {
   color: $light;
   background-color: $dark;
@@ -514,7 +506,7 @@ otg-moment-date-range {
  
 
 .app-console-modal {
-  background-color: rgba(0,0,0,0.5);
+  background-color: white;
   padding: 20px 10px;
   ion-content {
     padding: 10px;
@@ -528,6 +520,49 @@ otg-moment-date-range {
     position: relative;
   }
 } 
+
+.app-modal {
+  background-color: rgba(0,0,0,0.5);
+  padding: 20px 10px 0 10px;
+  ion-content {
+    margin: 10px;
+    background-color: white;
+    margin-bottom: 0;
+  }
+  .bar-header {
+    position: relative;
+    > .title {
+      font-size: 17px;
+      font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+      text-align: center;
+      line-height: 44px;
+    }
+  }
+} 
+
+.legal {
+  .tab-item {
+    max-width: 46%;
+  }
+  .item-checkbox .item-content {
+    margin-top: -10px;
+  }  
+}
+
+.app-modal.legal {
+  &.pane{
+    top: 3%;
+    left: 3%;
+    right:3%;
+    width: 94%;
+    height: 97%;
+    .bar-header {
+      position: absolute;
+    }
+  }
+}
+
+
 
 
 /*

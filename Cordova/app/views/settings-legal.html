@@ -1,0 +1,44 @@
+
+<ion-view class="legal"  title="{{i18n.tr('title', 'app.settings.legal')}}" 
+ng-class="isModal ? 'app-modal' : ''"
+>
+
+
+  <div ng-show='isModal' class="tabs bar-header bar bar-positive">
+    <h1 class="title">Legal</h1>
+      <button class="button button-icon icon ion-close-circled"
+      ng-click="isModal.hide()"></button>
+  </div>
+
+  <!-- ion-tabs -->
+  <ion-tabs class="tabs-calm tabs-top">
+
+
+    <!-- ion-tab: camera-roll -->
+    <ion-tab title="{{i18n.tr('tos', 'app.settings.legal')}}">
+      <ion-content class="has-header has-footer">
+        <div class="padding" ng-include="'/legal/terms-of-service.html'"></div>
+      </ion-content>
+
+      <div class="bar bar-footer bar-calm">
+        <ion-checkbox class='checkbox-positive item-calm' ng-model="user.tos">
+          {{i18n.tr('tos-agree', 'app.settings.legal')}}
+        </ion-checkbox>
+      </div>
+
+    </ion-tab>
+
+    <!-- ion-tabs: calendar -->
+    <ion-tab title="{{i18n.tr('privacy', 'app.settings.legal')}}">
+      <ion-content class="has-header">
+        <div class="padding" ng-include="'/legal/privacy-policy.html'"></div>
+      </ion-content>
+    </ion-tab>
+
+  </ion-tabs>
+
+</ion-view>
+
+
+
+

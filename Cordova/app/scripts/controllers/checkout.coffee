@@ -48,7 +48,7 @@ angular.module('ionBlankApp')
     # checkout wizard navigation
     _wizard = {
       doneState: 'app.uploader'
-      steps : ['from','order-detail', 'payment', 'sign-up', 'terms-of-service', 'submit', 'complete']
+      steps : ['from','order-detail', 'payment', 'sign-up', 'submit', 'complete']
       from: (from)->
         _wizard.steps[0] = from # set state for back to Choose
       
@@ -112,11 +112,19 @@ angular.module('ionBlankApp')
             # return false on error by promise
             return $scope.otgProfile.submitP() if $scope.otgProfile.dirty
 
-          when 'app.checkout.terms-of-service'
+          when 'app.checkout.payment'
             if !$scope.user.tos
               # TODO: notify TOS must be checked
-              $ionicScrollDelegate.scrollBottom(true)
+              el = document.getElementById('tos-checkbox')
+              angular.element(el).addClass('item-assertive').removeClass('item-calm')
               return false 
+
+            if $scope.watch.servicePlan.total != 0
+              # offer additional coupon?
+              el = document.getElementById('promo-code-button')
+              angular.element(el).addClass('button-assertive').removeClass('button-balanced')
+              return false
+
           when 'app.checkout.submit'
             # return false on error by promise
             return parse._createWorkorderP( $scope.checkout, $scope.watch.servicePlan ).then (workorderObj)->
@@ -136,9 +144,24 @@ angular.module('ionBlankApp')
         # put on on $rootScope.$on '$stateChangeSuccess'
         # switch $state.current.name
         return true
-      getPromoCode: ()->
+      getPromoCode: (ev)->
         $scope.watch.promoCode = "3DAYSFREE"
         _applyPromoCode($scope.watch.promoCode, $scope.watch.servicePlan)
+        el = ev.currentTarget
+        # el = document.getElementById('promo-code-button')
+        angular.element(el).addClass('button-balanced').removeClass('button-assertive')
+        return true
+
+      tosClick: (ev)->
+        if $scope.user.tos 
+          el = ev.currentTarget
+          # el = document.getElementById('tos-checkbox')
+          angular.element(el).addClass('item-calm').removeClass('item-assertive')
+        return
+
+
+      hide : (swipeCard)->
+        swipeCard.el.parentNode.className += ' hide '
     }
 
     $scope.otgProfile = otgProfile
@@ -233,19 +256,6 @@ angular.module('ionBlankApp')
         .then (workorderObj)->
           $scope.workorderObj = workorderObj
           return workorderObj
-
-
-      DEPRECATED_getPhotosFromMoments : (moments)->
-        # using reduce with dateRange instead
-        return moments if moments[0]?.type != 'moment' 
-        photoList = otgData.parsePhotosFromMoments moments
-        lookup = cameraRoll.photos
-        photos = _.map photoList, (o)->
-          # map to lorempixel src
-          return _.findWhere lookup, {UUID : o.UUID}
-
-        return photos    # with photo.src as lorempixel  
-          
 
       _queueSelectedMoments : (checkout, workorderObj)->
         workorderObj = $scope.workorderObj if !workorderObj

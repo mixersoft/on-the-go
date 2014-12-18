@@ -27,7 +27,9 @@
       <div ng-include="'views/template/terms-of-service.html'"></div>
       
     </div> 
-    <ion-checkbox class="item-royal checkbox-balanced" ng-model="user.tos">I agree to the Terms of Service</ion-checkbox>
+    <ion-checkbox class="item-royal checkbox-balanced" ng-model="user.tos">
+      {{i18n.tr('tos-agree', 'app.settings.legal')}}
+    </ion-checkbox>
 
   </div>
 </div>

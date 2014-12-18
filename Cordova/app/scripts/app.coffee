@@ -288,6 +288,15 @@ angular
         }
       }
     })
+    .state('app.settings.legal', {
+      url: "/legal",
+      views: {
+        'settingsContent' : {
+          templateUrl: "views/settings-legal.html"
+          controller: 'SettingsCtrl'
+        }
+      }
+    })
 
     .state('app.help', {
       url: "/help",
@@ -553,7 +562,7 @@ angular
     _LOAD_DEBUG_TOOLS = ()->
       # currently testing
       $scope.MessengerPlugin = snappiMessengerPluginService
-      $rootScope.appConsole = appConsole
+      window.appConsole = $rootScope.appConsole = appConsole
 
 
     _LOAD_BROWSER_TOOLS = ()->
@@ -579,6 +588,37 @@ angular
         return
 
       return
+
+    # app modals
+    $scope.modal = {
+      legal: null
+    }
+
+        # refactor to AppCtrl or service
+    $ionicModal.fromTemplateUrl('/views/settings-legal.html', {
+        scope: $scope,
+        animation: 'slide-in-up'
+      }).then( (modal)-> 
+        $scope.modal.legal = self = modal
+        window.legal = $scope.modal.legal
+
+        self.scope.isModal = {
+          type: 'terms-of-service'  # [terms-of-service | privacy]
+          hide: ()->
+            self.hide()
+        }
+        self.showTab = (type)->
+          self.scope.isModal.type = type
+          self.show()
+      ) 
+
+    $scope.$on('$destroy', ()->
+      $scope.modal.legal.remove();
+      delete $scope.modal.legal
+    );  
+    #
+    #
+    #
 
 
     init = ()->

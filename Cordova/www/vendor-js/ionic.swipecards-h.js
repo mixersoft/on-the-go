@@ -166,6 +166,7 @@
      * Swipe a card out programtically
      */
     swipeOut: function(positive) {
+      if (positive == null) positive = this.fly 
       if (positive === 'right') positive = true;
       if (positive === 'left') positive = false;  
       this.transitionOut(positive, false);
