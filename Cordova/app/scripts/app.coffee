@@ -506,6 +506,7 @@ angular
     $scope.$watch 'user.tosAgree', (newVal, oldVal)->
       return if newVal == oldVal
       agreedOn = if newVal then new Date().toJSON() else null
+      return if !agreedOn && !$rootScope.sessionUser
       return otgParse.updateSessionUserP({'tosAgree': agreedOn}).then (o)->
           return check = o
         , (error)->

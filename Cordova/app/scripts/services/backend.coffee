@@ -435,6 +435,9 @@ angular
         .then (user)->  
             $rootScope.sessionUser = Parse.User.current()
             $rootScope.user.isRegistered = true
+            $rootScope.user = self.mergeSessionUser($rootScope.user)
+
+
             return user
         , (user, error)->
             $rootScope.sessionUser = null
@@ -448,7 +451,7 @@ angular
           password: null
           email: null
           emailVerified: false
-          tos: false
+          tosAgree: false
           rememberMe: false
           isRegistered: false
         }
@@ -518,6 +521,7 @@ angular
       updateSessionUserP : (options)->
         options = _.pick options, ['tosAgree', 'rememberMe']
         return if _.isEmpty options
+        return if !$rootScope.sessionUser
         return deviceReady.waitP().then self.checkSessionUserP() 
         .then ()->
           $rootScope.sessionUser.save(options)
