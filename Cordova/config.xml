@@ -1,6 +1,6 @@
-    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <widget id="com.snaphappi.on-the-go" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-  <name>ion-OnTheGo</name>
+  <name>On-the-Go</name>
   <description>
         Get the photos to feed your feed when you're On-the-Go - by Snaphappi
     </description>
@@ -14,7 +14,10 @@
   <preference name="DisallowOverscroll" value="true"/>
   <preference name="BackupWebStorage" value="none"/>
   <preference name="iosPersistentFileLocation" value="library" />
+  <preference name="AutoHideSplashScreen" value="false" />
   <feature name="StatusBar">
     <param name="ios-package" value="CDVStatusBar" onload="true"/>
   </feature>
+
+
 </widget>
