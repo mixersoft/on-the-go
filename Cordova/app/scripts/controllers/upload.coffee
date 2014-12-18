@@ -9,10 +9,11 @@
 ###
 angular.module('ionBlankApp')
 .factory 'otgUploader', [
-  '$timeout', '$q', 'otgData', 'otgParse', 'cameraRoll'
-  ($timeout, $q, otgData, otgParse, cameraRoll)->
+  '$timeout', '$q', 'otgData', 'otgParse', 'cameraRoll', '$cordovaNetwork', 'deviceReady'
+  ($timeout, $q, otgData, otgParse, cameraRoll, $cordovaNetwork, deviceReady)->
 
     self = {
+      _allowCellularNetwork: false
       _queue : []
       UPLOAD_IMAGE_SIZE: 'preview'
       state :
@@ -26,8 +27,33 @@ angular.module('ionBlankApp')
         else 
           return this.state.isEnabled
       isActive: ()->
-        return self.state.isActive    
+        return self.state.isActive  
+
+      isOffline: ()->
+        return false if !deviceReady.isWebView()
+        return $cordovaNetwork.isOffline()
+
+      allowCellularNetwork: (value)->
+        self._allowCellularNetwork = value if `value!=null`
+        return self._allowCellularNetwork
+
+      isCellularNetwork: ()->
+        return false if !deviceReady.isWebView()
+        type = $cordovaNetwork.getNetwork()
+        isCellular = [Connection.CELL, Connection.CELL_2G, Connection.CELL_3G, Connection.CELL_4G].indexOf(type) > -1
+        return isCellular
+
+      networkOK: ()->
+        return true if !deviceReady.isWebView()
+        if $cordovaNetwork.isOffline()
+          return false
+        if self.isCellularNetwork() && !self.allowCellularNetwork()
+          return false
+        return true 
+
       startUploadingP: (onProgress)->
+
+        return self.networkOK()
 
         if self.state.isEnabled && self._queue.length
           item = self._queue.shift()
@@ -115,8 +141,8 @@ angular.module('ionBlankApp')
     return self
 ]
 .controller 'UploadCtrl', [
-  '$scope', '$timeout',  'otgUploader', 'otgParse'
-  ($scope, $timeout, otgUploader, otgParse) ->
+  '$scope', '$timeout',  'otgUploader', 'otgParse', 'deviceReady'
+  ($scope, $timeout, otgUploader, otgParse, deviceReady) ->
     $scope.label = {
       title: "Upload"
     }
@@ -135,7 +161,7 @@ angular.module('ionBlankApp')
           otgUploader.startUploadingP(onProgress)
         else 
           target.removeClass('enabled') 
-        
+        _fetchWarnings()
         return
       release: (ev)-> 
         target = angular.element(ev.currentTarget)
@@ -145,12 +171,35 @@ angular.module('ionBlankApp')
         $scope.menu.uploader.count = otgUploader.queueLength()
         return 
 
+      
+        
+
     }
 
+    # can't change value within controller
+    # $scope.$watch 'config.upload.use-cellular-data', (newVal, oldVal)->
+    #   return if newVal == oldVal
+    #   otgUploader.allowCellularNetwork(newVal)
+    #   return
+    $scope.warnings = null
+    _fetchWarnings = ()->
+      return deviceReady.waitP()
+      .then ()->
+        if otgUploader.isOffline()
+          return $scope.warnings = "Please connect to the network."
+        if otgUploader.isCellularNetwork() && !otgUploader.allowCellularNetwork()
+          return $scope.warnings = "Uploading is disabled over Cellular Data."
+        return $scope.warnings = null
+
+
     init =()->
+      otgUploader.allowCellularNetwork($scope.config.upload['use-cellular-data'])
       $scope.menu.uploader.count = otgUploader.queueLength()
       if otgUploader.enable()==null
         otgUploader.enable($scope.config.upload['auto-upload'])
+
+      _fetchWarnings()
+
 
     init() 
 

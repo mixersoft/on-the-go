@@ -13,8 +13,10 @@
         ng-class="{'enabled ion-ios7-cloud-upload': otgUploader.enable(), 
         'ion-spin':otgUploader.isActive(),
         'ion-pause': (otgUploader.queueLength() && !otgUploader.enable()),
-        'ion-ios7-cloud-upload': (!otgUploader.queueLength() && !otgUploader.enable())
-         }"></i>
+        'ion-ios7-cloud-upload': (!otgUploader.queueLength() && !otgUploader.enable()),
+        'warning': !!warnings
+         }"
+         ></i>
         <div class="fine">{{otgUploader.queueLength()}} Photos</div>
       </div>
     </div>
@@ -22,6 +24,7 @@
 
 
     <div class="row"><div class="col col-offset-10 col-80 text-center">
+      <div class="fine warning" ng-bind="warnings"></div>
       <h3 class="inverse ">The Big Red Button <span class="nowrap">is {{otgUploader.enable() ? 'ON' : 'OFF'}}</span></h3>
       <div>This button controls the upload of photos to our servers. 
         <span ng-show="!otgUploader.enable()">Go ahead, press it when you are ready to upload.</span>

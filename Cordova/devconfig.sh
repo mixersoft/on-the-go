@@ -50,6 +50,15 @@ ln -s ../bower_components ./www/components
 
 
 
+
+
+### install ionic libs to ./www/lib
+echo 'answer "yes" to install ionic libs to cordova project'
+ionic lib update
+###
+### prompt> answer 'yes'
+###ß
+
 ### install Cordova platform for ios and plugins
 ionic platform ios
 ionic plugin add org.apache.cordova.console 
@@ -58,17 +67,10 @@ ionic plugin add org.apache.cordova.file
 ionic plugin add com.ionic.keyboard 
 ionic plugin add me.apla.cordova.app-preferences 
 ionic plugin add https://github.com/EddyVerbruggen/SocialSharing-PhoneGap-Plugin.git
+ionic plugin add org.apache.cordova.network-information
 #ionic plugin rm com.snaphappi.native-messenger.Messenger
 ionic plugin add ../CordovaNativeMessenger
 # ionic plugin add org.apache.cordova.file-transfer
-
-
-### install ionic libs to ./www/lib
-echo 'answer "yes" to install ionic libs to cordova project'
-ionic lib update
-###
-### prompt> answer 'yes'
-###
 
 ###
 ### On-the-Go: Project Build

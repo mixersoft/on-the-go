@@ -449,6 +449,9 @@ otg-moment-date-range {
 }
 
 #upload {
+  .warning {
+    color: $energized;
+  }
   .big-red-button {
     margin: 20px auto;
     width:240px;
