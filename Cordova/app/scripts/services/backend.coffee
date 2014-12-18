@@ -337,15 +337,32 @@ angular
               console.log attrs
               ## force PhotoObj attributes with first upload by adding classDefaults
               classDefaults = {
-                dateTaken : new Date().toJSON()
+                UUID: '' # char(36)
+                deviceId: '' # char(36)
+                owner: 'Parse pointer' # Pointer < Parse.User
+                workorder: 'Parse pointer' # Pointer < WorkorderObj
+                dateTaken : new Date().toJSON() # UTC time
                 originalWidth : 0
                 originalHeight : 0
+                favorite : false # Boolean value from Photos framework
+                # for mapping UIImageOrientation to Exif Orientation, see http://cloudintouch.it/2014/04/03/exif-pain-orientation-ios/
+                exifOrientation : 1 # Exif Orientation Tag value, 
+                ### from PHAsset: https://developer.apple.com/library/ios/documentation/Photos/Reference/PHAsset_Class/
+                    @"mediaType":@(asset.mediaType),
+                    @"mediaSubTypes":@(asset.mediaSubtypes),
+                    @"hidden":@(asset.hidden),
+                    @"favorite":@(asset.favorite),
+                    @"originalWidth":@(asset.pixelWidth),
+                    @"originalHeight":@(asset.pixelHeight),
+                    @"burstIdentifier":@(asset.burstIdentifier),
+                    @"burstSelectionTypes":@(asset.burstSelectionTypes),
+                    @"representsBurst"@(asset.representsBurst)
+                ### 
+                exif: {} # Q: can you embed EXIF data in the uploaded JPG?  I can read it from the server.
                 rating : 0
-                favorite : false
                 topPick: false
                 shared: false
                 caption : ''
-                exif : {}
                 shotId : '000'
                 isBestshot: false
               }
@@ -665,6 +682,7 @@ angular
 
       uploadFileP : (base64src, photo)->
         if /^data:image/.test(base64src)
+          # expecting this prefix: 'data:image/jpg;base64,' + rawBase64
           mimeType = base64src[10..20]
           ext = 'jpg' if (/jpg|jpeg/i.test(mimeType))   
           ext = 'png' if (/png/i.test(mimeType)) 
