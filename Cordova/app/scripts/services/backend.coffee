@@ -309,9 +309,11 @@ angular
       updateWorkorderCounts: (woObj, missing)->
         updates = {}
         woMoment = woObj.get('workorderMoment') 
-        received = woMoment[0].value[0].value.length if !_.isEmpty woMoment
-        updates['count_received'] = received if woObj.get('count_received') != received
-        updates['count_expected'] = missing.length + (updates['count_received'] || 0)  if missing?.length
+        received = if !_.isEmpty woMoment then woMoment[0].value[0].value.length else 0
+        updates['count_received'] = received 
+
+        if missing?.length && deviceReady.isWebView() && woObj.get('owner').id == $rootScope.sessionUser.id
+          updates['count_expected'] = missing.length + received 
 
         # count_duplicate: query(photosObj) by Owner and indexBy workorderObj.id
 
@@ -623,6 +625,7 @@ angular
           console.warn "\n\n ***  WARNING: using workorder.owner as a proxy for workorder.editor for the moment\n"
           query.equalTo('owner', options.editor) 
 
+        query.limit(1000)  # parse limit, use query.skip() to continue
         collection = query.collection()
         # collection.comparator = (o)->
         #   return o.get('toDate')
@@ -734,7 +737,14 @@ angular
               #   return found # is a dataURL
 
               # fetch with promise
-              return cameraRoll.getDataURL_P( photo.UUID, UPLOAD_IMAGE_SIZE, 'dataURL' ).then (oPhoto)->
+              return cameraRoll.getDataURL_P( photo.UUID, UPLOAD_IMAGE_SIZE, 'dataURL' )
+              .catch (error)->
+                error = error.shift() if _.isArray(error)
+                if error.message == "Base64 encoding failed"
+                  console.error "WARNING: there is a problem getting photo, UUID="+error.UUID
+                $q.reject(error)
+
+              .then (oPhoto)->
                 dataURL = oPhoto.data
                 console.log "\n*** cameraRoll.getDataURL_P() resolved with:" + dataURL[0...50]
                 
@@ -762,6 +772,13 @@ angular
                   url: ()-> return error.src
                 }
                 return $q.when fakeParseFile
+              else if error.message == "Base64 encoding failed"
+                # from window.Messenger.getPhotoById 
+                skipErrorFile = {
+                  UUID: error.UUID
+                  url: ()-> return error.message
+                }
+                return $q.when skipErrorFile
               else 
                 throw error
           .then (parseFile)->

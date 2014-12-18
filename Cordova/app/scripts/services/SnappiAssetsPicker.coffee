@@ -761,9 +761,11 @@ angular
               return dfd.resolve ( retval.photos ) 
             else if retval.photos.length && retval.errors.length 
               console.log "WARNING: SOME errors occurred in Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
+              # ???: how do we handle the errors? save them until last?
               return dfd.resolve ( retval.photos ) 
             else if retval.errors.length 
-              return dfd.reject "ERROR: Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
+              console.error "ERROR: Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
+              return dfd.reject retval.errors
 
 
           _patchOrientation = (photo)->
@@ -805,6 +807,8 @@ angular
               remaining--
               return _resolveIfDone(remaining, retval, dfd)
             , (error)->
+              # example: {"message":"Base64 encoding failed","UUID":"05B86AB8-7C56-41DA-A6D8-E6D1F01B2620/L0/001"}
+              # skip future uploads
               retval.errors.push error
               remaining--
               return _resolveIfDone(remaining, retval, dfd)
