@@ -7,6 +7,7 @@
 //
 
 #import "PhotosSource.h"
+#import "PhotosUploader.h"
 
 @implementation PhotosSource {
     NSMutableArray *_collectionLists;
@@ -82,6 +83,14 @@
             [_collectionLists addObject:collection];
         }
     }
+    
+    PHFetchResult *result = [[[_moments firstObject] firstObject] firstObject];
+    PhotosUploader *up = [PhotosUploader uploaderWithSessionConfigurationIdentifier:@"testIdentifier"];
+    NSMutableArray *arr = [NSMutableArray new];
+    [result enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        [arr addObject:[obj localIdentifier]];
+    }];
+    [up scheduleAssetsWithIdentifiers:arr];
 }
 
 -(NSArray *)assetsForIndexPath:(NSIndexPath *)path {

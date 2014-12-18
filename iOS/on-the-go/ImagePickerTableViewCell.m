@@ -39,7 +39,7 @@ static CGFloat heigh = 80.0;
     _assets = assets;
     
     [assets enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-        ImagePickerFlowLayout *layout = [ImagePickerFlowLayout new];
+        UICollectionViewFlowLayout *layout = [UICollectionViewFlowLayout new];
         [layout setScrollDirection:UICollectionViewScrollDirectionHorizontal];
         UICollectionView *v = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:layout];
         [v setDelegate:(id<UICollectionViewDelegate>)self];
