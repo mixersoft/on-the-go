@@ -397,8 +397,9 @@ angular
         isRegistered = !self.isAnonymousUser()
         return anonUser if !isRegistered
         
-        userCred = _.pick( $rootScope.sessionUser.toJSON(), ['username', 'email', 'emailVerified', 'tos', 'rememberMe'] )
+        userCred = _.pick( $rootScope.sessionUser.toJSON(), ['username', 'email', 'emailVerified', 'tosAgree', 'rememberMe'] )
         userCred.password = 'HIDDEN'
+        userCred.tosAgree = !!userCred.tosAgree # checkbox:ng-model expects a boolean
         userCred.isRegistered = true
         return _.extend anonUser, userCred
 
@@ -514,6 +515,12 @@ angular
         o.role = 'EDITOR'
         return $q.when(o)
 
+      updateSessionUserP : (options)->
+        options = _.pick options, ['tosAgree', 'rememberMe']
+        return if _.isEmpty options
+        return deviceReady.waitP().then self.checkSessionUserP() 
+        .then ()->
+          $rootScope.sessionUser.save(options)
 
 
       findWorkorderP : (options)->

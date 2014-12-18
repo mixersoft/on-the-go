@@ -497,12 +497,19 @@ angular
       # email: 'this@that'
       # emailVerified: true
 
-      tos: false
+      tosAgree: false
       rememberMe: false
       isRegistered: false 
     } 
     $rootScope.user = otgParse.mergeSessionUser(anonUser)
 
+    $scope.$watch 'user.tosAgree', (newVal, oldVal)->
+      return if newVal == oldVal
+      agreedOn = if newVal then new Date().toJSON() else null
+      return otgParse.updateSessionUserP({'tosAgree': agreedOn}).then (o)->
+          return check = o
+        , (error)->
+          console.log error
 
 
     $scope.$watch 'config', (newVal, oldVal)->
@@ -589,39 +596,42 @@ angular
 
       return
 
-    # app modals
-    $scope.modal = {
-      legal: null
-    }
+    _LOAD_MODALS = ()->  
+      #
+      # app modals
+      #
+      $scope.modal = {
+        legal: null
+      }
 
-        # refactor to AppCtrl or service
-    $ionicModal.fromTemplateUrl('views/settings-legal.html', {
-        scope: $scope,
-        animation: 'slide-in-up'
-      }).then( (modal)-> 
-        $scope.modal.legal = self = modal
-        window.legal = $scope.modal.legal
+          # refactor to AppCtrl or service
+      $ionicModal.fromTemplateUrl('views/settings-legal.html', {
+          scope: $scope,
+          animation: 'slide-in-up'
+        }).then( (modal)-> 
+          $scope.modal.legal = self = modal
+          window.legal = $scope.modal.legal
 
-        self.scope.isModal = {
-          type: 'terms-of-service'  # [terms-of-service | privacy]
-          hide: ()->
-            self.hide()
-        }
-        self.showTab = (type)->
-          self.scope.isModal.type = type
-          self.show()
-      ) 
+          self.scope.isModal = {
+            type: 'terms-of-service'  # [terms-of-service | privacy]
+            hide: ()->
+              self.hide()
+          }
+          self.showTab = (type)->
+            self.scope.isModal.type = type
+            self.show()
+        ) 
 
-    $scope.$on('$destroy', ()->
-      $scope.modal.legal.remove();
-      delete $scope.modal.legal
-    );  
-    #
-    #
-    #
+      $scope.$on('$destroy', ()->
+        $scope.modal.legal.remove();
+        delete $scope.modal.legal
+      );  
+
 
 
     init = ()->
+      _LOAD_MODALS()
+
       _LOAD_DEBUG_TOOLS()
 
       deviceReady.waitP().then ()->
