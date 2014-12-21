@@ -69,7 +69,7 @@ angular.module('onTheGo.i18n', [])
       'app.settings.legal':
         title: 'Legal'
         tos: "Terms of Use"
-        'tos-agree': "I have read and agree to the Terms of Use"
+        'tos-agree': "By checking this box, I acknowledge that I have read, understand, and agree to Snaphappi’s Terms of Use and Privacy Policy."
         privacy: "Privacy"
       'app.settings.terms-of-service': {}
       'app.help.main': {}

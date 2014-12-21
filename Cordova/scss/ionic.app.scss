@@ -429,16 +429,6 @@ otg-moment-date-range {
 }
 
 
-#privacy-policy, #terms-of-service {
-  .scroll-content > .scroll, .iframe-wrap {
-    height: 100%;
-  }
-  .iframe-wrap > iframe {
-    min-height: 100%;
-  }
-}
-
-
 
 .inverse {
   color: $light;
@@ -547,12 +537,45 @@ otg-moment-date-range {
 } 
 
 .legal {
+  .scroll-content > .scroll, .iframe-wrap {
+    height: 100%;
+  }
+  .iframe-wrap {
+    &.has-footer {
+      padding-bottom: 46px;
+    }
+    iframe {
+      width:100%;
+      min-height: 100%;
+    }
+
+  }
+
   .tab-item {
     max-width: 46%;
   }
-  .item-checkbox .item-content {
-    margin-top: -10px;
-  }  
+  
+  .item-checkbox {
+    font-size: 13px;
+    line-height: 1.1;
+    padding-top: 11px;
+    padding-bottom: 11px;
+    .item-content {
+      white-space: normal;
+    }
+  } 
+
+  .bar-footer {
+    height: 52px; /* was 44px */
+    .item-content {
+      margin-top: -10px;
+    }
+  } 
+  &.item-text-wrap {
+    .item-content {
+      margin-top: 0;
+    }
+  }
 }
 
 .app-modal.legal {
