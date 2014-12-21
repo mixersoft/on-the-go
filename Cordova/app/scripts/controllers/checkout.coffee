@@ -113,7 +113,7 @@ angular.module('ionBlankApp')
             return $scope.otgProfile.submitP() if $scope.otgProfile.dirty
 
           when 'app.checkout.payment'
-            if !$scope.user.tos
+            if !$scope.user.tosAgree
               # TODO: notify TOS must be checked
               el = document.getElementById('tos-checkbox')
               angular.element(el).addClass('item-assertive').removeClass('item-calm')
