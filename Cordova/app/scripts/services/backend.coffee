@@ -172,11 +172,14 @@ angular
         uploadedAssetIds = _.pluck photos, 'assetId'
 
         # compare against selectedMoment UUIDs
-        dateRange = otgWorkorder.on.selectByCalendar workorderObj.get('fromDate'), workorderObj.get('toDate')
+        # dateRange = otgWorkorder.on.selectByCalendar workorderObj.get('fromDate'), workorderObj.get('toDate')
+        # NOTE: using otgWorkorder has the side effect of setting days in directive:otgMoment
         dateRange = {
           from: workorderObj.get('fromDate')
           to: workorderObj.get('toDate')
         }
+        otgWorkorder.existingOrders.addExistingOrder(dateRange) # for cameraRoll otgMoment
+
         # compare vs. map because cameraRoll.photos is incomplete
         mappedPhotos = cameraRoll.map() 
         mappedPhotos = cameraRoll.photos if _.isEmpty mappedPhotos

@@ -307,6 +307,9 @@ otg-moment {
       &.included .btn.date  .day {
         color: $balanced;
       }
+      &.existing-order .btn.date {
+        background-color: $energized;
+      }
       &.selected .btn.date {
         background-color: $balanced;
       }

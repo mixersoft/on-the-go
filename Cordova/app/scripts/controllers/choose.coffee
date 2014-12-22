@@ -180,6 +180,7 @@ angular.module('ionBlankApp')
 .factory 'otgWorkorder', [ 
   'cameraRoll', 'otgData'
   (cameraRoll, otgData)->
+    # convert to a service, one instance for each order, including 'new'
     _moments = cameraRoll.moments
     _data = []
     _selected = _reset = {
@@ -191,6 +192,7 @@ angular.module('ionBlankApp')
       days: 0
       moments: {}
     }
+    _existingOrders = []  # array of dateRanges
 
     #
     # Service for parsing WorkOrders
@@ -207,11 +209,20 @@ angular.module('ionBlankApp')
         found = _.find( _data, {key: day.key} )
         return found
 
-      isDayIncluded: (day)->
-        return false if !_selected.dateRange.from || day.key < _selected.dateRange.from
-        return false if !_selected.dateRange.to || day.key > _selected.dateRange.to 
-        return false if self.isDaySelected(day)
-        return true
+      isDayIncluded: (day, existingOrder=false)->
+        if !existingOrder
+          return false if !_selected.dateRange.from || day.key < _selected.dateRange.from
+          return false if !_selected.dateRange.to || day.key > _selected.dateRange.to 
+          return false if self.isDaySelected(day)
+          return true 
+        else 
+          # TODO: distinguish between new & existing orders
+          found = false
+          _.each _existingOrders, (dateRange)->
+            if dateRange.from <= day.key <= dateRange.to
+              found = true
+              return false
+          return found
 
       countSelectedPhotos: ()->
         _selected.selectedPhotos =  _.reduce _data, (result, day)->
@@ -257,6 +268,15 @@ angular.module('ionBlankApp')
         _selected.days = (new Date(_selected.dateRange.to) - new Date(_selected.dateRange.from))/(24*60*60*1000) + 1
         return _selected.dateRange
 
+
+      existingOrders:
+        addExistingOrder: (dateRange)->
+          found = _.find _existingOrders, dateRange
+          _existingOrders.push dateRange if !found
+
+        clearExistingOrder: (dateRange)->
+          return _existingOrders = [] if !dateRange
+          return _existingOrders = _.filter _existingOrders, dateRange
 
       checkout:
         getSelectedAsMoments: ()->

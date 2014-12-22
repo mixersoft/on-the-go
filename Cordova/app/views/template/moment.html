@@ -13,8 +13,11 @@
 
               <!-- dates -->
               <ul class="list-inline" 
-              ng-class="{selected: otgWorkorder.isDaySelected(day), 
-                included: otgWorkorder.isDayIncluded(day) }" >
+              ng-class="{
+                selected: otgWorkorder.isDaySelected(day), 
+                included: otgWorkorder.isDayIncluded(day),
+                'existing-order': otgWorkorder.isDayIncluded(day, true)
+              }" >
                 <button class="btn {{options.btnSize}} date" 
                   ng-click="otgWorkorder.on.selectByCameraRollDate($event)"
                   >
