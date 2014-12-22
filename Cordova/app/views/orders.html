@@ -102,6 +102,9 @@
 
 
 <script type="text/ng-template" id="partials/workorder-card">
+  <ng-include 
+    ng-if="order.status=='standby'"
+    src="'partials/order-standby'"></ng-include>
   <div class="list card workorder-card" >
     <div class="item item-divider item-assertive">
     <i class="icon ion-gear-b"> {{order.fromDate | date}} - {{order.toDate | date}}</i>

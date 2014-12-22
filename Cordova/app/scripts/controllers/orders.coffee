@@ -151,9 +151,15 @@ angular.module('ionBlankApp')
 
     init = ()->
       # show loading
+      $scope.showLoading(true)
       force = true || !otgWorkorderSync._workorderColl['owner'].length
       if force
-        otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force')
+        otgWorkorderSync.SYNC_ORDERS(
+          $scope, 
+          'owner', 
+          'force', 
+          ()->return $scope.hideLoading(1000)
+          )
       else 
         options = { owner: true }
         otgWorkorderSync.fetchWorkordersP( options ).then (workorderColl)->
@@ -165,6 +171,7 @@ angular.module('ionBlankApp')
             return if woObj.get('status') == 'complete'
             otgWorkorderSync.updateWorkorderCounts(woObj)
             return
+          $scope.hideLoading()  
           return
 
 

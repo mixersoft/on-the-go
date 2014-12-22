@@ -241,7 +241,11 @@ angular.module('ionBlankApp')
 
     parse = {
       _createWorkorderP : (checkout, servicePlan)->
-        return otgParse.checkSessionUserP().then ()->
+        return otgParse.checkSessionUserP()
+        .then ()->
+          return otgParse.checkBacklogP()
+        .then (backlog)->
+          $scope.config.system['order-standby'] = backlog.get('status') == 'standby'
           options = {
             status: 'new'
             fromDate: checkout.dateRange.from
@@ -249,7 +253,8 @@ angular.module('ionBlankApp')
           }
           return otgParse.findWorkorderP(options)
         .then (results)->
-            return otgParse.createWorkorderP(checkout, servicePlan) if _.isEmpty(results)
+            orderStatus = backlog.status || 'new'
+            return otgParse.createWorkorderP(checkout, servicePlan, orderStatus) if _.isEmpty(results)
             return results.shift()
           , (error)->
             return otgParse.createWorkorderP(checkout, servicePlan)
@@ -286,9 +291,9 @@ angular.module('ionBlankApp')
     init = ()->
       $scope.orders = []
 
-      otgParse.checkSessionUserP().then ()->  
-        check = $rootScope.user 
-        return 
+      otgParse.checkSessionUserP() # register anonymous user/guest here(?)
+      otgParse.checkBacklogP().then (backlog)->
+        $scope.config.system['order-standby'] = backlog.get('status') == 'standby'
 
       console.log "init: state="+$state.current.name
       $scope.checkout = otgWorkorder.checkout.getSelectedAsMoments()

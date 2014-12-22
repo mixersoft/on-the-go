@@ -368,10 +368,14 @@ angular.module('ionBlankApp')
       # show loading
       force = !otgWorkorderSync._workorderColl['owner'].length
       if force
-        otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force')
-        .then ()->
-          $scope.hideSplash()
-      else $scope.hideSplash()
+        $scope.showLoading(true)
+        otgWorkorderSync.SYNC_ORDERS(
+          $scope, 'owner', 'force'
+          , ()->
+            $scope.hideSplash()
+            return $scope.hideLoading(1000)
+
+      )
 
       $scope.config['app-bootstrap'] = false
       return

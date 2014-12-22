@@ -391,12 +391,13 @@ angular
 
 .controller 'AppCtrl', [
   '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', '$ionicPlatform', 
-  'SideMenuSwitcher', '$ionicSideMenuDelegate'
+  'SideMenuSwitcher', '$ionicSideMenuDelegate', '$ionicLoading'
   'otgData', 'otgParse', 'otgWorkorder', 'otgWorkorderSync', 'otgUploader'
   'snappiMessengerPluginService', 'i18n'
   'deviceReady', 'cameraRoll', 'appConsole'
   'TEST_DATA', 'imageCacheSvc'
-  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, SideMenuSwitcher, $ionicSideMenuDelegate, 
+  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, 
+    SideMenuSwitcher, $ionicSideMenuDelegate, $ionicLoading,
     otgData, otgParse, otgWorkorder, otgWorkorderSync, otgUploader
     snappiMessengerPluginService, i18n
     deviceReady, cameraRoll, appConsole,
@@ -438,6 +439,22 @@ angular
       $scope.config.help = !$scope.config.help  
       console.log "help="+ if $scope.config.help then 'ON' else 'OFF'
 
+
+    # 
+    # loading backdrop
+    # 
+       
+    $scope.showLoading = (value = true)-> 
+      return $ionicLoading.hide() if !value
+      $ionicLoading.show({
+        template: '<i class="icon ion-load-b ion-spin"></i>'
+      })
+    $scope.hideLoading = (delay=0)->
+      $timeout ()->
+          $ionicLoading.hide();
+        , delay 
+
+    # Cordova splashscreen     
     $scope.hideSplash = ()->
       deviceReady.waitP()
       .then ()->
@@ -461,6 +478,8 @@ angular
     $scope.config = {
       'app-bootstrap' : true
       'no-view-headers' : true
+      'system':
+        'order-standby': false
       help: false
       privacy:
         'only-mothers': false
@@ -634,6 +653,9 @@ angular
         delete $scope.modal.legal
       );  
 
+     
+
+
 
 
     init = ()->
@@ -648,7 +670,9 @@ angular
         _LOAD_MOMENTS_FROM_CAMERA_ROLL_P()
         .finally ()->
           $timeout ()->
-              otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.$state.includes('app.workorders')
+              promise = otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.$state.includes('app.workorders')
+              promise = otgParse.checkBacklogP().then (backlog)->
+                $scope.config.system['order-standby'] = backlog.get('status') == 'standby'
             , 3000  
 
         if !deviceReady.isWebView()

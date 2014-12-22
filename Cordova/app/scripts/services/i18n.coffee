@@ -55,9 +55,24 @@ angular.module('onTheGo.i18n', [])
       'app.checkout.payment': {}
       'app.checkout.sign-up': {}
       'app.checkout.terms-of-service': {}
-      'app.checkout.submit': {}
+      'app.checkout.submit': 
+        standby:
+          header: 'Order Standby'
+          body: """
+            Our apologies - we have reached our order processing limit for the moment. 
+            You may continue with your order, but it will be placed on standby with no scheduled date for processing. 
+            We will notify you when the status changes, and your order will not be charged until work begins.
+          """
       'app.checkout.complete': {}
-      'app.orders': {}
+      'app.orders': 
+        standby:
+          header: 'Order Standby'
+          body: """
+            Our apologies - we have reached our order processing limit for the moment.
+            This order is currently on 'standby' with no scheduled date for processing. 
+            However, you may continue to upload photos for this order. 
+            We will notify you when the status changes, and your order will not be charged until work begins.
+          """
       'app.orders-detail': {}
       'app.uploader': 
         warning:

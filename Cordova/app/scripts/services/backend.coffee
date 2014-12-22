@@ -378,6 +378,7 @@ angular
         }
       ) 
       WorkorderObj : Parse.Object.extend('WorkorderObj') 
+      BacklogObj : Parse.Object.extend('BacklogObj')
       
     }
 
@@ -531,6 +532,20 @@ angular
         .then ()->
           $rootScope.sessionUser.save(options)
 
+      checkBacklogP: ()->
+        return deviceReady.waitP()
+        .then ()->
+          query = new Parse.Query(parseClass.BacklogObj)
+          return query.first()
+          .then (backlog)->
+            return backlog if backlog
+            backlog = new parseClass.BacklogObj({
+              status: 'new'
+              orders: 0
+              photos: 0
+            })
+            return backlog.save()
+
 
       findWorkorderP : (options)->
         query = new Parse.Query(parseClass.WorkorderObj)
@@ -546,7 +561,7 @@ angular
         return query.find()
 
 
-      createWorkorderP : (checkout, servicePlan)->
+      createWorkorderP : (checkout, servicePlan, status='new')->
         parseData = {
           owner: $rootScope.sessionUser
           deviceId: $rootScope.deviceId
@@ -561,7 +576,7 @@ angular
           count_days: checkout.count.days 
           servicePlan: servicePlan
           editor: null 
-          status: 'new'
+          status: status
           startedAt: null
           finishedAt: null
           approvedAt: null

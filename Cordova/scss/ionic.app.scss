@@ -102,6 +102,13 @@ $ionicons-font-path: "../lib/ionic/fonts" !default;
   cursor: pointer;
 }
 
+.loading-container .loading {
+  padding: 10px;
+  .icon {
+    font-size: 2em;
+  }
+}
+
 
 p.fine {
   font-size: 0.7em;
@@ -200,6 +207,13 @@ ion-side-menu-content .item > * {
   right: 0;
   top: 4px;
   padding: 0px 10px;
+}
+
+.header-card.standby {
+  .item-text-wrap {
+    background-color: $dark;
+    color: white;
+  }
 }
 
 .otg-cr-preview {
@@ -307,8 +321,8 @@ otg-moment {
       &.included .btn.date  .day {
         color: $balanced;
       }
-      &.existing-order .btn.date {
-        background-color: $energized;
+      &.existing-order .btn.date .day {
+        color: $energized;
       }
       &.selected .btn.date {
         background-color: $balanced;
