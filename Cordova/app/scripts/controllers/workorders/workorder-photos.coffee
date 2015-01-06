@@ -203,7 +203,9 @@ angular.module('ionBlankApp')
         otgWorkorderSync.fetchWorkorderPhotosP(workorderObj).then (photosColl)->
 
           $scope.photosColl = photosColl
-          $scope.photos = photosColl.toJSON()
+          photoIds = _.indexBy photosColl.toJSON(), 'UUID'
+          $scope.photos = _.filter cameraRoll.photos, (o)->
+            return photoIds[o.UUID]?
           # add to sideMenu
           $scope.workorderAttr = workorderObj.toJSON()
           $scope.SideMenuSwitcher.watch['workorder'] = $scope.workorderAttr 

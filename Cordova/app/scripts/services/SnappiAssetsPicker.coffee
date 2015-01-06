@@ -223,11 +223,22 @@ angular
         # cameraRoll.patchPhoto(): will just patch local attrs
         # ???: where do we want to patch photo.from???
         photo.date = self.getDateFromLocalTime(photo.dateTaken)
+        if photo.from == 'PARSE'
+          if photo.src == 'Base64 encoding failed'
+            photo.src = ''
+            photo.isInvalid = true
+            photo.originalHeight = 100
+            photo.originalWidth = 640
+
+        # commit patch    
         self._addOrUpdatePhoto_FromCameraRoll(photo)
+
+        # add to dataURLs
         if photo.from == 'PARSE'
           # add src directly
           self.dataURLs['preview'][photo.UUID] = photo.src
           "NOTE: use imgCache.js to cache PARSE URLs"
+
         else
           self.addDataURL(photo.format, photo)    
         return
@@ -259,6 +270,8 @@ angular
 
         # cameraRoll.getDataURL only works if UID in map()
         # foundInMap = _.find cameraRoll._mapAssetsLibrary, (o)->return o.UUID[0...36] == photo.UUID[0...36]
+
+
         foundInMap = _.find self._mapAssetsLibrary, {UUID: photo.UUID}
         if !foundInMap 
           # WARNING: UUID might still be in cameraRoll, but not cached
@@ -274,7 +287,7 @@ angular
             # keep dataURL or replace with remote parsefile?
           else if photo.src
             self.dataURLs['preview'][photo.UUID] = photo.src 
-          console.log "\n**** NEW photo from WORKORDER added to map() & photos, uuid=" + photo.UUID
+          # console.log "\n**** NEW photo from WORKORDER added to map() & photos, uuid=" + photo.UUID
           return  
 
 
@@ -298,7 +311,7 @@ angular
         else 
           # merge values set by Editor
           _.extend foundInPhotos, _.pick photo, ['topPick', 'favorite', 'shotId', 'isBestshot']
-          console.log "\n**** MERGE photo from WORKORDER into cameraRoll for uuid=" + photo.UUID
+          # console.log "\n**** MERGE photo from WORKORDER into cameraRoll for uuid=" + photo.UUID
         return
 
 
