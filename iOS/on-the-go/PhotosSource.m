@@ -84,13 +84,13 @@
         }
     }
     
-    PHFetchResult *result = [[[_moments firstObject] firstObject] firstObject];
-    PhotosUploader *up = [PhotosUploader uploaderWithSessionConfigurationIdentifier:@"testIdentifier"];
-    NSMutableArray *arr = [NSMutableArray new];
-    [result enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-        [arr addObject:[obj localIdentifier]];
-    }];
-    [up scheduleAssetsWithIdentifiers:arr];
+//    PHFetchResult *result = [[[_moments firstObject] firstObject] firstObject];
+//    PhotosUploader *up = [PhotosUploader uploaderWithSessionConfigurationIdentifier:@"testIdentifier"];
+//    NSMutableArray *arr = [NSMutableArray new];
+//    [result enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+//        [arr addObject:[obj localIdentifier]];
+//    }];
+//    [up scheduleAssetsWithIdentifiers:arr];
 }
 
 -(NSArray *)assetsForIndexPath:(NSIndexPath *)path {

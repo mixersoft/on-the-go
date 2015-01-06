@@ -273,6 +273,15 @@
 			name = "Image Picker";
 			sourceTree = "<group>";
 		};
+		BFA4E62D1A5BDAAC005DFEA8 /* Photo Uploader */ = {
+			isa = PBXGroup;
+			children = (
+				BF2E36481A42F55500EF03BD /* PhotosUploader.h */,
+				BF2E36491A42F55500EF03BD /* PhotosUploader.m */,
+			);
+			name = "Photo Uploader";
+			sourceTree = "<group>";
+		};
 		BFBA28111A1B333000FF5E71 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
@@ -281,8 +290,7 @@
 				BF94AB831A3C756900B7ADA5 /* PhotosSource.m */,
 				BFA6A7311A406385007EBF57 /* PhotosUploadScheduler.h */,
 				BFA6A7321A406385007EBF57 /* PhotosUploadScheduler.m */,
-				BF2E36481A42F55500EF03BD /* PhotosUploader.h */,
-				BF2E36491A42F55500EF03BD /* PhotosUploader.m */,
+				BFA4E62D1A5BDAAC005DFEA8 /* Photo Uploader */,
 			);
 			name = Shared;
 			sourceTree = "<group>";

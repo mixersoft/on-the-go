@@ -70,6 +70,10 @@ static NSString *parseMasterKey = @"fsMgAw0ozmaZj5Kr9Tz8nuhPwNI1ZTLAsKeoojlP";
     [_delegates addObject:delegate];
 }
 
+-(void)removeDelegate:(id<PhotosUploaderDelegate>)delegate {
+    [_delegates removeObject:delegate];
+}
+
 
 -(NSString *)imagePathForAssetIdentifier:(NSString *)identifier {
     NSString *name = [[[identifier componentsSeparatedByString:@"/"] firstObject] stringByAppendingPathExtension:@"jpg"];
@@ -92,10 +96,10 @@ static NSString *parseMasterKey = @"fsMgAw0ozmaZj5Kr9Tz8nuhPwNI1ZTLAsKeoojlP";
         CGSize originalImageSize = CGSizeMake(obj.pixelWidth, obj.pixelHeight);
         CGFloat maxSide = MAX(originalImageSize.width, originalImageSize.height);
         
-        if (self.convertTo720p && maxSide > 720) {
-            CGFloat scale = (720.0 / maxSide);
-            originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
-        }
+//        if (self.convertTo720p && maxSide > 720) {
+//            CGFloat scale = (720.0 / maxSide);
+//            originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
+//        }
         
         PHImageRequestID imageRequestID = [cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
             if ([info[PHImageResultIsDegradedKey] boolValue]) {
@@ -109,8 +113,10 @@ static NSString *parseMasterKey = @"fsMgAw0ozmaZj5Kr9Tz8nuhPwNI1ZTLAsKeoojlP";
                 NSString *fullPath = [self imagePathForAssetIdentifier:obj.localIdentifier];
                 if (![data writeToFile:fullPath atomically:YES])
                     return;
+                
                 NSLog(@"image:%@ with size:%@", fullPath.lastPathComponent, NSStringFromCGSize(result.size));
-                NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", fullPath.lastPathComponent];
+                //NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", fullPath.lastPathComponent];
+                NSString *path = [NSString stringWithFormat:@"http://dev.mediastorm.bg:1337/files/%@", fullPath.lastPathComponent];
                 NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60];
                 [request setHTTPMethod:@"POST"];
                 [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-Application-Id"];
@@ -135,6 +141,12 @@ static NSString *parseMasterKey = @"fsMgAw0ozmaZj5Kr9Tz8nuhPwNI1ZTLAsKeoojlP";
     totalBytesSent:(int64_t)totalBytesSent
 totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
     
+    NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+    for (id<PhotosUploaderDelegate>delegate in _delegates) {
+        if ([delegate respondsToSelector:@selector(photoUploader:didUploadDataForAssetWithIdentifier:totalBytesSent:totalBytesExpectedToSend:)]) {
+            [delegate photoUploader:self didUploadDataForAssetWithIdentifier:identifier totalBytesSent:totalBytesSent totalBytesExpectedToSend:totalBytesExpectedToSend];
+        }
+    }
 }
 
 /* Sent as the last message related to a specific task.  Error may be
@@ -155,6 +167,10 @@ didCompleteWithError:(NSError *)error {
             [delegate photoUploader:self didUploadAssetIdentifier:identifier responseData:responseData withError:error];
         }
     }
+    UILocalNotification* n1 = [[UILocalNotification alloc] init];
+    n1.fireDate = [[NSDate date] dateByAddingTimeInterval:1];
+    n1.alertBody = @"Image Uploaded";
+    [[UIApplication sharedApplication] scheduleLocalNotification: n1];
 }
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
