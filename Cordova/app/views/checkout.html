@@ -87,10 +87,10 @@
         Special Promo Codes
       </div>
       <div class="item item-text-wrap">
-        It&rsquo;s your lucky day! For a limited time, all the cool kids can get a special promo code!
+        {{watch.promoCodeLabel.copy}}
         <button id="promo-code-button" class="button button-full button-balanced"
-        ng-click="on.getPromoCode($event); this.swipeCard.swipeOut()">
-          I&rsquo;m Cool, Gimme a Code
+        ng-click="on.getPromoCode($event, swipeCard);">
+          {{watch.promoCodeLabel.button}}
         </button>
         <div class="list list-inset hide">
         <label class="item item-input">

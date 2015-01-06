@@ -136,6 +136,25 @@ angular.module('ionBlankApp')
         return true
       afterNextStep: ()->
         switch $state.current.name
+          when 'app.checkout.payment'
+            servicePlan = $scope.watch.servicePlan
+            if servicePlan.plans.indexOf("Promo Code: " + "3DAYSFREE") == -1
+              promoCode = "3DAYSFREE"
+              promoCodeLabel = {
+                copy: "It's your lucky day! For a limited time, all the cool kids can get a special promo code!"
+                button: "I'm Cool, Gimme a Code!"
+              }
+            else if servicePlan.plans.indexOf("Promo Code: " + "IWILLGIVEFEEDBACK") == -1
+              promoCode = "IWILLGIVEFEEDBACK"
+              promoCodeLabel = {
+                copy: "Aw snap! It looks like you will need some extra love for this order!"
+                button: "I'll Have Another, Please :-D"
+              }
+            else 
+              promoCode = null
+            $scope.watch.promoCode = promoCode
+            $scope.watch.promoCodeLabel = promoCodeLabel
+
           when 'app.checkout.complete'
             # AFTER submit, queue photos
             parse._queueSelectedMoments $scope.checkout, $scope.workorderObj
@@ -144,12 +163,12 @@ angular.module('ionBlankApp')
         # put on on $rootScope.$on '$stateChangeSuccess'
         # switch $state.current.name
         return true
-      getPromoCode: (ev)->
-        $scope.watch.promoCode = "3DAYSFREE"
-        _applyPromoCode($scope.watch.promoCode, $scope.watch.servicePlan)
+      getPromoCode: (ev, swipeCard)->
+        total = _applyPromoCode($scope.watch.promoCode, $scope.watch.servicePlan)
         el = ev.currentTarget
         # el = document.getElementById('promo-code-button')
         angular.element(el).addClass('button-balanced').removeClass('button-assertive')
+        swipeCard.swipeOut() if !$scope.watch.servicePlan.total
         return true
 
       tosClick: (ev)->
@@ -235,17 +254,25 @@ angular.module('ionBlankApp')
     _applyPromoCode = (promoCode, servicePlan)->
       switch promoCode
         when '3DAYSFREE'
-          return if servicePlan.plans.indexOf("Promo Code: " + promoCode) > -1
-          servicePlan.plans.push('Promo Code: ' + promoCode)
-          servicePlan.total = Math.max( servicePlan.total - 3, 0)
+          if servicePlan.plans.indexOf("Promo Code: " + promoCode) == -1
+            servicePlan.plans.push('Promo Code: ' + promoCode)
+            servicePlan.total = Math.max( servicePlan.total - 3, 0)
+        when 'IWILLGIVEFEEDBACK'
+          if servicePlan.plans.indexOf("Promo Code: " + promoCode) == -1
+            servicePlan.plans.push('Promo Code: ' + promoCode)
+            servicePlan.total = Math.max( servicePlan.total - 10, 0)
+      $scope.on.afterNextStep()
+      return servicePlan.total
+
 
     parse = {
       _createWorkorderP : (checkout, servicePlan)->
+        backlogStatus = null
         return otgParse.checkSessionUserP()
-        .then ()->
-          return otgParse.checkBacklogP()
+        .then otgParse.checkBacklogP
         .then (backlog)->
-          $scope.config.system['order-standby'] = backlog.get('status') == 'standby'
+          backlogStatus = backlog.get('status')
+          $scope.config.system['order-standby'] =  (backlogStatus == 'standby')
           options = {
             status: 'new'
             fromDate: checkout.dateRange.from
@@ -253,7 +280,7 @@ angular.module('ionBlankApp')
           }
           return otgParse.findWorkorderP(options)
         .then (results)->
-            orderStatus = backlog.status || 'new'
+            orderStatus = backlogStatus || 'new'
             return otgParse.createWorkorderP(checkout, servicePlan, orderStatus) if _.isEmpty(results)
             return results.shift()
           , (error)->
