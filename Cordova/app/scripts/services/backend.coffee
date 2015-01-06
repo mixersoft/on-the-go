@@ -398,7 +398,7 @@ angular
       mergeSessionUser: (anonUser)->
         # merge from cookie into $rootScope.user
         $rootScope.sessionUser = Parse.User.current()
-        return if !($rootScope.sessionUser instanceof Parse.Object)
+        return anonUser if !($rootScope.sessionUser instanceof Parse.Object)
 
         isRegistered = !self.isAnonymousUser()
         return anonUser if !isRegistered
@@ -482,7 +482,7 @@ angular
 
       checkSessionUserP: ()-> 
         if _.isEmpty($rootScope.sessionUser)
-          if $rootScope.user.username? && $rootScope.user.password?
+          if $rootScope.user?.username? && $rootScope.user.password?
             authPromise = self.loginP($rootScope.user).then null
                 , (error)->
                   userCred = error

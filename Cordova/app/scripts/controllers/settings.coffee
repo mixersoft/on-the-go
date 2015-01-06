@@ -168,7 +168,9 @@ angular.module('ionBlankApp')
       ev.preventDefault()
       otgWorkorderSync.clear()
       return otgProfile.signInP().then ()->
-          $state.transitionTo('app.settings.main')
+          target = 'app.settings.main'
+          target = 'app.workorders.all' if /workorders/.test($scope.SideMenuSwitcher?.leftSide.src)
+          $state.transitionTo(target)
         , (error)->
           $scope.user.password ==''
           otgProfile.username.dirty = !! $scope.user.username

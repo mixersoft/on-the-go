@@ -102,6 +102,12 @@ $ionicons-font-path: "../lib/ionic/fonts" !default;
   cursor: pointer;
 }
 
+.menu-left {
+  ion-list ion-item > *  {
+    @extend .cursor-pointer;
+  }
+}
+
 .loading-container .loading {
   padding: 10px;
   .icon {
