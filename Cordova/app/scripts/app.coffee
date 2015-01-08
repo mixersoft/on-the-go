@@ -18,7 +18,10 @@ angular
   'ionic.contrib.ui.cards',
   'onTheGo.i18n'
 ])
-.constant('version', '0.0.1')
+.config ($ionicConfigProvider)->
+  return if !$ionicConfigProvider.views
+  # for beta.14 view caching
+  $ionicConfigProvider.views.maxCache(0);
 .run [
   '$rootScope', '$state', '$stateParams', '$ionicPlatform', 'PARSE_CREDENTIALS'
   ($rootScope, $state, $stateParams, $ionicPlatform, PARSE_CREDENTIALS)->

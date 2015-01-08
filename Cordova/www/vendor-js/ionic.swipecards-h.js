@@ -319,37 +319,33 @@
         onKeep: '&',
         onReject: '&'
       },
-      compile: function(element, attr) {
-        return function($scope, $element, $attr, swipeCards) {
-          var el = $element[0];
+      link: function($scope, $element, $attr, swipeCards) {
+        var el = $element[0];
 
-          // Instantiate our card view
-          var swipeableCard = new SwipeableCardView({
-            el: el,
-            fly: $attr.fly || 'back',  // 'out' to fly offscreen, otherwise fly back in place
-            onSwipe: function(keep) {
-              $timeout(function() {
-                $scope.onCardSwipe(keep);
+        // Instantiate our card view
+        var swipeableCard = new SwipeableCardView({
+          el: el,
+          fly: $attr.fly || 'back',  // 'out' to fly offscreen, otherwise fly back in place
+          onSwipe: function(keep) {
+            $timeout(function() {
+              $scope.onCardSwipe(keep);
                 if (keep) {
                   $scope.onKeep()
                 }
                 else $scope.onReject();
-              });
-            },
-            onDestroy: function(keep) {
-              $timeout(function() {
-                $scope.onDestroy({keep: keep})
-              });
-            },
-          });
-          $scope.$parent.swipeCard = swipeableCard;
-          // back link, use from parent scope onDestroy() callback, but should use $ionicSwipeCardDelegate
-          // el.swipeCard = swipeableCard
+            });
+          },
+          onDestroy: function(keep) {
+            $timeout(function() {
+              $scope.onDestroy({keep: keep})
+            });
+          },
+        });
+        $scope.$parent.swipeCard = swipeableCard;
 
-          swipeCards.pushCard(swipeableCard);
+        swipeCards.swipeController.pushCard(swipeableCard);
 
-        }
-      }
+      }      
     }
   }])
 
@@ -359,7 +355,7 @@
       template: '<div class="swipe-cards" ng-transclude></div>',
       replace: true,
       transclude: true,
-      scope: {},
+      scope: true,
       controller: function($scope, $element) {
         var swipeController = new SwipeableCardController({
         });
@@ -367,7 +363,7 @@
           swipeController.popCard(isAnimated);
         });
 
-        return swipeController;
+        this.swipeController = swipeController;
       }
     }
   }])
@@ -377,7 +373,7 @@
       popCard: function($scope, isAnimated) {
         $rootScope.$emit('swipeCard.pop', isAnimated);
       },
-      getSwipebleCard: function($scope) {
+      getSwipeableCard: function($scope) {
         return $scope.$parent.swipeCard;
       }
     }
