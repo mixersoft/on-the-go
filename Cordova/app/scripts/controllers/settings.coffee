@@ -146,8 +146,8 @@ angular.module('ionBlankApp')
 
 ]
 .controller 'SettingsCtrl', [
-  '$scope', '$rootScope', '$state','$timeout', '$ionicPopup', '$ionicNavBarDelegate', 'otgParse', 'otgProfile', 'otgWorkorderSync', 'otgUploader'
-  ($scope, $rootScope, $state, $timeout, $ionicPopup, $ionicNavBarDelegate, otgParse, otgProfile, otgWorkorderSync, otgUploader) ->
+  '$scope', '$rootScope', '$state','$timeout', '$ionicHistory', '$ionicPopup', '$ionicNavBarDelegate', 'otgParse', 'otgProfile', 'otgWorkorderSync', 'otgUploader'
+  ($scope, $rootScope, $state, $timeout, $ionicHistory, $ionicPopup, $ionicNavBarDelegate, otgParse, otgProfile, otgWorkorderSync, otgUploader) ->
     $scope.label = {
       title: "Settings"
       subtitle: "Share something great today!"
@@ -170,6 +170,11 @@ angular.module('ionBlankApp')
       return otgProfile.signInP().then ()->
           target = 'app.settings.main'
           target = 'app.workorders.all' if /workorders/.test($scope.SideMenuSwitcher?.leftSide.src)
+          $ionicHistory.nextViewOptions({
+            historyRoot: true
+          })
+          # refresh everything, including topPicks
+          otgWorkorderSync.clear()
           $state.transitionTo(target)
         , (error)->
           $scope.user.password ==''

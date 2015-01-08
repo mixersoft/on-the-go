@@ -339,17 +339,20 @@ angular.module('ionBlankApp')
       $scope.showLoading(true)
       setFilter( $state.current )
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info
-      otgWorkorderSync.SYNC_ORDERS(
-        $scope, 'owner', 'force'
-        , ()->
-          $scope.hideSplash()
-          return $scope.hideLoading(300)
-        )
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
       # cached view becomes active 
       setFilter( $state.current )
+      _force = !otgWorkorderSync._workorderColl['owner'].length
+      if _force
+        otgWorkorderSync.SYNC_ORDERS(
+        $scope, 'owner', 'force'
+        , ()->
+          $scope.hideSplash()
+          return $scope.hideLoading(300)
+        )
+
       # sync? or pull-to-refresh?
       return
 
