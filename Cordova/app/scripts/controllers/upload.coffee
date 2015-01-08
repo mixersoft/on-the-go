@@ -192,15 +192,23 @@ angular.module('ionBlankApp')
         return $scope.warnings = null
 
 
-    init =()->
+    $scope.$on '$ionicView.loaded', ()->
+      # once per controller load, setup code for view
+      return
+
+    $scope.$on '$ionicView.beforeEnter', ()->
+      # cached view becomes active 
       otgUploader.allowCellularNetwork($scope.config.upload['use-cellular-data'])
       $scope.menu.uploader.count = otgUploader.queueLength()
       if otgUploader.enable()==null
         otgUploader.enable($scope.config.upload['auto-upload'])
 
       _fetchWarnings()
+      return
 
+    $scope.$on '$ionicView.leave', ()->
+      # cached view becomes in-active 
+      return 
 
-    init() 
 
 ]

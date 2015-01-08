@@ -10,9 +10,9 @@
 angular.module('ionBlankApp')
 .controller 'CheckoutCtrl', [
   '$scope', '$rootScope', '$state', '$q', 
-  '$ionicNavBarDelegate', '$ionicModal', '$ionicScrollDelegate'
+  '$ionicNavBarDelegate', '$ionicHistory', '$ionicModal', '$ionicScrollDelegate'
   'otgData', 'otgWorkorder', 'otgUploader', 'otgParse', 'otgProfile', 'cameraRoll',  'TEST_DATA',
-  ($scope, $rootScope, $state, $q, $ionicNavBarDelegate, $ionicModal, $ionicScrollDelegate, otgData, otgWorkorder, otgUploader, otgParse, otgProfile, cameraRoll, TEST_DATA) ->
+  ($scope, $rootScope, $state, $q, $ionicNavBarDelegate, $ionicHistory, $ionicModal, $ionicScrollDelegate, otgData, otgWorkorder, otgUploader, otgParse, otgProfile, cameraRoll, TEST_DATA) ->
     $scope.label = {
       title: "Checkout"
       header_card: 
@@ -50,7 +50,9 @@ angular.module('ionBlankApp')
       doneState: 'app.uploader'
       steps : ['from','order-detail', 'payment', 'sign-up', 'submit', 'complete']
       from: (from)->
-        _wizard.steps[0] = from # set state for back to Choose
+        _wizard.steps[0] = from if from # set state for back to Choose
+        return _wizard.steps[0]
+
       
       validateSteps: ()->
         _wizard.steps.splice(_wizard.steps.indexOf('sign-up'), 1) if !!$scope.user.username && _wizard.steps.indexOf('sign-up')>-1
@@ -79,7 +81,10 @@ angular.module('ionBlankApp')
     $scope.on = {
       back : (params)-> 
         # _wizard.goto('prev', params)
-        $ionicNavBarDelegate.back()
+        # $ionicNavBarDelegate.back()
+        return $ionicHistory.goBack() if $ionicHistory.backView()
+        $state.transitionTo( _wizard.from() )
+
       next : (params)-> 
         retval = $scope.on.beforeNextStep()
         if retval.then?  # a promise
@@ -315,6 +320,19 @@ angular.module('ionBlankApp')
         $scope.on.afterNextStep()
 
 
+    $scope.$on '$ionicView.loaded', ()->
+      # once per controller load, setup code for view
+      return
+
+    $scope.$on '$ionicView.beforeEnter', ()->
+      # cached view becomes active 
+      init()
+      return
+
+    $scope.$on '$ionicView.leave', ()->
+      # cached view becomes in-active 
+      return 
+
     init = ()->
       $scope.orders = []
 
@@ -353,7 +371,7 @@ angular.module('ionBlankApp')
     );
 
 
-    init()
+
 
     window.debug = _.extend window.debug || {} , {
         watch: $scope.watch

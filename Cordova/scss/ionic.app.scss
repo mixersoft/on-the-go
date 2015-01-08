@@ -328,7 +328,7 @@ otg-moment {
         color: $balanced;
       }
       &.existing-order .btn.date .day {
-        color: $energized;
+        color: $assertive;
       }
       &.selected .btn.date {
         background-color: $balanced;
@@ -425,6 +425,17 @@ otg-moment-date-range {
   }
 }
 
+/*  app.choose, app.checkout */
+.tabs-top .pane {
+  &.has-tabs-top {
+    top: 93px;
+  }
+  &.has-footer {
+    bottom: 44px;
+    height: auto;
+  }
+}
+
 #choose-tab-calendar {
   .calendar-placeholder {
     width:100%;
@@ -433,6 +444,9 @@ otg-moment-date-range {
 }
 
 #settings {
+  .item {
+    cursor: default ;
+  }
   .item-toggle {
     p {
       overflow: visible;

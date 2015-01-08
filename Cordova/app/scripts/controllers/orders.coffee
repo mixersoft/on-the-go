@@ -42,33 +42,41 @@ angular.module('ionBlankApp')
 
     $scope.workorders = []
 
-    init = ()->
-      # show loading
+
+
+    $scope.$on '$ionicView.loaded', ()->
+      # once per controller load, setup code for view
       $scope.showLoading(true)
-      force = true || !otgWorkorderSync._workorderColl['owner'].length
-      if force
-        otgWorkorderSync.SYNC_ORDERS(
-          $scope, 
-          'owner', 
-          'force', 
-          ()->return $scope.hideLoading(1000)
-          )
-      else 
-        options = { owner: true }
-        otgWorkorderSync.fetchWorkordersP( options ).then (workorderColl)->
-          # console.log " \n\n 2: &&&&& REFRESH fetchWorkordersP from orders.coffee "
-          $scope.workorders = workorderColl.toJSON()
+      otgWorkorderSync.SYNC_ORDERS(
+        $scope, 
+        'owner', 
+        'force', 
+        ()->return $scope.hideLoading(1000)
+      )
+      return
 
-          # update workorder Photo counts
-          workorderColl.each (woObj)->
-            return if woObj.get('status') == 'complete'
-            otgWorkorderSync.updateWorkorderCounts(woObj)
-            return
-          $scope.hideLoading()  
+    $scope.$on '$ionicView.beforeEnter', ()->
+      # ???: this may duplicate of .loaded
+      # cached view becomes active 
+      $scope.showLoading(true)
+      options = { owner: true }
+      otgWorkorderSync.fetchWorkordersP( options ).then (workorderColl)->
+        # console.log " \n\n 2: &&&&& REFRESH fetchWorkordersP from orders.coffee "
+        $scope.workorders = workorderColl.toJSON()
+
+        # update workorder Photo counts
+        workorderColl.each (woObj)->
+          return if woObj.get('status') == 'complete'
+          otgWorkorderSync.updateWorkorderCounts(woObj)
           return
+        $scope.hideLoading()  
+        return      
+      return
 
-
-    init()  
+    $scope.$on '$ionicView.leave', ()->
+      # cached view becomes in-active 
+      return 
+      
 
 ]
 

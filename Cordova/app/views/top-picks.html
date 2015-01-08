@@ -17,7 +17,7 @@
 
   <ion-content delegate-handle="collection-repeat-wrap">
     <div class="button-bar bar-royal">
-      <a class="button icon ion-checkmark-circled" ui-sref="app.top-picks" ui-sref-active="active"></a>
+      <a class="button icon ion-checkmark-circled" ui-sref="app.top-picks.top-picks" ui-sref-active="active"></a>
       <a class="button icon ion-heart" ui-sref=".favorites"  ui-sref-active="active"></a>
       <a class="button icon ion-ios7-upload-outline" ui-sref=".shared"  ui-sref-active="active"></a>
     </div>
@@ -38,7 +38,7 @@
         ng-if='0'
         ng-click="on.test()"> Test ImgCache</button>
       </div>
-      <div class="empty-list" ng-if="filteredPhotos.length==0 && $state.$current.name=='app.top-picks'"> 
+      <div class="empty-list" ng-if="filteredPhotos.length==0 && $state.$current.name=='app.top-picks.top-picks'"> 
           <div class="item item-text-wrap">
             <div class="text-center">
               <h2>{{i18n.tr('empty-list').header}}</h2>

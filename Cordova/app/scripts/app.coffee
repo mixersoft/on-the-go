@@ -21,7 +21,7 @@ angular
 .config ($ionicConfigProvider)->
   return if !$ionicConfigProvider.views
   # for beta.14 view caching
-  $ionicConfigProvider.views.maxCache(0);
+  # $ionicConfigProvider.views.maxCache(0);
 .run [
   '$rootScope', '$state', '$stateParams', '$ionicPlatform', 'PARSE_CREDENTIALS'
   ($rootScope, $state, $stateParams, $ionicPlatform, PARSE_CREDENTIALS)->
@@ -99,12 +99,16 @@ angular
     # view:camera-roll
     .state('app.top-picks', {
       url: "/top-picks",
+      abstract: true
       views: {
         'menuContent' : {
           templateUrl: "views/top-picks.html"
           controller: 'TopPicksCtrl'
         }
       }
+    })
+    .state('app.top-picks.top-picks', {
+      url: "/top-picks",
     })
     .state('app.top-picks.favorites', {
       url: "/favorites",
@@ -240,7 +244,7 @@ angular
       abstract: true
       views: {
         'menuContent' : {
-          template: '<ion-view title="Settngs" hide-back-button="true" ><ion-nav-view name="settingsContent" animation="slide-left-right"></ion-nav-view></ion-view>'
+          template: '<ion-view title="Settngs"><ion-nav-view name="settingsContent" animation="slide-left-right"></ion-nav-view></ion-view>'
           controller: 'SettingsCtrl'
         }
       }
@@ -388,7 +392,7 @@ angular
       url: "/picks",
     })    
   # if none of the above states are matched, use this as the fallback
-  $urlRouterProvider.otherwise('/app/top-picks');  
+  $urlRouterProvider.otherwise('/app/top-picks/top-picks');  
   # $urlRouterProvider.otherwise('/app/settings');  
 
 

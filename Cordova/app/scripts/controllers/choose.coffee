@@ -169,6 +169,7 @@ angular.module('ionBlankApp')
     return self
 
 ]
+
 .controller 'ChooseCtrl', [
   '$scope', '$rootScope', '$state', '$stateParams', '$timeout', '$ionicModal', 'otgData', 'otgWorkorder', 'deviceReady', 'cameraRoll', 'snappiMessengerPluginService', 'TEST_DATA',
   ($scope, $rootScope, $state, $stateParams, $timeout, $ionicModal, otgData, otgWorkorder, deviceReady, cameraRoll, snappiMessengerPluginService,TEST_DATA) ->
@@ -209,18 +210,27 @@ angular.module('ionBlankApp')
       return cameraRoll.loadMomentThumbnailsP()
 
 
-    init = ()->
-      # console.log "init: state="+$state.current.name
-      console.log "\n\n*** ChooseCtrl init() ***"
+    $scope.$on '$ionicView.loaded', ()->
+      # once per controller load, setup code for view
+      return
 
+    $scope.$on '$ionicView.beforeEnter', ()->
+      # cached view becomes active 
       return cameraRoll.loadMomentThumbnailsP() 
 
-      # skip DEBUG
-      switch $state.current.name
-        when 'app.choose.calendar'
-          otgWorkorder.on.clearSelected()
-          return otgWorkorder.on.selectByCalendar("2014-09-20", "2014-09-24")
+    $scope.$on '$ionicView.leave', ()->
+      # cached view becomes in-active 
+      return 
+
+    init = ()->
       return
+
+      # skip DEBUG
+      # switch $state.current.name
+      #   when 'app.choose.calendar'
+      #     otgWorkorder.on.clearSelected()
+      #     return otgWorkorder.on.selectByCalendar("2014-09-20", "2014-09-24")
+      # return
 
     # refactor to AppCtrl or service
     $ionicModal.fromTemplateUrl('partials/modal/pricing', {

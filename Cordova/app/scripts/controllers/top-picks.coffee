@@ -334,26 +334,31 @@ angular.module('ionBlankApp')
         $scope.menu.top_picks.count = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks').length
       return
 
+    $scope.$on '$ionicView.loaded', ()->
+      # once per controller load, setup code for view
+      $scope.showLoading(true)
+      setFilter( $state.current )
+      $scope.on.showInfo(true) if $scope.config['top-picks']?.info
+      otgWorkorderSync.SYNC_ORDERS(
+        $scope, 'owner', 'force'
+        , ()->
+          $scope.hideSplash()
+          return $scope.hideLoading(1000)
+        )
+      return
+
+    $scope.$on '$ionicView.beforeEnter', ()->
+      # cached view becomes active 
+      # sync? or pull-to-refresh?
+      return
+
+    $scope.$on '$ionicView.leave', ()->
+      # cached view becomes in-active 
+      return      
 
     
 
     init = ()->
-      setFilter( $state.current )
-
-      $scope.on.showInfo(true) if $scope.config['top-picks']?.info
-
-      # show loading
-      force = !otgWorkorderSync._workorderColl['owner'].length
-      if force
-        $scope.showLoading(true)
-        otgWorkorderSync.SYNC_ORDERS(
-          $scope, 'owner', 'force'
-          , ()->
-            $scope.hideSplash()
-            return $scope.hideLoading(1000)
-
-      )
-
       $scope.config['app-bootstrap'] = false
       return
 

@@ -13,7 +13,7 @@ angular.module('onTheGo.i18n', [])
     'EN':
       'app':
         'dont-show': "Don't Show Me Again"
-      'app.top-picks':
+      'app.top-picks.top-picks':
         title: "Top Picks"
         'header-card':
           header: "Top Picks"

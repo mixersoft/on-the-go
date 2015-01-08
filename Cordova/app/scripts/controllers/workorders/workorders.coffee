@@ -17,9 +17,7 @@ angular.module('ionBlankApp')
       subtitle: "Workorder Management System"
     }
 
-    # dynamically update left side menu
-    $scope.SideMenuSwitcher.leftSide.src = 'partials/workorders/left-side-menu'
-    $scope.SideMenuSwitcher.watch['workorder'] = null
+
 
     $scope.gotoTab = (name)->
       switch name
@@ -47,13 +45,21 @@ angular.module('ionBlankApp')
     $scope.workorders = []
     $scope.workorder = null
 
+    $scope.$on '$ionicView.loaded', ()->
+      # once per controller load, setup code for view
+      return
 
-    init = ()->
+    $scope.$on '$ionicView.beforeEnter', ()->
+      # cached view becomes active 
+      # dynamically update left side menu
+      $scope.SideMenuSwitcher.leftSide.src = 'partials/workorders/left-side-menu'
+      $scope.SideMenuSwitcher.watch['workorder'] = null
       otgWorkorderSync.SYNC_WORKORDERS($scope, 'editor', 'force')
-      return 
+      return
 
-
-    init()  
+    $scope.$on '$ionicView.leave', ()->
+      # cached view becomes in-active 
+      return   
 
 ]
 
