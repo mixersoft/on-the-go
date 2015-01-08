@@ -89,6 +89,7 @@
       <div class="item item-text-wrap">
         {{watch.promoCodeLabel.copy}}
         <button id="promo-code-button" class="button button-full button-balanced"
+        ng-show="watch.promoCode"
         ng-click="on.getPromoCode($event, swipeCard);">
           {{watch.promoCodeLabel.button}}
         </button>

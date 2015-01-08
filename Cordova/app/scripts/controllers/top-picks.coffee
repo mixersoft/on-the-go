@@ -311,6 +311,14 @@ angular.module('ionBlankApp')
           when 'right'
             scope.swipeCard.swipeOver('right')
 
+      refresh: ()->
+        otgWorkorderSync.SYNC_ORDERS(
+          $scope, 'owner', 'force'
+          , ()->
+            $scope.hideSplash()
+            return $scope.$broadcast('scroll.refreshComplete');
+        )
+
       test: ()->
         # _TEST_imageCacheSvc()
         # $scope.loadMomentsFromCameraRollP().then ()->
@@ -336,7 +344,6 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
-      
       setFilter( $state.current )
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info
       return
@@ -352,9 +359,7 @@ angular.module('ionBlankApp')
           , ()->
             $scope.hideSplash()
             return $scope.hideLoading(300)
-        )
-
-      # sync? or pull-to-refresh?
+          )
       return
 
     $scope.$on '$ionicView.leave', ()->

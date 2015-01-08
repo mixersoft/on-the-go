@@ -40,6 +40,16 @@ angular.module('ionBlankApp')
 
     }        
 
+    $scope.on = {
+      refresh: ()->
+        otgWorkorderSync.SYNC_ORDERS(
+          $scope, 'owner', 'force'
+          , ()->
+            $scope.hideSplash()
+            return $scope.$broadcast('scroll.refreshComplete');
+        )        
+    }
+
     $scope.workorders = []
 
 
@@ -56,22 +66,16 @@ angular.module('ionBlankApp')
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
-      # ???: this may duplicate of .loaded
-      # cached view becomes active 
-      $scope.showLoading(true)
-      options = { owner: true }
-      otgWorkorderSync.fetchWorkordersP( options ).then (workorderColl)->
-        # console.log " \n\n 2: &&&&& REFRESH fetchWorkordersP from orders.coffee "
-        $scope.workorders = workorderColl.toJSON()
+      _force = !otgWorkorderSync._workorderColl['owner'].length
+      if _force
+        $scope.showLoading(true)
+        otgWorkorderSync.SYNC_ORDERS(
+          $scope, 'owner', 'force'
+          , ()->
+            $scope.hideSplash()
+            return $scope.hideLoading(300)
+        )
 
-        # update workorder Photo counts
-        workorderColl.each (woObj)->
-          return if woObj.get('status') == 'complete'
-          otgWorkorderSync.updateWorkorderCounts(woObj)
-          return
-        $scope.hideLoading()  
-        return      
-      return
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 

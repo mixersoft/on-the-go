@@ -677,7 +677,7 @@ angular
         _LOAD_MOMENTS_FROM_CAMERA_ROLL_P()
         .finally ()->
           $timeout ()->
-              promise = otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.$state.includes('app.workorders')
+              # promise = otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.$state.includes('app.workorders')
               promise = otgParse.checkBacklogP().then (backlog)->
                 $scope.config.system['order-standby'] = backlog.get('status') == 'standby'
             , 3000  

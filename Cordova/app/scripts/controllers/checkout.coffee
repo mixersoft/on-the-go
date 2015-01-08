@@ -157,6 +157,10 @@ angular.module('ionBlankApp')
               }
             else 
               promoCode = null
+              promoCodeLabel = {
+                copy: "I'm sorry, you've gone over our limit for now..."
+                button: ""
+              }
             $scope.watch.promoCode = promoCode
             $scope.watch.promoCodeLabel = promoCodeLabel
 
