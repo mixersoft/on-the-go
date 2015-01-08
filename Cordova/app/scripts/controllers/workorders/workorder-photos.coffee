@@ -95,7 +95,9 @@ angular.module('ionBlankApp')
         return $scope.on._info  
 
       notTopPick: (event, item)->
-        event.preventDefault() if event
+        if event
+          event.preventDefault() 
+          event.stopPropagation()
         revert = item.topPick
         return if revert==false
         item.topPick = false
@@ -114,13 +116,15 @@ angular.module('ionBlankApp')
         # scroll to next item()
         return item  
       addTopPick: (event, item)->
-        event.preventDefault() if event
+        if event
+          event.preventDefault() 
+          event.stopPropagation()
         revert = item.topPick
         return if revert==true
         item.topPick = true
         otgParse.savePhotoP(item, $scope.photosColl, 'topPick').then ()->
             $scope.workorderAttr.progress.todo -= 1 if !revert && revert != false
-            $scope.workorderAttr.progress.picks += 1 if revert==false
+            $scope.workorderAttr.progress.picks += 1 if !revert
             return $scope.$apply()
             # don't have to save to Parse yet
           , (err)->
