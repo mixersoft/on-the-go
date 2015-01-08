@@ -185,7 +185,7 @@ angular.module('ionBlankApp')
     # TODO: use ion-tabs instead?
     setFilter = (toState)->
       switch toState.name
-        when 'app.top-picks'
+        when 'app.top-picks.top-picks'
           $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks')
         when 'app.top-picks.favorites'
           $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'favorites')
@@ -343,12 +343,13 @@ angular.module('ionBlankApp')
         $scope, 'owner', 'force'
         , ()->
           $scope.hideSplash()
-          return $scope.hideLoading(1000)
+          return $scope.hideLoading(300)
         )
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
       # cached view becomes active 
+      setFilter( $state.current )
       # sync? or pull-to-refresh?
       return
 
