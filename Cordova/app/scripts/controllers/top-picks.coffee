@@ -144,29 +144,6 @@ angular.module('ionBlankApp')
       }
 ]
 
-# not properly implemented
-.directive 'imgCache', [ 'otgImgCache'
-    (otgImgCache)->
-      return {
-        restrict: 'A'
-        scope: false
-        link: (scope, element, attrs)->
-          otgImgCache.promise.then (o)->
-              # return if !ImgCache || !ImgCache.ready
-              url = attrs.ngSrc || attrs.src
-              ImgCache.isCached url , (path, success)->
-                return ImgCache.useCachedFile element if success
-                ImgCache.cacheFile url, ()->
-                    console.log "ImgCache: using cached file=" + url
-                    return ImgCache.useCachedFile element 
-                  , ()->
-                    console.log "ImgCache: cache hit ERROR. file=" + url
-          .catch (o)->
-              console.warn "ImgCache error, msg=" + o
-      }
-]
-
-
 .filter 'ownerPhotosByType', ()->
   return (input, type='topPick')->
     switch type

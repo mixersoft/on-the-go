@@ -71,7 +71,7 @@ gulp.task('copy:html', function(){
 gulp.task('copy:more', function(){
   gulp.src(paths.legal)
     .pipe(gulp.dest('./www/legal/'));
-  gulp.src('./index.html')
-    .pipe(gulp.dest('./www/index.html'));
+  gulp.src('./app/index.html')
+    .pipe(gulp.dest('./www/'));
 })
 

@@ -48,10 +48,10 @@ angular
       return false
 
 
-    _.extend ImgCache.options, _IMAGE_CACHE_defaults
+    # _.extend ImgCache.options, _IMAGE_CACHE_defaults
 
-    deviceReady.waitP().then ()->
-      ImgCache.init()
+    # deviceReady.waitP().then ()->
+    #   ImgCache.init()
 
 
 
