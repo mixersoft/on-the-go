@@ -146,14 +146,27 @@ angular.module('ionBlankApp')
 
 ]
 .controller 'SettingsCtrl', [
-  '$scope', '$rootScope', '$state','$timeout', '$ionicHistory', '$ionicPopup', '$ionicNavBarDelegate', 'otgParse', 'otgProfile', 'otgWorkorderSync', 'otgUploader'
-  ($scope, $rootScope, $state, $timeout, $ionicHistory, $ionicPopup, $ionicNavBarDelegate, otgParse, otgProfile, otgWorkorderSync, otgUploader) ->
+  '$scope', '$rootScope', '$state','$timeout', 
+  '$ionicHistory', '$ionicPopup', '$ionicNavBarDelegate', 
+  'otgParse', 'otgProfile', 'otgWorkorderSync', 'otgUploader', 'imageCacheSvc'
+  ($scope, $rootScope, $state, $timeout, $ionicHistory, $ionicPopup, $ionicNavBarDelegate, otgParse, otgProfile, otgWorkorderSync, otgUploader, imageCacheSvc) ->
     $scope.label = {
       title: "Settings"
     }
     
     $scope.otgProfile = otgProfile
     $scope.user = $rootScope.user
+
+    $scope.watch = {
+      imgCache: 
+        size: '0 Bytes'
+        count: 0
+    }
+    $scope.on = {
+      clearCache: ()->
+        imageCacheSvc.clearStashedP().then ()->
+          _.extend $scope.watch.imgCache, imageCacheSvc.stashStats()
+    }
 
     $scope.signOut = (ev)->
       ev.preventDefault()   
@@ -189,11 +202,15 @@ angular.module('ionBlankApp')
             , 3000
           return 
         
-
-    init = ()->
-      otgParse.checkSessionUserP().then (userCred)->
-        return 
+    $scope.$on '$ionicView.loaded', ()->
       return
 
-    init()
+    $scope.$on '$ionicView.beforeEnter', ()->
+      _.extend $scope.watch.imgCache, imageCacheSvc.stashStats()
+      return
+
+    $scope.$on '$ionicView.leave', ()->
+      # cached view becomes in-active 
+      return 
+
 ]  

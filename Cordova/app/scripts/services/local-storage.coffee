@@ -53,6 +53,12 @@ angular
     # deviceReady.waitP().then ()->
     #   ImgCache.init()
 
+    _bytesToSize = (bytes)-> 
+       return '0 Byte' if (bytes == 0) 
+       k = 1000;
+       sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+       i = Math.floor(Math.log(bytes) / Math.log(k));
+       return (bytes / Math.pow(k, i)).toPrecision(3) + ' ' + sizes[i];
 
 
     self = {
@@ -124,6 +130,12 @@ angular
             return total += o.fileSize
           , 0
         return total
+
+      stashStats: ()->
+        return {
+          size: _bytesToSize( self.stashSize() )
+          count: _.values( self.cacheIndex ).length
+        }
 
       unstashFileP: (UUID, size)->
         hashKey = if size then hashKey = [ UUID[0...36] ,size].join(':') else UUID

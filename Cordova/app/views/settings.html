@@ -119,10 +119,18 @@
         </p>
       </li>  
       <li class="item">
-      Storage: <span>{{menu.archived.count}}</span> Photos, <span>{{menu.archived.count}}</span>MB
+      Saved Photos: <span>{{menu.archived.count}}</span> Photos, <span>{{menu.archived.count}}</span> MB
       <button class="button button-assertive button-full" ng-class="{disabled:!menu.archived.count}">
         <i class="icon ion-ios7-trash"></i> 
         Remove Saved Photos
+      </button>
+      </li>
+      <li class="item">
+      App Cache: <span>{{watch.imgCache.count}}</span> Files, <span>{{watch.imgCache.size}}</span>
+      <button class="button button-assertive button-full" ng-class="{disabled: !watch.imgCache.count}"
+      ng-click="on.clearCache()">
+        <i class="icon ion-ios7-trash"></i> 
+        Clear App Cache
       </button>
       </li>
 
