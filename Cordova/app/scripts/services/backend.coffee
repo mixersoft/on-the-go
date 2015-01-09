@@ -227,7 +227,8 @@ angular
       SYNC_ORDERS : (scope, force, DELAY=10, whenDoneP)->
         # run AFTER cameraRoll loaded
         # return if _.isEmpty $rootScope.sessionUser
-        return if deviceReady.isWebView() && _.isEmpty cameraRoll.map()
+        # if deviceReady.isWebView() && _.isEmpty cameraRoll.map()
+        #   return whenDoneP() if whenDoneP
 
         options = {
           role: 'owner'
@@ -387,6 +388,20 @@ angular
       password: 'password-'
     }
 
+    ANON_USER = {
+      id: null
+
+      username: null
+      password: null
+      role: 'owner'
+      email: null
+      emailVerified: false
+
+      tosAgree: false
+      rememberMe: false
+      isRegistered: false       
+    }
+
 
     self = {
       isAnonymousUser: ()->
@@ -395,7 +410,8 @@ angular
         # return true if $rootScope.sessionUser.get('username') == 'browser'
         return false
 
-      mergeSessionUser: (anonUser)->
+      mergeSessionUser: (anonUser={})->
+        anonUser = _.extend _.clone(ANON_USER), anonUser
         # merge from cookie into $rootScope.user
         $rootScope.sessionUser = Parse.User.current()
         return anonUser if !($rootScope.sessionUser instanceof Parse.Object)
@@ -403,7 +419,11 @@ angular
         isRegistered = !self.isAnonymousUser()
         return anonUser if !isRegistered
         
-        userCred = _.pick( $rootScope.sessionUser.toJSON(), ['username', 'email', 'emailVerified', 'tosAgree', 'rememberMe'] )
+        userCred = _.pick( $rootScope.sessionUser.toJSON(), [
+          'username', 'role', 
+          'email', 'emailVerified', 
+          'tosAgree', 'rememberMe'
+        ] )
         userCred.password = 'HIDDEN'
         userCred.tosAgree = !!userCred.tosAgree # checkbox:ng-model expects a boolean
         userCred.isRegistered = true
@@ -449,19 +469,11 @@ angular
             $rootScope.sessionUser = null
             $q.reject("User login error. msg=" + JSON.stringify error)
 
-      logoutSession: ()->
+      logoutSession: (anonUser)->
         Parse.User.logOut()
-        _.extend $rootScope.user , {
-          id: null
-          username: null
-          password: null
-          email: null
-          emailVerified: false
-          tosAgree: false
-          rememberMe: false
-          isRegistered: false
-        }
-        return $rootScope.sessionUser = Parse.User.current()
+        $rootScope.sessionUser = Parse.User.current()
+        _.extend $rootScope.user , ANON_USER
+        return
 
       anonSignUpP: (seed)->
         dfd = $q.defer()

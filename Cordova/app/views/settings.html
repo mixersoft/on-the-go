@@ -8,8 +8,12 @@
 
       <li class="item item-divider item-icon-right">Account
       </li>
-      <li class="item item-icon-left item-icon-right" ui-sref="app.settings.profile">Profile
-        <i class="icon ion-person"></i>
+      <li class="item item-icon-right" ui-sref="app.settings.profile">Profile
+        <span class="username badge capitalize padding item-icon-left"
+        ng-class="user.role=='editor' ? 'badge-assertive' :'badge-positive'"
+        >
+          <i class="icon ion-person"></i> {{user.username || i18n.tr('anon-username','app') }}
+        </span>
         <i class="icon ion-chevron-right"></i>
       </li>
 

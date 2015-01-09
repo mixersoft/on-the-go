@@ -150,11 +150,10 @@ angular.module('ionBlankApp')
   ($scope, $rootScope, $state, $timeout, $ionicHistory, $ionicPopup, $ionicNavBarDelegate, otgParse, otgProfile, otgWorkorderSync, otgUploader) ->
     $scope.label = {
       title: "Settings"
-      subtitle: "Share something great today!"
     }
-
     
     $scope.otgProfile = otgProfile
+    $scope.user = $rootScope.user
 
     $scope.signOut = (ev)->
       ev.preventDefault()   

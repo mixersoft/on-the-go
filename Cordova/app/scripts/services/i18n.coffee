@@ -13,6 +13,7 @@ angular.module('onTheGo.i18n', [])
     'EN':
       'app':
         'dont-show': "Don't Show Me Again"
+        'anon-username': 'anonymous'
       'app.top-picks.top-picks':
         title: "Top Picks"
         'header-card':

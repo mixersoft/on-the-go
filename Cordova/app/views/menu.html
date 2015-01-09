@@ -58,7 +58,7 @@ ng-class="{'no-view-headers':config['no-view-headers']}">
           Help
         </ion-item>
 
-      <div ng-show="SideMenuSwitcher.mediaQuery()">  
+      <div ng-show="user.role=='editor'">  
         <ion-item class="item-divider">
           (for Editors only)
         </ion-item>

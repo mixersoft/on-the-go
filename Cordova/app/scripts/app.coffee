@@ -516,24 +516,15 @@ angular
     }
 
     $rootScope.deviceId = "1234567890" # updated after deviceReady.waitP()
-    anonUser = {
-      id: null
-
-      username: null
-      password: null
-      email: null
-      emailVerified: false
-
-      # username: 'bob'
-      # password: 'required'
-      # email: 'this@that'
-      # emailVerified: true
-
-      tosAgree: false
-      rememberMe: false
-      isRegistered: false 
-    } 
-    $rootScope.user = otgParse.mergeSessionUser(anonUser)
+    # testUser = {
+    #   username: 'bob'
+    #   password: 'required'
+    #   email: 'this@that'
+    #   emailVerified: true
+    #   role: 'owner'
+    # } 
+    # $rootScope.user = otgParse.mergeSessionUser(testUser)
+    $rootScope.user = otgParse.mergeSessionUser()
 
     $scope.$watch 'user.tosAgree', (newVal, oldVal)->
       return if newVal == oldVal
