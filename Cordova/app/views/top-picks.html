@@ -78,7 +78,7 @@
     <!-- collection-repeat  -->
     <ion-list class="otg-cr-preview">
       <div swipe-cards
-        collection-repeat="item in filteredPhotos"
+        collection-repeat="item in filteredPhotos | orderBy:-dateTaken"
         collection-item-width="'100%'"
         collection-item-height="on.getItemHeight(item, $index)"
         ng-style="{height: on.getItemHeight(item, $index)+'px'}"

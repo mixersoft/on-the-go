@@ -99,7 +99,7 @@ angular
         hashKey = [ UUID[0...36] ,size].join(':') 
         src = self.cacheIndex[hashKey]?.fileURL || false
         if src
-          console.log "\n\n >>> STASH HIT !!!  file=" + src.slice(-60) 
+          # console.log "\n\n >>> STASH HIT !!!  file=" + src.slice(-60) 
           self.mostRecent.unshift(hashKey)
           if self.mostRecent.length >  self.LIMITS.MOST_RECENT
             self.mostRecent = _.unique(self.mostRecent) 
@@ -196,7 +196,7 @@ angular
               filenames.push file.name
               return
             console.log "\n\n *** cordovaFile_LOAD_CACHED_P cached. file count=" + filenames.length
-            console.log filenames # $$$  
+            # console.log filenames # $$$  
             return $q.all(promises).then (sizes)->
               return dfd.resolve(filenames)
           , (error)->

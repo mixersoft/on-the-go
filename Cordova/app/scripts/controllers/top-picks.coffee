@@ -191,6 +191,8 @@ angular.module('ionBlankApp')
           $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'favorites')
         when 'app.top-picks.shared'
           $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'shared')
+
+      $scope.filteredPhotos = $filter('orderBy')($scope.filteredPhotos, '-dateTaken')   # hack: collection-repeat does not work with orderBy    
       return    
 
     # use dot notation for prototypal inheritance in child scopes
@@ -312,12 +314,13 @@ angular.module('ionBlankApp')
             scope.swipeCard.swipeOver('right')
 
       refresh: ()->
-        otgWorkorderSync.SYNC_ORDERS(
-          $scope, 'owner', 'force'
-          , ()->
-            $scope.hideSplash()
-            return $scope.$broadcast('scroll.refreshComplete');
-        )
+        promise = cameraRoll.loadCameraRollP().finally ()->
+          otgWorkorderSync.SYNC_ORDERS(
+            $scope, 'owner', 'force'
+            , ()->
+              return $scope.$broadcast('scroll.refreshComplete');
+          )
+        return
 
       test: ()->
         # _TEST_imageCacheSvc()
@@ -344,7 +347,6 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
-      setFilter( $state.current )
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info
       return
 
@@ -369,6 +371,7 @@ angular.module('ionBlankApp')
     
 
     init = ()->
+      setFilter( $state.current )
       $scope.config['app-bootstrap'] = false
       return
 

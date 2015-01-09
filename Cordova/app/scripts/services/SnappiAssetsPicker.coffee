@@ -108,13 +108,17 @@ angular
         preview: {}     # indexBy UUID
         thumbnail: {}   # indexBy UUID
       }
+      readyP: ()->
+        return 
+
       map: ()->
         return self._mapAssetsLibrary
 
       loadCameraRollP: (options)->
+
         defaults = {
           size: 'thumbnail'
-          # pluck: ['DateTimeOriginal', 'PixelXDimension', 'PixelYDimension', 'Orientation']
+          # pluck: ['favorite','mediaType', 'mediaSubTypes', 'hidden']  
           # fromDate: null
           # toDate: null
         }
@@ -128,8 +132,13 @@ angular
           if _.isEmpty self._mapAssetsLibrary
             self._mapAssetsLibrary = mapped 
           else 
-            throw "WARNING: we should be merging into _mapAssetsLibrary"
+            # NOTE: this will reflect deletions if we don't merge
             self._mapAssetsLibrary = mapped 
+          return mapped
+
+        .then (mapped)->
+          promise = self.loadFavoritesP(5000)
+          # don't wait for promise
           return mapped
 
         .then ( mapped )->
@@ -137,6 +146,7 @@ angular
           end = new Date().getTime()
           console.log "\n*** mapAssetsLibraryP() complete, elapsed=" + (end-start)/1000
           moments = self.loadMomentsFromCameraRoll( mapped ) # mapped -> moments
+          # camraRoll ready
 
           if false && "appConsole"
             retval = {
@@ -158,25 +168,43 @@ angular
           # appConsole.show( error)
           return $q.reject(error)
 
+      loadFavoritesP: (delay=10)->
+        # load 'preview' of favorites from cameraRoll, from mapAssetsLibrary()
+        favorites = _.filter self.map(), {favorite: true}
+        # check against imageCacheSvc
+        notCached = _.reduce( 
+          favorites
+          , (result, photo)->
+            result.push photo.UUID if !imageCacheSvc.isStashed( photo.UUID, 'preview')
+            return result
+          , []
+        )
+        console.log "\n\n\n*** preloading favorite previews for UUIDs: " 
+        # console.log notCached
+        return self.loadPhotosP(notCached, delay)
 
       loadMomentThumbnailsP: (delay=10)->
+        # preload thumbnail DataURLs for self moment previews
+        momentPreviewAssets = self.getMomentPreviewAssets() # do this async
+        # check against imageCacheSvc
+        notCached = _.reduce( 
+          momentPreviewAssets
+          , (result, photo)->
+            result.push photo.UUID if !imageCacheSvc.isStashed( photo.UUID, 'thumbnail')
+            return result
+          , []
+        )
+        console.log "\n\n\n*** preloading moment thumbnails for UUIDs: " 
+        # console.log notCached
+        return self.loadPhotosP(notCached, delay)
+
+
+      loadPhotosP: (photos, delay=10)->
         dfd = $q.defer()
         _fn = ()->
             start = new Date().getTime()
-            # preload thumbnail DataURLs for self moment previews
-            momentPreviewAssets = self.getMomentPreviewAssets() # do this async
-            # check against imageCacheSvc
-            notCached = _.reduce( 
-              momentPreviewAssets
-              , (result, photo)->
-                result.push photo.UUID if !imageCacheSvc.isStashed( photo.UUID, 'thumbnail')
-                return result
-              , []
-            )
-            console.log "\n\n\n*** preloading moment thumbnails for UUIDs: " 
-            console.log notCached
             return snappiMessengerPluginService.getDataURLForAssetsByChunks_P( 
-              notCached
+              photos
               , 'thumbnail'                          
               , self.patchPhoto
               , snappiMessengerPluginService.SERIES_DELAY_MS 
@@ -214,6 +242,10 @@ angular
             return photo.from != 'PARSE'
 
       # standard eachPhoto callback
+      patchPhotoFromMap: (photo)->
+        foundInMap = _.find self._mapAssetsLibrary, {UUID: photo.UUID}
+        _.extend photo, _.pick foundInMap, ['favorite','mediaType', 'mediaSubTypes', 'hidden']  
+
       patchPhoto: (photo)->
 
         # photo.topPick = true 
@@ -223,6 +255,8 @@ angular
         # cameraRoll.patchPhoto(): will just patch local attrs
         # ???: where do we want to patch photo.from???
         photo.date = self.getDateFromLocalTime(photo.dateTaken)
+        self.patchPhotoFromMap( photo )
+        # NOTE: originalWidth, originalHeight properties may not adjust for autoRotate
         if photo.from == 'PARSE'
           if photo.src == 'Base64 encoding failed'
             photo.src = ''
@@ -622,6 +656,7 @@ angular
           # console.log "about to call Messenger.mapAssetsLibrary(), Messenger.properties=" + JSON.stringify _.keys window.Messenger.prototype 
           window.Messenger.mapAssetsLibrary (mapped)->
               ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
+              # attributes: UUID, dateTaken, mediaType, MediaSubTypes, hidden, favorite, originalWidth, originalHeight
               # console.log "\n *** mapAssetsLibrary Got it!!! length=" + mapped.length
               return dfd.resolve ( mapped )
             , (error)->
@@ -799,6 +834,7 @@ angular
               # one callback for each element in assetIds
               end = new Date().getTime()
               ## expecting photo keys: [data,UUID,dateTaken,originalWidth,originalHeight]
+              ## NOTE: extended attrs from mapAssetsLibrary: UUID, dateTaken, mediaType, MediaSubTypes, hidden, favorite, originalWidth, originalHeight
               # photo.elapsed = (end-start)/1000
               photo.from = 'cameraRoll'
               photo.autoRotate = options.autoRotate
