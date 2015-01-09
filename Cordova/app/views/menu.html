@@ -62,9 +62,8 @@ ng-class="{'no-view-headers':config['no-view-headers']}">
         <ion-item class="item-divider">
           (for Editors only)
         </ion-item>
-        <ion-item class="item-icon-left item-assertive" nav-clear menu-close 
-        ui-sref="app.workorders.all"
-        ng-click="SideMenuSwitcher.leftSide.src='partials/workorders/left-side-menu'">
+        <ion-item class="item-icon-left item-assertive" nav-clear menu-close ui-sref="app.workorders.all"
+        ng-click="on.menu('editor')">
           <i class="icon ion-archive icon-assertive"></i>
           Workorders
         </ion-item>

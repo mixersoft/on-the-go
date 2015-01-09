@@ -352,7 +352,7 @@ angular
       url: "/workorders",
       views: {
         'menuContent': {
-          template: '<ion-view title="Workorders" hide-back-button="true" ><ion-nav-view  id="workorder" name="workorderContent" animation="slide-left-right"></ion-nav-view></ion-view>'
+          template: '<ion-view title="Workorders" xxxhide-back-button="true" ><ion-nav-view  id="workorder" name="workorderContent" animation="slide-left-right"></ion-nav-view></ion-view>'
         }
         'workorderPartials':
           templateUrl: "views/workorders/workorder-partials.html"  
@@ -512,6 +512,18 @@ angular
           'photos': false
           'todo' : false
           'picks' : false
+
+    }
+
+    $scope.on = {
+      menu: (type='owner')->
+        switch type
+          when 'owner'
+            SideMenuSwitcher.leftSide.src='partials/left-side-menu'
+          when 'editor'
+            SideMenuSwitcher.leftSide.src='partials/workorders/left-side-menu'
+        $ionicSideMenuDelegate.toggleLeft()
+        return
 
     }
 
