@@ -8,6 +8,8 @@
 
 #import "AppDelegate.h"
 #import "DrawerContainerViewController.h"
+#import "PhotosSource.h"
+
 @interface AppDelegate ()
 
 @end
@@ -23,6 +25,23 @@
     [[UINavigationBar appearance] setTranslucent:NO];
     [[UINavigationBar appearance] setBarTintColor:[UIColor colorWithRed:74/255.0 green:135/255.0 blue:238/255.0 alpha:1.0]];
     [[UINavigationBar appearance] setTintColor:[UIColor blackColor]];
+    
+    [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
+        [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+            switch (status) {
+                case PHAuthorizationStatusAuthorized: {
+                    [[PhotosSource sharedInstance] invalidate];
+                    break;
+                }
+                case PHAuthorizationStatusRestricted:
+                    break;
+                case PHAuthorizationStatusDenied:
+                    break;
+                default:
+                    break;
+            }
+        }];
+    }];
     
     return YES;
 }

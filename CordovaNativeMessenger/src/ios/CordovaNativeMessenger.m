@@ -36,7 +36,9 @@ NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeM
 -(void)mapAssetsLibrary:(CDVInvokedUrlCommand*) command {
     
     [self.commandDelegate runInBackground:^{
-        PHFetchResult *assets = [PHAsset fetchAssetsWithMediaType:PHAssetMediaTypeImage options:nil];
+        PHFetchOptions *opts = [PHFetchOptions new];
+        opts.includeAllBurstAssets = YES;
+        PHFetchResult *assets = [PHAsset fetchAssetsWithMediaType:PHAssetMediaTypeImage options:opts];
         
         NSMutableArray *resultArray = [NSMutableArray arrayWithCapacity:assets.count];
         

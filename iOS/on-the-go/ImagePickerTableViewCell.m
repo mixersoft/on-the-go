@@ -8,31 +8,86 @@
 
 #import "ImagePickerTableViewCell.h"
 #import "UIImageView+Additions.h"
+#import "ImagePickerFlowLayout.h"
+
+static CGFloat heigh = 80.0;
 
 @import Photos;
 
 @interface ImagePickerTableViewCell () <UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout>
-@property (weak, nonatomic) IBOutlet UICollectionView *collectionView;
 
+@property (weak, nonatomic) IBOutlet NSLayoutConstraint *descriptionLabelTopConstraint;
+@property (weak, nonatomic) IBOutlet UIView *descriptionView;
+@property (nonatomic, strong) NSMutableArray *collectionViews;
 @end
 
-@implementation ImagePickerTableViewCell
-
--(void)setAssets:(PHFetchResult *)assets {
-    _assets = assets;
-    [self.collectionView reloadData];
-    [self.collectionView.collectionViewLayout invalidateLayout];
-    [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0] atScrollPosition:UICollectionViewScrollPositionLeft animated:NO];
+@implementation ImagePickerTableViewCell {
 }
 
-- (void)awakeFromNib {
-    // Initialization code
+-(void)awakeFromNib {
+    self.collectionViews = [NSMutableArray new];
+}
+
+-(void)setOffsetToTableView:(CGFloat)offsetToTableView {
+    _offsetToTableView = offsetToTableView;
+    self.descriptionLabelTopConstraint.constant = offsetToTableView;
+    [self.descriptionView layoutIfNeeded];
+}
+
+-(void)setAssets:(NSArray *)assets {
+    UINib *nib = [UINib nibWithNibName:@"ImagePickerCell" bundle:nil];
+    _assets = assets;
+    
+    [assets enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        UICollectionViewFlowLayout *layout = [UICollectionViewFlowLayout new];
+        [layout setScrollDirection:UICollectionViewScrollDirectionHorizontal];
+        UICollectionView *v = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:layout];
+        [v setDelegate:(id<UICollectionViewDelegate>)self];
+        [v setDataSource:(id<UICollectionViewDataSource>)self];
+        [v setTag:idx];
+        [v setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [v registerNib:nib forCellWithReuseIdentifier:@"Cell"];
+        [v setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
+        [self.contentView addSubview:v];
+        [self.collectionViews addObject:v];
+    }];
+    
+    NSDictionary *metrics = @{@"height":@(heigh)};
+
+    NSMutableDictionary *views = [NSMutableDictionary new];
+    NSMutableString *verticalConstraint = [NSMutableString stringWithString:@"V:|"];
+    
+    [self.collectionViews enumerateObjectsUsingBlock:^(UICollectionView *obj, NSUInteger idx, BOOL *stop) {
+        [views setObject:obj forKey:[NSString stringWithFormat:@"view%d", obj.tag]];
+        NSString *horizontalConstraint = [NSString stringWithFormat:@"H:|-height-[view%d]-0-|", obj.tag];
+        [self.contentView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:horizontalConstraint options:0 metrics:metrics views:views]];
+        [verticalConstraint appendFormat:@"-0-[view%d(height)]", obj.tag];
+        
+        [obj reloadData];
+        [obj.collectionViewLayout invalidateLayout];
+        PHFetchResult *result = _assets[idx];
+        if (result.count) {
+            [obj scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:0 inSection:0] atScrollPosition:UICollectionViewScrollPositionNone animated:NO];
+        }
+    }];
+    
+    [verticalConstraint appendString:@"-0-|"];
+    [self.contentView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:verticalConstraint options:0 metrics:metrics views:views]];
 }
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated {
     [super setSelected:selected animated:animated];
 
     // Configure the view for the selected state
+}
+
+-(void)prepareForReuse {
+    [super prepareForReuse];
+    [self.collectionViews enumerateObjectsUsingBlock:^(UICollectionView *obj, NSUInteger idx, BOOL *stop) {
+        [self removeConstraints:obj.constraints];
+        [obj removeFromSuperview];
+    }];
+    [self.collectionViews removeAllObjects];
 }
 
 -(NSAttributedString *)headerDayStringForDate:(NSDate *)date {
@@ -51,16 +106,17 @@
     return str;
 }
 
-
 -(NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
-    return self.assets.count;
+    NSInteger idx = collectionView.tag;
+    return [self.assets[idx] count];
 }
 
 -(UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"Cell" forIndexPath:indexPath];
     UIImageView *imgView = (UIImageView *)[cell viewWithTag:1];
     [imgView setImage:nil];
-    PHAsset *asset = self.assets[indexPath.row];
+    NSInteger idx = collectionView.tag;
+    PHAsset *asset = _assets[idx][indexPath.row];
     CGFloat side = 80 * [UIScreen.mainScreen scale];
     [PHImageManager.defaultManager requestImageForAsset:asset targetSize:CGSizeMake(side, side) contentMode:PHImageContentModeAspectFit options:nil resultHandler:^(UIImage *result, NSDictionary *info) {
         [imgView setImage:result];
@@ -76,8 +132,7 @@
     
     UICollectionReusableView *header = [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:@"Header" forIndexPath:indexPath];
     UILabel *titleLabel = (UILabel *)[header viewWithTag:1];
-    PHAsset *asset = [self.assets firstObject];
-    titleLabel.attributedText = [self headerDayStringForDate:asset.creationDate];
+    titleLabel.attributedText = [self headerDayStringForDate:self.date];
     return header;
 }
 
@@ -90,7 +145,7 @@
 }
 
 -(CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-    return CGSizeMake(78, 78);
+    return CGSizeMake(heigh-2, heigh-2);
 }
 
 
