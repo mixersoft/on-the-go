@@ -397,13 +397,15 @@ angular
 
 
 .controller 'AppCtrl', [
-  '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', '$ionicPlatform', 
+  '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', 
+  '$ionicPlatform', 
   'SideMenuSwitcher', '$ionicSideMenuDelegate', '$ionicLoading'
   'otgData', 'otgParse', 'otgWorkorder', 'otgWorkorderSync', 'otgUploader'
   'snappiMessengerPluginService', 'i18n'
   'deviceReady', 'cameraRoll', 'appConsole'
   'TEST_DATA', 'imageCacheSvc'
-  ($scope, $rootScope, $ionicModal, $timeout, $q, $ionicPlatform, 
+  ($scope, $rootScope, $ionicModal, $timeout, $q, 
+    $ionicPlatform, 
     SideMenuSwitcher, $ionicSideMenuDelegate, $ionicLoading,
     otgData, otgParse, otgWorkorder, otgWorkorderSync, otgUploader
     snappiMessengerPluginService, i18n
@@ -501,6 +503,7 @@ angular
       sharing:  
         'use-720p-sharing': false
       'dont-show-again':
+        'test-drive': false
         'top-picks':
           'top-picks': false
           'favorite': false
@@ -623,6 +626,8 @@ angular
       TEST_DATA.addSomeShared( cameraRoll.photos)
       # add item.height for collection-repeat
 
+
+
       _.each cameraRoll.photos, (e,i,l)->
         e.originalHeight = if /^[EF]/.test(e.UUID) then 400 else 240
         e.originalWidth = 320
@@ -630,6 +635,34 @@ angular
         e.src = TEST_DATA.lorempixel.getSrc(e.UUID, e.originalWidth, e.originalHeight, TEST_DATA)
         return
 
+      # refactor to AppCtrl or service
+
+      _readCookie = `function (k,r){return(r=RegExp('(^|; )'+encodeURIComponent(k)+'=([^;]*)').exec(document.cookie))?r[2]:null;}`
+      
+      _showTestDrive = ()->
+         $ionicModal.fromTemplateUrl('partials/modal/test-drive', {
+            scope: $scope,
+            animation: 'slide-in-down'
+          }).then( (modal)-> 
+            $scope.modal.testdrive = self = modal
+            self.show()
+            window.testdrive = $scope.modal.testdrive
+
+            self.scope.isModal = {
+              type: 'testdrive'  # [terms-of-service | privacy]
+              hide: ()->
+                self.hide()
+                self.remove()
+              dontShowAgain: ()->
+                $scope.config['dont-show-again']['test-drive'] = true
+                document.cookie = 'dontShowTestDrive=true; expires=Wed, 01 Jan 2020 12:00:00 GMT; path=/';
+                self.scope.isModal.hide()
+            }
+          ) 
+
+      # check cookie for value
+      $scope.config['dont-show-again']['test-drive'] = _readCookie('dontShowTestDrive')=='true'
+      _showTestDrive() if !$scope.config['dont-show-again']['test-drive']
       return
 
     _LOAD_MODALS = ()->  
@@ -640,7 +673,6 @@ angular
         legal: null
       }
 
-          # refactor to AppCtrl or service
       $ionicModal.fromTemplateUrl('views/settings-legal.html', {
           scope: $scope,
           animation: 'slide-in-up'
@@ -686,6 +718,7 @@ angular
             , 3000  
 
         if !deviceReady.isWebView()
+          # browser
           _LOAD_BROWSER_TOOLS() 
           $scope.orders = TEST_DATA.orders 
         
@@ -699,6 +732,7 @@ angular
             console.log "NSUserDefaults=" + JSON.stringify config
             _.extend $scope.config, config
           return
+
 
         return  # end $ionicPlatform.ready
 
