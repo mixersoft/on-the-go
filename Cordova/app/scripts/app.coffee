@@ -17,6 +17,7 @@ angular
   'onTheGo.localStorage',
   'ionic.contrib.ui.cards',
   'onTheGo.i18n'
+  'angular-datepicker'
 ])
 .config ($ionicConfigProvider)->
   return if !$ionicConfigProvider.views

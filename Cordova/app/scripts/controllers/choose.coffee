@@ -10,7 +10,7 @@
 angular.module('ionBlankApp')
 #
 .factory 'otgWorkorder', [ 
-  'cameraRoll', 'otgData'
+  'cameraRoll', 'otgData', 
   (cameraRoll, otgData)->
     # convert to a service, one instance for each order, including 'new'
     _moments = cameraRoll.moments
@@ -173,20 +173,32 @@ angular.module('ionBlankApp')
 .controller 'ChooseCtrl', [
   '$scope', '$rootScope', '$state', '$stateParams', '$timeout', '$ionicModal', 'otgData', 'otgWorkorder', 'deviceReady', 'cameraRoll', 'snappiMessengerPluginService', 'TEST_DATA',
   ($scope, $rootScope, $state, $stateParams, $timeout, $ionicModal, otgData, otgWorkorder, deviceReady, cameraRoll, snappiMessengerPluginService,TEST_DATA) ->
-    $scope.label = {
-      title: "Choose Your Days"
-      header_card: 
-        'app.choose.calendar': 
-          header: "When will you be On-The-Go?"
-          body: "Planning a trip? Choose the days you hope to re-live and go capture some beautiful moments. We'll take care of the rest."
-          footer: ""
-        'app.choose.camera-roll':
-          header: "When were you On-The-Go?"
-          body: "Back home already? Choose the days you want to re-live, and we'll find the beautiful moments in your Camera Roll"
-          footer: ""  
-    }
 
     $scope.otgWorkorder = otgWorkorder
+    
+
+    $scope.watch = {
+      datePickerOptions: 
+        format: 'd mm, yyyy'
+        formatSubmit: 'yyyy-mm-dd'
+        hiddenName: true
+        firstDay: 1
+        editable: true
+        # min: null
+        # max: null
+
+      dateRange:
+        from: null
+        to: null
+
+    }
+
+    $scope.$watch 'dateRange', (newVal, oldVal)->
+        return if _.isEmpty newVal
+        # clear ?
+        otgWorkorder.on.selectByCalendar(newVal.from, newVal.to)
+        return 
+      , true
 
     $rootScope.$on '$stateChangeStart', (event, toState, toParams, fromState, fromParams)->
       if toState.name.indexOf('app.choose') == 0 
@@ -215,6 +227,22 @@ angular.module('ionBlankApp')
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
+      # initialize calendar/datepicker
+      WEEKS_TO_SHOW = 5
+      _getDatePickerRange = (numWeeks = 5)->
+        _getMon = (today)->
+          day = today.getDay()
+          diff = today.getDate() - day + ( day == 0 ? -6 : 1 )
+          return new Date( today.setDate(diff) )
+        datePickerRange = {
+          min: _getMon( new Date() )
+        }
+        datePickerRange.max = new Date(  )
+        datePickerRange.max.setDate( datePickerRange.min.getDate() + (7 * numWeeks)  )
+        return datePickerRange
+
+      _.extend $scope.watch.datePickerOptions, _getDatePickerRange(WEEKS_TO_SHOW)
+
       # cached view becomes active 
       return cameraRoll.loadMomentThumbnailsP() 
 
