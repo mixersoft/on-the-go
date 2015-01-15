@@ -782,7 +782,7 @@ var ImgCache = {
                 if (error.source) { ImgCache.overridables.log('Download error source: ' + error.source, LOG_LEVEL_ERROR); }
                 if (error.target) { ImgCache.overridables.log('Download error target: ' + error.target, LOG_LEVEL_ERROR); }
                 ImgCache.overridables.log('Download error code: ' + error.code, LOG_LEVEL_ERROR);
-                if (error_callback) { error_callback(); }
+                if (error_callback) { error_callback(filePath); }
             }
             
         )
