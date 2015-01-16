@@ -242,7 +242,25 @@ angular.module('ionBlankApp')
         else if selected >= dateRange.from
           dateRange.to = selected
         return dateRange
+      activate : ()->
+        options = _datepicker.getDatePickerRange(_datepicker.WEEKS_TO_SHOW)
+        _.extend $scope.watch.datePickerOptions, options
+        input = angular.element(document.getElementById('datepicker-input'))
+        input.triggerHandler('focus') if input.length
+        #_datepicker.instance?.open().trigger( 'start' ).trigger( 'render' )
+        # _datepicker.instance?.start()
+
+        ## TODO: we need to restart listeners on the view!!
+        ## also apply to on.clearSelected()
+        return
+
+      deactivate : ()->
+        _datepicker.instance?.close(null, 'force')
+        return
+
     }
+
+
 
     $scope.watch = {
       datePickerOptions: _datepicker.datePickerOptions
@@ -292,29 +310,20 @@ angular.module('ionBlankApp')
       window.debug.picker = _datepicker.instance
       return
 
+
     $scope.$on '$ionicView.beforeEnter', ()->
-      if $state.includes('app.choose.calendar')
-        # initialize calendar/datepicker
-        options = _datepicker.getDatePickerRange(_datepicker.WEEKS_TO_SHOW)
-        _.extend $scope.watch.datePickerOptions, options
-        input = angular.element(document.getElementById('datepicker-input'))
-        input.triggerHandler('focus') if input.length
-        #_datepicker.instance?.open().trigger( 'start' ).trigger( 'render' )
-        # _datepicker.instance?.start()
-
-        ## TODO: we need to restart listeners on the view!!
-        ## also apply to on.clearSelected()
+      switch $state.current.name
+        when 'app.choose.calendar'
+          # initialize calendar/datepicker
+          return _datepicker.activate()
+        when 'app.choose.camera-roll'  
+          return cameraRoll.loadMomentThumbnailsP() 
 
 
-        return
-      if $state.includes('app.choose.camera-roll')
-        # cached view becomes active 
-        return cameraRoll.loadMomentThumbnailsP() 
-
-    $scope.$on '$ionicView.leave', ()->
+    $scope.$on '$ionicView.beforeLeave', ()->
       # cached view becomes in-active 
-      _datepicker.instance?.close(null, 'force')
-      return 
+      # _datepicker.deactivate() # deactivate in on.calendarDeselected()
+
 
     init = ()->
       return
@@ -358,6 +367,14 @@ angular.module('ionBlankApp')
         else 
           otgWorkorder.on.clearSelected(ev)
         return
+      calendarSelected : (value)->
+        _datepicker.activate()
+        return
+      calendarDeselected : (value)->
+        _datepicker.deactivate()
+        return
+
+
     }
 
 

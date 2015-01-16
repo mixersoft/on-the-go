@@ -18,7 +18,9 @@
     <!-- ion-tabs: calendar -->
     <ion-tab title="Calendar" 
     icon="ion-calendar" 
-    ui-sref='app.choose.calendar'>
+    ui-sref='app.choose.calendar'
+    on-select="on.calendarSelected()"
+    on-deselect="on.calendarDeselected()">
       <ion-nav-view name="chooseCalendar" animation='slide-left-right'></ion-nav-view>
     </ion-tab> 
 
