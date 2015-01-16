@@ -34,7 +34,7 @@
   <div class="bar bar-footer bar-royal">
     <button class="button button-outline button-light" 
       ng-class="{disabled: !otgWorkorder.isSelected()}"
-      ng-click="otgWorkorder.on.clearSelected($event)">
+      ng-click="on.clearSelected($event)">
       Reset <i class="icon ion-close-circled"></i>
     </button>
     <div ng-show="$state.current.name=='app.choose.calendar'">
