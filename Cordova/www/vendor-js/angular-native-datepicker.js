@@ -73,7 +73,11 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
             start: function() {
 
                 // If it’s already started, do nothing.
-                if ( STATE && STATE.start ) return P
+                if ( STATE && STATE.start ) {
+                    // // *** restart problem
+                    // prepareElementRoot()
+                    return P
+                }
 
 
                 // Update the picker states.
@@ -204,7 +208,9 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
             open: function( dontGiveFocus ) {
 
                 // If it’s already open, do nothing.
-                if ( STATE.open ) return P
+                if ( STATE.open ) {
+                    return P
+                }
 
 
                 // Add the “active” class.
@@ -298,7 +304,9 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
             /**
              * Close the picker
              */
-            close: function( giveFocus ) {
+            close: function( giveFocus, force ) {
+                // *** only close when we leave the view
+                if (!force) return P
 
                 // If we need to give focus, do it before changing states.
                 if ( giveFocus ) {
@@ -376,10 +384,15 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
                         }
 
                         // Then, check to update the element value and broadcast a change.
-                        if ( thingItem == 'select' || thingItem == 'clear' ) {
-                            $ELEMENT[0].value = thingItem == 'clear' ?
-                                '' : P.get( thingItem, SETTINGS.format );
+                        if ( thingItem == 'select' ) {
+                            $ELEMENT[0].value = P.get( thingItem, SETTINGS.format );
+                            SETTINGS.onBeforeSet && SETTINGS.onBeforeSet(thingObject)
 							$ELEMENT.triggerHandler('change');
+                        } else // Then, check to update the element value and broadcast a change.
+                        if ( thingItem == 'clear' ) {
+                            $ELEMENT[0].value =  '';
+                            SETTINGS.onBeforeSet && SETTINGS.onBeforeSet('clear')
+                            $ELEMENT.triggerHandler('change');
                         }
                     }
 
@@ -632,7 +645,7 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
 		
         function attachLiveEvents() {
 			// If there’s a click on an actionable element, carry out the actions.
-			angular.element(P.$root[0].querySelectorAll('[data-pick], [data-nav], [data-clear]')).on('click', function() {
+			angular.element(P.$root[0].querySelectorAll('[data-pick], [data-nav], [data-clear]')).on('click', function(ev) {
 				var $target = angular.element( this ),
 					targetDisabled = $target.hasClass( CLASSES.navDisabled ) || $target.hasClass( CLASSES.disabled ),
 
@@ -654,19 +667,31 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
 
 				// If something is picked, set `select` then close with focus.
 				else if ( PickerConstructor._.isInteger( parseInt($target.attr('data-pick')) ) && !targetDisabled ) {
-                    P.set( 'select', parseInt($target.attr('data-pick')) ).close( true )
-					attachLiveEvents();
+                    if (ev.currentTarget.className == 'picker__button--today') {
+                        P.clear()
+                        P.component.set('select', null).set( 'highlight', P.component.item.now )
+                        P.render(true)
+                        attachLiveEvents();
+                    // } else if (ev.currentTarget.className == 'picker__button--clear') {
+                    } else {
+                        P.set( 'select', parseInt($target.attr('data-pick')) )
+                        P.close( true )
+    					attachLiveEvents();
+                    }
 				}
 
 				// If a “clear” button is pressed, empty the values and close with focus.
 				else if ( $target.attr('data-clear') ) {
-					P.clear().close( true )
+					P.clear()
+                    P.close( true )
 					attachLiveEvents();
 				}
 				
 				
 			});
 		}
+
+        window.attach = attachLiveEvents
 		
 		attachLiveEvents();
 		
@@ -730,6 +755,7 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
 
         // And then finally open the picker.
         P.open()
+        // P.start()
     }
 
 
@@ -2103,8 +2129,9 @@ DatePicker.prototype.nodes = function( isOpen ) {
                                 // Convert the time date from a relative date to a target date.
                                 targetDate = calendar.create([ viewsetObject.year, viewsetObject.month, targetDate + ( settings.firstDay ? 1 : 0 ) ])
 
-                                var isSelected = selectedObject && selectedObject.pick == targetDate.pick,
-                                    isHighlighted = highlightedObject && highlightedObject.pick == targetDate.pick,
+                                var isSelected = (settings.isSelected && settings.isSelected(targetDate)) || selectedObject && selectedObject.pick == targetDate.pick,
+                                    isHighlighted =  (settings.isSelected && settings.isSelected(targetDate)) || highlightedObject && highlightedObject.pick == targetDate.pick,
+                                    // isHighlighted =  (settings.isSelected && settings.isSelected(targetDate)), 
                                     isDisabled = disabledCollection && calendar.disabled( targetDate ) || targetDate.pick < minLimitObject.pick || targetDate.pick > maxLimitObject.pick
 
                                 return [
@@ -2243,7 +2270,7 @@ Picker.extend( 'pickadate', DatePicker )
 /*  *******************************************************
  *  directives.js
  */
- 
+
 // mostly taken from http://www.codinginsight.com/angularjs-and-pickadate/
 
 angular.module('angular-datepicker', [])
@@ -2273,6 +2300,7 @@ angular.module('angular-datepicker', [])
                         }
                         if (!scope.pickADate || typeof scope.pickADate === 'string')
                             scope.pickADate = new Date(0);
+                        if (!select) return
                         scope.pickADate.setYear(select.obj.getYear() + 1900); // hello Y2K...
                         // It took me half a day to figure out that javascript Date object's getYear
                         // function returns the years since 1900. Ironically setYear() accepts the actual year A.D.
@@ -2319,73 +2347,4 @@ angular.module('angular-datepicker', [])
             }
         };
     })
-    .directive('pickATime', function () {
-        return {
-            restrict: "A",
-            scope: {
-                pickATime: '=',
-                pickATimeOptions: '='
-            },
-            link: function (scope, element, attrs) {
-                var options = scope.pickATimeOptions || {};
-
-                var userOnSet = options.onSet;
-                function onSet (e) {
-                    if (typeof userOnSet === 'function') {
-                        userOnSet.apply(this, arguments);
-                    }
-
-                    if (scope.$$phase || scope.$root.$$phase) // we are coming from $watch or link setup
-                        return;
-                    var select = element.pickatime('picker').get('select'); // selected date
-                    scope.$apply(function () {
-                        if (e.hasOwnProperty('clear')) {
-                            scope.pickATime = null;
-                            return;
-                        }
-                        if (!scope.pickATime || typeof scope.pickATime === 'string')
-                            scope.pickATime = new Date();
-
-                        scope.pickATime.setHours(select.hour);
-                        scope.pickATime.setMinutes(select.mins);
-                        scope.pickATime.setSeconds(0);
-                        scope.pickATime.setMilliseconds(0);
-                    });
-                }
-
-                var userOnClose = options.onClose;
-                function onClose (e) {
-                    if (typeof userOnClose === 'function') {
-                        userOnClose.apply(this, arguments);
-                    }
-
-                    if (typeof cordova ==='undefined' || !cordova.plugins || !cordova.plugins.Keyboard) {
-                        return;
-                    }
-                    
-                    var keyboardShowCallback = function () {
-                        cordova.plugins.Keyboard.close();
-                        window.removeEventListener('native.keyboardshow', this);
-                    };
-
-                    window.addEventListener('native.keyboardshow', keyboardShowCallback);
-                    
-                    setTimeout(function () {
-                        window.removeEventListener('native.keyboardshow', keyboardShowCallback);
-                    }, 500);
-                }
-
-                element.pickatime(angular.extend(options, {
-                    onSet: onSet,
-                    onClose: onClose,
-                    container: document.body
-                }));
-
-                setTimeout(function() {
-                    if (scope.pickATime) {
-                        element.pickatime('picker').set('select', scope.pickATime);
-                    }
-                }, 1000);
-            }
-        };
-    }); 
+    

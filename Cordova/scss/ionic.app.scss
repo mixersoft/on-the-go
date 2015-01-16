@@ -437,9 +437,36 @@ otg-moment-date-range {
 }
 
 #choose-tab-calendar {
-  .calendar-placeholder {
-    width:100%;
+  #datepicker-wrap {
+    position:relative; 
+    display: block;
+    .picker {
+      position: relative;
+      .picker__holder {
+        position: relative;
+        background: none;
+        .picker__frame {
+          position: relative;
+          margin-bottom: 0;
+          .picker__wrap {
+            .picker__box {
+              border-radius: 8px;
+              border-color: $positive;
+              box-shadow: none;
+              -webkit-box-shadow: none;
+              .picker__day--highlighted {
+                /* selected */
+              }
+              .picker__day--selected {
+
+              }
+            }
+          }
+        }
+      }
+    }
   }
+
 
 }
 

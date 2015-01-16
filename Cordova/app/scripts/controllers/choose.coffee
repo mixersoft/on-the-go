@@ -15,7 +15,7 @@ angular.module('ionBlankApp')
     # convert to a service, one instance for each order, including 'new'
     _moments = cameraRoll.moments
     _data = []
-    _selected = _reset = {
+    _selected = _.clone _reset = {
       selectedPhotos: 0
       contiguousPhotos: 0
       dateRange: 
@@ -137,6 +137,8 @@ angular.module('ionBlankApp')
 
       on: # methods available to directives
         selectByCalendar: (from, to)->
+          to = from if !to
+          _data = []
           _data.push({key:from, value: []})
           _data.push({key:to, value: []})
           return self.getDateRange()
@@ -176,26 +178,85 @@ angular.module('ionBlankApp')
 
     $scope.otgWorkorder = otgWorkorder
     
-
-    $scope.watch = {
+    _datepicker = {
+      instance: null # set in '$ionicView.loaded'
+      WEEKS_TO_SHOW : 5
       datePickerOptions: 
-        format: 'd mm, yyyy'
+        # autofocus: true
+        format: 'd mmm, yyyy'
         formatSubmit: 'yyyy-mm-dd'
         hiddenName: true
         firstDay: 1
         editable: true
+        container: null
         # min: null
         # max: null
+        onBeforeSet: (newVal)->
+          if newVal?.select
+            selected = _datepicker._getAsLocalTime(new Date(newVal.select), true)[0...10]
+          else 
+            selected = newVal
+          # selected = _datepicker.instance.get('select', $scope.watch.datePickerOptions.formatSubmit)
+          dateRange = _datepicker.dateRange(selected)
+          console.log dateRange
+          return
+        isSelected: (targetDate)->
+          date = _datepicker._getAsLocalTime(targetDate.obj, true)[0...10]
+          selectedRange = _datepicker.dateRange()
+          return true if selectedRange.from == date
+          return false if !selectedRange.to
+          isBetween = selectedRange.from <= date <= selectedRange.to
+          return isBetween
+      _getAsLocalTime : (d, asJSON=true)->
+        d = new Date() if !d    # now
+        throw "_getAsLocalTimeJSON: expecting a Date param" if !_.isDate(d)
+        d.setHours(d.getHours() - d.getTimezoneOffset() / 60)
+        return d.toJSON() if asJSON
+        return d    
+      getMon : (today)->
+          day = today.getDay()
+          diff = today.getDate() - day 
+          diff +=  if day == 0 then -6 else 1 
+          return new Date( today.setDate(diff) )
+      getDatePickerRange : (numWeeks = 5)->
+        datePickerRange = {
+          min: _datepicker.getMon( new Date() )
+        }
+        datePickerRange.max = new Date(  )
+        datePickerRange.max.setDate( datePickerRange.min.getDate() + (7 * numWeeks)  )
+        return datePickerRange
+      dateRange : (selected)->
+        dateRange = $scope.watch.dateRange
+        return dateRange if !selected
+        if selected == 'clear'
+          dateRange.from = null
+          dateRange.to = null
+          # calendar = _datepicker.instance.component
+        else if !dateRange.from 
+          dateRange.from = selected
+          # dateRange.to = null
+        else if selected < dateRange.from
+          dateRange.to = dateRange.from if !dateRange.to
+          dateRange.from = selected
+          
+        else if selected >= dateRange.from
+          dateRange.to = selected
+        return dateRange
+    }
 
+    $scope.watch = {
+      datePickerOptions: _datepicker.datePickerOptions
       dateRange:
         from: null
         to: null
+        selected: null  # last selected as Date()
 
     }
+    debug.dateRange = $scope.watch.dateRange
 
-    $scope.$watch 'dateRange', (newVal, oldVal)->
-        return if _.isEmpty newVal
-        # clear ?
+    $scope.$watch 'watch.dateRange', (newVal, oldVal)->
+        if !newVal.from
+          return otgWorkorder.on.clearSelected()
         otgWorkorder.on.selectByCalendar(newVal.from, newVal.to)
         return 
       , true
@@ -207,9 +268,8 @@ angular.module('ionBlankApp')
         else
           console.log "state.transitionTo: " + fromState.name + ' > ' + toState.name
           switch toState.name
-            when 'app.choose.calendar', 'app.choose.TEST'
-              otgWorkorder.on.clearSelected()
-              return otgWorkorder.on.selectByCalendar("2014-09-20", "2014-09-24")
+            when 'app.choose.calendar'
+              return otgWorkorder.on.clearSelected()
             when 'app.choose.camera-roll'
               # return
               return otgWorkorder.on.clearSelected()
@@ -224,30 +284,36 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
+      _datepicker.instance = angular.element(document.getElementById('datepicker-input')).data('pickadate')
+      container = document.getElementById('datepicker-wrap')
+      if container
+        angular.element(container).append( _datepicker.instance.$root )
+        $scope.watch.datePickerOptions.container  = container
+      window.debug.picker = _datepicker.instance
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
-      # initialize calendar/datepicker
-      WEEKS_TO_SHOW = 5
-      _getDatePickerRange = (numWeeks = 5)->
-        _getMon = (today)->
-          day = today.getDay()
-          diff = today.getDate() - day + ( day == 0 ? -6 : 1 )
-          return new Date( today.setDate(diff) )
-        datePickerRange = {
-          min: _getMon( new Date() )
-        }
-        datePickerRange.max = new Date(  )
-        datePickerRange.max.setDate( datePickerRange.min.getDate() + (7 * numWeeks)  )
-        return datePickerRange
+      if $state.includes('app.choose.calendar')
+        # initialize calendar/datepicker
+        options = _datepicker.getDatePickerRange(_datepicker.WEEKS_TO_SHOW)
+        _.extend $scope.watch.datePickerOptions, options
+        input = angular.element(document.getElementById('datepicker-input'))
+        input.triggerHandler('focus') if input.length
+        #_datepicker.instance?.open().trigger( 'start' ).trigger( 'render' )
+        # _datepicker.instance?.start()
 
-      _.extend $scope.watch.datePickerOptions, _getDatePickerRange(WEEKS_TO_SHOW)
+        ## TODO: we need to restart listeners on the view!!
+        ## also apply to on.clearSelected()
 
-      # cached view becomes active 
-      return cameraRoll.loadMomentThumbnailsP() 
+
+        return
+      if $state.includes('app.choose.camera-roll')
+        # cached view becomes active 
+        return cameraRoll.loadMomentThumbnailsP() 
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 
+      _datepicker.instance?.close(null, 'force')
       return 
 
     init = ()->
@@ -286,6 +352,12 @@ angular.module('ionBlankApp')
             , 500
           return 
         return $scope.config['dont-show-again']['choose']?[current]
+      clearSelected : (ev)->
+        if $state.includes('app.choose.calendar')
+           angular.element(debug.picker.$root[0].querySelectorAll('[data-clear]')).triggerHandler('click')
+        else 
+          otgWorkorder.on.clearSelected(ev)
+        return
     }
 
 
