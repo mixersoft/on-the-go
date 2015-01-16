@@ -54,6 +54,7 @@
 -(void)setContentViewController:(UIViewController *)contentViewController {
     [self willChangeValueForKey:@"contentViewController"];
     _contentViewController = contentViewController;
+    [_contentViewController setDrawerContainerViewController:self];
     
     if (_contentViewController) {
         
@@ -65,10 +66,11 @@
             [self.view addSubview: _nav.view];
             [_nav didMoveToParentViewController:self];
         } else {
+            [_nav.viewControllers enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+                [obj setDrawerContainerViewController:nil];
+            }];
             [_nav setViewControllers:@[_contentViewController] animated:NO];
         }
-        
-        [_contentViewController setDrawerContainerViewController:self];
         
         UIBarButtonItem *item = nil;
         UIImage *img = [_overlayController imageForOverlayBarButton];

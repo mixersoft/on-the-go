@@ -12,6 +12,8 @@ static NSString *parseApplicationID = @"Y9kGkaX2cbq6sh8NVZnslB9ZpwF4TbAEfFti7FQX
 static NSString *parseRESTAPIKey = @"q9OPhuoIMLfIzvGoBLpHqb6mdJnMMdGGCGZgKfqB";
 static NSString *parseMasterKey = @"fsMgAw0ozmaZj5Kr9Tz8nuhPwNI1ZTLAsKeoojlP";
 
+static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIdentifier";
+
 @interface PhotosUploader () <NSURLSessionTaskDelegate, NSURLSessionDelegate, NSURLSessionDataDelegate>
 
 @end
@@ -46,8 +48,17 @@ static NSString *parseMasterKey = @"fsMgAw0ozmaZj5Kr9Tz8nuhPwNI1ZTLAsKeoojlP";
 
 +(PhotosUploader *)uploaderWithSessionConfigurationIdentifier:(NSString *)identifier {
     if (!identifier.length) return nil;
-    PhotosUploader *u = self.instances[@"identifier"] ?: [[self alloc] initInternalWithIdentifier:identifier];
+    PhotosUploader *u = self.instances[identifier];
+    if (!u) {
+        u = [[self alloc] initInternalWithIdentifier:identifier];
+        self.instances[identifier] = u;
+    }
+    
     return u;
+}
+
++(PhotosUploader *)sharedInstance {
+    return [self uploaderWithSessionConfigurationIdentifier:sessionIdentifierKey];
 }
 
 - (NSString *) applicationDocumentsDirectory
@@ -169,7 +180,7 @@ didCompleteWithError:(NSError *)error {
     }
     UILocalNotification* n1 = [[UILocalNotification alloc] init];
     n1.fireDate = [[NSDate date] dateByAddingTimeInterval:1];
-    n1.alertBody = @"Image Uploaded";
+    n1.alertBody = error ? @"Image Uploaded With Error" : @"Image Uploaded";
     [[UIApplication sharedApplication] scheduleLocalNotification: n1];
 }
 
@@ -246,6 +257,14 @@ didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
  willCacheResponse:(NSCachedURLResponse *)proposedResponse
  completionHandler:(void (^)(NSCachedURLResponse *cachedResponse))completionHandler {
     
+}
+
+-(void)URLSessionDidFinishEventsForBackgroundURLSession:(NSURLSession *)session {
+    for (id<PhotosUploaderDelegate>delegate in _delegates) {
+        if ([delegate respondsToSelector:@selector(photoUploaderFinishedProcessingBackgroundEvents:)]) {
+            [delegate photoUploaderFinishedProcessingBackgroundEvents:self];
+        }
+    }
 }
 
 @end

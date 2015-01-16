@@ -23,4 +23,6 @@
 
 -(NSArray *)assetsForIndexPath:(NSIndexPath *)path;
 
+-(void)handleChange:(PHChange *)change;
+
 @end
