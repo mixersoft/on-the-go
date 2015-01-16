@@ -35,11 +35,11 @@
                 case PHAuthorizationStatusAuthorized: {
                     [[PHPhotoLibrary sharedPhotoLibrary] registerChangeObserver:(id<PHPhotoLibraryChangeObserver>)self];
                     [CordovaNativeMessenger addResponseBlock:^(NSString *command, id data) {
-                        if ([command isEqualToString:kLastImageAssetIDCommandValue]) {
-                            
-                        }
+//                        if ([command isEqualToString:kLastImageAssetIDCommandValue]) {
+//                            
+//                        }
                     }];
-                    [CordovaNativeMessenger sendMessage:nil WithCommand:kLastImageAssetIDCommandValue];
+                    //[CordovaNativeMessenger sendMessage:nil WithCommand:kLastImageAssetIDCommandValue];
                     break;
                 }
                 case PHAuthorizationStatusRestricted:

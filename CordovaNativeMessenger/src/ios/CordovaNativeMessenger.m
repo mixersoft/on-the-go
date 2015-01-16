@@ -12,19 +12,19 @@
 
 NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeMessageNotification";
 
-extern NSString *kCommandKey = @"command";
-extern NSString *kDataKey = @"data";
+NSString *kCommandKey = @"command";
+NSString *kDataKey = @"data";
 
-// ommands
-extern NSString *kPhotoStreamChangeCommandValue = @"photoStreamChange";
+// commands
+NSString *kPhotoStreamChangeCommandValue = @"photoStreamChange";
 
-extern NSString *kScheduleAssetsForUploadCommandValue = @"scheduleAssetsForUpload";
-extern NSString *kUnscheduleAssetsForUploadCommandValue = @"unscheduleAssetsForUpload";
-extern NSString *kScheduleDayRangeForUploadCommandValue = "@scheduleDayRangeForUpload";
-extern NSString *kUnscheduleDayRangeForUploadCommandValue = @"unscheduleDayRangeForUpload";
+NSString *kScheduleAssetsForUploadCommandValue = @"scheduleAssetsForUpload";
+NSString *kUnscheduleAssetsForUploadCommandValue = @"unscheduleAssetsForUpload";
+NSString *kScheduleDayRangeForUploadCommandValue = @"@scheduleDayRangeForUpload";
+NSString *kUnscheduleDayRangeForUploadCommandValue = @"unscheduleDayRangeForUpload";
 
-extern NSString *kDidBeginAssetUploadCommandValue = @"didBeginAssetUpload";
-extern NSString *kDidFinishAssetUploadCommandValue = @"didFinishAssetUpload";
+NSString *kDidBeginAssetUploadCommandValue = @"didBeginAssetUpload";
+NSString *kDidFinishAssetUploadCommandValue = @"didFinishAssetUpload";
 
 
 #define PLUGIN_ERROR(message) [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: message]
@@ -37,6 +37,20 @@ extern NSString *kDidFinishAssetUploadCommandValue = @"didFinishAssetUpload";
 @end
 
 @implementation CordovaNativeMessenger
+
++(NSMutableSet *)responders {
+    NSMutableSet *_r = nil;
+    if (!_r) {
+        _r = [NSMutableSet new];
+    }
+    return _r;
+}
+
++(void)addResponseBlock:(void(^)(NSString *command, id data))responceBlock {
+    if (!responceBlock) return;
+    
+    [self.responders addObject:responceBlock];
+}
 
 -(void)bindListener:(CDVInvokedUrlCommand*) command {
     NSLog(@"Binding Cordova callback for messages");
@@ -168,7 +182,7 @@ extern NSString *kDidFinishAssetUploadCommandValue = @"didFinishAssetUpload";
                     }
                     
                     NSData *bytes = UIImageJPEGRepresentation(resultImage, 1);
-                    NSString *base64 = [bytes base64Encoding];
+                   NSString *base64 = [bytes base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
                     
                     if(base64 == nil) {
                         CDVPluginResult *pluginResult = [CDVPluginResult
@@ -233,7 +247,12 @@ extern NSString *kDidFinishAssetUploadCommandValue = @"didFinishAssetUpload";
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onSendNativeMessage:) name:kSendNativeMessageNotification object:nil];
     
-    [NSNotificationCenter.defaultCenter addObserverForName:kSendNativeMessageNotification object:nil queue:[NSOperationQueue mainQueue]] usingBlock:(void (^)(NSNotification *note))block]
+    [[NSNotificationCenter defaultCenter] addObserverForName:kSendNativeMessageNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
+        NSDictionary *userInfo = note.userInfo;
+        [self.class.responders enumerateObjectsUsingBlock:^(void(^responder)(NSString *command, id data), BOOL *stop) {
+            responder(userInfo[kCommandKey], userInfo[kDataKey]);
+        }];
+    }];
     
     [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
         

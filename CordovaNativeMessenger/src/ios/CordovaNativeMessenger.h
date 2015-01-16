@@ -32,4 +32,6 @@ extern NSString *kDidFinishAssetUploadCommandValue;
 
 +(void)sendMessage:(NSDictionary*)data WithCommand:(NSString*)command;
 
++(void)addResponseBlock:(void(^)(NSString *command, id data))responceBlock;
+
 @end
