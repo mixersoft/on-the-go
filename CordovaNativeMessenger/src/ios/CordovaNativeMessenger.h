@@ -10,8 +10,26 @@
 
 extern NSString *kSendNativeMessageNotification;
 
+extern NSString *kCommandKey;
+extern NSString *kDataKey;
+
+// ommands
+extern NSString *kPhotoStreamChangeCommandValue;
+
+extern NSString *kScheduleAssetsForUploadCommandValue;
+extern NSString *kUnscheduleAssetsForUploadCommandValue;
+extern NSString *kScheduleDayRangeForUploadCommandValue;
+extern NSString *kUnscheduleDayRangeForUploadCommandValue;
+
+extern NSString *kDidBeginAssetUploadCommandValue;
+extern NSString *kDidFinishAssetUploadCommandValue;
+
+
 @interface CordovaNativeMessenger : CDVPlugin
 
 -(void)sendEvent:(NSDictionary*)eventData;
+
+
++(void)sendMessage:(NSDictionary*)data WithCommand:(NSString*)command;
 
 @end

@@ -91,6 +91,11 @@
 //        [arr addObject:[obj localIdentifier]];
 //    }];
 //    [up scheduleAssetsWithIdentifiers:arr];
+    
+}
+
+-(void)handleChange:(PHChange *)change {
+    
 }
 
 -(NSArray *)assetsForIndexPath:(NSIndexPath *)path {

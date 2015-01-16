@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6254" systemVersion="14C78c" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="bgX-d2-kfe">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6254" systemVersion="14C81f" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="bgX-d2-kfe">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6247"/>
     </dependencies>
@@ -67,11 +67,12 @@
                     <connections>
                         <segue destination="vXZ-lx-hvc" kind="custom" identifier="CordovaViewControllerSegue" customClass="DrawerContentSegue" id="3Yp-00-XWm"/>
                         <segue destination="WSX-qb-7Pv" kind="custom" identifier="ChooseYourDaysSegue" customClass="DrawerContentSegue" id="wFf-bb-5t1"/>
+                        <segue destination="9UL-jn-SeD" kind="custom" identifier="UploaderSegue" customClass="DrawerContentSegue" id="eBV-jc-BrJ"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="hRo-uT-q3u" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-701" y="980"/>
+            <point key="canvasLocation" x="-825" y="1643"/>
         </scene>
         <!--Cordova View Controller-->
         <scene sceneID="ufC-wZ-h7g">
@@ -183,6 +184,25 @@
             </objects>
             <point key="canvasLocation" x="-9" y="1643"/>
         </scene>
+        <!--Uploader-->
+        <scene sceneID="evz-Qt-9RF">
+            <objects>
+                <viewController id="9UL-jn-SeD" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="tKX-Y3-O94"/>
+                        <viewControllerLayoutGuide type="bottom" id="jvI-dz-ved"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="bsR-aS-giz">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" title="Uploader" id="DzL-qF-y8m"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="4JI-KS-lqi" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-9" y="2346"/>
+        </scene>
         <!--Kal View Controller-->
         <scene sceneID="aVr-zU-3kp">
             <objects>
@@ -218,13 +238,13 @@
                                 <color key="backgroundColor" cocoaTouchSystemColor="groupTableViewBackgroundColor"/>
                                 <color key="separatorColor" cocoaTouchSystemColor="groupTableViewBackgroundColor"/>
                                 <prototypes>
-                                    <tableViewCell contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="Cell" rowHeight="80" id="oJ2-dR-3R7" customClass="ImagePickerTableViewCell">
+                                    <tableViewCell contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="Cell" rowHeight="80" id="oJ2-dR-3R7" customClass="ImagePickerTableViewCell">
                                         <rect key="frame" x="0.0" y="0.0" width="600" height="44"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="oJ2-dR-3R7" id="o1e-Rd-fcT">
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
-                                                <view contentMode="scaleToFill" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="t5z-q8-cSa">
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="t5z-q8-cSa">
                                                     <rect key="frame" x="0.0" y="0.0" width="80" height="80"/>
                                                     <subviews>
                                                         <label opaque="NO" userInteractionEnabled="NO" tag="1" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="1000" usesAttributedText="YES" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="NJ7-2a-lKt">
@@ -261,7 +281,7 @@
                                             </subviews>
                                             <constraints>
                                                 <constraint firstItem="t5z-q8-cSa" firstAttribute="top" secondItem="o1e-Rd-fcT" secondAttribute="top" id="SMl-1W-FGo"/>
-                                                <constraint firstAttribute="bottom" secondItem="t5z-q8-cSa" secondAttribute="bottom" id="gno-3E-CRP"/>
+                                                <constraint firstAttribute="bottom" secondItem="t5z-q8-cSa" secondAttribute="bottom" constant="-1" id="gno-3E-CRP"/>
                                                 <constraint firstItem="t5z-q8-cSa" firstAttribute="leading" secondItem="o1e-Rd-fcT" secondAttribute="leading" id="nWE-Db-68j"/>
                                             </constraints>
                                         </tableViewCellContentView>
@@ -292,7 +312,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Msu-2L-Tma" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="681" y="2166"/>
+            <point key="canvasLocation" x="1319" y="1648"/>
         </scene>
     </scenes>
 </document>

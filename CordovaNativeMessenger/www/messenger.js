@@ -1,11 +1,23 @@
+const pluginName = "CordovaNativeMessenger";
 
 cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
 	var exec = require('cordova/exec');
-	var Messenger = function(){};
-
-	Messenger.prototype.bindListener = function(listener) {
-		exec(listener, listener, "CordovaNativeMessenger", "bindListener", []);
+	
+	var Messenger = function() {
+    	this.listeners = {};
+    	
+    	exec(this.nativeListener, null, pluginName, "bindListener", []);
 	};
+	
+	Messenger.prototype.nativeListener = function(message) {
+        if(this.listeners[message.command]) {
+            this.listeners[message.command](message.data);
+        }
+	};
+	
+	Messenger.prototype.on = function(command, callback) {
+    	this.listeners[command] = callback;
+	}
 
 	Messenger.prototype.mapAssetsLibrary = function(callback) {
 		exec(callback, null, "CordovaNativeMessenger", "mapAssetsLibrary", []);
@@ -14,6 +26,7 @@ cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
 	Messenger.prototype.getPhotoById =function(identifier, options, onSuccess, onError) {
 		exec(onSuccess, onError, "CordovaNativeMessenger", "getPhotoById", [identifier, options]);
 	}
+	
 	var plugin = new Messenger();
 
 	module.exports = plugin;

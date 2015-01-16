@@ -12,6 +12,21 @@
 
 NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeMessageNotification";
 
+extern NSString *kCommandKey = @"command";
+extern NSString *kDataKey = @"data";
+
+// ommands
+extern NSString *kPhotoStreamChangeCommandValue = @"photoStreamChange";
+
+extern NSString *kScheduleAssetsForUploadCommandValue = @"scheduleAssetsForUpload";
+extern NSString *kUnscheduleAssetsForUploadCommandValue = @"unscheduleAssetsForUpload";
+extern NSString *kScheduleDayRangeForUploadCommandValue = "@scheduleDayRangeForUpload";
+extern NSString *kUnscheduleDayRangeForUploadCommandValue = @"unscheduleDayRangeForUpload";
+
+extern NSString *kDidBeginAssetUploadCommandValue = @"didBeginAssetUpload";
+extern NSString *kDidFinishAssetUploadCommandValue = @"didFinishAssetUpload";
+
+
 #define PLUGIN_ERROR(message) [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: message]
 
 @interface CordovaNativeMessenger () {
@@ -216,6 +231,8 @@ NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeM
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onSendNativeMessage:) name:kSendNativeMessageNotification object:nil];
     
+    [NSNotificationCenter.defaultCenter addObserverForName:kSendNativeMessageNotification object:nil queue:[NSOperationQueue mainQueue]] usingBlock:(void (^)(NSNotification *note))block]
+    
     [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
         
     }];
@@ -311,4 +328,15 @@ NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeM
     return img;
 }
 
++(void)sendMessage:(NSDictionary*)data WithCommand:(NSString*)command {
+    
+    NSDictionary *userInfo = @{
+                               kCommandKey: command,
+                               kDataKey : data
+                               };
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:kSendNativeMessageNotification object:self userInfo:userInfo];
+}
+
 @end
+
