@@ -114,8 +114,20 @@ angular
       map: ()->
         return self._mapAssetsLibrary
 
-      loadCameraRollP: (options)->
+      getPhoto: (UUID)->
+        # find the photo, if we have it
+        found = _.find self.photos, { UUID: UUID } 
+        # get from cameraRoll.map() if not in cameraRoll.photo
+        if !found
+          found = _.find self.map(), { UUID: UUID } 
+          cameraRoll.getDataURL UUID, 'thumbnail' # queue to add to cameraRoll.photos
 
+        return found if found
+        console.error '\n\nERROR: cameraRoll.getPhoto(): is not found, UUID=' + UUID 
+        return null
+
+
+      loadCameraRollP: (options)->
         defaults = {
           size: 'thumbnail'
           # pluck: ['favorite','mediaType', 'mediaSubTypes', 'hidden']  
@@ -637,6 +649,92 @@ angular
       MAX_PHOTOS: 200
       CHUNK_SIZE : 30
       SERIES_DELAY_MS: 100
+
+      _callP : (method, data, TIMEOUT=2000)->
+        dfd = $q.defer()
+        cancel = $timeout ()->
+            return dfd.reject("TIMEOUT: snappiMessengerPluginService - " + method)
+          , TIMEOUT
+        window.Messenger[method](  data
+          , (resp)->
+            $timeout.cancel(cancel)
+            return dfd.resolve(resp)
+          , (err)->
+            $timeout.cancel(cancel)
+            return dfd.reject(err)
+        )
+        return dfd.promise 
+
+      on : 
+        photoStreamChange : (handler)-> 
+          #  updated:{array of phasset ids}, removed:{array of phasset ids}, added:{array of phasset ids}
+          return window.Messenger.on( 'photoStreamChange', handler )
+
+
+        didBeginAssetUpload : (handler)-> 
+          #  asset:{string phasset id}
+          return window.Messenger.on( 'didBeginAssetUpload', handler )
+
+        didFinishAssetUpload : (handler)-> 
+          # asset:{string phasset id}, 
+          # name:{string (Parse name)}    # Parse URL
+          # success: bool
+          return window.Messenger.on( 'didFinishAssetUpload', handler )
+
+
+        # currently UNUSED
+        lastImageAssetID : (handler)-> 
+          #  No data passed
+          return window.Messenger.on( 'lastImageAssetID', handler )
+
+        #
+        #  native CameraRoll picker control
+        #
+        scheduleAssetsForUpload : (handler)-> 
+          #  assets:{array of phasset ids}
+          return window.Messenger.on( 'scheduleAssetsForUpload', handler )
+
+        unscheduleAssetsForUpload : (handler)-> 
+          #   assets:{array of phasset ids}
+          return window.Messenger.on( 'unscheduleAssetsForUpload', handler )
+
+        #
+        #  native Calendar control
+        #
+        scheduleDayRangeForUpload : (handler)-> 
+          #  fromDate:{string}, toDate:{string}
+          return window.Messenger.on( 'scheduleDayRangeForUpload', handler )
+
+        unscheduleDayRangeForUpload : (handler)-> 
+          #  fromDate:{string}, toDate:{string}
+          return window.Messenger.on( 'unscheduleDayRangeForUpload', handler )
+
+
+      # For communicating back with the native, we’ve defined two methods for you to call. The first is a response to the same command for returning whatever is your last phasset that the native has given you, the second is for passing array of phasset ids to be scheduled for background upload. I am not exactly sure how this happens on the Cordova side but I am guessing there should be a method in the messenger you can call an pass in the command string and a dictionary. I’ve listed the command names and data dictionary key:value pairs.
+      # //Responds
+      lastImageAssetIDP : (resp)-> 
+        # o = {  
+        #  asset:[UUID, UUID, UUID, ... ]
+        # }
+        return _MessengerPLUGIN._callP( 'lastImageAssetID' )
+
+      scheduleAssetsForUploadP : (assetIds, options)-> 
+        # o = {  
+        # assets:[UUID, UUID, UUID, ... ]
+        # options:
+        #   targetWidth: 640
+        #   targetHeight: 640
+        #   resizeMode: 'aspectFit'
+        #   autoRotate: true
+        #     
+        # }
+        return $q.when({}) if _.isEmpty assetIds
+        data = {
+          assets: assetIds
+          options: options
+        }
+        console.log "\n\n*** scheduleAssetsForUpload, data=" + JSON.stringify( data )
+        return _MessengerPLUGIN._callP( 'scheduleAssetsForUpload', data )        
 
       mapAssetsLibraryP: (options={})->
         console.log "mapAssetsLibrary() calling window.Messenger.mapAssetsLibrary(assets)"

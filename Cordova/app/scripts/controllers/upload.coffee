@@ -9,8 +9,8 @@
 ###
 angular.module('ionBlankApp')
 .factory 'otgUploader', [
-  '$timeout', '$q', 'otgData', 'otgParse', 'cameraRoll', '$cordovaNetwork', 'deviceReady'
-  ($timeout, $q, otgData, otgParse, cameraRoll, $cordovaNetwork, deviceReady)->
+  '$timeout', '$q', 'otgData', 'otgParse', 'cameraRoll', '$cordovaNetwork', 'deviceReady', 'snappiMessengerPluginService'
+  ($timeout, $q, otgData, otgParse, cameraRoll, $cordovaNetwork, deviceReady, snappiMessengerPluginService)->
 
     self = {
       _allowCellularNetwork: false
@@ -51,6 +51,76 @@ angular.module('ionBlankApp')
           return false
         return true 
 
+      startNativeFileUploadingP: ()->
+        # we only want to get imageWidth/Height for nativeFileUploading
+        self.UPLOAD_IMAGE_SIZE = 'thumbnail' 
+
+        # add photoObj to Parse with src='queued'
+        # WARNING: will not be able to queue photoMeta in airplane mode, 
+        # but that should not affect queue count
+        promises = []
+        _.each self._queue, (item)->
+          return if /queued|complete/.test(item.photo?.status)
+          workorderObj = item.workorderObj
+          photo = item.photo
+
+          # find the photo, if we have it
+          found = cameraRoll.getPhoto(photo.UUID)
+          $q.when(found)
+          .then (found)->
+            if !found
+              return cameraRoll.getDataURL_P( UUID, self.UPLOAD_IMAGE_SIZE) 
+            return found
+          .then (found)->
+            if !found 
+              return $q.reject("ERROR: startNativeFileUploadingP() UUID not found in cameraRoll. deleted?")
+            p = otgParse.uploadPhotoMetaP(workorderObj, found).then ()->
+                  item.photo.status = "queued"
+                  return
+                , (err)->
+                  item.photos.status = 'error: photo meta'
+                  return
+            promises.push p 
+            return p
+ 
+
+        # activate/enable uploader
+        'TODO' || snappiMessengerPluginService.enableUploads(true)
+        # register in appController
+        # snappiMessengerPluginService.on.didFinishAssetUpload(self.uploadPhotoFileComplete)
+
+        $q.all(promises)
+        .then (o)->
+          console.log "*** startNativeFileUploadingP.uploadPhotoMetaP() complete. count=" + _.values(o).length
+
+
+        # TODO: need to change method for counting queued uploads
+        return
+
+      uploadPhotoFileComplete : (resp)->
+        # handler for nativeFileUploader
+        # resp:
+          # asset:{string phasset id}, 
+          # name:{string (Parse name)}    # Parse URL
+          # success: bool
+        console.log "***** uploadPhotoFileComplete called!!!"
+
+        # find queue item
+        queuedPhotos = _.pluck otgUploader._queue, 'photo'
+        queuedPhoto = _.find queuedPhotos, {UUID: resp.asset}
+
+        if resp.success == false
+          status = queuedPhoto.src = 'error: file upload'
+        else 
+          status = 'complete'
+          queuedPhoto.src = resp.name
+
+        otgParse.updatePhotoP(queuedPhoto, 'src') # update Parse
+        .then ()->
+            return queuedPhoto.status = 'complete'
+          , (err)->
+            return queuedPhoto.status = 'error: update Photo.src' 
+
       startUploadingP: (onProgress)->
 
         return if !self.connectionOK()
@@ -61,9 +131,7 @@ angular.module('ionBlankApp')
           photo = item.photo
 
           # find the photo, if we have it
-          found = _.find cameraRoll.photos, {UUID: photo.UUID || photo } 
-          # get from cameraRoll.map() if not in cameraRoll.photo
-          found = _.find cameraRoll.map(), {UUID: photo.UUID || photo } if !found
+          found = cameraRoll.getPhoto( photo?.UUID || photo )
           if !found
             console.error '\n\nERROR: queued photo is not found, UUID=' + photo.UUID || photo
             return $q.when() 
@@ -73,6 +141,7 @@ angular.module('ionBlankApp')
 
           # test upload to parse
           self.state.isActive = true
+
           otgParse.uploadPhotoP( workorderObj, photo).then ()->
               self.state.isActive = false
               workorderObj.increment('count_received')
@@ -109,27 +178,53 @@ angular.module('ionBlankApp')
         self.queue(workorderObj, photos)
         return $q.when(self._queue)
 
-      queue: (workorderObj, photos)->
-        # need to queue photo by UUID because it might not be loaded from cameraRoll
-        alreadyQueued = _ .reduce self._queue, (result, item)->
-            result.push item.photo if _.isString item.photo
-            result.push item.photo.UUID if item.photo.UUID
-            return result
-          , []
+      queue: (workorderObj, photos, force=true)->
+        return self._queue if _.isEmpty(photos) && !force
+        # queued photos will be preloaded, do NOT upload until complete
+        queuedPhotos = _.pluck self._queue, 'photo'
+        dictQueuedPhotos = _.indexBy queuedPhotos, 'UUID'
 
-        _.each photos, (photoOrUUID)->
-          UUID = if photoOrUUID.UUID then photoOrUUID.UUID else photoOrUUID
-          return if alreadyQueued.indexOf( UUID ) > -1
-          item = {
-            photo: photoOrUUID
-            workorderObj: workorderObj
-          }
-          self._queue.push item
-          
-          # preload DataURLs using cameraRoll.queue(), preloading is debounced
-          cameraRoll.getDataURL UUID, self.UPLOAD_IMAGE_SIZE
-          return
+        # queuedPhotos = _ .reduce self._queue, (result, item)->
+        #     result.push item.photo if _.isString item.photo
+        #     result.push item.photo.UUID if item.photo.UUID
+        #     return result
+        #   , []
+
         
+        addedToQueue = _.reduce photos, (assetIds, photo)->
+            queued = dictQueuedPhotos[photo.UUID]
+            if queued   #re-queue errors
+              queued.status = null 
+              return assetIds
+            item = {
+              photo: photo
+              workorderObj: workorderObj
+            }
+            self._queue.push item
+            # preload DataURLs using cameraRoll.queue(), preloading is debounced
+            cameraRoll.getDataURL photo.UUID, self.UPLOAD_IMAGE_SIZE
+            assetIds.push photo.UUID
+            return assetIds
+          , []
+        if force && !_.isEmpty(dictQueuedPhotos)
+          addedToQueue.concat(dictQueuedPhotos)
+
+        # add to nativeUploader queue
+        options = {
+          targetWidth: 640
+          targetHeight: 640
+          resizeMode: 'aspectFit'
+          autoRotate: true            
+        }
+        snappiMessengerPluginService.scheduleAssetsForUploadP(addedToQueue, options)
+        .then (resp)->
+            console.log "*** snappiMessengerPluginService.scheduleAssetsForUploadP, queue length="+addedToQueue.length
+            console.log resp 
+            return 
+          , (error)->
+            console.log "*** ERROR: snappiMessengerPluginService.scheduleAssetsForUploadP"
+            console.log error
+
         return self._queue
 
       clear : ()->
@@ -141,8 +236,8 @@ angular.module('ionBlankApp')
     return self
 ]
 .controller 'UploadCtrl', [
-  '$scope', '$timeout',  'otgUploader', 'otgParse', 'deviceReady'
-  ($scope, $timeout, otgUploader, otgParse, deviceReady) ->
+  '$scope', '$timeout',  'otgUploader', 'otgParse', 'deviceReady', 'snappiMessengerPluginService'
+  ($scope, $timeout, otgUploader, otgParse, deviceReady, snappiMessengerPluginService) ->
     $scope.label = {
       title: "Upload"
     }
@@ -158,7 +253,10 @@ angular.module('ionBlankApp')
         target.addClass('activated')
         if otgUploader.enable('toggle')
           target.addClass('enabled') 
-          otgUploader.startUploadingP(onProgress)
+          # otgUploader.startUploadingP(onProgress)
+          otgUploader.state.isActive = true
+          otgUploader.startNativeFileUploadingP(onProgress)
+          
         else 
           target.removeClass('enabled') 
         _fetchWarnings()
@@ -194,6 +292,15 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
+      # register handlers for native uploader
+      snappiMessengerPluginService.on.didFinishAssetUpload(otgUploader.uploadPhotoFileComplete)
+      console.log '\n\n ***** handler registered for didFinishAssetUpload'
+      console.log otgUploader.uploadPhotoFileComplete
+
+      snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
+          console.log "\n\n ***** didBeginAssetUpload"
+          console.log resp
+          return
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
@@ -209,6 +316,8 @@ angular.module('ionBlankApp')
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 
       return 
+
+
 
 
 ]

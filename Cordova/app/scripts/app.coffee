@@ -710,6 +710,7 @@ angular
         $scope.config['no-view-headers'] = deviceReady.isWebView() && false
         $rootScope.deviceId = deviceReady.deviceId()
 
+
         _LOAD_MOMENTS_FROM_CAMERA_ROLL_P()
         .finally ()->
           $timeout ()->
@@ -718,10 +719,22 @@ angular
                 $scope.config.system['order-standby'] = backlog.get('status') == 'standby'
             , 3000  
 
-        if !deviceReady.isWebView()
+        if !deviceReady.isWebView() # isBrowser
           # browser
           _LOAD_BROWSER_TOOLS() 
           $scope.orders = TEST_DATA.orders 
+        else # mobile device w/ cordova
+          # register handlers for native uploader
+          snappiMessengerPluginService.on.didFinishAssetUpload( otgUploader.uploadPhotoFileComplete )
+          console.log '\n\n ***** handler registered for didFinishAssetUpload'
+          console.log otgUploader.uploadPhotoFileComplete
+
+          snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
+              console.log "\n\n ***** didBeginAssetUpload"
+              console.log resp
+              return
+
+        
         
         _prefs.load().then (config)->
           if config?.status == "PLUGIN unavailable"
@@ -744,6 +757,7 @@ angular
       cameraRoll: cameraRoll
       workorders: otgWorkorderSync._workorderColl
       imgCache: imageCacheSvc
+      config: $scope.config
     }
 
   ]

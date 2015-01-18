@@ -11,8 +11,10 @@ angular.module('ionBlankApp')
 .controller 'CheckoutCtrl', [
   '$scope', '$rootScope', '$state', '$q', 
   '$ionicNavBarDelegate', '$ionicHistory', '$ionicModal', '$ionicScrollDelegate'
-  'otgData', 'otgWorkorder', 'otgUploader', 'otgParse', 'otgProfile', 'cameraRoll',  'TEST_DATA',
-  ($scope, $rootScope, $state, $q, $ionicNavBarDelegate, $ionicHistory, $ionicModal, $ionicScrollDelegate, otgData, otgWorkorder, otgUploader, otgParse, otgProfile, cameraRoll, TEST_DATA) ->
+  'otgData', 'otgWorkorder', 'otgUploader', 'otgParse', 'otgProfile', 'cameraRoll', 'snappiMessengerPluginService', 'TEST_DATA',
+  ($scope, $rootScope, $state, $q, $ionicNavBarDelegate, $ionicHistory, $ionicModal, $ionicScrollDelegate, 
+    otgData, otgWorkorder, otgUploader, otgParse, otgProfile, cameraRoll, snappiMessengerPluginService
+    TEST_DATA) ->
     $scope.label = {
       title: "Checkout"
       header_card: 
@@ -326,6 +328,16 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
+            # once per controller load, setup code for view
+      # register handlers for native uploader
+      snappiMessengerPluginService.on.didFinishAssetUpload(otgUploader.uploadPhotoFileComplete)
+      console.log '\n\n ***** handler registered for didFinishAssetUpload'
+      console.log otgUploader.uploadPhotoFileComplete
+
+      snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
+          console.log "\n\n ***** didBeginAssetUpload"
+          console.log resp
+          return
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
@@ -359,6 +371,7 @@ angular.module('ionBlankApp')
 
       # get header_card data from state     
       $scope.headerCard = $scope.on.getHeaderCard()
+
 
       return
 

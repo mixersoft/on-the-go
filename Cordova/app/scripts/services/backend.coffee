@@ -166,42 +166,39 @@ angular
           return photosColl
 
       queueMissingPhotos : (workorderObj, photosColl)->
-        photos = photosColl.toJSON()
 
-        console.log "\n\n workorder photo assetIds, length=" + photos.length
-        uploadedAssetIds = _.pluck photos, 'assetId'
-
-        # compare against selectedMoment UUIDs
+        # find all photos from cameraRoll in workorder dateRange, compare against selectedMoment UUIDs
         # dateRange = otgWorkorder.on.selectByCalendar workorderObj.get('fromDate'), workorderObj.get('toDate')
-        # NOTE: using otgWorkorder has the side effect of setting days in directive:otgMoment
         dateRange = {
           from: workorderObj.get('fromDate')
           to: workorderObj.get('toDate')
         }
         otgWorkorder.existingOrders.addExistingOrder(dateRange) # for cameraRoll otgMoment
-
         # compare vs. map because cameraRoll.photos is incomplete
         mappedPhotos = cameraRoll.map() 
         mappedPhotos = cameraRoll.photos if _.isEmpty mappedPhotos
-
-        mappedAssetIdsFromWorkorderDateRange = _.reduce mappedPhotos, (result, o)->
+        cameraRollPhotos = _.reduce mappedPhotos, (result, o)->
             o.date = cameraRoll.getDateFromLocalTime o.dateTaken if !o.date
-            result.push o.UUID if dateRange.from <= o.date <= dateRange.to
+            result.push o if dateRange.from <= o.date <= dateRange.to
             return result
           , []
 
-        console.log "workorder.count_expected="+mappedAssetIdsFromWorkorderDateRange.length
+        parsePhotos = photosColl.toJSON()
+        queuedPhotos = _.pluck otgUploader._queue, 'photo'
 
-        ## move to self.updateWorkorderCounts(workorderObj, queue) 
-        # if workorderObj.get('count_expected') != mappedAssetIdsFromWorkorderDateRange
-        #   $timeout ()->return workorderObj.save {
-        #         count_expected: mappedAssetIdsFromWorkorderDateRange.length
-        #       }
-        #     , 100
+        # requeue errors
+        parsePhotos = _.filter parsePhotos, (o)->return /^error/.test(o.src) == false
+        queuedPhotos = _.filter queuedPhotos, (o)->return /^error/.test(o.status) == false
 
-
-
-        missingPhotos = _.difference mappedAssetIdsFromWorkorderDateRange, uploadedAssetIds
+        # 3 arrays to check: cameraRollPhotos NOT in parsePhotos, queuedPhotos
+        parseAssetIds = _.pluck parsePhotos, 'UUID'
+        queuedAssetIds = _.pluck queuedPhotos, 'UUID'
+        missingPhotos = _.reduce cameraRollPhotos, (result, photo)->
+            return result if parseAssetIds.indexOf(photo.UUID) != -1
+            return result if queuedAssetIds.indexOf(photo.UUID) != -1
+            result.push photo
+            return result
+          , []
 
         queue = otgUploader.queue(workorderObj, missingPhotos)
         console.log "workorder found and missing photos queued, length=" + queue.length
@@ -677,6 +674,7 @@ angular
         # find photoObj   
         query = new Parse.Query( parseClass.PhotoObj )
         query.equalTo 'assetId', photo.UUID
+        query.equalTo 'owner', $rootScope.sessionUser
         query.first().then (photoObj)->
           update = _.pick photo, pick
           photoObj.save(update).then ()->
@@ -745,7 +743,41 @@ angular
             base64: base64src
           })
         return parseFile.save()
+
   
+      # register handler with MessengerPlugin.on.didFinishAssetUpload
+      updateParseURL : (resp)->
+        return deviceReady.waitP().then self.checkSessionUserP() 
+          .then (resp)->
+            return resp
+
+      uploadPhotoMetaP: (workorderObj, photo)->
+        return $q.reject("uploadPhotoMetaP: photo is empty") if !photo
+        # upload photo meta BEFORE file upload from native uploader
+        # photo.src == 'queued'
+        return deviceReady.waitP().then self.checkSessionUserP()
+        .then ()-> 
+          extendedAttrs = _.pick photo, ['dateTaken', 'originalWidth', 'originalHeight', 'rating', 'favorite', 'caption', 'exif', 'orientation']
+          # console.log extendedAttrs
+
+          parseData = _.extend {
+                assetId: photo.UUID  # deprecate
+                UUID: photo.UUID
+                owner: $rootScope.sessionUser
+                workorder : workorderObj
+                deviceId: $rootScope.deviceId
+                src: "queued"
+            }
+            , extendedAttrs # , classDefaults
+
+          photoObj = new parseClass.PhotoObj parseData , {initClass: false }
+          return photoObj.save()
+        .then (o)->
+            return console.log "photoObj.save() complete: " + JSON.stringify o        
+          , (err)->
+            console.warn "ERROR: uploadPhotoMetaP photoObj.save(), err=" + JSON.stringify err
+            return $q.reject(err)
+
 
       uploadPhotoP : (workorder, photoOrMapItem)->
         UPLOAD_IMAGE_SIZE = 'preview'
@@ -823,7 +855,7 @@ angular
                     owner: $rootScope.sessionUser
                     workorder : workorder
                     deviceId: $rootScope.deviceId
-                    src: parseFile.url()
+                    src: parseFile?.url() || parseFile
                   }
                 , extendedAttrs # , classDefaults
 
