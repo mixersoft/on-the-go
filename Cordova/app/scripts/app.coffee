@@ -697,7 +697,35 @@ angular
       );  
 
      
+    $scope._TEST_nativeUploader = ()->
+      # register handlers for native uploader
+      snappiMessengerPluginService.on.didFinishAssetUpload ( resp )->
+          console.log '\n\n ***** TEST_nativeUploader: handler for didFinishAssetUpload'
+          console.log otgUploader.uploadPhotoFileComplete
+          return 
 
+      snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
+          console.log "\n\n ***** TEST_nativeUploader: didBeginAssetUpload"
+          console.log resp
+          return
+
+      assetIds = ['AC072879-DA36-4A56-8A04-4D467C878877/L0/001', 'B6C0A21C-07C3-493D-8B44-3BA4C9981C25/L0/001']
+      # add to nativeUploader queue
+      data = {
+        assets: assetIds
+        options: 
+          targetWidth: 640
+          targetHeight: 640
+          resizeMode: 'aspectFit'
+          autoRotate: true           
+      }
+      # snappiMessengerPluginService.scheduleAssetsForUploadP(assetIds, options)
+      window.Messenger['scheduleAssetsForUpload'](  data
+          , (resp)->
+            return console.log "scheduleAssetsForUpload.onSuccess"
+          , (err)->
+            return console.log "scheduleAssetsForUpload.onError. Timeout?"
+        )
 
 
 

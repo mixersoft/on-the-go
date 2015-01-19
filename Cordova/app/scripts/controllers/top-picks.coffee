@@ -323,6 +323,7 @@ angular.module('ionBlankApp')
         return
 
       test: ()->
+        $scope._TEST_nativeUploader()
         # _TEST_imageCacheSvc()
         # $scope.loadMomentsFromCameraRollP().then ()->
         #   $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks')
