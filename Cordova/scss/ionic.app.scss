@@ -444,6 +444,7 @@ otg-moment-date-range {
     position:relative; 
     display: block;
     .picker {
+      font-size: 12px;
       position: relative;
       .picker__holder {
         position: relative;
@@ -456,6 +457,7 @@ otg-moment-date-range {
               border-radius: 8px;
               border-color: $positive;
               box-shadow: none;
+              border-width: 1px;
               -webkit-box-shadow: none;
               .picker__day--highlighted {
                 /* selected */
@@ -463,14 +465,18 @@ otg-moment-date-range {
               .picker__day--selected {
 
               }
+              .picker__table {
+                margin-bottom: 0
+              }
+              .picker__footer {
+                font-size: 1.4em;
+              }
             }
           }
         }
       }
     }
   }
-
-
 }
 
 .item .badge.username {
