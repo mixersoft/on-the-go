@@ -437,6 +437,9 @@ otg-moment-date-range {
 }
 
 #choose-tab-calendar {
+  #datepicker-input {
+    height: 0;
+  }
   #datepicker-wrap {
     position:relative; 
     display: block;

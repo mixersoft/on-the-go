@@ -15,10 +15,11 @@
     <div class="item item-divider">
       <p class="fine cursor-pointer" ng-click="on.dontShowHint(this.$parent)"><i class="icon ion-close-circled"> {{i18n.tr('dont-show','app')}}</i></p>
     </div>
+  </swipe-card></swipe-cards>
   
 
   <!-- calendar widget  -->
   <input class="invisible" id="datepicker-input" type="text" date-range="watch.dateRange" pick-a-date="watch.dateRange.selected" pick-a-date-options="watch.datePickerOptions" placeholder="Select From Date" /> 
-  <div id="datepicker-wrap"></div>
+  <div id="datepicker-wrap" class="padding-horizontal"></div>
 
 </ion-content>
