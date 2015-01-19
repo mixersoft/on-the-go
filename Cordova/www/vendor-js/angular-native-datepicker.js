@@ -74,8 +74,6 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
 
                 // If it’s already started, do nothing.
                 if ( STATE && STATE.start ) {
-                    // // *** restart problem
-                    // prepareElementRoot()
                     return P
                 }
 
@@ -206,7 +204,6 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
              * Open up the picker
              */
             open: function( dontGiveFocus ) {
-
                 // If it’s already open, do nothing.
                 if ( STATE.open ) {
                     return P
@@ -357,7 +354,6 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
              * Set something
              */
             set: function( thing, value, options ) {
-
                 var thingItem, thingValue,
                     thingIsObject = angular.isObject( thing ),
                     thingObject = thingIsObject ? thing : {}
@@ -442,7 +438,6 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
              * Bind events on the things.
              */
             on: function( thing, method ) {
-
                 var thingName, thingMethod,
                     thingIsObject = angular.isObject( thing ),
                     thingObject = thingIsObject ? thing : {}
@@ -626,7 +621,7 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
 			// Make sure the target isn’t the root holder so it can bubble up.
 			if ( target != P.$root.children()[ 0 ] ) {
 
-				event.stopPropagation()
+				"skip" || event.stopPropagation()
 
 				// * For mousedown events, cancel the default action in order to
 				//   prevent cases where focus is shifted onto external elements
@@ -691,8 +686,6 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
 			});
 		}
 
-        window.attach = attachLiveEvents
-		
 		attachLiveEvents();
 		
         aria( P.$root[0], 'hidden', true )
@@ -1128,7 +1121,6 @@ function DatePicker( picker, settings ) {
  * Set a datepicker item object.
  */
 DatePicker.prototype.set = function( type, value, options ) {
-
     var calendar = this,
         calendarItem = calendar.item
 
@@ -2214,7 +2206,7 @@ DatePicker.defaults = (function( prefix ) {
 
         // Today and clear
         today: 'Today',
-        clear: 'Clear',
+        clear: 'Reset',
 
         // The format to show on the `input` element
         format: 'd mmmm, yyyy',
@@ -2336,7 +2328,7 @@ angular.module('angular-datepicker', [])
                 element.pickadate(angular.extend(options, {
                     onSet: onSet,
                     onClose: onClose,
-                    container: document.body
+                    container: document.getElementById(options.containerId) || document.body
                 }));
 
                 setTimeout(function() {

@@ -188,7 +188,8 @@ angular.module('ionBlankApp')
         hiddenName: true
         firstDay: 1
         editable: true
-        container: null
+        container: document.getElementById('datepicker-wrap')
+        containerId: 'datepicker-wrap'
         # min: null
         # max: null
         onBeforeSet: (newVal)->
@@ -246,16 +247,16 @@ angular.module('ionBlankApp')
         options = _datepicker.getDatePickerRange(_datepicker.WEEKS_TO_SHOW)
         _.extend $scope.watch.datePickerOptions, options
         input = angular.element(document.getElementById('datepicker-input'))
-        input.triggerHandler('focus') if input.length
-        #_datepicker.instance?.open().trigger( 'start' ).trigger( 'render' )
-        # _datepicker.instance?.start()
-
-        ## TODO: we need to restart listeners on the view!!
-        ## also apply to on.clearSelected()
+        console.log "datepicker activate ***"
+        if input.length # make sure view is rendered
+          # input.triggerHandler('focus') 
+          selected = _datepicker.dateRange()
+          otgWorkorder.on.selectByCalendar(selected.from, selected.to) if selected.from
+          window.P = _datepicker.instance.start().open(true)
         return
 
       deactivate : ()->
-        _datepicker.instance?.close(null, 'force')
+        _datepicker.instance.stop()
         return
 
     }
@@ -302,12 +303,9 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
-      _datepicker.instance = angular.element(document.getElementById('datepicker-input')).data('pickadate')
-      container = document.getElementById('datepicker-wrap')
-      if container
-        angular.element(container).append( _datepicker.instance.$root )
-        $scope.watch.datePickerOptions.container  = container
-      window.debug.picker = _datepicker.instance
+      if !_datepicker.instance
+        _datepicker.instance = angular.element(document.getElementById('datepicker-input')).data('pickadate')
+        window.debug.P = _datepicker.instance
       return
 
 
@@ -318,6 +316,9 @@ angular.module('ionBlankApp')
           return _datepicker.activate()
         when 'app.choose.camera-roll'  
           return cameraRoll.loadMomentThumbnailsP() 
+
+    $scope.$on '$ionicView.enter', ()->
+      return true
 
 
     $scope.$on '$ionicView.beforeLeave', ()->
