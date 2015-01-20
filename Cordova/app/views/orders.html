@@ -29,6 +29,9 @@
           <div class="item item-text-wrap">
             <div class="text-center">
               <h2>You have no open orders.</h2>
+
+                <div class="energized padding-vertical" ng-show="watch.isOffline()">Warning: Your device is offline.</div>
+
                 <div class="text-left">
                   <div><span ng-show="workorders.length">And we miss you.</span> Why don't you send us some old vacation photos?</div>
                 </div>
