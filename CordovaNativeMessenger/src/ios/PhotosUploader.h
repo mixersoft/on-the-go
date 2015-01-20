@@ -32,4 +32,6 @@
 -(void)addDelegate:(id<PhotosUploaderDelegate>)delegate;
 -(void)removeDelegate:(id<PhotosUploaderDelegate>)delegate;
 
+-(NSArray *)currentlyScheduledAssetIDs;
+
 @end

@@ -85,6 +85,11 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
     [_delegates removeObject:delegate];
 }
 
+-(NSArray *)currentlyScheduledAssetIDs {
+    NSMutableArray *assets = [NSMutableArray new];
+    return assets;
+}
+
 
 -(NSString *)imagePathForAssetIdentifier:(NSString *)identifier {
     NSString *name = [[[identifier componentsSeparatedByString:@"/"] firstObject] stringByAppendingPathExtension:@"jpg"];
@@ -107,10 +112,10 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
         CGSize originalImageSize = CGSizeMake(obj.pixelWidth, obj.pixelHeight);
         CGFloat maxSide = MAX(originalImageSize.width, originalImageSize.height);
         
-//        if (self.convertTo720p && maxSide > 720) {
-//            CGFloat scale = (720.0 / maxSide);
-//            originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
-//        }
+        if (self.convertTo720p && maxSide > 720) {
+            CGFloat scale = (720.0 / maxSide);
+            originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
+        }
         
         PHImageRequestID imageRequestID = [cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
             if ([info[PHImageResultIsDegradedKey] boolValue]) {
@@ -134,7 +139,7 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
                 [request addValue:parseRESTAPIKey forHTTPHeaderField:@"X-Parse-REST-API-Key"];
                 [request addValue:@"image/jpeg" forHTTPHeaderField:@"Content-Type"];
                 [request addValue:obj.localIdentifier forHTTPHeaderField:@"X-Image-Identifier"];
-            
+                
                 NSURLSessionUploadTask *task = [_backgroundUploadSession uploadTaskWithRequest:request fromFile:[NSURL fileURLWithPath:fullPath]];
                 [task resume];
                 for (id<PhotosUploaderDelegate>delegate in _delegates) {

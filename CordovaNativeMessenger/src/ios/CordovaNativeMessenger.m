@@ -58,6 +58,15 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     [self.responders addObject:responceBlock];
 }
 
+-(void)getScheduledAssets:(CDVInvokedUrlCommand*) command {
+    
+    NSArray *scheduledIDS = [PhotosUploader.sharedInstance currentlyScheduledAssetIDs];
+    
+    CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:scheduledIDS];
+    
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+}
+
 -(void)bindListener:(CDVInvokedUrlCommand*) command {
     NSLog(@"Binding Cordova callback for messages");
     
@@ -94,7 +103,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     
     __weak __typeof(self) weakself = self;
     [weakself.commandDelegate runInBackground:^{
-    
+        
         NSArray *identifiers;
         
         NSObject *arg0 = command.arguments[0];
@@ -124,7 +133,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                 --requestsLeft;
                 
                 [weakself.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-
+                
             }
         }
         
@@ -174,7 +183,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                     
                     pluginResult.keepCallback = @(requestsLeft > 1);
                     --requestsLeft;
-
+                    
                     
                     [weakself.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
                     return;
@@ -188,7 +197,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                     }
                     
                     NSData *bytes = UIImageJPEGRepresentation(resultImage, 1);
-                   NSString *base64 = [bytes base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
+                    NSString *base64 = [bytes base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
                     
                     if(base64 == nil) {
                         CDVPluginResult *pluginResult = [CDVPluginResult
@@ -231,7 +240,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
         }
         
     }];
-
+    
 }
 
 -(void)sendEvent:(NSDictionary *)eventData {
@@ -272,9 +281,9 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
 -(BOOL)isPortraitImage:(UIImage*)image{
     UIImageOrientation o = image.imageOrientation;
     return o == UIImageOrientationLeft
-        || o == UIImageOrientationLeftMirrored
-        || o == UIImageOrientationRight
-        || o == UIImageOrientationRightMirrored;
+    || o == UIImageOrientationLeftMirrored
+    || o == UIImageOrientationRight
+    || o == UIImageOrientationRightMirrored;
     
 }
 

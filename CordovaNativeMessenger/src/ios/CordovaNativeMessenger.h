@@ -7,6 +7,7 @@
 //
 
 #import <Cordova/CDVPlugin.h>
+#import "PhotosUploader.h"
 
 extern NSString *kSendNativeMessageNotification;
 
@@ -34,7 +35,6 @@ extern NSString *kScheduleAssetsForUploadResponseValue; // assets {array}
 @interface CordovaNativeMessenger : CDVPlugin
 
 -(void)sendEvent:(NSDictionary*)eventData;
-
 
 +(void)sendMessage:(NSDictionary*)data WithCommand:(NSString*)command;
 

@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		BF160B341A126B7700309CEE /* libCordova.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BF160B2F1A126B6200309CEE /* libCordova.a */; settings = {ATTRIBUTES = (Required, ); }; };
 		BF160B391A126C8200309CEE /* CordovaViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF160B381A126C8200309CEE /* CordovaViewController.m */; };
-		BF2E364A1A42F55500EF03BD /* PhotosUploader.m in Sources */ = {isa = PBXBuildFile; fileRef = BF2E36491A42F55500EF03BD /* PhotosUploader.m */; };
 		BF365C5E1A162385006EE290 /* ChooseYourDaysViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF365C5D1A162385006EE290 /* ChooseYourDaysViewController.m */; };
 		BF365C5F1A1623CB006EE290 /* libKal.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BF365C5B1A1620D2006EE290 /* libKal.a */; };
 		BF38103A1A125A3400915183 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = BF3810391A125A3400915183 /* main.m */; };
@@ -24,6 +23,7 @@
 		BF38109E1A125CA100915183 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = BF38109D1A125CA100915183 /* config.xml */; };
 		BF3E9BA11A1A450600588C13 /* ImagePickerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF3E9BA01A1A450600588C13 /* ImagePickerViewController.m */; };
 		BF3E9BA51A1A4D7C00588C13 /* ImagePickerTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = BF3E9BA41A1A4D7C00588C13 /* ImagePickerTableViewCell.m */; };
+		BF8156801A6E8CBE00345224 /* PhotosUploader.m in Sources */ = {isa = PBXBuildFile; fileRef = BF81567F1A6E8CBE00345224 /* PhotosUploader.m */; };
 		BF8284AF1A3F2E500063163D /* ImagePickerCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = BF8284AE1A3F2E500063163D /* ImagePickerCell.xib */; };
 		BF8C60321A5C220A000FAAF1 /* IonicKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = BF8C601B1A5C220A000FAAF1 /* IonicKeyboard.m */; };
 		BF8C60331A5C220A000FAAF1 /* UIWebViewExtension.m in Sources */ = {isa = PBXBuildFile; fileRef = BF8C601D1A5C220A000FAAF1 /* UIWebViewExtension.m */; };
@@ -93,8 +93,6 @@
 		BF160B2A1A126B6200309CEE /* CordovaLib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = CordovaLib.xcodeproj; path = ../Cordova/platforms/ios/CordovaLib/CordovaLib.xcodeproj; sourceTree = "<group>"; };
 		BF160B371A126C8200309CEE /* CordovaViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CordovaViewController.h; sourceTree = "<group>"; };
 		BF160B381A126C8200309CEE /* CordovaViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CordovaViewController.m; sourceTree = "<group>"; };
-		BF2E36481A42F55500EF03BD /* PhotosUploader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotosUploader.h; sourceTree = "<group>"; };
-		BF2E36491A42F55500EF03BD /* PhotosUploader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PhotosUploader.m; sourceTree = "<group>"; };
 		BF365C561A1620D2006EE290 /* Kal.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Kal.xcodeproj; path = src/Kal.xcodeproj; sourceTree = "<group>"; };
 		BF365C5C1A162385006EE290 /* ChooseYourDaysViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ChooseYourDaysViewController.h; sourceTree = "<group>"; };
 		BF365C5D1A162385006EE290 /* ChooseYourDaysViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ChooseYourDaysViewController.m; sourceTree = "<group>"; };
@@ -117,6 +115,8 @@
 		BF3E9BA01A1A450600588C13 /* ImagePickerViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImagePickerViewController.m; sourceTree = "<group>"; };
 		BF3E9BA31A1A4D7C00588C13 /* ImagePickerTableViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImagePickerTableViewCell.h; sourceTree = "<group>"; };
 		BF3E9BA41A1A4D7C00588C13 /* ImagePickerTableViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImagePickerTableViewCell.m; sourceTree = "<group>"; };
+		BF81567E1A6E8CBE00345224 /* PhotosUploader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotosUploader.h; sourceTree = "<group>"; };
+		BF81567F1A6E8CBE00345224 /* PhotosUploader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PhotosUploader.m; sourceTree = "<group>"; };
 		BF8284AE1A3F2E500063163D /* ImagePickerCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ImagePickerCell.xib; sourceTree = "<group>"; };
 		BF8C601A1A5C220A000FAAF1 /* IonicKeyboard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IonicKeyboard.h; sourceTree = "<group>"; };
 		BF8C601B1A5C220A000FAAF1 /* IonicKeyboard.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IonicKeyboard.m; sourceTree = "<group>"; };
@@ -338,6 +338,8 @@
 			children = (
 				BF8C601F1A5C220A000FAAF1 /* CordovaNativeMessenger.h */,
 				BF8C60201A5C220A000FAAF1 /* CordovaNativeMessenger.m */,
+				BF81567E1A6E8CBE00345224 /* PhotosUploader.h */,
+				BF81567F1A6E8CBE00345224 /* PhotosUploader.m */,
 			);
 			path = "com.snaphappi.native-messenger.Messenger";
 			sourceTree = "<group>";
@@ -382,15 +384,6 @@
 			path = org.apache.cordova.file;
 			sourceTree = "<group>";
 		};
-		BFA4E62D1A5BDAAC005DFEA8 /* Photo Uploader */ = {
-			isa = PBXGroup;
-			children = (
-				BF2E36481A42F55500EF03BD /* PhotosUploader.h */,
-				BF2E36491A42F55500EF03BD /* PhotosUploader.m */,
-			);
-			name = "Photo Uploader";
-			sourceTree = "<group>";
-		};
 		BFA4E62E1A5BE877005DFEA8 /* Image Uploade Manager */ = {
 			isa = PBXGroup;
 			children = (
@@ -408,7 +401,6 @@
 				BF94AB831A3C756900B7ADA5 /* PhotosSource.m */,
 				BFA6A7311A406385007EBF57 /* PhotosUploadScheduler.h */,
 				BFA6A7321A406385007EBF57 /* PhotosUploadScheduler.m */,
-				BFA4E62D1A5BDAAC005DFEA8 /* Photo Uploader */,
 			);
 			name = Shared;
 			sourceTree = "<group>";
@@ -592,11 +584,11 @@
 				BF3E9BA51A1A4D7C00588C13 /* ImagePickerTableViewCell.m in Sources */,
 				BFD751A11A1394AE0008664A /* DrawerContentSegue.m in Sources */,
 				BF365C5E1A162385006EE290 /* ChooseYourDaysViewController.m in Sources */,
+				BF8156801A6E8CBE00345224 /* PhotosUploader.m in Sources */,
 				BFD751951A1391390008664A /* DrawerContainerViewController.m in Sources */,
 				BFBA28181A1B4F5700FF5E71 /* ImagePickerFlowLayout.m in Sources */,
 				BF8C60341A5C220A000FAAF1 /* CordovaNativeMessenger.m in Sources */,
 				BF8C60361A5C220A000FAAF1 /* CDVLogger.m in Sources */,
-				BF2E364A1A42F55500EF03BD /* PhotosUploader.m in Sources */,
 				BFB94D011A162B3A004BDB1C /* EventKitDataSource.m in Sources */,
 				BF3E9BA11A1A450600588C13 /* ImagePickerViewController.m in Sources */,
 				BF160B391A126C8200309CEE /* CordovaViewController.m in Sources */,
