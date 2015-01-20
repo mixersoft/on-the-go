@@ -20,12 +20,18 @@ NSString *kPhotoStreamChangeCommandValue = @"photoStreamChange";
 
 NSString *kScheduleAssetsForUploadCommandValue = @"scheduleAssetsForUpload";
 NSString *kUnscheduleAssetsForUploadCommandValue = @"unscheduleAssetsForUpload";
-NSString *kScheduleDayRangeForUploadCommandValue = @"@scheduleDayRangeForUpload";
+NSString *kScheduleDayRangeForUploadCommandValue = @"scheduleDayRangeForUpload";
 NSString *kUnscheduleDayRangeForUploadCommandValue = @"unscheduleDayRangeForUpload";
 
 NSString *kDidBeginAssetUploadCommandValue = @"didBeginAssetUpload";
 NSString *kDidFinishAssetUploadCommandValue = @"didFinishAssetUpload";
 
+NSString *kLastImageAssetIDCommandValue = @"lastImageAssetID";
+
+//Responds
+NSString *kLastImageAssetIDResponseValue = @"lastImageAssetID";
+
+NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
 
 #define PLUGIN_ERROR(message) [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: message]
 

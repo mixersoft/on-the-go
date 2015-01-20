@@ -13,17 +13,23 @@ extern NSString *kSendNativeMessageNotification;
 extern NSString *kCommandKey;
 extern NSString *kDataKey;
 
-// ommands
-extern NSString *kPhotoStreamChangeCommandValue;
+// commands
+extern NSString *kPhotoStreamChangeCommandValue; //updated {array}, removed {array}, added {array}
 
-extern NSString *kScheduleAssetsForUploadCommandValue;
-extern NSString *kUnscheduleAssetsForUploadCommandValue;
-extern NSString *kScheduleDayRangeForUploadCommandValue;
+extern NSString *kScheduleAssetsForUploadCommandValue; // assets {array}
+extern NSString *kUnscheduleAssetsForUploadCommandValue; // assets {array}
+extern NSString *kScheduleDayRangeForUploadCommandValue; // fromDate {string}, toDate {string}
 extern NSString *kUnscheduleDayRangeForUploadCommandValue;
 
-extern NSString *kDidBeginAssetUploadCommandValue;
-extern NSString *kDidFinishAssetUploadCommandValue;
+extern NSString *kDidBeginAssetUploadCommandValue; // asset {phasset identifier}
+extern NSString *kDidFinishAssetUploadCommandValue; // asset {phasset identifier}, name {string} (Parse name), success:bool
 
+extern NSString *kLastImageAssetIDCommandValue; // void
+
+//Responds
+extern NSString *kLastImageAssetIDResponseValue; // asset {phasset identifier}
+
+extern NSString *kScheduleAssetsForUploadResponseValue; // assets {array}
 
 @interface CordovaNativeMessenger : CDVPlugin
 
