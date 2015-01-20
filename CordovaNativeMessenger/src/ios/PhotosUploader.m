@@ -110,6 +110,12 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
     return fullPath;
 }
 
+-(void)unscheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers {
+    [localPHAssetIdentifiers enumerateObjectsUsingBlock:^(NSString * obj, NSUInteger idx, BOOL *stop) {
+        [self stopUploadingAssetWithID:obj completion:nil];
+    }];
+}
+
 -(void)scheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers {
     PHFetchResult *assets = [PHAsset fetchAssetsWithLocalIdentifiers:localPHAssetIdentifiers options:nil];
     PHImageManager *cachingImageManager = [PHImageManager new];
@@ -117,63 +123,66 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
     
     
     [assets enumerateObjectsUsingBlock:^(PHAsset *obj, NSUInteger idx, BOOL *stop) {
-        //get image
-        PHImageRequestOptions *opts = [PHImageRequestOptions new];
-        [opts setDeliveryMode:PHImageRequestOptionsDeliveryModeHighQualityFormat];
-        [opts setVersion:PHImageRequestOptionsVersionOriginal];
-        [opts setResizeMode:PHImageRequestOptionsResizeModeExact];
-        
-        CGSize originalImageSize = CGSizeMake(obj.pixelWidth, obj.pixelHeight);
-        CGFloat maxSide = MAX(originalImageSize.width, originalImageSize.height);
-        
-        if (self.convertTo720p && maxSide > 720) {
-            CGFloat scale = (720.0 / maxSide);
-            originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
-        }
-        
-        PHImageRequestID imageRequestID = [cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
-            if ([info[PHImageResultIsDegradedKey] boolValue]) {
-                return;
+        [self stopUploadingAssetWithID:obj.localIdentifier completion:^(bool fond) {
+            //get image
+            PHImageRequestOptions *opts = [PHImageRequestOptions new];
+            [opts setDeliveryMode:PHImageRequestOptionsDeliveryModeHighQualityFormat];
+            [opts setVersion:PHImageRequestOptionsVersionOriginal];
+            [opts setResizeMode:PHImageRequestOptionsResizeModeExact];
+            
+            CGSize originalImageSize = CGSizeMake(obj.pixelWidth, obj.pixelHeight);
+            CGFloat maxSide = MAX(originalImageSize.width, originalImageSize.height);
+            
+            if (self.convertTo720p && maxSide > 720) {
+                CGFloat scale = (720.0 / maxSide);
+                originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
             }
-            NSData *data = UIImageJPEGRepresentation(result, 1);
-            [cachingImageManager cancelImageRequest:imageRequestID];
             
-            if (data.length) {
-                //store image
-                NSString *fullPath = [self imagePathForAssetIdentifier:obj.localIdentifier];
-                if (![data writeToFile:fullPath atomically:YES])
+            PHImageRequestID imageRequestID = [cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
+                if ([info[PHImageResultIsDegradedKey] boolValue]) {
                     return;
+                }
+                NSData *data = UIImageJPEGRepresentation(result, 1);
+                [cachingImageManager cancelImageRequest:imageRequestID];
                 
-                NSLog(@"image:%@ with size:%@", fullPath.lastPathComponent, NSStringFromCGSize(result.size));
-                //NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", fullPath.lastPathComponent];
-                NSString *path = [NSString stringWithFormat:@"http://dev.mediastorm.bg:1337/files/%@", fullPath.lastPathComponent];
-                NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60];
-                [request setHTTPMethod:@"POST"];
-                [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-Application-Id"];
-                [request addValue:parseRESTAPIKey forHTTPHeaderField:@"X-Parse-REST-API-Key"];
-                [request addValue:@"image/jpeg" forHTTPHeaderField:@"Content-Type"];
-                [request addValue:obj.localIdentifier forHTTPHeaderField:@"X-Image-Identifier"];
-            
-                NSURLSessionUploadTask *task = [_backgroundUploadSession uploadTaskWithRequest:request fromFile:[NSURL fileURLWithPath:fullPath]];
-                [task resume];
-                for (id<PhotosUploaderDelegate>delegate in _delegates) {
-                    if ([delegate respondsToSelector:@selector(photoUploader:didScheduleUploadForAssetWithIdentifier:)]) {
-                        [delegate photoUploader:self didScheduleUploadForAssetWithIdentifier:obj.localIdentifier];
+                if (data.length) {
+                    //store image
+                    NSString *fullPath = [self imagePathForAssetIdentifier:obj.localIdentifier];
+                    if (![data writeToFile:fullPath atomically:YES])
+                        return;
+                    
+                    NSLog(@"image:%@ with size:%@", fullPath.lastPathComponent, NSStringFromCGSize(result.size));
+                    //NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", fullPath.lastPathComponent];
+                    NSString *path = [NSString stringWithFormat:@"http://dev.mediastorm.bg:1337/files/%@", fullPath.lastPathComponent];
+                    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60];
+                    [request setHTTPMethod:@"POST"];
+                    [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-Application-Id"];
+                    [request addValue:parseRESTAPIKey forHTTPHeaderField:@"X-Parse-REST-API-Key"];
+                    [request addValue:@"image/jpeg" forHTTPHeaderField:@"Content-Type"];
+                    [request addValue:obj.localIdentifier forHTTPHeaderField:@"X-Image-Identifier"];
+                    
+                    NSURLSessionUploadTask *task = [_backgroundUploadSession uploadTaskWithRequest:request fromFile:[NSURL fileURLWithPath:fullPath]];
+                    [task resume];
+                    for (id<PhotosUploaderDelegate>delegate in _delegates) {
+                        if ([delegate respondsToSelector:@selector(photoUploader:didScheduleUploadForAssetWithIdentifier:)]) {
+                            [delegate photoUploader:self didScheduleUploadForAssetWithIdentifier:obj.localIdentifier];
+                        }
                     }
                 }
-            }
+            }];
         }];
+        
     }];
 }
 
--(void)stopUploadingAssetWithID:(PHAsset *)asset completion:(void(^)(bool fond))completion {
+-(void)stopUploadingAssetWithID:(NSString *)assetID completion:(void(^)(bool fond))completion {
     
     [_backgroundUploadSession getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
         __block bool found = NO;
         
         [uploadTasks enumerateObjectsUsingBlock:^(NSURLSessionUploadTask *obj, NSUInteger idx, BOOL *stop) {
             NSString *identifier = obj.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-            if ([identifier isEqualToString:asset.localIdentifier]) {
+            if ([identifier isEqualToString:assetID]) {
                 *stop = found = YES;
                 [obj cancel];
                 [self deleteDataForTask:obj];

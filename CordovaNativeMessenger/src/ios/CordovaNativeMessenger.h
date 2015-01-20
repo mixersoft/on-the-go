@@ -29,7 +29,6 @@ extern NSString *kLastImageAssetIDCommandValue; // void
 
 //Responds
 extern NSString *kLastImageAssetIDResponseValue; // asset {phasset identifier}
-
 extern NSString *kScheduleAssetsForUploadResponseValue; // assets {array}
 
 @interface CordovaNativeMessenger : CDVPlugin

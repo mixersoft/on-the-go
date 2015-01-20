@@ -35,7 +35,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
 
 #define PLUGIN_ERROR(message) [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: message]
 
-@interface CordovaNativeMessenger () {
+@interface CordovaNativeMessenger () <PhotosUploaderDelegate> {
     NSString *callbackId;
     NSDateFormatter *dateFormatter;
 }
@@ -257,18 +257,32 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
     [dateFormatter setLocale:enUSPOSIXLocale];
     [dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
-    
+    __weak CordovaNativeMessenger *_self = self;
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onSendNativeMessage:) name:kSendNativeMessageNotification object:nil];
     
     [[NSNotificationCenter defaultCenter] addObserverForName:kSendNativeMessageNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
         NSDictionary *userInfo = note.userInfo;
-        [self.class.responders enumerateObjectsUsingBlock:^(void(^responder)(NSString *command, id data), BOOL *stop) {
-            responder(userInfo[kCommandKey], userInfo[kDataKey]);
-        }];
+        [_self handleCommand:userInfo[kCommandKey] withData:userInfo[kDataKey]];
     }];
+    
+    [PhotosUploader.sharedInstance addDelegate:(id<PhotosUploaderDelegate>)self];
     
     [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
         
+    }];
+}
+     
+-(void)handleCommand:(NSString *)command withData:(NSDictionary *)data {
+    
+    if ([command isEqualToString:kScheduleAssetsForUploadCommandValue]) {
+        [self scheduleAssetsForUpload:data[@"assets"]];
+    }
+    else if ([command isEqualToString:kUnscheduleAssetsForUploadCommandValue]) {
+        [PhotosUploader.sharedInstance unscheduleAssetsWithIdentifiers:data[@"assets"]];
+    }
+    
+    [self.class.responders enumerateObjectsUsingBlock:^(void(^responder)(NSString *command, id data), BOOL *stop) {
+        responder(command, data);
     }];
 }
 
@@ -371,6 +385,37 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     
     [[NSNotificationCenter defaultCenter] postNotificationName:kSendNativeMessageNotification object:self userInfo:userInfo];
 }
+
+-(void)scheduleAssetsForUpload:(NSArray *)assets {
+    [PhotosUploader.sharedInstance scheduleAssetsWithIdentifiers:assets];
+}
+
+#pragma mark PhotosUploaderDelegate
+
+-(void)photoUploader:(PhotosUploader *)uploader didCancelUploadAssetIdentifier:(NSString *)assetIdentifier {
+    [self.class sendMessage:@{@"assets":@[assetIdentifier]} WithCommand:kUnscheduleAssetsForUploadCommandValue];
+}
+
+-(void)photoUploader:(PhotosUploader *)uploader didUploadAssetIdentifier:(NSString *)assetIdentifier responseData:(NSData *)data withError:(NSError *)error {
+    
+    NSMutableDictionary *dict = [@{@"asset":assetIdentifier, @"success":@(error==nil)} mutableCopy];
+    if (!error) {
+        NSError *parseError = nil;
+        NSDictionary *d = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:&parseError];
+        [dict addEntriesFromDictionary:d];
+        [dict setObject:@(parseError==nil) forKey:@"success"];
+    }
+    [self.class sendMessage:dict WithCommand:kDidFinishAssetUploadCommandValue];
+    
+}
+
+-(void)photoUploader:(PhotosUploader *)uploader didScheduleUploadForAssetWithIdentifier:(NSString *)assetIdentifier {
+    [self.class sendMessage:@{@"asset":assetIdentifier} WithCommand:kDidBeginAssetUploadCommandValue];
+}
+
+//-(void)photoUploader:(PhotosUploader *)uploader didUploadDataForAssetWithIdentifier:(NSString *)asseetIdentifier totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
+//    #warning not implemented
+//}
 
 @end
 
