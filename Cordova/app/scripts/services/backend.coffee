@@ -493,6 +493,9 @@ angular
         return dfd.promise
 
       checkSessionUserP: ()-> 
+        if !deviceReady.isOnline()
+          return $q.reject("Error: Network unavailable") 
+
         if _.isEmpty($rootScope.sessionUser)
           if $rootScope.user?.username? && $rootScope.user.password?
             authPromise = self.loginP($rootScope.user).then null

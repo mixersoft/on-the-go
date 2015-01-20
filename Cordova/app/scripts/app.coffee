@@ -484,6 +484,8 @@ angular
         count: 0
     }
 
+    $scope.deviceReady = deviceReady
+
     # config values read from localstorage, set in settings
     $scope.config = {
       'app-bootstrap' : true
@@ -528,7 +530,14 @@ angular
             SideMenuSwitcher.leftSide.src='partials/workorders/left-side-menu'
         $ionicSideMenuDelegate.toggleLeft()
         return
-
+      xxxalertOffline: ()->
+        $scope.offlinePopup = $ionicPopup.alert {
+          title: "Please establish a network connection."
+        }
+        $scope.offlinePopup.then()
+        $timeout ()->
+            offlinePopup.close()
+          , 3000
     }
 
     $rootScope.deviceId = "1234567890" # updated after deviceReady.waitP()

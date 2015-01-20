@@ -56,6 +56,9 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
+      if !$scope.deviceReady.isOnline()
+        return 
+
       $scope.showLoading(true)
       otgWorkorderSync.SYNC_ORDERS(
         $scope, 
@@ -67,14 +70,15 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.beforeEnter', ()->
       _force = !otgWorkorderSync._workorderColl['owner'].length
-      if _force
-        $scope.showLoading(true)
-        otgWorkorderSync.SYNC_ORDERS(
-          $scope, 'owner', 'force'
-          , ()->
-            $scope.hideSplash()
-            return $scope.hideLoading(300)
-        )
+      return if !_force 
+      return if !$scope.deviceReady.isOnline()
+      $scope.showLoading(true)
+      otgWorkorderSync.SYNC_ORDERS(
+        $scope, 'owner', 'force'
+        , ()->
+          $scope.hideSplash()
+          return $scope.hideLoading(300)
+      )
 
 
     $scope.$on '$ionicView.leave', ()->

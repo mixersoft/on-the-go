@@ -46,8 +46,8 @@ angular
 }
 
 .factory 'deviceReady', [
-  '$q', '$timeout',  '$ionicPlatform'
-  ($q, $timeout, $ionicPlatform)->
+  '$q', '$timeout',  '$ionicPlatform', '$cordovaNetwork'
+  ($q, $timeout, $ionicPlatform, $cordovaNetwork)->
     _promise = null
     _timeout = 2000
     _device = null
@@ -80,6 +80,9 @@ angular
           console.log "$ionicPlatform reports deviceready, device.UUID=" + _deviceready.deviceId()
           return deferred.resolve("deviceready")
         return _promise = deferred.promise
+      isOnline: ()->
+        return true if _deviceready.isWebView() == false
+        return !$cordovaNetwork.isOffline()
     }
     return _deviceready
 ]

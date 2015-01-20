@@ -354,14 +354,15 @@ angular.module('ionBlankApp')
       # cached view becomes active 
       setFilter( $state.current )
       _force = !otgWorkorderSync._workorderColl['owner'].length
-      if _force
-        $scope.showLoading(true)
-        otgWorkorderSync.SYNC_ORDERS(
-          $scope, 'owner', 'force'
-          , ()->
-            $scope.hideSplash()
-            return $scope.hideLoading(300)
-          )
+      return if !_force 
+      return if !deviceReady.isOnline()
+      $scope.showLoading(true)
+      otgWorkorderSync.SYNC_ORDERS(
+        $scope, 'owner', 'force'
+        , ()->
+          $scope.hideSplash()
+          return $scope.hideLoading(300)
+        )
       return
 
     $scope.$on '$ionicView.leave', ()->
