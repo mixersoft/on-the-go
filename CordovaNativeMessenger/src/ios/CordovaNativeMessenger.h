@@ -7,7 +7,6 @@
 //
 
 #import <Cordova/CDVPlugin.h>
-#import "PhotosUploader.h"
 
 extern NSString *kSendNativeMessageNotification;
 

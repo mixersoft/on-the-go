@@ -7,7 +7,8 @@
 //
 
 #import <Foundation/Foundation.h>
-@import QuartzCore;
+#import <QuartzCore/QuartzCore.h>
+
 @class PhotosUploader;
 
 @protocol PhotosUploaderDelegate <NSObject>
