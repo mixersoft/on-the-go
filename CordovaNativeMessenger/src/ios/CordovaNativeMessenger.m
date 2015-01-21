@@ -7,7 +7,7 @@
 //
 
 #import "CordovaNativeMessenger.h"
-
+#import "PhotosUploader.h"
 #import <Photos/Photos.h>
 
 NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeMessageNotification";

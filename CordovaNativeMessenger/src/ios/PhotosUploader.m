@@ -7,7 +7,8 @@
 //
 
 #import "PhotosUploader.h"
-@import Photos;
+#import <Photos/Photos.h>
+
 static NSString *parseApplicationID = @"Y9kGkaX2cbq6sh8NVZnslB9ZpwF4TbAEfFti7FQX";
 static NSString *parseRESTAPIKey = @"q9OPhuoIMLfIzvGoBLpHqb6mdJnMMdGGCGZgKfqB";
 static NSString *parseMasterKey = @"fsMgAw0ozmaZj5Kr9Tz8nuhPwNI1ZTLAsKeoojlP";
