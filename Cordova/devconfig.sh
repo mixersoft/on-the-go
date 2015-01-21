@@ -61,6 +61,7 @@ ionic lib update
 
 ### install Cordova platform for ios and plugins
 ionic platform ios
+cp -R ./resources/* ./platforms/ios/On-the-Go/Resources/
 ionic plugin add org.apache.cordova.console 
 ionic plugin add org.apache.cordova.device
 ionic plugin add org.apache.cordova.file
