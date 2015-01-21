@@ -117,7 +117,7 @@ angular
       map: ()->
         return self._mapAssetsLibrary
 
-      loadCameraRollP: (options)->
+      loadCameraRollP: (options, force=true)->
 
         defaults = {
           size: 'thumbnail'
@@ -134,7 +134,7 @@ angular
         .then ( mapped )->
           if _.isEmpty self._mapAssetsLibrary
             self._mapAssetsLibrary = mapped 
-          else 
+          else if force
             # NOTE: this will reflect deletions if we don't merge
             self._mapAssetsLibrary = mapped 
           return mapped

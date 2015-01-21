@@ -315,10 +315,11 @@ angular.module('ionBlankApp')
 
       refresh: ()->
         promise = cameraRoll.loadCameraRollP().finally ()->
+          return $scope.$broadcast('scroll.refreshComplete') if !$scope.deviceReady.isOnline()
           otgWorkorderSync.SYNC_ORDERS(
             $scope, 'owner', 'force'
             , ()->
-              return $scope.$broadcast('scroll.refreshComplete');
+              return $scope.$broadcast('scroll.refreshComplete')
           )
         return
 

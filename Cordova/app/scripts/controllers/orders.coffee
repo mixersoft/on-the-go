@@ -44,12 +44,15 @@ angular.module('ionBlankApp')
 
     $scope.on = {
       refresh: ()->
-        otgWorkorderSync.SYNC_ORDERS(
-          $scope, 'owner', 'force'
-          , ()->
-            $scope.hideSplash()
-            return $scope.$broadcast('scroll.refreshComplete');
-        )        
+        return $scope.$broadcast('scroll.refreshComplete'); if !$scope.deviceReady.isOnline()
+        
+        promise = cameraRoll.loadCameraRollP().finally ()->
+          otgWorkorderSync.SYNC_ORDERS(
+            $scope, 'owner', 'force'
+            , ()->
+              return $scope.$broadcast('scroll.refreshComplete');
+          )
+        return      
     }
 
     $scope.workorders = []
@@ -58,8 +61,8 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
-      if !$scope.deviceReady.isOnline()
-        return 
+      return if !$scope.deviceReady.isOnline()
+         
 
       $scope.showLoading(true)
       otgWorkorderSync.SYNC_ORDERS(

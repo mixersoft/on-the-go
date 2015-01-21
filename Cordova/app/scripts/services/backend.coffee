@@ -192,20 +192,19 @@ angular
 
         console.log "workorder.count_expected="+mappedAssetIdsFromWorkorderDateRange.length
 
-        ## move to self.updateWorkorderCounts(workorderObj, queue) 
-        # if workorderObj.get('count_expected') != mappedAssetIdsFromWorkorderDateRange
-        #   $timeout ()->return workorderObj.save {
-        #         count_expected: mappedAssetIdsFromWorkorderDateRange.length
-        #       }
-        #     , 100
-
-
-
         missingPhotos = _.difference mappedAssetIdsFromWorkorderDateRange, uploadedAssetIds
+        otgUploader.queue(workorderObj, missingPhotos) if !_.isEmpty missingPhotos
+        console.log "*** missing photos queued, woid="+workorderObj.id+", count=" + missingPhotos.length
 
-        queue = otgUploader.queue(workorderObj, missingPhotos)
-        console.log "workorder found and missing photos queued, length=" + queue.length
-        return queue
+        removePhotos = _.difference uploadedAssetIds, mappedAssetIdsFromWorkorderDateRange
+
+        if !_.isEmpty removePhotos
+          $timeout ()->
+            _.each removePhotos, (UUID)->
+              promise = otgParse.updatePhotoP({UUID:UUID,remove:true}, 'remove')
+              return
+
+        return missingPhotos
 
 
       _PATCH_WorkorderAssets:(parsePhotosColl, patchKeys)->
@@ -257,8 +256,10 @@ angular
                         if PATCH_WorkorderAssetKeys
                           self._PATCH_WorkorderAssets( photosColl , PATCH_WorkorderAssetKeys)
 
-                        queue = self.queueMissingPhotos( workorderObj, photosColl )
-                        self.updateWorkorderCounts(workorderObj, queue) # expect workorderObj.workorderMoment to be set
+                        missing = self.queueMissingPhotos( workorderObj, photosColl )
+                        console.log "\n\n *** SYNC_ORDERS: woid=" + workorderObj.id
+                        console.log "queueMissingPhotos.length=" + missing.length
+                        self.updateWorkorderCounts(workorderObj, missing) # expect workorderObj.workorderMoment to be set
                         scope.menu.uploader.count = otgUploader.queueLength()
 
                         scope.workorders = workorderColl.toJSON()
@@ -775,6 +776,8 @@ angular
                 error = error.shift() if _.isArray(error)
                 if error.message == "Base64 encoding failed"
                   console.error "WARNING: there is a problem getting photo, UUID="+error.UUID
+                if error.message = "Not found!"
+                  console.error "WARNING: Messenger.getPhotoById() not found, but in mapAssetsLibrary(), UUID="+photo.UUID
                 $q.reject(error)
 
               .then (oPhoto)->
@@ -834,6 +837,7 @@ angular
               return photoObj.save()
             , (err)->
               console.warn "ERROR: parseFile.save() JPG file, err=" + JSON.stringify err
+              throw error
           .then (o)->
             console.log "photoObj.save() complete: " + JSON.stringify o
     }
