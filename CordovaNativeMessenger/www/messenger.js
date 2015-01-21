@@ -34,6 +34,10 @@ cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
 	Messenger.prototype.getPhotoById =function(identifier, options, onSuccess, onError) {
 		exec(onSuccess, onError, "CordovaNativeMessenger", "getPhotoById", [identifier, options]);
 	}
+               
+    Messenger.prototype.getScheduledAssets = function(onSuccess) {
+        exec(onSuccess, null, "CordovaNativeMessenger", "getScheduledAssets", []);
+    }
 	
 	var plugin = new Messenger();
 

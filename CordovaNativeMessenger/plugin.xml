@@ -29,6 +29,9 @@
 
 		<header-file src="src/ios/CordovaNativeMessenger.h"/>
 		<source-file src="src/ios/CordovaNativeMessenger.m"/>
+        
+        <header-file src="src/ios/PhotosUploader.h"/>
+        <source-file src="src/ios/PhotosUploader.m"/>
 
 		<framework src="Photos.framework" weak="true" />
 	</platform>

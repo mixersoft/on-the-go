@@ -20,7 +20,7 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
 @implementation PhotosUploader {
     NSURLSession *_backgroundUploadSession;
     NSHashTable *_delegates;
-    NSMutableDictionary *_responseDataDict;
+    NSMutableDictionary *_responseDataWrappers;
 }
 
 -(instancetype)initInternalWithIdentifier:(NSString *)identifier {
@@ -32,7 +32,7 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
         _backgroundUploadSession = [NSURLSession sessionWithConfiguration:config delegate:(id<NSURLSessionDelegate>)self delegateQueue:[NSOperationQueue mainQueue]];
         
         _delegates = [NSHashTable hashTableWithOptions:NSHashTableWeakMemory];
-        _responseDataDict = [NSMutableDictionary new];
+        _responseDataWrappers = [NSMutableDictionary new];
     }
     return self;
 }
@@ -61,12 +61,12 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
     return [self uploaderWithSessionConfigurationIdentifier:sessionIdentifierKey];
 }
 
-- (NSString *) applicationDocumentsDirectory
+- (NSString *) uploaderStoreDirectory
 {
     static NSString *path = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
         NSString *basePath = ([paths count] > 0) ? [paths objectAtIndex:0] : nil;
         
         path = [basePath stringByAppendingString:@"PhotosUploadStore"];
@@ -85,11 +85,35 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
     [_delegates removeObject:delegate];
 }
 
+-(void)currentlyScheduledAssetIDs:(void(^)(NSArray *))completion {
+    if (!completion) return;
+    
+    [_backgroundUploadSession getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
+        NSMutableArray *assets = [NSMutableArray arrayWithCapacity:uploadTasks.count];
+        [uploadTasks enumerateObjectsUsingBlock:^(NSURLSessionUploadTask *obj, NSUInteger idx, BOOL *stop) {
+             NSString *identifier = obj.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+            if (!identifier.length) return;
+            
+            [assets addObject:identifier];
+        }];
+        
+        [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+            completion(assets);
+        }];
+    }];
+}
+
 
 -(NSString *)imagePathForAssetIdentifier:(NSString *)identifier {
     NSString *name = [[[identifier componentsSeparatedByString:@"/"] firstObject] stringByAppendingPathExtension:@"jpg"];
-    NSString *fullPath = [self.applicationDocumentsDirectory stringByAppendingPathComponent:name];
+    NSString *fullPath = [self.uploaderStoreDirectory stringByAppendingPathComponent:name];
     return fullPath;
+}
+
+-(void)unscheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers {
+    [localPHAssetIdentifiers enumerateObjectsUsingBlock:^(NSString * obj, NSUInteger idx, BOOL *stop) {
+        [self stopUploadingAssetWithID:obj completion:nil];
+    }];
 }
 
 -(void)scheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers {
@@ -97,54 +121,126 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
     PHImageManager *cachingImageManager = [PHImageManager new];
     NSLog(@"Assets Count: %d", assets.count);
     
+    
     [assets enumerateObjectsUsingBlock:^(PHAsset *obj, NSUInteger idx, BOOL *stop) {
-        //get image
-        PHImageRequestOptions *opts = [PHImageRequestOptions new];
-        [opts setDeliveryMode:PHImageRequestOptionsDeliveryModeHighQualityFormat];
-        [opts setVersion:PHImageRequestOptionsVersionOriginal];
-        [opts setResizeMode:PHImageRequestOptionsResizeModeExact];
-        
-        CGSize originalImageSize = CGSizeMake(obj.pixelWidth, obj.pixelHeight);
-        CGFloat maxSide = MAX(originalImageSize.width, originalImageSize.height);
-        
-//        if (self.convertTo720p && maxSide > 720) {
-//            CGFloat scale = (720.0 / maxSide);
-//            originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
-//        }
-        
-        PHImageRequestID imageRequestID = [cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
-            if ([info[PHImageResultIsDegradedKey] boolValue]) {
-                return;
+        [self stopUploadingAssetWithID:obj.localIdentifier completion:^(bool fond) {
+            //get image
+            PHImageRequestOptions *opts = [PHImageRequestOptions new];
+            [opts setDeliveryMode:PHImageRequestOptionsDeliveryModeHighQualityFormat];
+            [opts setVersion:PHImageRequestOptionsVersionOriginal];
+            [opts setResizeMode:PHImageRequestOptionsResizeModeExact];
+            
+            CGSize originalImageSize = CGSizeMake(obj.pixelWidth, obj.pixelHeight);
+            CGFloat maxSide = MAX(originalImageSize.width, originalImageSize.height);
+            
+            if (self.convertTo720p && maxSide > 720) {
+                CGFloat scale = (720.0 / maxSide);
+                originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
             }
-            NSData *data = UIImageJPEGRepresentation(result, 1);
-            [cachingImageManager cancelImageRequest:imageRequestID];
             
-            if (data.length) {
-                //store image
-                NSString *fullPath = [self imagePathForAssetIdentifier:obj.localIdentifier];
-                if (![data writeToFile:fullPath atomically:YES])
+            PHImageRequestID imageRequestID = [cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
+                if ([info[PHImageResultIsDegradedKey] boolValue]) {
                     return;
+                }
+                NSData *data = UIImageJPEGRepresentation(result, 1);
+                [cachingImageManager cancelImageRequest:imageRequestID];
                 
-                NSLog(@"image:%@ with size:%@", fullPath.lastPathComponent, NSStringFromCGSize(result.size));
-                //NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", fullPath.lastPathComponent];
-                NSString *path = [NSString stringWithFormat:@"http://dev.mediastorm.bg:1337/files/%@", fullPath.lastPathComponent];
-                NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60];
-                [request setHTTPMethod:@"POST"];
-                [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-Application-Id"];
-                [request addValue:parseRESTAPIKey forHTTPHeaderField:@"X-Parse-REST-API-Key"];
-                [request addValue:@"image/jpeg" forHTTPHeaderField:@"Content-Type"];
-                [request addValue:obj.localIdentifier forHTTPHeaderField:@"X-Image-Identifier"];
-            
-                NSURLSessionUploadTask *task = [_backgroundUploadSession uploadTaskWithRequest:request fromFile:[NSURL fileURLWithPath:fullPath]];
-                [task resume];
-                for (id<PhotosUploaderDelegate>delegate in _delegates) {
-                    if ([delegate respondsToSelector:@selector(photoUploader:didScheduleUploadForAssetWithIdentifier:)]) {
-                        [delegate photoUploader:self didScheduleUploadForAssetWithIdentifier:obj.localIdentifier];
+                if (data.length) {
+                    //store image
+                    NSString *fullPath = [self imagePathForAssetIdentifier:obj.localIdentifier];
+                    if (![data writeToFile:fullPath atomically:YES])
+                        return;
+                    
+                    NSLog(@"image:%@ with size:%@", fullPath.lastPathComponent, NSStringFromCGSize(result.size));
+                    //NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", fullPath.lastPathComponent];
+                    NSString *path = [NSString stringWithFormat:@"http://dev.mediastorm.bg:1337/files/%@", fullPath.lastPathComponent];
+                    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60];
+                    [request setHTTPMethod:@"POST"];
+                    [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-Application-Id"];
+                    [request addValue:parseRESTAPIKey forHTTPHeaderField:@"X-Parse-REST-API-Key"];
+                    [request addValue:@"image/jpeg" forHTTPHeaderField:@"Content-Type"];
+                    [request addValue:obj.localIdentifier forHTTPHeaderField:@"X-Image-Identifier"];
+                    
+                    NSURLSessionUploadTask *task = [_backgroundUploadSession uploadTaskWithRequest:request fromFile:[NSURL fileURLWithPath:fullPath]];
+                    [task resume];
+                    for (id<PhotosUploaderDelegate>delegate in _delegates) {
+                        if ([delegate respondsToSelector:@selector(photoUploader:didScheduleUploadForAssetWithIdentifier:)]) {
+                            [delegate photoUploader:self didScheduleUploadForAssetWithIdentifier:obj.localIdentifier];
+                        }
                     }
                 }
+            }];
+        }];
+        
+    }];
+}
+
+-(void)stopUploadingAssetWithID:(NSString *)assetID completion:(void(^)(bool fond))completion {
+    
+    [_backgroundUploadSession getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
+        __block bool found = NO;
+        
+        [uploadTasks enumerateObjectsUsingBlock:^(NSURLSessionUploadTask *obj, NSUInteger idx, BOOL *stop) {
+            NSString *identifier = obj.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+            if ([identifier isEqualToString:assetID]) {
+                *stop = found = YES;
+                [obj cancel];
+                [self deleteDataForTask:obj];
             }
         }];
+        
+        if (completion) {
+            [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+                completion(found);
+            }];
+        }
     }];
+}
+
+-(NSData *)responseDataForTask:(NSURLSessionTask *)task {
+     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+    NSMutableData *data = [_responseDataWrappers objectForKey:identifier];
+    return  data;
+}
+
+-(NSURL *)fileURLOfDataForTask:(NSURLSessionTask *)task {
+    NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+    if (!identifier.length) return nil;
+    
+     NSString *dir = [[self uploaderStoreDirectory] stringByAppendingPathComponent:identifier];
+    return [NSURL fileURLWithPath:dir];
+}
+
+-(BOOL)appendData:(NSData *)data toTask:(NSURLSessionTask *)task {
+    //NSFileWrapperReadingImmediate
+    bool success = YES;
+     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+    NSMutableData *_data = [_responseDataWrappers objectForKey:identifier];
+    if (!_data) {
+        //create wrapper
+        
+        _data = [NSMutableData data];
+        [_responseDataWrappers setObject:_data forKey:identifier];
+    }
+    [_data appendData:data];
+    NSError *error;
+    [_data writeToURL:[self fileURLOfDataForTask:task] options:NSDataWritingAtomic error:&error];
+    success = error == nil;
+    
+    return success;
+}
+
+-(void)deleteDataForTask:(NSURLSessionTask *)task {
+    
+    NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+    //delete data
+    [_responseDataWrappers removeObjectForKey:identifier];
+    [NSFileManager.defaultManager removeItemAtURL:[self fileURLOfDataForTask:task] error:nil];
+    for (id<PhotosUploaderDelegate>delegate in _delegates) {
+        if ([delegate respondsToSelector:@selector(photoUploader:didCancelUploadAssetIdentifier:)]) {
+            [delegate photoUploader:self didCancelUploadAssetIdentifier:identifier];
+        }
+    }
 }
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
@@ -165,12 +261,16 @@ totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
  */
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
 didCompleteWithError:(NSError *)error {
+    if ((error.code == kCFURLErrorCancelled || task.state == NSURLSessionTaskStateCanceling)) {
+        return;
+    }
+    
     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
     
     NSString *path = [self imagePathForAssetIdentifier:identifier];
     [NSFileManager.defaultManager removeItemAtPath:path error:nil];
-    NSData *responseData = _responseDataDict[identifier];
-    [_responseDataDict removeObjectForKey:identifier];
+    NSData *responseData = [self responseDataForTask:task];
+    [self deleteDataForTask:task];
     NSLog(@"Finished task with image identifier: %@ responseDataLength: %d with error:%@", identifier, responseData.length, error);
     
     for (id<PhotosUploaderDelegate>delegate in _delegates) {
@@ -237,13 +337,7 @@ didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
     didReceiveData:(NSData *)data {
     if(!data.length) return;
     
-    NSString *identifier = dataTask.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-    NSMutableData *localData = _responseDataDict[identifier];
-    if (!localData) {
-        localData = [NSMutableData new];
-        [_responseDataDict setObject:localData forKey:identifier];
-    }
-    [localData appendData:data];
+    [self appendData:data toTask:dataTask];
     NSLog(@"%@",dataTask);
 }
 
