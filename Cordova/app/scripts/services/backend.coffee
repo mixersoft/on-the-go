@@ -834,10 +834,9 @@ angular
                 , extendedAttrs # , classDefaults
 
               photoObj = new parseClass.PhotoObj parseData , {initClass: false }
-              return photoObj.save()
-            , (err)->
-              console.warn "ERROR: parseFile.save() JPG file, err=" + JSON.stringify err
-              throw error
+              return photoObj.save().fail (err)->
+                console.warn "ERROR: parseFile.save() JPG file, err=" + JSON.stringify err
+                throw err
           .then (o)->
             console.log "photoObj.save() complete: " + JSON.stringify o
     }
