@@ -167,7 +167,7 @@ angular
           return mapped
 
         .catch (error)->
-          console.log error
+          # console.warn "ERROR: loadCameraRollP, error="+JSON.stringify( error )[0..100]
           # appConsole.show( error)
           return $q.reject(error)
 

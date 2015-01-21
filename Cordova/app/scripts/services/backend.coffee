@@ -815,6 +815,12 @@ angular
                   url: ()-> return error.message
                 }
                 return $q.when skipErrorFile
+              else if error.message = "Not found!"
+                skipErrorFile = {
+                  UUID: error.UUID
+                  url: ()-> "error: getPhotoById() not found"
+                }
+                $q.when skipErrorFile
               else 
                 throw error
           .then (parseFile)->
