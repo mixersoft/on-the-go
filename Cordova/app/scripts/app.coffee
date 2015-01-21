@@ -699,6 +699,8 @@ angular
      
     $scope._TEST_nativeUploader = ()->
       # register handlers for native uploader
+      assetIds = _.pluck cameraRoll.map(), 'UUID'
+
       snappiMessengerPluginService.on.didFinishAssetUpload ( resp )->
           console.log '\n\n ***** TEST_nativeUploader: handler for didFinishAssetUpload'
           console.log otgUploader.uploadPhotoFileComplete
@@ -709,8 +711,8 @@ angular
           console.log resp
           return
 
-      assetIds = ['AC072879-DA36-4A56-8A04-4D467C878877/L0/001', 'B6C0A21C-07C3-493D-8B44-3BA4C9981C25/L0/001']
       # add to nativeUploader queue
+      assetIds = assetIds[0...3]
       data = {
         assets: assetIds
         options: 
@@ -722,10 +724,20 @@ angular
       # snappiMessengerPluginService.scheduleAssetsForUploadP(assetIds, options)
       window.Messenger['scheduleAssetsForUpload'](  data
           , (resp)->
+            # onSuccess is not part of the API
             return console.log "scheduleAssetsForUpload.onSuccess"
           , (err)->
             return console.log "scheduleAssetsForUpload.onError. Timeout?"
         )
+
+      $timeout ()->
+           window.Messenger['getScheduledAssets']( (resp)->
+              console.log "\n\n*** onSuccess getScheduleAssetsP"
+              console.log resp
+              return
+            )
+        ,1000
+
 
 
 

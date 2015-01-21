@@ -20,11 +20,11 @@ cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
 	}
 
 	Messenger.prototype.lastImageAssetID = function(data, onSuccess, onError) {
-		exec(onSuccess, onError, "CordovaNativeMessenger", "sendMessage", ["lastImageAssetID", data]);
+		exec(onSuccess, onError, "CordovaNativeMessenger", "lastImageAssetID", [data]);
 	};
 
 	Messenger.prototype.scheduleAssetsForUpload = function(data, onSuccess, onError) {
-		exec(onSuccess, onError, "CordovaNativeMessenger", "sendMessage", ["scheduleAssetsForUpload", data]);
+		exec(onSuccess, onError, "CordovaNativeMessenger", "scheduleAssetsForUpload", [data]);
 	};
 
 	Messenger.prototype.mapAssetsLibrary = function(callback) {
@@ -35,9 +35,9 @@ cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
 		exec(onSuccess, onError, "CordovaNativeMessenger", "getPhotoById", [identifier, options]);
 	}
                
-    Messenger.prototype.getScheduledAssets = function(onSuccess) {
-        exec(onSuccess, null, "CordovaNativeMessenger", "getScheduledAssets", []);
-    }
+  Messenger.prototype.getScheduledAssets = function(onSuccess) {
+      exec(onSuccess, null, "CordovaNativeMessenger", "getScheduledAssets", []);
+  }
 	
 	var plugin = new Messenger();
 

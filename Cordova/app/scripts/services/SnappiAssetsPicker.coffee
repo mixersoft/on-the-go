@@ -734,7 +734,11 @@ angular
           options: options
         }
         console.log "\n\n*** scheduleAssetsForUpload, data=" + JSON.stringify( data )
-        return _MessengerPLUGIN._callP( 'scheduleAssetsForUpload', data )        
+        return _MessengerPLUGIN._callP( 'scheduleAssetsForUpload', data )  
+
+      getScheduleAssetsP : ()-> 
+        console.log "\n\n*** calling getScheduleAssetsP"
+        return _MessengerPLUGIN._callP( 'getScheduledAssets')        
 
       mapAssetsLibraryP: (options={})->
         console.log "mapAssetsLibrary() calling window.Messenger.mapAssetsLibrary(assets)"
