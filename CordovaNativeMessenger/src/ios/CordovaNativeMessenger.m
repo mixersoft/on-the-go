@@ -65,6 +65,24 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     }];
 }
 
+-(void)scheduleAssetsForUpload:(CDVInvokedUrlCommand*) command {
+    
+    NSDictionary *data = command.arguments.firstObject;
+    NSArray *assets = data[@"assets"];
+    [PhotosUploader.sharedInstance scheduleAssetsWithIdentifiers:assets];
+    
+    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
+}
+
+-(void)unscheduleAssetsForUpload:(CDVInvokedUrlCommand*) command {
+    
+    NSDictionary *data = command.arguments.firstObject;
+    NSArray *assets = data[@"assets"];
+    [PhotosUploader.sharedInstance unscheduleAssetsWithIdentifiers:assets];
+    
+    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
+}
+
 -(void)bindListener:(CDVInvokedUrlCommand*) command {
     NSLog(@"Binding Cordova callback for messages");
     
@@ -279,10 +297,10 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     __weak CordovaNativeMessenger *_self = self;
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onSendNativeMessage:) name:kSendNativeMessageNotification object:nil];
     
-    [[NSNotificationCenter defaultCenter] addObserverForName:kSendNativeMessageNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
-        NSDictionary *userInfo = note.userInfo;
-        [_self handleCommand:userInfo[kCommandKey] withData:userInfo[kDataKey]];
-    }];
+//    [[NSNotificationCenter defaultCenter] addObserverForName:kSendNativeMessageNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
+//        //NSDictionary *userInfo = note.userInfo;
+//        //[_self handleCommand:userInfo[kCommandKey] withData:userInfo[kDataKey]];
+//    }];
     
     [PhotosUploader.sharedInstance addDelegate:(id<PhotosUploaderDelegate>)self];
     
@@ -291,22 +309,23 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     }];
 }
      
--(void)handleCommand:(NSString *)command withData:(NSDictionary *)data {
-    
-    if ([command isEqualToString:kScheduleAssetsForUploadCommandValue]) {
-        [self scheduleAssetsForUpload:data[@"assets"]];
-    }
-    else if ([command isEqualToString:kUnscheduleAssetsForUploadCommandValue]) {
-        [PhotosUploader.sharedInstance unscheduleAssetsWithIdentifiers:data[@"assets"]];
-    }
-    
-    [self.class.responders enumerateObjectsUsingBlock:^(void(^responder)(NSString *command, id data), BOOL *stop) {
-        responder(command, data);
-    }];
-}
+//-(void)handleCommand:(NSString *)command withData:(NSDictionary *)data {
+//    
+//    if ([command isEqualToString:kScheduleAssetsForUploadCommandValue]) {
+//        [self scheduleAssetsForUpload:data[@"assets"]];
+//    }
+//    else if ([command isEqualToString:kUnscheduleAssetsForUploadCommandValue]) {
+//        [PhotosUploader.sharedInstance unscheduleAssetsWithIdentifiers:data[@"assets"]];
+//    }
+//    
+//    [self.class.responders enumerateObjectsUsingBlock:^(void(^responder)(NSString *command, id data), BOOL *stop) {
+//        responder(command, data);
+//    }];
+//}
 
 -(void)dispose {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [PhotosUploader.sharedInstance removeDelegate:(id<PhotosUploaderDelegate>)self];
 }
 
 -(BOOL)isPortraitImage:(UIImage*)image{
@@ -403,10 +422,6 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                                };
     
     [[NSNotificationCenter defaultCenter] postNotificationName:kSendNativeMessageNotification object:self userInfo:userInfo];
-}
-
--(void)scheduleAssetsForUpload:(NSArray *)assets {
-    [PhotosUploader.sharedInstance scheduleAssetsWithIdentifiers:assets];
 }
 
 #pragma mark PhotosUploaderDelegate

@@ -120,7 +120,7 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
 -(void)scheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers {
     PHFetchResult *assets = [PHAsset fetchAssetsWithLocalIdentifiers:localPHAssetIdentifiers options:nil];
     PHImageManager *cachingImageManager = [PHImageManager new];
-    NSLog(@"Assets Count: %d", assets.count);
+    NSLog(@"Assets Count: %lu", (unsigned long)localPHAssetIdentifiers.count);
     
     
     [assets enumerateObjectsUsingBlock:^(PHAsset *obj, NSUInteger idx, BOOL *stop) {
@@ -139,12 +139,11 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
                 originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
             }
             
-            PHImageRequestID imageRequestID = [cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
+            [cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
                 if ([info[PHImageResultIsDegradedKey] boolValue]) {
                     return;
                 }
                 NSData *data = UIImageJPEGRepresentation(result, 1);
-                [cachingImageManager cancelImageRequest:imageRequestID];
                 
                 if (data.length) {
                     //store image

@@ -16,8 +16,9 @@ extern NSString *kDataKey;
 // commands
 extern NSString *kPhotoStreamChangeCommandValue; //updated {array}, removed {array}, added {array}
 
-extern NSString *kScheduleAssetsForUploadCommandValue; // assets {array}
-extern NSString *kUnscheduleAssetsForUploadCommandValue; // assets {array}
+//extern NSString *kScheduleAssetsForUploadCommandValue; // assets {array}
+//extern NSString *kUnscheduleAssetsForUploadCommandValue; // assets {array}
+
 extern NSString *kScheduleDayRangeForUploadCommandValue; // fromDate {string}, toDate {string}
 extern NSString *kUnscheduleDayRangeForUploadCommandValue;
 
