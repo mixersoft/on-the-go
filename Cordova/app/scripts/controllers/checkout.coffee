@@ -328,16 +328,6 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
-            # once per controller load, setup code for view
-      # register handlers for native uploader
-      snappiMessengerPluginService.on.didFinishAssetUpload(otgUploader.uploadPhotoFileComplete)
-      console.log '\n\n ***** handler registered for didFinishAssetUpload'
-      console.log otgUploader.uploadPhotoFileComplete
-
-      snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
-          console.log "\n\n ***** didBeginAssetUpload"
-          console.log resp
-          return
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->

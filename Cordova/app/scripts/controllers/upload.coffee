@@ -21,11 +21,21 @@ angular.module('ionBlankApp')
         isEnabled : null
       enable : (action=null)->
         if action=='toggle'
-          return this.state.isEnabled = !this.state.isEnabled 
+          value = this.state.isEnabled = !this.state.isEnabled 
         else if action!=null
-          return this.state.isEnabled =  !!action
+          value = this.state.isEnabled =  !!action
         else 
-          return this.state.isEnabled
+          value = this.state.isEnabled
+        $scope.config['upload']['enabled'] = value  
+        return value
+      backgroundQueue : (action)->
+        # called by $watch 'config.upload.enabled'
+        if action
+          console.log "TODO: scheduleAssetsForUploadP"
+        else 
+          console.log "TODO: unscheduleAssetsForuploadP"
+        self.enable( !!action )
+
       isActive: ()->
         return self.state.isActive  
 
@@ -83,11 +93,6 @@ angular.module('ionBlankApp')
             promises.push p 
             return p
  
-
-        # activate/enable uploader
-        'TODO' || snappiMessengerPluginService.enableUploads(true)
-        # register in appController
-        # snappiMessengerPluginService.on.didFinishAssetUpload(self.uploadPhotoFileComplete)
 
         $q.all(promises)
         .then (o)->
@@ -209,16 +214,20 @@ angular.module('ionBlankApp')
         if force && !_.isEmpty(dictQueuedPhotos)
           addedToQueue.concat(dictQueuedPhotos)
 
-        # add to nativeUploader queue
-        options = {
-          targetWidth: 640
-          targetHeight: 640
-          resizeMode: 'aspectFit'
-          autoRotate: true            
+        return self._queue if _.isEmpty addedToQueue
+        return self._queue if $scope.config.upload.enabled == false
+
+        data = {
+          assets: addedToQueue
+          options:
+            targetWidth: 640
+            targetHeight: 640
+            resizeMode: 'aspectFit'
+            autoRotate: true            
         }
-        snappiMessengerPluginService.scheduleAssetsForUploadP(addedToQueue, options)
+        snappiMessengerPluginService.scheduleAssetsForUploadP(data)
         .then (resp)->
-            console.log "*** snappiMessengerPluginService.scheduleAssetsForUploadP, queue length="+addedToQueue.length
+            console.log "*** upload: snappiMessengerPluginService.scheduleAssetsForUploadP, queue length="+addedToQueue.length
             console.log resp 
             return 
           , (error)->
@@ -292,15 +301,16 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
-      # register handlers for native uploader
-      snappiMessengerPluginService.on.didFinishAssetUpload(otgUploader.uploadPhotoFileComplete)
-      console.log '\n\n ***** handler registered for didFinishAssetUpload'
-      console.log otgUploader.uploadPhotoFileComplete
+      # # register handlers for native uploader
+      # snappiMessengerPluginService.on.didFinishAssetUpload(otgUploader.uploadPhotoFileComplete)
+      # console.log '\n\n ***** upload: handler registered for didFinishAssetUpload'
+      # # update queue, count
+      # console.log otgUploader.uploadPhotoFileComplete
 
-      snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
-          console.log "\n\n ***** didBeginAssetUpload"
-          console.log resp
-          return
+      # snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
+      #     console.log "\n\n ***** didBeginAssetUpload"
+      #     console.log resp
+      #     return
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->

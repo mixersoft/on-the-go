@@ -494,6 +494,7 @@ angular
       privacy:
         'only-mothers': false
       upload:
+        'enabled': false
         'auto-upload': false
         'use-cellular-data': false
         'use-720p-service': true
@@ -553,6 +554,9 @@ angular
 
 
     $scope.$watch 'config', (newVal, oldVal)->
+        if newVal['upload']['enabled'] !== oldVal['upload']['enabled']
+          otgUploader.backgroundQueue(newVal['upload']['enabled'])
+
         return _prefs.store newVal, oldVal
       , true
 
@@ -725,9 +729,10 @@ angular
       window.Messenger['scheduleAssetsForUpload'](  data
           , (resp)->
             # onSuccess is not part of the API
-            return console.log "scheduleAssetsForUpload.onSuccess"
+            console.log resp
+            return console.log "test: scheduleAssetsForUpload.onSuccess, count=" + assetIds.length
           , (err)->
-            return console.log "scheduleAssetsForUpload.onError. Timeout?"
+            return console.log "test: scheduleAssetsForUpload.onError. Timeout?"
         )
 
       $timeout ()->
@@ -765,14 +770,14 @@ angular
           $scope.orders = TEST_DATA.orders 
         else # mobile device w/ cordova
           # register handlers for native uploader
-          snappiMessengerPluginService.on.didFinishAssetUpload( otgUploader.uploadPhotoFileComplete )
-          console.log '\n\n ***** handler registered for didFinishAssetUpload'
-          console.log otgUploader.uploadPhotoFileComplete
+          # snappiMessengerPluginService.on.didFinishAssetUpload( otgUploader.uploadPhotoFileComplete )
+          # console.log '\n\n ***** app: handler registered for didFinishAssetUpload'
+          # console.log otgUploader.uploadPhotoFileComplete
 
-          snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
-              console.log "\n\n ***** didBeginAssetUpload"
-              console.log resp
-              return
+          # snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
+          #     console.log "\n\n ***** app: didBeginAssetUpload"
+          #     console.log resp
+          #     return
 
         
         
