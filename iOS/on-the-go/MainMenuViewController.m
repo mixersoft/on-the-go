@@ -59,9 +59,6 @@ typedef NS_ENUM(uint8_t, CordovaPage) {
         case 1:
             [self performSegueWithIdentifier:@"ChooseYourDaysSegue" sender:self];
             break;
-        case 3:
-            [self performSegueWithIdentifier:@"UploaderSegue" sender:self];
-            break;
         default:
             [self performSegueWithIdentifier:@"CordovaViewControllerSegue" sender:@(indexPath.row)];
             break;
