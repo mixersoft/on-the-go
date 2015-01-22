@@ -9,9 +9,9 @@
 #import "PhotosUploader.h"
 #import <Photos/Photos.h>
 
-static NSString *parseApplicationID = @"Y9kGkaX2cbq6sh8NVZnslB9ZpwF4TbAEfFti7FQX";
-static NSString *parseRESTAPIKey = @"q9OPhuoIMLfIzvGoBLpHqb6mdJnMMdGGCGZgKfqB";
-static NSString *parseMasterKey = @"fsMgAw0ozmaZj5Kr9Tz8nuhPwNI1ZTLAsKeoojlP";
+static NSString *parseApplicationID = @"cS8RqblszHpy6GJLAuqbyQF7Lya0UIsbcxO8yKrI"; //@"Y9kGkaX2cbq6sh8NVZnslB9ZpwF4TbAEfFti7FQX";
+static NSString *parseRESTAPIKey = @"Jnx8ZaWNyvG5aEor0kYya69XSzF51goQ7dbd7JDJ"; //"@"q9OPhuoIMLfIzvGoBLpHqb6mdJnMMdGGCGZgKfqB";
+static NSString *parseMasterKey = @"3n5AwFGDO1n0YLEa1zLQfHwrFGpTnQUSZoRrFoD9"; //@"fsMgAw0ozmaZj5Kr9Tz8nuhPwNI1ZTLAsKeoojlP";
 
 static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIdentifier";
 
