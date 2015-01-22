@@ -6,7 +6,7 @@ cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
 	var Messenger = function() {
     	this.listeners = {};
     	
-    	exec(this.nativeListener, null, pluginName, "bindListener", []);
+    	exec(this.nativeListener.bind(this), null, pluginName, "bindListener", []);
 	};
 	
 	Messenger.prototype.nativeListener = function(message) {
