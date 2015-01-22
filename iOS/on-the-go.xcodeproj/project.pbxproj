@@ -20,21 +20,9 @@
 		BF3810971A125C2B00915183 /* AssetsLibrary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF3810961A125C2B00915183 /* AssetsLibrary.framework */; };
 		BF3810991A125C3200915183 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF3810981A125C3200915183 /* MobileCoreServices.framework */; };
 		BF38109C1A125C8400915183 /* www in Resources */ = {isa = PBXBuildFile; fileRef = BF38109B1A125C8400915183 /* www */; };
-		BF38109E1A125CA100915183 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = BF38109D1A125CA100915183 /* config.xml */; };
 		BF3E9BA11A1A450600588C13 /* ImagePickerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF3E9BA01A1A450600588C13 /* ImagePickerViewController.m */; };
 		BF3E9BA51A1A4D7C00588C13 /* ImagePickerTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = BF3E9BA41A1A4D7C00588C13 /* ImagePickerTableViewCell.m */; };
-		BF8156801A6E8CBE00345224 /* PhotosUploader.m in Sources */ = {isa = PBXBuildFile; fileRef = BF81567F1A6E8CBE00345224 /* PhotosUploader.m */; };
 		BF8284AF1A3F2E500063163D /* ImagePickerCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = BF8284AE1A3F2E500063163D /* ImagePickerCell.xib */; };
-		BF8C60321A5C220A000FAAF1 /* IonicKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = BF8C601B1A5C220A000FAAF1 /* IonicKeyboard.m */; };
-		BF8C60331A5C220A000FAAF1 /* UIWebViewExtension.m in Sources */ = {isa = PBXBuildFile; fileRef = BF8C601D1A5C220A000FAAF1 /* UIWebViewExtension.m */; };
-		BF8C60341A5C220A000FAAF1 /* CordovaNativeMessenger.m in Sources */ = {isa = PBXBuildFile; fileRef = BF8C60201A5C220A000FAAF1 /* CordovaNativeMessenger.m */; };
-		BF8C60351A5C220A000FAAF1 /* AppPreferences.m in Sources */ = {isa = PBXBuildFile; fileRef = BF8C60231A5C220A000FAAF1 /* AppPreferences.m */; };
-		BF8C60361A5C220A000FAAF1 /* CDVLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = BF8C60261A5C220A000FAAF1 /* CDVLogger.m */; };
-		BF8C60371A5C220A000FAAF1 /* CDVDevice.m in Sources */ = {isa = PBXBuildFile; fileRef = BF8C60291A5C220A000FAAF1 /* CDVDevice.m */; };
-		BF8C60381A5C220A000FAAF1 /* CDVAssetLibraryFilesystem.m in Sources */ = {isa = PBXBuildFile; fileRef = BF8C602C1A5C220A000FAAF1 /* CDVAssetLibraryFilesystem.m */; };
-		BF8C60391A5C220A000FAAF1 /* CDVFile.m in Sources */ = {isa = PBXBuildFile; fileRef = BF8C602E1A5C220A000FAAF1 /* CDVFile.m */; };
-		BF8C603A1A5C220A000FAAF1 /* CDVLocalFilesystem.m in Sources */ = {isa = PBXBuildFile; fileRef = BF8C60301A5C220A000FAAF1 /* CDVLocalFilesystem.m */; };
-		BF8C603B1A5C220A000FAAF1 /* README in Resources */ = {isa = PBXBuildFile; fileRef = BF8C60311A5C220A000FAAF1 /* README */; };
 		BF94AB841A3C756900B7ADA5 /* PhotosSource.m in Sources */ = {isa = PBXBuildFile; fileRef = BF94AB831A3C756900B7ADA5 /* PhotosSource.m */; };
 		BFA4E6311A5BE8C1005DFEA8 /* ImageUploadeManagerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BFA4E6301A5BE8C1005DFEA8 /* ImageUploadeManagerViewController.m */; };
 		BFA6A7331A406385007EBF57 /* PhotosUploadScheduler.m in Sources */ = {isa = PBXBuildFile; fileRef = BFA6A7321A406385007EBF57 /* PhotosUploadScheduler.m */; };
@@ -49,6 +37,18 @@
 		BFD751981A1391390008664A /* DrawerOverlayAnimatedTransitioning.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD751941A1391390008664A /* DrawerOverlayAnimatedTransitioning.m */; };
 		BFD7519B1A1391F00008664A /* MainMenuViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD7519A1A1391F00008664A /* MainMenuViewController.m */; };
 		BFD751A11A1394AE0008664A /* DrawerContentSegue.m in Sources */ = {isa = PBXBuildFile; fileRef = BFD751A01A1394AE0008664A /* DrawerContentSegue.m */; };
+		BFE254961A714ECB00F3292C /* IonicKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = BFE2547D1A714ECB00F3292C /* IonicKeyboard.m */; };
+		BFE254971A714ECB00F3292C /* UIWebViewExtension.m in Sources */ = {isa = PBXBuildFile; fileRef = BFE2547F1A714ECB00F3292C /* UIWebViewExtension.m */; };
+		BFE254981A714ECB00F3292C /* CordovaNativeMessenger.m in Sources */ = {isa = PBXBuildFile; fileRef = BFE254821A714ECB00F3292C /* CordovaNativeMessenger.m */; };
+		BFE254991A714ECB00F3292C /* PhotosUploader.m in Sources */ = {isa = PBXBuildFile; fileRef = BFE254841A714ECB00F3292C /* PhotosUploader.m */; };
+		BFE2549A1A714ECB00F3292C /* AppPreferences.m in Sources */ = {isa = PBXBuildFile; fileRef = BFE254871A714ECB00F3292C /* AppPreferences.m */; };
+		BFE2549B1A714ECB00F3292C /* CDVLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = BFE2548A1A714ECB00F3292C /* CDVLogger.m */; };
+		BFE2549C1A714ECB00F3292C /* CDVDevice.m in Sources */ = {isa = PBXBuildFile; fileRef = BFE2548D1A714ECB00F3292C /* CDVDevice.m */; };
+		BFE2549D1A714ECB00F3292C /* CDVAssetLibraryFilesystem.m in Sources */ = {isa = PBXBuildFile; fileRef = BFE254901A714ECB00F3292C /* CDVAssetLibraryFilesystem.m */; };
+		BFE2549E1A714ECB00F3292C /* CDVFile.m in Sources */ = {isa = PBXBuildFile; fileRef = BFE254921A714ECB00F3292C /* CDVFile.m */; };
+		BFE2549F1A714ECB00F3292C /* CDVLocalFilesystem.m in Sources */ = {isa = PBXBuildFile; fileRef = BFE254941A714ECB00F3292C /* CDVLocalFilesystem.m */; };
+		BFE254A01A714ECB00F3292C /* README in Resources */ = {isa = PBXBuildFile; fileRef = BFE254951A714ECB00F3292C /* README */; };
+		BFE254A21A714F1700F3292C /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = BFE254A11A714F1700F3292C /* config.xml */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -110,33 +110,11 @@
 		BF3810961A125C2B00915183 /* AssetsLibrary.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AssetsLibrary.framework; path = System/Library/Frameworks/AssetsLibrary.framework; sourceTree = SDKROOT; };
 		BF3810981A125C3200915183 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		BF38109B1A125C8400915183 /* www */ = {isa = PBXFileReference; lastKnownFileType = folder; name = www; path = ../../Cordova/platforms/ios/www; sourceTree = "<group>"; };
-		BF38109D1A125CA100915183 /* config.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = config.xml; path = "../../Cordova/platforms/ios/ion-OnTheGo/config.xml"; sourceTree = "<group>"; };
 		BF3E9B9F1A1A450600588C13 /* ImagePickerViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImagePickerViewController.h; sourceTree = "<group>"; };
 		BF3E9BA01A1A450600588C13 /* ImagePickerViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImagePickerViewController.m; sourceTree = "<group>"; };
 		BF3E9BA31A1A4D7C00588C13 /* ImagePickerTableViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImagePickerTableViewCell.h; sourceTree = "<group>"; };
 		BF3E9BA41A1A4D7C00588C13 /* ImagePickerTableViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImagePickerTableViewCell.m; sourceTree = "<group>"; };
-		BF81567E1A6E8CBE00345224 /* PhotosUploader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotosUploader.h; sourceTree = "<group>"; };
-		BF81567F1A6E8CBE00345224 /* PhotosUploader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PhotosUploader.m; sourceTree = "<group>"; };
 		BF8284AE1A3F2E500063163D /* ImagePickerCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ImagePickerCell.xib; sourceTree = "<group>"; };
-		BF8C601A1A5C220A000FAAF1 /* IonicKeyboard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IonicKeyboard.h; sourceTree = "<group>"; };
-		BF8C601B1A5C220A000FAAF1 /* IonicKeyboard.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IonicKeyboard.m; sourceTree = "<group>"; };
-		BF8C601C1A5C220A000FAAF1 /* UIWebViewExtension.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UIWebViewExtension.h; sourceTree = "<group>"; };
-		BF8C601D1A5C220A000FAAF1 /* UIWebViewExtension.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UIWebViewExtension.m; sourceTree = "<group>"; };
-		BF8C601F1A5C220A000FAAF1 /* CordovaNativeMessenger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CordovaNativeMessenger.h; sourceTree = "<group>"; };
-		BF8C60201A5C220A000FAAF1 /* CordovaNativeMessenger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CordovaNativeMessenger.m; sourceTree = "<group>"; };
-		BF8C60221A5C220A000FAAF1 /* AppPreferences.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppPreferences.h; sourceTree = "<group>"; };
-		BF8C60231A5C220A000FAAF1 /* AppPreferences.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppPreferences.m; sourceTree = "<group>"; };
-		BF8C60251A5C220A000FAAF1 /* CDVLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CDVLogger.h; sourceTree = "<group>"; };
-		BF8C60261A5C220A000FAAF1 /* CDVLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CDVLogger.m; sourceTree = "<group>"; };
-		BF8C60281A5C220A000FAAF1 /* CDVDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CDVDevice.h; sourceTree = "<group>"; };
-		BF8C60291A5C220A000FAAF1 /* CDVDevice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CDVDevice.m; sourceTree = "<group>"; };
-		BF8C602B1A5C220A000FAAF1 /* CDVAssetLibraryFilesystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CDVAssetLibraryFilesystem.h; sourceTree = "<group>"; };
-		BF8C602C1A5C220A000FAAF1 /* CDVAssetLibraryFilesystem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CDVAssetLibraryFilesystem.m; sourceTree = "<group>"; };
-		BF8C602D1A5C220A000FAAF1 /* CDVFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CDVFile.h; sourceTree = "<group>"; };
-		BF8C602E1A5C220A000FAAF1 /* CDVFile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CDVFile.m; sourceTree = "<group>"; };
-		BF8C602F1A5C220A000FAAF1 /* CDVLocalFilesystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CDVLocalFilesystem.h; sourceTree = "<group>"; };
-		BF8C60301A5C220A000FAAF1 /* CDVLocalFilesystem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CDVLocalFilesystem.m; sourceTree = "<group>"; };
-		BF8C60311A5C220A000FAAF1 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 		BF94AB821A3C756900B7ADA5 /* PhotosSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotosSource.h; sourceTree = "<group>"; };
 		BF94AB831A3C756900B7ADA5 /* PhotosSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PhotosSource.m; sourceTree = "<group>"; };
 		BFA4E62F1A5BE8C1005DFEA8 /* ImageUploadeManagerViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImageUploadeManagerViewController.h; sourceTree = "<group>"; };
@@ -164,6 +142,28 @@
 		BFD7519A1A1391F00008664A /* MainMenuViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MainMenuViewController.m; sourceTree = "<group>"; };
 		BFD7519F1A1394AE0008664A /* DrawerContentSegue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DrawerContentSegue.h; sourceTree = "<group>"; };
 		BFD751A01A1394AE0008664A /* DrawerContentSegue.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DrawerContentSegue.m; sourceTree = "<group>"; };
+		BFE2547C1A714ECB00F3292C /* IonicKeyboard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IonicKeyboard.h; sourceTree = "<group>"; };
+		BFE2547D1A714ECB00F3292C /* IonicKeyboard.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IonicKeyboard.m; sourceTree = "<group>"; };
+		BFE2547E1A714ECB00F3292C /* UIWebViewExtension.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UIWebViewExtension.h; sourceTree = "<group>"; };
+		BFE2547F1A714ECB00F3292C /* UIWebViewExtension.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UIWebViewExtension.m; sourceTree = "<group>"; };
+		BFE254811A714ECB00F3292C /* CordovaNativeMessenger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CordovaNativeMessenger.h; sourceTree = "<group>"; };
+		BFE254821A714ECB00F3292C /* CordovaNativeMessenger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CordovaNativeMessenger.m; sourceTree = "<group>"; };
+		BFE254831A714ECB00F3292C /* PhotosUploader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotosUploader.h; sourceTree = "<group>"; };
+		BFE254841A714ECB00F3292C /* PhotosUploader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PhotosUploader.m; sourceTree = "<group>"; };
+		BFE254861A714ECB00F3292C /* AppPreferences.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppPreferences.h; sourceTree = "<group>"; };
+		BFE254871A714ECB00F3292C /* AppPreferences.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppPreferences.m; sourceTree = "<group>"; };
+		BFE254891A714ECB00F3292C /* CDVLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CDVLogger.h; sourceTree = "<group>"; };
+		BFE2548A1A714ECB00F3292C /* CDVLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CDVLogger.m; sourceTree = "<group>"; };
+		BFE2548C1A714ECB00F3292C /* CDVDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CDVDevice.h; sourceTree = "<group>"; };
+		BFE2548D1A714ECB00F3292C /* CDVDevice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CDVDevice.m; sourceTree = "<group>"; };
+		BFE2548F1A714ECB00F3292C /* CDVAssetLibraryFilesystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CDVAssetLibraryFilesystem.h; sourceTree = "<group>"; };
+		BFE254901A714ECB00F3292C /* CDVAssetLibraryFilesystem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CDVAssetLibraryFilesystem.m; sourceTree = "<group>"; };
+		BFE254911A714ECB00F3292C /* CDVFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CDVFile.h; sourceTree = "<group>"; };
+		BFE254921A714ECB00F3292C /* CDVFile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CDVFile.m; sourceTree = "<group>"; };
+		BFE254931A714ECB00F3292C /* CDVLocalFilesystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CDVLocalFilesystem.h; sourceTree = "<group>"; };
+		BFE254941A714ECB00F3292C /* CDVLocalFilesystem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CDVLocalFilesystem.m; sourceTree = "<group>"; };
+		BFE254951A714ECB00F3292C /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		BFE254A11A714F1700F3292C /* config.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = config.xml; path = "../../Cordova/platforms/ios/On-the-Go/config.xml"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -242,9 +242,9 @@
 		BF3810361A125A3400915183 /* on-the-go */ = {
 			isa = PBXGroup;
 			children = (
-				BF38109D1A125CA100915183 /* config.xml */,
+				BFE254A11A714F1700F3292C /* config.xml */,
 				BF38109B1A125C8400915183 /* www */,
-				BF8C60181A5C220A000FAAF1 /* Plugins */,
+				BFE2547A1A714ECB00F3292C /* Plugins */,
 				BF38103B1A125A3400915183 /* AppDelegate.h */,
 				BF38103C1A125A3400915183 /* AppDelegate.m */,
 				BF160B371A126C8200309CEE /* CordovaViewController.h */,
@@ -307,83 +307,6 @@
 			name = "Image Picker";
 			sourceTree = "<group>";
 		};
-		BF8C60181A5C220A000FAAF1 /* Plugins */ = {
-			isa = PBXGroup;
-			children = (
-				BF8C60191A5C220A000FAAF1 /* com.ionic.keyboard */,
-				BF8C601E1A5C220A000FAAF1 /* com.snaphappi.native-messenger.Messenger */,
-				BF8C60211A5C220A000FAAF1 /* me.apla.cordova.app-preferences */,
-				BF8C60241A5C220A000FAAF1 /* org.apache.cordova.console */,
-				BF8C60271A5C220A000FAAF1 /* org.apache.cordova.device */,
-				BF8C602A1A5C220A000FAAF1 /* org.apache.cordova.file */,
-				BF8C60311A5C220A000FAAF1 /* README */,
-			);
-			name = Plugins;
-			path = "../../Cordova/platforms/ios/ion-OnTheGo/Plugins";
-			sourceTree = "<group>";
-		};
-		BF8C60191A5C220A000FAAF1 /* com.ionic.keyboard */ = {
-			isa = PBXGroup;
-			children = (
-				BF8C601A1A5C220A000FAAF1 /* IonicKeyboard.h */,
-				BF8C601B1A5C220A000FAAF1 /* IonicKeyboard.m */,
-				BF8C601C1A5C220A000FAAF1 /* UIWebViewExtension.h */,
-				BF8C601D1A5C220A000FAAF1 /* UIWebViewExtension.m */,
-			);
-			path = com.ionic.keyboard;
-			sourceTree = "<group>";
-		};
-		BF8C601E1A5C220A000FAAF1 /* com.snaphappi.native-messenger.Messenger */ = {
-			isa = PBXGroup;
-			children = (
-				BF8C601F1A5C220A000FAAF1 /* CordovaNativeMessenger.h */,
-				BF8C60201A5C220A000FAAF1 /* CordovaNativeMessenger.m */,
-				BF81567E1A6E8CBE00345224 /* PhotosUploader.h */,
-				BF81567F1A6E8CBE00345224 /* PhotosUploader.m */,
-			);
-			path = "com.snaphappi.native-messenger.Messenger";
-			sourceTree = "<group>";
-		};
-		BF8C60211A5C220A000FAAF1 /* me.apla.cordova.app-preferences */ = {
-			isa = PBXGroup;
-			children = (
-				BF8C60221A5C220A000FAAF1 /* AppPreferences.h */,
-				BF8C60231A5C220A000FAAF1 /* AppPreferences.m */,
-			);
-			path = "me.apla.cordova.app-preferences";
-			sourceTree = "<group>";
-		};
-		BF8C60241A5C220A000FAAF1 /* org.apache.cordova.console */ = {
-			isa = PBXGroup;
-			children = (
-				BF8C60251A5C220A000FAAF1 /* CDVLogger.h */,
-				BF8C60261A5C220A000FAAF1 /* CDVLogger.m */,
-			);
-			path = org.apache.cordova.console;
-			sourceTree = "<group>";
-		};
-		BF8C60271A5C220A000FAAF1 /* org.apache.cordova.device */ = {
-			isa = PBXGroup;
-			children = (
-				BF8C60281A5C220A000FAAF1 /* CDVDevice.h */,
-				BF8C60291A5C220A000FAAF1 /* CDVDevice.m */,
-			);
-			path = org.apache.cordova.device;
-			sourceTree = "<group>";
-		};
-		BF8C602A1A5C220A000FAAF1 /* org.apache.cordova.file */ = {
-			isa = PBXGroup;
-			children = (
-				BF8C602B1A5C220A000FAAF1 /* CDVAssetLibraryFilesystem.h */,
-				BF8C602C1A5C220A000FAAF1 /* CDVAssetLibraryFilesystem.m */,
-				BF8C602D1A5C220A000FAAF1 /* CDVFile.h */,
-				BF8C602E1A5C220A000FAAF1 /* CDVFile.m */,
-				BF8C602F1A5C220A000FAAF1 /* CDVLocalFilesystem.h */,
-				BF8C60301A5C220A000FAAF1 /* CDVLocalFilesystem.m */,
-			);
-			path = org.apache.cordova.file;
-			sourceTree = "<group>";
-		};
 		BFA4E62E1A5BE877005DFEA8 /* Image Uploade Manager */ = {
 			isa = PBXGroup;
 			children = (
@@ -428,6 +351,83 @@
 				BFD751941A1391390008664A /* DrawerOverlayAnimatedTransitioning.m */,
 			);
 			name = "Drawer Base";
+			sourceTree = "<group>";
+		};
+		BFE2547A1A714ECB00F3292C /* Plugins */ = {
+			isa = PBXGroup;
+			children = (
+				BFE2547B1A714ECB00F3292C /* com.ionic.keyboard */,
+				BFE254801A714ECB00F3292C /* com.snaphappi.native-messenger.Messenger */,
+				BFE254851A714ECB00F3292C /* me.apla.cordova.app-preferences */,
+				BFE254881A714ECB00F3292C /* org.apache.cordova.console */,
+				BFE2548B1A714ECB00F3292C /* org.apache.cordova.device */,
+				BFE2548E1A714ECB00F3292C /* org.apache.cordova.file */,
+				BFE254951A714ECB00F3292C /* README */,
+			);
+			name = Plugins;
+			path = "../../Cordova/platforms/ios/On-the-Go/Plugins";
+			sourceTree = "<group>";
+		};
+		BFE2547B1A714ECB00F3292C /* com.ionic.keyboard */ = {
+			isa = PBXGroup;
+			children = (
+				BFE2547C1A714ECB00F3292C /* IonicKeyboard.h */,
+				BFE2547D1A714ECB00F3292C /* IonicKeyboard.m */,
+				BFE2547E1A714ECB00F3292C /* UIWebViewExtension.h */,
+				BFE2547F1A714ECB00F3292C /* UIWebViewExtension.m */,
+			);
+			path = com.ionic.keyboard;
+			sourceTree = "<group>";
+		};
+		BFE254801A714ECB00F3292C /* com.snaphappi.native-messenger.Messenger */ = {
+			isa = PBXGroup;
+			children = (
+				BFE254811A714ECB00F3292C /* CordovaNativeMessenger.h */,
+				BFE254821A714ECB00F3292C /* CordovaNativeMessenger.m */,
+				BFE254831A714ECB00F3292C /* PhotosUploader.h */,
+				BFE254841A714ECB00F3292C /* PhotosUploader.m */,
+			);
+			path = "com.snaphappi.native-messenger.Messenger";
+			sourceTree = "<group>";
+		};
+		BFE254851A714ECB00F3292C /* me.apla.cordova.app-preferences */ = {
+			isa = PBXGroup;
+			children = (
+				BFE254861A714ECB00F3292C /* AppPreferences.h */,
+				BFE254871A714ECB00F3292C /* AppPreferences.m */,
+			);
+			path = "me.apla.cordova.app-preferences";
+			sourceTree = "<group>";
+		};
+		BFE254881A714ECB00F3292C /* org.apache.cordova.console */ = {
+			isa = PBXGroup;
+			children = (
+				BFE254891A714ECB00F3292C /* CDVLogger.h */,
+				BFE2548A1A714ECB00F3292C /* CDVLogger.m */,
+			);
+			path = org.apache.cordova.console;
+			sourceTree = "<group>";
+		};
+		BFE2548B1A714ECB00F3292C /* org.apache.cordova.device */ = {
+			isa = PBXGroup;
+			children = (
+				BFE2548C1A714ECB00F3292C /* CDVDevice.h */,
+				BFE2548D1A714ECB00F3292C /* CDVDevice.m */,
+			);
+			path = org.apache.cordova.device;
+			sourceTree = "<group>";
+		};
+		BFE2548E1A714ECB00F3292C /* org.apache.cordova.file */ = {
+			isa = PBXGroup;
+			children = (
+				BFE2548F1A714ECB00F3292C /* CDVAssetLibraryFilesystem.h */,
+				BFE254901A714ECB00F3292C /* CDVAssetLibraryFilesystem.m */,
+				BFE254911A714ECB00F3292C /* CDVFile.h */,
+				BFE254921A714ECB00F3292C /* CDVFile.m */,
+				BFE254931A714ECB00F3292C /* CDVLocalFilesystem.h */,
+				BFE254941A714ECB00F3292C /* CDVLocalFilesystem.m */,
+			);
+			path = org.apache.cordova.file;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -543,10 +543,10 @@
 				BF8284AF1A3F2E500063163D /* ImagePickerCell.xib in Resources */,
 				BF3810481A125A3400915183 /* LaunchScreen.xib in Resources */,
 				BFB94CFA1A1628EE004BDB1C /* Kal.bundle in Resources */,
-				BF8C603B1A5C220A000FAAF1 /* README in Resources */,
-				BF38109E1A125CA100915183 /* config.xml in Resources */,
+				BFE254A01A714ECB00F3292C /* README in Resources */,
 				BF38109C1A125C8400915183 /* www in Resources */,
 				BF3810451A125A3400915183 /* Images.xcassets in Resources */,
+				BFE254A21A714F1700F3292C /* config.xml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -565,33 +565,33 @@
 			buildActionMask = 2147483647;
 			files = (
 				BFD751971A1391390008664A /* DrawerOverlayPresentationController.m in Sources */,
-				BF8C60331A5C220A000FAAF1 /* UIWebViewExtension.m in Sources */,
 				BF38103D1A125A3400915183 /* AppDelegate.m in Sources */,
 				BFBA28151A1B336700FF5E71 /* UIImageView+Additions.m in Sources */,
 				BFD751981A1391390008664A /* DrawerOverlayAnimatedTransitioning.m in Sources */,
-				BF8C60381A5C220A000FAAF1 /* CDVAssetLibraryFilesystem.m in Sources */,
+				BFE254991A714ECB00F3292C /* PhotosUploader.m in Sources */,
+				BFE2549D1A714ECB00F3292C /* CDVAssetLibraryFilesystem.m in Sources */,
 				BF38103A1A125A3400915183 /* main.m in Sources */,
-				BF8C60321A5C220A000FAAF1 /* IonicKeyboard.m in Sources */,
-				BF8C603A1A5C220A000FAAF1 /* CDVLocalFilesystem.m in Sources */,
-				BF8C60351A5C220A000FAAF1 /* AppPreferences.m in Sources */,
-				BF8C60371A5C220A000FAAF1 /* CDVDevice.m in Sources */,
 				BFA6A7331A406385007EBF57 /* PhotosUploadScheduler.m in Sources */,
+				BFE2549F1A714ECB00F3292C /* CDVLocalFilesystem.m in Sources */,
+				BFE2549A1A714ECB00F3292C /* AppPreferences.m in Sources */,
+				BFE2549C1A714ECB00F3292C /* CDVDevice.m in Sources */,
 				BFD7519B1A1391F00008664A /* MainMenuViewController.m in Sources */,
-				BF8C60391A5C220A000FAAF1 /* CDVFile.m in Sources */,
 				BFD751961A1391390008664A /* DrawerOverlayViewController.m in Sources */,
+				BFE2549E1A714ECB00F3292C /* CDVFile.m in Sources */,
 				BFA4E6311A5BE8C1005DFEA8 /* ImageUploadeManagerViewController.m in Sources */,
+				BFE254961A714ECB00F3292C /* IonicKeyboard.m in Sources */,
 				BF94AB841A3C756900B7ADA5 /* PhotosSource.m in Sources */,
 				BF3E9BA51A1A4D7C00588C13 /* ImagePickerTableViewCell.m in Sources */,
 				BFD751A11A1394AE0008664A /* DrawerContentSegue.m in Sources */,
+				BFE254981A714ECB00F3292C /* CordovaNativeMessenger.m in Sources */,
 				BF365C5E1A162385006EE290 /* ChooseYourDaysViewController.m in Sources */,
-				BF8156801A6E8CBE00345224 /* PhotosUploader.m in Sources */,
 				BFD751951A1391390008664A /* DrawerContainerViewController.m in Sources */,
 				BFBA28181A1B4F5700FF5E71 /* ImagePickerFlowLayout.m in Sources */,
-				BF8C60341A5C220A000FAAF1 /* CordovaNativeMessenger.m in Sources */,
-				BF8C60361A5C220A000FAAF1 /* CDVLogger.m in Sources */,
+				BFE2549B1A714ECB00F3292C /* CDVLogger.m in Sources */,
 				BFB94D011A162B3A004BDB1C /* EventKitDataSource.m in Sources */,
 				BF3E9BA11A1A450600588C13 /* ImagePickerViewController.m in Sources */,
 				BF160B391A126C8200309CEE /* CordovaViewController.m in Sources */,
+				BFE254971A714ECB00F3292C /* UIWebViewExtension.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
