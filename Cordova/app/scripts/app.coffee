@@ -554,9 +554,6 @@ angular
 
 
     $scope.$watch 'config', (newVal, oldVal)->
-        if newVal['upload']['enabled'] !== oldVal['upload']['enabled']
-          otgUploader.backgroundQueue(newVal['upload']['enabled'])
-
         return _prefs.store newVal, oldVal
       , true
 

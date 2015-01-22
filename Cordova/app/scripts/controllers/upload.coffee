@@ -21,20 +21,20 @@ angular.module('ionBlankApp')
         isEnabled : null
       enable : (action=null)->
         if action=='toggle'
-          value = this.state.isEnabled = !this.state.isEnabled 
+          this.state.isEnabled = !this.state.isEnabled 
+          self.backgroundQueue(this.state.isEnabled) 
         else if action!=null
-          value = this.state.isEnabled =  !!action
+          this.state.isEnabled =  !!action
+          self.backgroundQueue(this.state.isEnabled) 
         else 
-          value = this.state.isEnabled
-        $scope.config['upload']['enabled'] = value  
-        return value
+          this.state.isEnabled # just get current value
+        return this.state.isEnabled
       backgroundQueue : (action)->
         # called by $watch 'config.upload.enabled'
         if action
           console.log "TODO: scheduleAssetsForUploadP"
         else 
           console.log "TODO: unscheduleAssetsForuploadP"
-        self.enable( !!action )
 
       isActive: ()->
         return self.state.isActive  
@@ -262,20 +262,21 @@ angular.module('ionBlankApp')
         target.addClass('activated')
         if otgUploader.enable('toggle')
           target.addClass('enabled') 
-          # otgUploader.startUploadingP(onProgress)
-          otgUploader.state.isActive = true
-          otgUploader.startNativeFileUploadingP(onProgress)
-          
+          # upload photo meta
+          otgUploader.startNativeFileUploadingP(onProgress) 
         else 
           target.removeClass('enabled') 
+        $scope['config']['upload']['enabled'] = otgUploader.enable()  
         _fetchWarnings()
         return
       release: (ev)-> 
         target = angular.element(ev.currentTarget)
         target.removeClass('activated')
-        target.removeClass('enabled') if otgUploader.enable()
+        if !otgUploader.enable()
+          target.removeClass('enabled') 
         
         $scope.menu.uploader.count = otgUploader.queueLength()
+        $scope['config']['upload']['enabled'] = otgUploader.enable()
         return 
 
       
@@ -300,6 +301,8 @@ angular.module('ionBlankApp')
 
 
     $scope.$on '$ionicView.loaded', ()->
+      otgUploader.enable( $scope['config']['upload']['enabled'] )
+
       # once per controller load, setup code for view
       # # register handlers for native uploader
       # snappiMessengerPluginService.on.didFinishAssetUpload(otgUploader.uploadPhotoFileComplete)
