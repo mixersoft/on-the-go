@@ -26,6 +26,10 @@ cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
 	Messenger.prototype.scheduleAssetsForUpload = function(data, onSuccess, onError) {
 		exec(onSuccess, onError, "CordovaNativeMessenger", "scheduleAssetsForUpload", [data]);
 	};
+	
+	Messenger.prototype.unscheduleAssetsForUpload = function(data, onSuccess, onError) {
+		exec(onSuccess, onError, "CordovaNativeMessenger", "unscheduleAssetsForUpload", [data]);
+	};
 
 	Messenger.prototype.mapAssetsLibrary = function(callback) {
 		exec(callback, null, "CordovaNativeMessenger", "mapAssetsLibrary", []);
