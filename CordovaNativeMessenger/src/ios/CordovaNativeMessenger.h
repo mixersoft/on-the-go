@@ -24,6 +24,7 @@ extern NSString *kUnscheduleDayRangeForUploadCommandValue;
 
 extern NSString *kDidBeginAssetUploadCommandValue; // asset {phasset identifier}
 extern NSString *kDidFinishAssetUploadCommandValue; // asset {phasset identifier}, name {string} (Parse name), success:bool
+extern NSString *kDidUploadAssetProgressCommandValue; // asset {phasset identifier}:(string), totalBytesSent:(int64_t) totalBytesExpectedToSend:(int64_t)
 
 extern NSString *kLastImageAssetIDCommandValue; // void
 

@@ -9,9 +9,9 @@
 #import "PhotosUploader.h"
 #import <Photos/Photos.h>
 
-static NSString *parseApplicationID = @"cS8RqblszHpy6GJLAuqbyQF7Lya0UIsbcxO8yKrI"; //@"Y9kGkaX2cbq6sh8NVZnslB9ZpwF4TbAEfFti7FQX";
-static NSString *parseRESTAPIKey = @"Jnx8ZaWNyvG5aEor0kYya69XSzF51goQ7dbd7JDJ"; //"@"q9OPhuoIMLfIzvGoBLpHqb6mdJnMMdGGCGZgKfqB";
-static NSString *parseMasterKey = @"3n5AwFGDO1n0YLEa1zLQfHwrFGpTnQUSZoRrFoD9"; //@"fsMgAw0ozmaZj5Kr9Tz8nuhPwNI1ZTLAsKeoojlP";
+static NSString *parseApplicationID = @"cS8RqblszHpy6GJLAuqbyQF7Lya0UIsbcxO8yKrI";
+static NSString *parseRESTAPIKey = @"Jnx8ZaWNyvG5aEor0kYya69XSzF51goQ7dbd7JDJ";
+static NSString *parseMasterKey = @"3n5AwFGDO1n0YLEa1zLQfHwrFGpTnQUSZoRrFoD9";
 
 static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIdentifier";
 
@@ -153,10 +153,10 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
                     
                     NSLog(@"image:%@ with size:%@", fullPath.lastPathComponent, NSStringFromCGSize(result.size));
                     //NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", fullPath.lastPathComponent];
-                    NSString *path = [NSString stringWithFormat:@"http://dev.mediastorm.bg:1337/files/%@", fullPath.lastPathComponent];
+                    NSString *path = [NSString stringWithFormat:@"http://151.237.16.170:1337/files/%@", fullPath.lastPathComponent];
                     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60];
                     [request setHTTPMethod:@"POST"];
-                    [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-Application-Id"];
+                    [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-REST-API-Key"];
                     [request addValue:parseRESTAPIKey forHTTPHeaderField:@"X-Parse-REST-API-Key"];
                     [request addValue:@"image/jpeg" forHTTPHeaderField:@"Content-Type"];
                     [request addValue:obj.localIdentifier forHTTPHeaderField:@"X-Image-Identifier"];
