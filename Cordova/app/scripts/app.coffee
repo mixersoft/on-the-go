@@ -468,7 +468,7 @@ angular
     $scope.hideSplash = ()->
       deviceReady.waitP()
       .then ()->
-        navigator.splashscreen.hide() if deviceReady.isWebView()
+        navigator.splashscreen?.hide() if deviceReady.isWebView()
         return
 
     window.i18n = $rootScope.i18n = $scope.i18n = i18n;
@@ -708,8 +708,7 @@ angular
           return 
 
       snappiMessengerPluginService.on.didUploadAssetProgress ( resp )->
-          console.log '\n\n ***** TEST_nativeUploader: handler for didUploadAssetProgress'
-          console.log resp
+          _logOnce resp.asset, '\n\n ***** TEST_nativeUploader: handler for didUploadAssetProgress' + JSON.stringify resp
           return     
 
       snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
@@ -724,10 +723,12 @@ angular
       data = {
         assets: assetIds
         options: 
-          targetWidth: 640
-          targetHeight: 640
-          resizeMode: 'aspectFit'
-          autoRotate: true           
+          # targetWidth: 640
+          # targetHeight: 640
+          # resizeMode: 'aspectFit'
+          autoRotate: true       # always true with PHImageContentModeAspectFit?
+          maxWidth: 720
+
       }
       # snappiMessengerPluginService.scheduleAssetsForUploadP(assetIds, options)
       window.Messenger['scheduleAssetsForUpload'](  data

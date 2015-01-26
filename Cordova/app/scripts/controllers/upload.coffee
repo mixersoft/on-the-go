@@ -121,7 +121,7 @@ angular.module('ionBlankApp')
           , (resp)->
             # onSuccess is not part of the API
             console.log resp
-            return console.log "test: scheduleAssetsForUpload.onSuccess, count=" + assetIds.length
+            return console.log "test: scheduleAssetsForUpload.onSuccess, count=" + queuedAssets.length
           , (err)->
             return console.log "test: scheduleAssetsForUpload.onError. Timeout?"
         )
