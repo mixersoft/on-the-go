@@ -29,7 +29,7 @@
 +(PhotosUploader *)uploaderWithSessionConfigurationIdentifier:(NSString *)identifier;
 +(PhotosUploader *)sharedInstance;
 
--(void)scheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers;
+-(void)scheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers options:(NSDictionary *)options;
 -(void)unscheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers;
 
 -(void)addDelegate:(id<PhotosUploaderDelegate>)delegate;

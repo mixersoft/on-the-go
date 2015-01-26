@@ -116,7 +116,7 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
     }];
 }
 
--(void)scheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers {
+-(void)scheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers options:(NSDictionary *)options {
     PHFetchResult *assets = [PHAsset fetchAssetsWithLocalIdentifiers:localPHAssetIdentifiers options:nil];
     PHImageManager *cachingImageManager = [PHImageManager new];
     NSLog(@"Assets Count: %lu", (unsigned long)localPHAssetIdentifiers.count);
@@ -131,10 +131,9 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
             [opts setResizeMode:PHImageRequestOptionsResizeModeExact];
             
             CGSize originalImageSize = CGSizeMake(obj.pixelWidth, obj.pixelHeight);
-            CGFloat maxSide = MAX(originalImageSize.width, originalImageSize.height);
-            
-            if (YES || self.convertTo720p && maxSide > 720) {
-                CGFloat scale = (720.0 / maxSide);
+            NSNumber *maxWidth = options[@"maxWidth"];
+            if (maxWidth && obj.pixelWidth > maxWidth.floatValue) {
+                CGFloat scale = (maxWidth.floatValue / obj.pixelWidth);
                 originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
             }
             
