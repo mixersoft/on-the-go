@@ -10,8 +10,7 @@
 #import <Photos/Photos.h>
 
 static NSString *parseApplicationID = @"cS8RqblszHpy6GJLAuqbyQF7Lya0UIsbcxO8yKrI";
-static NSString *parseRESTAPIKey = @"Jnx8ZaWNyvG5aEor0kYya69XSzF51goQ7dbd7JDJ";
-static NSString *parseMasterKey = @"3n5AwFGDO1n0YLEa1zLQfHwrFGpTnQUSZoRrFoD9";
+static NSString *parseRESTAPIKey = @"3n5AwFGDO1n0YLEa1zLQfHwrFGpTnQUSZoRrFoD9";
 
 static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIdentifier";
 
@@ -134,7 +133,7 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
             CGSize originalImageSize = CGSizeMake(obj.pixelWidth, obj.pixelHeight);
             CGFloat maxSide = MAX(originalImageSize.width, originalImageSize.height);
             
-            if (self.convertTo720p && maxSide > 720) {
+            if (YES || self.convertTo720p && maxSide > 720) {
                 CGFloat scale = (720.0 / maxSide);
                 originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
             }
@@ -156,7 +155,7 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
                     //NSString *path = [NSString stringWithFormat:@"http://151.237.16.170:1337/files/%@", fullPath.lastPathComponent];
                     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60];
                     [request setHTTPMethod:@"POST"];
-                    [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-REST-API-Key"];
+                    [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-Application-Id"];
                     [request addValue:parseRESTAPIKey forHTTPHeaderField:@"X-Parse-REST-API-Key"];
                     [request addValue:@"image/jpeg" forHTTPHeaderField:@"Content-Type"];
                     [request addValue:obj.localIdentifier forHTTPHeaderField:@"X-Image-Identifier"];
@@ -312,13 +311,13 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
  * will *NOT* be called and the behavior will be the same as using the default handling
  * disposition.
  */
-- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
-didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
- completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential *credential))completionHandler {
-     NSURLCredential *cred = [NSURLCredential credentialWithUser:@"browser" password:@"password" persistence:NSURLCredentialPersistenceForSession];
-    completionHandler(NSURLSessionAuthChallengeUseCredential, cred);
-    
-}
+//- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+//didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
+// completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential *credential))completionHandler {
+//     NSURLCredential *cred = [NSURLCredential credentialWithUser:@"browser" password:@"password" persistence:NSURLCredentialPersistenceForSession];
+//    completionHandler(NSURLSessionAuthChallengeUseCredential, cred);
+//    
+//}
 
 /* Sent if a task requires a new, unopened body stream.  This may be
  * necessary when authentication has failed for any request that
