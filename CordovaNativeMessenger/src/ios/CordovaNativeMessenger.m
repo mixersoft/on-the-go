@@ -94,6 +94,11 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     [self.commandDelegate sendPluginResult:result callbackId:callbackId];
 }
 
+-(void)mapCollections:(CDVInvokedUrlCommand*) command {
+ //ToDO: map the list of collections with label, date range and array of images ( "PHFetchResult" )
+    // test image change notifications
+}
+
 -(void)mapAssetsLibrary:(CDVInvokedUrlCommand*) command {
     
     [self.commandDelegate runInBackground:^{
@@ -118,9 +123,9 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                     @"favorite":@(asset.favorite),
                     @"originalWidth":@(asset.pixelWidth),
                     @"originalHeight":@(asset.pixelHeight),
-                    // @"burstIdentifier":asset.burstIdentifier,
-                    // @"burstSelectionTypes":@(asset.burstSelectionTypes),
-                    // @"representsBurst":@(asset.representsBurst)
+                    @"burstIdentifier":asset.burstIdentifier,
+                    @"burstSelectionTypes":@(asset.burstSelectionTypes),
+                    @"representsBurst":@(asset.representsBurst)
                 }];
         }
         
