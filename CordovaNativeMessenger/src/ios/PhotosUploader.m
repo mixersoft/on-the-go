@@ -23,16 +23,20 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
     NSMutableDictionary *_responseDataWrappers;
 }
 
+- (void)creteNewSession:(NSString *)identifier {
+    NSURLSessionConfiguration *config = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:identifier];
+    [config setDiscretionary:YES];
+    [config setAllowsCellularAccess:YES];
+    [config setSessionSendsLaunchEvents:YES];
+    _backgroundUploadSession = [NSURLSession sessionWithConfiguration:config delegate:(id<NSURLSessionDelegate>)self delegateQueue:[NSOperationQueue mainQueue]];
+    
+    _delegates = [NSHashTable hashTableWithOptions:NSHashTableWeakMemory];
+    _responseDataWrappers = [NSMutableDictionary new];
+}
+
 -(instancetype)initInternalWithIdentifier:(NSString *)identifier {
     if (self = [super init]) {
-        NSURLSessionConfiguration *config = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:identifier];
-        [config setDiscretionary:YES];
-        [config setAllowsCellularAccess:YES];
-        [config setSessionSendsLaunchEvents:YES];
-        _backgroundUploadSession = [NSURLSession sessionWithConfiguration:config delegate:(id<NSURLSessionDelegate>)self delegateQueue:[NSOperationQueue mainQueue]];
-        
-        _delegates = [NSHashTable hashTableWithOptions:NSHashTableWeakMemory];
-        _responseDataWrappers = [NSMutableDictionary new];
+        [self creteNewSession:identifier];
     }
     return self;
 }
@@ -113,6 +117,41 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
 -(void)unscheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers {
     [localPHAssetIdentifiers enumerateObjectsUsingBlock:^(NSString * obj, NSUInteger idx, BOOL *stop) {
         [self stopUploadingAssetWithID:obj completion:nil];
+    }];
+}
+
+-(void)unscheduleAllAssets {
+    NSString *identifier = _backgroundUploadSession.configuration.identifier;
+    [_backgroundUploadSession invalidateAndCancel];
+    [self creteNewSession:identifier];
+}
+
+-(void)suspendAllAssetUploadsWithCompletion:(void(^)(NSArray *))completion {
+    [_backgroundUploadSession getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
+        NSMutableArray *new = [NSMutableArray arrayWithCapacity:uploadTasks.count];
+        [uploadTasks enumerateObjectsUsingBlock:^(NSURLSessionUploadTask *obj, NSUInteger idx, BOOL *stop) {
+            if (obj.state == NSURLSessionTaskStateRunning) {
+                [obj suspend];
+                NSString *identifier = obj.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+                [new addObject:identifier];
+            }
+        }];
+    }];
+}
+
+-(void)resumeAllAssetUplaodsWithCompletion:(void(^)(NSArray *))completion {
+    [_backgroundUploadSession getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
+        NSMutableArray *new = [NSMutableArray arrayWithCapacity:uploadTasks.count];
+        [uploadTasks enumerateObjectsUsingBlock:^(NSURLSessionUploadTask *obj, NSUInteger idx, BOOL *stop) {
+            if (obj.state == NSURLSessionTaskStateSuspended) {
+                [obj resume];
+                NSString *identifier = obj.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+                [new addObject:identifier];
+            }
+            
+        }];
+        
+        
     }];
 }
 
@@ -259,21 +298,18 @@ totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
  */
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
 didCompleteWithError:(NSError *)error {
-    if ((error.code == kCFURLErrorCancelled || task.state == NSURLSessionTaskStateCanceling)) {
-        return;
-    }
+    [self deleteDataForTask:task];
     
     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
     
     NSString *path = [self imagePathForAssetIdentifier:identifier];
     [NSFileManager.defaultManager removeItemAtPath:path error:nil];
     NSData *responseData = [self responseDataForTask:task];
-    [self deleteDataForTask:task];
     NSLog(@"Finished task with image identifier: %@ responseDataLength: %d with error:%@", identifier, responseData.length, error);
     
     for (id<PhotosUploaderDelegate>delegate in _delegates) {
-        if ([delegate respondsToSelector:@selector(photoUploader:didUploadAssetIdentifier:responseData:withError:)]) {
-            [delegate photoUploader:self didUploadAssetIdentifier:identifier responseData:responseData withError:error];
+        if ([delegate respondsToSelector:@selector(photoUploader:didFinishUploadAssetIdentifier:responseData:withError:state:)]) {
+            [delegate photoUploader:self didFinishUploadAssetIdentifier:identifier responseData:responseData withError:error state:task.state];
         }
     }
     UILocalNotification* n1 = [[UILocalNotification alloc] init];
