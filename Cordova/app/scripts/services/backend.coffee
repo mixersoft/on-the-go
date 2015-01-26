@@ -186,16 +186,18 @@ angular
         parsePhotos = photosColl.toJSON()
         queuedPhotos = _.pluck otgUploader._queue, 'photo'
 
-        # requeue errors
-        parsePhotos = _.filter parsePhotos, (o)->return /^error/.test(o.src) == false
-        queuedPhotos = _.filter queuedPhotos, (o)->return /^error/.test(o.status) == false
+        # already queued on parse
+        skip = {
+          parsePhotos : _.filter parsePhotos, (o)->return /^error|^queued/.test(o.src) == false
+          queuedPhotos : _.filter queuedPhotos, (o)->return /^error|^queued/.test(o.status) == false
+        }
 
         # 3 arrays to check: cameraRollPhotos NOT in parsePhotos, queuedPhotos
-        parseAssetIds = _.pluck parsePhotos, 'UUID'
-        queuedAssetIds = _.pluck queuedPhotos, 'UUID'
+        skip.parseAssetIds = _.pluck skip.parsePhotos, 'UUID'
+        skip.queuedAssetIds = _.pluck skip.queuedPhotos, 'UUID'
         missingPhotos = _.reduce cameraRollPhotos, (result, photo)->
-            return result if parseAssetIds.indexOf(photo.UUID) != -1
-            return result if queuedAssetIds.indexOf(photo.UUID) != -1
+            return result if skip.parseAssetIds.indexOf(photo.UUID) != -1
+            return result if skip.queuedAssetIds.indexOf(photo.UUID) != -1
             result.push photo
             return result
           , []
@@ -462,7 +464,7 @@ angular
 
 
             return user
-        , (user, error)->
+        , (error)->
             $rootScope.sessionUser = null
             $q.reject("User login error. msg=" + JSON.stringify error)
 

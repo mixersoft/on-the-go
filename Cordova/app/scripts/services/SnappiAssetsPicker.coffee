@@ -675,6 +675,12 @@ angular
           #  asset:{string phasset id}
           return window.Messenger.on( 'didBeginAssetUpload', handler )
 
+        didUploadAssetProgress : (handler)-> 
+          # asset:{string phasset id}
+          # totalBytesSent:
+          # totalByesExpectedToSend:
+          return window.Messenger.on( 'didUploadAssetProgress', handler )
+
         didFinishAssetUpload : (handler)-> 
           # asset:{string phasset id}, 
           # name:{string (Parse name)}    # Parse URL

@@ -393,8 +393,8 @@ angular
       url: "/picks",
     })    
   # if none of the above states are matched, use this as the fallback
-  $urlRouterProvider.otherwise('/app/top-picks/top-picks');  
-  # $urlRouterProvider.otherwise('/app/settings');  
+  # $urlRouterProvider.otherwise('/app/top-picks/top-picks');  
+  $urlRouterProvider.otherwise('/app/settings');  
 
 
 .controller 'AppCtrl', [
@@ -704,8 +704,13 @@ angular
 
       snappiMessengerPluginService.on.didFinishAssetUpload ( resp )->
           console.log '\n\n ***** TEST_nativeUploader: handler for didFinishAssetUpload'
-          console.log otgUploader.uploadPhotoFileComplete
+          console.log resp
           return 
+
+      snappiMessengerPluginService.on.didUploadAssetProgress ( resp )->
+          console.log '\n\n ***** TEST_nativeUploader: handler for didUploadAssetProgress'
+          console.log resp
+          return     
 
       snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
           console.log "\n\n ***** TEST_nativeUploader: didBeginAssetUpload"
@@ -714,6 +719,8 @@ angular
 
       # add to nativeUploader queue
       assetIds = assetIds[0...3]
+
+
       data = {
         assets: assetIds
         options: 
@@ -767,14 +774,13 @@ angular
           $scope.orders = TEST_DATA.orders 
         else # mobile device w/ cordova
           # register handlers for native uploader
-          # snappiMessengerPluginService.on.didFinishAssetUpload( otgUploader.uploadPhotoFileComplete )
-          # console.log '\n\n ***** app: handler registered for didFinishAssetUpload'
-          # console.log otgUploader.uploadPhotoFileComplete
+          snappiMessengerPluginService.on.didFinishAssetUpload( otgUploader.uploadPhotoFileComplete )
+          console.log '\n\n ***** app: handler registered for didFinishAssetUpload'
 
-          # snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
-          #     console.log "\n\n ***** app: didBeginAssetUpload"
-          #     console.log resp
-          #     return
+          snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
+              console.log "\n\n ***** app: didBeginAssetUpload"
+              console.log resp
+              return
 
         
         
@@ -789,6 +795,7 @@ angular
             _.extend $scope.config, config
           return
 
+        # debug.sessionUser = Parse.User.current()
 
         return  # end $ionicPlatform.ready
 

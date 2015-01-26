@@ -152,8 +152,8 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
                         return;
                     
                     NSLog(@"image:%@ with size:%@", fullPath.lastPathComponent, NSStringFromCGSize(result.size));
-                    //NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", fullPath.lastPathComponent];
-                    NSString *path = [NSString stringWithFormat:@"http://151.237.16.170:1337/files/%@", fullPath.lastPathComponent];
+                    NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", fullPath.lastPathComponent];
+                    //NSString *path = [NSString stringWithFormat:@"http://151.237.16.170:1337/files/%@", fullPath.lastPathComponent];
                     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60];
                     [request setHTTPMethod:@"POST"];
                     [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-REST-API-Key"];
@@ -315,6 +315,8 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
 didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
  completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential *credential))completionHandler {
+     NSURLCredential *cred = [NSURLCredential credentialWithUser:@"browser" password:@"password" persistence:NSURLCredentialPersistenceForSession];
+    completionHandler(NSURLSessionAuthChallengeUseCredential, cred);
     
 }
 

@@ -76,29 +76,56 @@ angular.module('ionBlankApp')
 
           # find the photo, if we have it
           found = cameraRoll.getPhoto(photo.UUID)
-          $q.when(found)
-          .then (found)->
-            if !found
-              return cameraRoll.getDataURL_P( UUID, self.UPLOAD_IMAGE_SIZE) 
-            return found
-          .then (found)->
-            if !found 
-              return $q.reject("ERROR: startNativeFileUploadingP() UUID not found in cameraRoll. deleted?")
-            p = otgParse.uploadPhotoMetaP(workorderObj, found).then ()->
-                  item.photo.status = "queued"
-                  return
-                , (err)->
-                  item.photos.status = 'error: photo meta'
-                  return
-            promises.push p 
-            return p
- 
+          p = $q.when(found).then (found)->
+              if !found
+                return cameraRoll.getDataURL_P( UUID, self.UPLOAD_IMAGE_SIZE) 
+              return found
+            .then (found)->
+              if !found 
+                return {
+                  error: "ERROR: startNativeFileUploadingP() UUID not found in cameraRoll. deleted?, photo=" + photo.UUID
+                }
+              if found.src == 'queued'  
+                return found 
+              return otgParse.uploadPhotoMetaP(workorderObj, found).then ()->
+                    item.photo.status = "queued"
+                    return found
+                  , (err)->
+                    item.photos.status = 'error: photo meta'
+                    return found
+          promises.push p
+          return
 
         $q.all(promises)
         .then (o)->
           console.log "*** startNativeFileUploadingP.uploadPhotoMetaP() complete. count=" + _.values(o).length
+          queued = _.filter o, (photo)->return photo.src == 'queued'
+          self.queueNativeUploader( queued )
 
+          errors = _.filter o, (err)->return err.error?
+          console.warn errors
+          return o
+          
 
+      queueNativeUploader: (assets)->
+        queuedAssets = _.filter assets, (photo)-> return photo.src == 'queued'
+        data = {
+          assets: _.pluck queuedAssets, 'UUID'
+          options: 
+            targetWidth: 640
+            targetHeight: 640
+            resizeMode: 'aspectFit'
+            autoRotate: true           
+        }
+        window.Messenger['scheduleAssetsForUpload'](  data
+          , (resp)->
+            # onSuccess is not part of the API
+            console.log resp
+            return console.log "test: scheduleAssetsForUpload.onSuccess, count=" + assetIds.length
+          , (err)->
+            return console.log "test: scheduleAssetsForUpload.onError. Timeout?"
+        )
+        # listen for snappiMessengerPluginService.on.didFinishAssetUpload ()
         # TODO: need to change method for counting queued uploads
         return
 
@@ -107,18 +134,19 @@ angular.module('ionBlankApp')
         # resp:
           # asset:{string phasset id}, 
           # name:{string (Parse name)}    # Parse URL
+          # url: {string url}
           # success: bool
         console.log "***** uploadPhotoFileComplete called!!!"
 
         # find queue item
-        queuedPhotos = _.pluck otgUploader._queue, 'photo'
+        queuedPhotos = _.pluck self._queue, 'photo'
         queuedPhoto = _.find queuedPhotos, {UUID: resp.asset}
 
-        if resp.success == false
+        if !resp.success # false or 0 ????  
           status = queuedPhoto.src = 'error: file upload'
         else 
           status = 'complete'
-          queuedPhoto.src = resp.name
+          queuedPhoto.src = resp.url
 
         otgParse.updatePhotoP(queuedPhoto, 'src') # update Parse
         .then ()->
