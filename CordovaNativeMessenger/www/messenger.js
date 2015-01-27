@@ -42,6 +42,18 @@ cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
   Messenger.prototype.getScheduledAssets = function(onSuccess) {
       exec(onSuccess, null, "CordovaNativeMessenger", "getScheduledAssets", []);
   }
+    
+  Messenger.prototype.unscheduleAllAssets = function(onSuccess) {
+      exec(onSuccess, null, "CordovaNativeMessenger", "unscheduleAllAssets", []);
+  }
+               
+  Messenger.prototype.suspendAllAssetUploadsWithCompletion = function(onSuccess) {
+      exec(onSuccess, null, "CordovaNativeMessenger", "suspendAllAssetUploadsWithCompletion", []);
+  }
+
+  Messenger.prototype.resumeAllAssetUplaodsWithCompletion = function(onSuccess) {
+      exec(onSuccess, null, "CordovaNativeMessenger", "resumeAllAssetUplaodsWithCompletion", []);
+  }
 	
 	var plugin = new Messenger();
 

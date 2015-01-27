@@ -14,6 +14,11 @@ NSString *tableViewRowNames[] = {@"Top Picks",@"Choose Your Days",@"My Orders",@
 
 typedef NS_ENUM(uint8_t, CordovaPage) {
     CordovaPageTopPicks,
+    CordovaPicker,
+    CordovaOrders,
+    CordovaUploader,
+    CordovaSettings,
+    CordovaHelp
 };
 
 @interface MainMenuViewController () <UITableViewDataSource, UITableViewDelegate>
