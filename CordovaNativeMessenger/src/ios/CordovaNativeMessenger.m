@@ -9,6 +9,7 @@
 #import "CordovaNativeMessenger.h"
 #import "PhotosUploader.h"
 #import <Photos/Photos.h>
+#import <CoreLocation/CoreLocation.h>
 
 NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeMessageNotification";
 
@@ -96,12 +97,101 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     [self.commandDelegate sendPluginResult:result callbackId:callbackId];
 }
 
++(NSDateFormatter *)dateFormatter {
+    static NSDateFormatter *_formatter = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _formatter = [[NSDateFormatter alloc]init];
+        [_formatter setDateFormat:@"yyyy-MM-dd"];
+    });
+    return _formatter;
+}
+
 -(void)mapCollections:(CDVInvokedUrlCommand*) command {
  //ToDO: map the list of collections with label, date range and array of images ( "PHFetchResult" )
+    [self.commandDelegate runInBackground:^{
+        PHFetchOptions *options = [PHFetchOptions new];
+        [options setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"startDate" ascending:NO]]];
+        
+        NSMutableArray *_moments = [NSMutableArray new];
+        
+        PHFetchResult *collections = [PHCollectionList fetchMomentListsWithSubtype:PHCollectionListSubtypeMomentListCluster options:options];
+        for (PHCollectionList * collection in collections) {
+            
+            PHFetchResult * momentsInCollection = [PHCollection fetchCollectionsInCollectionList:collection options:options];
+            [momentsInCollection enumerateObjectsUsingBlock:^(PHAssetCollection * momentsAssetCollection, NSUInteger idx, BOOL *stop) {
+                PHFetchOptions *op = [PHFetchOptions new];
+                [op setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"creationDate" ascending:NO]]];
+                [op setPredicate:[NSPredicate predicateWithFormat:@"(mediaType = %d)", PHAssetMediaTypeImage]];
+                PHFetchResult *result = [PHAsset fetchAssetsInAssetCollection:momentsAssetCollection options:op];
+                
+                if (!result.count) {
+                    return;
+                }
+                
+                NSMutableDictionary *moment = [NSMutableDictionary new];
+                
+                NSMutableDictionary *momentInfoDict = [@{
+                                                        @"assetCollectionType" : @(momentsAssetCollection.assetCollectionType),
+                                                        @"assetCollectionSubtype" : @(momentsAssetCollection.assetCollectionSubtype),
+                                                        @"estimatedAssetCount" : @(momentsAssetCollection.estimatedAssetCount),
+                                                        @"startDate" : [self.class.dateFormatter stringFromDate:momentsAssetCollection.startDate],
+                                                        @"endDate" : [self.class.dateFormatter stringFromDate:momentsAssetCollection.endDate],
+                                                        
+                                                        } mutableCopy];
+                if (momentsAssetCollection.approximateLocation) {
+                    [momentInfoDict setObject:@(momentsAssetCollection.approximateLocation.coordinate.latitude) forKey:@"approximateLocationLatitude"];
+                    [momentInfoDict setObject:@(momentsAssetCollection.approximateLocation.coordinate.longitude) forKey:@"approximateLocationLongitude"];
+                }
+                if (momentsAssetCollection.localizedLocationNames.count) {
+                    [momentInfoDict setObject:momentsAssetCollection.localizedLocationNames forKey:@"localizedLocationNames"];
+                }
+                if (momentsAssetCollection.localizedTitle.length) {
+                    [momentInfoDict setObject:momentsAssetCollection.localizedTitle forKey:@"localizedTitle"];
+                }
+                
+                [moment setObject:momentInfoDict forKey:@"momentInfo"];
+                
+                [moment setObject:result forKey:@"assets"];
+                NSMutableArray *assetArray = [NSMutableArray new];
+                for(PHAsset *asset in result) {
+                    NSMutableDictionary *assetDict = [@{
+                                                        @"UUID":asset.localIdentifier,
+                                                        @"mediaType":@(asset.mediaType),
+                                                        @"mediaSubTypes":@(asset.mediaSubtypes),
+                                                        @"hidden":@(asset.hidden),
+                                                        @"favorite":@(asset.favorite),
+                                                        @"originalWidth":@(asset.pixelWidth),
+                                                        @"originalHeight":@(asset.pixelHeight),
+                                                        } mutableCopy];
+                    if (datet) {
+                        <#statements#>
+                    }
+                    
+                    [assetArray addObject:@{
+                                             @"dateTaken":[dateFormatter stringFromDate:asset.creationDate],
+                                             @"burstIdentifier":asset.burstIdentifier,
+                                             @"burstSelectionTypes":@(asset.burstSelectionTypes),
+                                             @"representsBurst":@(asset.representsBurst)
+                                             }];
+                }
+                [moment setObject:assetArray forKey:@"assets"];
+                
+                [_moments addObject:moment];
+            }];
+        }
+        
+        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:_moments];
+        [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
+    }];
+    
+    
     // test image change notifications
 }
 
 -(void)mapAssetsLibrary:(CDVInvokedUrlCommand*) command {
+    
+    [self mapCollections:command];
     
     [self.commandDelegate runInBackground:^{
         PHFetchOptions *opts = [PHFetchOptions new];
@@ -292,14 +382,14 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
 }
 
--(void)suspendAllAssetUploadsWithCompletion:(CDVInvokedUrlCommand*) command {
+-(void)suspendAllAssetUploads:(CDVInvokedUrlCommand*) command {
     [PhotosUploader.sharedInstance suspendAllAssetUploadsWithCompletion:^(NSArray *resultArray) {
         CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultArray];
         [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
     }];
 }
 
--(void)resumeAllAssetUplaodsWithCompletion:(CDVInvokedUrlCommand*) command {
+-(void)resumeAllAssetUploads:(CDVInvokedUrlCommand*) command {
     [PhotosUploader.sharedInstance resumeAllAssetUplaodsWithCompletion:^(NSArray *resultArray) {
         CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultArray];
         [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
