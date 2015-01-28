@@ -458,6 +458,7 @@ angular
       return $ionicLoading.hide() if !value
       $ionicLoading.show({
         template: '<i class="icon ion-load-b ion-spin"></i>'
+        duration: 5000
       })
     $scope.hideLoading = (delay=0)->
       $timeout ()->
@@ -487,7 +488,7 @@ angular
     $scope.deviceReady = deviceReady
 
     # config values read from localstorage, set in settings
-    $scope.config = {
+    $rootScope.config = $scope.config = {
       'app-bootstrap' : true
       'no-view-headers' : true
       'system':
@@ -560,10 +561,18 @@ angular
         , (error)->
           console.log error
 
-
+    # respond to changes of app.settings
     $scope.$watch 'config', (newVal, oldVal)->
+        # console.log "enabled=" + newVal.upload['enabled']
         return _prefs.store newVal, oldVal
       , true
+
+    $scope.$watch 'config.upload', (newVal, oldVal)->
+        if newVal['auto-upload'] != oldVal['auto-upload']
+          return newVal['enabled'] = newVal['auto-upload']
+        return
+      , true
+
 
     # initial app preferences, priority to NSUserDefaults via plugin
     _prefs = {

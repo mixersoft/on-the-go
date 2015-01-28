@@ -9,8 +9,18 @@
 ###
 angular.module('ionBlankApp')
 .factory 'otgUploader', [
-  '$timeout', '$q', 'otgData', 'otgParse', 'cameraRoll', '$cordovaNetwork', 'deviceReady'
-  ($timeout, $q, otgData, otgParse, cameraRoll, $cordovaNetwork, deviceReady)->
+  '$timeout', '$q', '$rootScope', 'otgData', 'otgParse', 'cameraRoll', '$cordovaNetwork', 'deviceReady', 'snappiMessengerPluginService'
+  ($timeout, $q, $rootScope, otgData, otgParse, cameraRoll, $cordovaNetwork, deviceReady, snappiMessengerPluginService)->
+
+    $rootScope.$watch 'config.upload', (newVal, oldVal)->
+        if newVal['enabled'] != oldVal['enabled']  
+          console.log "otgUploader: enabled=" + newVal['enabled']
+          self.enableBackgroundQueueP newVal['enabled'] 
+        return
+      , true
+
+
+    
 
     self = {
       _allowCellularNetwork: false
@@ -19,13 +29,20 @@ angular.module('ionBlankApp')
       state :
         isActive : false
         isEnabled : null
-      enable : (action=null)->
-        if action=='toggle'
-          return this.state.isEnabled = !this.state.isEnabled 
-        else if action!=null
-          return this.state.isEnabled =  !!action
+
+      ### states:
+        $scope['config']['upload']['enabled'] => self.enabled , .enabled => resume/suspend nativeUploader
+          can be .enabled with empty queue
+      ###
+
+      enable : (action)->
+        return this.state.isEnabled if `action==null`
+        # this.state.isEnabled = $rootScope.config.upload.enabled
+        if action == 'toggle'
+          this.state.isEnabled = !this.state.isEnabled 
         else 
-          return this.state.isEnabled
+          this.state.isEnabled =  !!action
+        return $rootScope['config']['upload']['enabled'] = this.state.isEnabled
       isActive: ()->
         return self.state.isActive  
 
@@ -104,12 +121,7 @@ angular.module('ionBlankApp')
         return self._queue?.length || 0
       ## @param photos array of photo Objects or UUIDs  
 
-      XXXqueueP: (workorderObj, photos)->
-        # DEPRECATE, not async
-        self.queue(workorderObj, photos)
-        return $q.when(self._queue)
-
-      queue: (workorderObj, photos)->
+      queue1: (workorderObj, photos)->
         # need to queue photo by UUID because it might not be loaded from cameraRoll
         alreadyQueued = _ .reduce self._queue, (result, item)->
             result.push item.photo if _.isString item.photo
@@ -132,6 +144,35 @@ angular.module('ionBlankApp')
         
         return self._queue
 
+      queue: (workorderObj, photos, force=true)->
+        return self._queue if _.isEmpty(photos) && !force
+        # queued photos will be preloaded, do NOT upload until complete
+        queuedPhotos = _.pluck self._queue, 'photo'
+        dictQueuedPhotos = _.indexBy queuedPhotos, 'UUID'
+
+        # queuedPhotos = _ .reduce self._queue, (result, item)->
+        #     result.push item.photo if _.isString item.photo
+        #     result.push item.photo.UUID if item.photo.UUID
+        #     return result
+        #   , []
+
+        
+        addedToQueue = _.reduce photos, (assetIds, photo)->
+            queued = dictQueuedPhotos[photo.UUID]
+            if queued   #re-queue errors
+              queued.status = null 
+              return assetIds
+            item = {
+              photo: photo
+              workorderObj: workorderObj
+            }
+            self._queue.push item
+            if 'useDataURLs' && false
+              # preload DataURLs using cameraRoll.queue(), preloading is debounced
+              cameraRoll.getDataURL photo.UUID, self.UPLOAD_IMAGE_SIZE
+            assetIds.push photo.UUID
+            return assetIds
+
       clear : ()->
         self._queue = []
         return self._queue.length
@@ -152,27 +193,28 @@ angular.module('ionBlankApp')
 
     $scope.otgUploader = otgUploader
 
+    # ???: what is the event to update counter?
+    # $rootScope.$broadcast 'queue-changed', {remaining: int}
+    $scope.$on 'queue-changed', (newVal, oldVal)->
+      $scope.menu.uploader.count = otgUploader.queueLength()
+      return
+
     $scope.redButton = {
       press: (ev)-> 
+        # toggle $scope['config']['upload']['enabled'] & $scope.$watch 'config.upload.enabled'
         target = angular.element(ev.currentTarget)
-        target.addClass('activated')
+        target.addClass('down') # .activated is same as .enabled
         if otgUploader.enable('toggle')
           target.addClass('enabled') 
-          otgUploader.startUploadingP(onProgress)
         else 
           target.removeClass('enabled') 
+        $scope.menu.uploader.count = otgUploader.queueLength()
         _fetchWarnings()
         return
       release: (ev)-> 
         target = angular.element(ev.currentTarget)
-        target.removeClass('activated')
-        target.removeClass('enabled') if otgUploader.enable()
-        
-        $scope.menu.uploader.count = otgUploader.queueLength()
+        target.removeClass('down')
         return 
-
-      
-        
 
     }
 
