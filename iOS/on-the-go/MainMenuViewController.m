@@ -14,6 +14,11 @@ NSString *tableViewRowNames[] = {@"Top Picks",@"Choose Your Days",@"My Orders",@
 
 typedef NS_ENUM(uint8_t, CordovaPage) {
     CordovaPageTopPicks,
+    CordovaPicker,
+    CordovaOrders,
+    CordovaUploader,
+    CordovaSettings,
+    CordovaHelp
 };
 
 @interface MainMenuViewController () <UITableViewDataSource, UITableViewDelegate>
@@ -29,7 +34,7 @@ typedef NS_ENUM(uint8_t, CordovaPage) {
 
 
 -(void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    if (![sender isKindOfClass:[NSIndexPath class]])
+    if (![sender isKindOfClass:[NSNumber class]])
         return;
     
     CordovaPage page = [sender integerValue];
@@ -55,12 +60,14 @@ typedef NS_ENUM(uint8_t, CordovaPage) {
 
 -(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
-    if (indexPath.row == 1) {
-        [self performSegueWithIdentifier:@"ChooseYourDaysSegue" sender:self];
-        return;
+    switch (indexPath.row) {
+        case 1:
+            [self performSegueWithIdentifier:@"ChooseYourDaysSegue" sender:self];
+            break;
+        default:
+            [self performSegueWithIdentifier:@"CordovaViewControllerSegue" sender:@(indexPath.row)];
+            break;
     }
-    
-    [self performSegueWithIdentifier:@"CordovaViewControllerSegue" sender:@(indexPath.row)];
 }
 
 @end

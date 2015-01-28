@@ -1,10 +1,34 @@
+const pluginName = "CordovaNativeMessenger";
 
 cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
 	var exec = require('cordova/exec');
-	var Messenger = function(){};
+	
+	var Messenger = function() {
+    	this.listeners = {};
+    	
+    	exec(this.nativeListener.bind(this), null, pluginName, "bindListener", []);
+	};
+	
+	Messenger.prototype.nativeListener = function(message) {
+        if(this.listeners[message.command]) {
+            this.listeners[message.command](message.data);
+        }
+	};
+	
+	Messenger.prototype.on = function(command, callback) {
+    	this.listeners[command] = callback;
+	}
 
-	Messenger.prototype.bindListener = function(listener) {
-		exec(listener, listener, "CordovaNativeMessenger", "bindListener", []);
+	Messenger.prototype.lastImageAssetID = function(data, onSuccess, onError) {
+		exec(onSuccess, onError, "CordovaNativeMessenger", "lastImageAssetID", [data]);
+	};
+
+	Messenger.prototype.scheduleAssetsForUpload = function(data, onSuccess, onError) {
+		exec(onSuccess, onError, "CordovaNativeMessenger", "scheduleAssetsForUpload", [data]);
+	};
+	
+	Messenger.prototype.unscheduleAssetsForUpload = function(data, onSuccess, onError) {
+		exec(onSuccess, onError, "CordovaNativeMessenger", "unscheduleAssetsForUpload", [data]);
 	};
 
 	Messenger.prototype.mapAssetsLibrary = function(callback) {
@@ -14,6 +38,23 @@ cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
 	Messenger.prototype.getPhotoById =function(identifier, options, onSuccess, onError) {
 		exec(onSuccess, onError, "CordovaNativeMessenger", "getPhotoById", [identifier, options]);
 	}
+               
+  Messenger.prototype.getScheduledAssets = function(onSuccess) {
+      exec(onSuccess, null, "CordovaNativeMessenger", "getScheduledAssets", []);
+  }
+    
+  Messenger.prototype.unscheduleAllAssets = function(onSuccess) {
+      exec(onSuccess, null, "CordovaNativeMessenger", "unscheduleAllAssets", []);
+  }
+               
+  Messenger.prototype.suspendAllAssetUploads = function(onSuccess) {
+      exec(onSuccess, null, "CordovaNativeMessenger", "suspendAllAssetUploads", []);
+  }
+
+  Messenger.prototype.resumeAllAssetUploads = function(onSuccess) {
+      exec(onSuccess, null, "CordovaNativeMessenger", "resumeAllAssetUploads", []);
+  }
+	
 	var plugin = new Messenger();
 
 	module.exports = plugin;

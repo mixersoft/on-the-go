@@ -29,15 +29,15 @@
 -(NSArray *)layoutAttributesForElementsInRect:(CGRect)rect {
     NSMutableArray *layoutAttributes = [[super layoutAttributesForElementsInRect:rect] mutableCopy];
     
-    UICollectionViewLayoutAttributes *headerAttributes = [[layoutAttributes filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"representedElementKind = %@", UICollectionElementKindSectionHeader]] lastObject];
-    if (!headerAttributes) {
-        headerAttributes = [self layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader atIndexPath:[NSIndexPath indexPathWithIndex:0]];
-        [layoutAttributes addObject:headerAttributes];
-    }
-    CGRect cvBounds = self.collectionView.bounds;
-    CGSize headerSize = headerAttributes.size;
-    headerAttributes.center = CGPointMake(CGRectGetMinX(cvBounds)+headerSize.width/2.0, headerSize.height/2.0);
-    headerAttributes.zIndex = 1000;
+////    UICollectionViewLayoutAttributes *headerAttributes = [[layoutAttributes filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"representedElementKind = %@", UICollectionElementKindSectionHeader]] lastObject];
+////    if (!headerAttributes) {
+////        headerAttributes = [self layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader atIndexPath:[NSIndexPath indexPathWithIndex:0]];
+////        [layoutAttributes addObject:headerAttributes];
+////    }
+//    CGRect cvBounds = self.collectionView.bounds;
+//    CGSize headerSize = headerAttributes.size;
+//    headerAttributes.center = CGPointMake(CGRectGetMinX(cvBounds)+headerSize.width/2.0, headerSize.height/2.0);
+//    headerAttributes.zIndex = 1000;
     return layoutAttributes;
 }
 
