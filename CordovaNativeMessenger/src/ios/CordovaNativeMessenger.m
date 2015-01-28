@@ -163,14 +163,16 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                                                         @"favorite":@(asset.favorite),
                                                         @"originalWidth":@(asset.pixelWidth),
                                                         @"originalHeight":@(asset.pixelHeight),
+                                                        @"dateTaken":[dateFormatter stringFromDate:asset.creationDate],
+                                                        @"burstSelectionTypes":@(asset.burstSelectionTypes),
+                                                        @"representsBurst":@(asset.representsBurst)
                                                         } mutableCopy];
+                    if (asset.burstIdentifier.length) {
+                        [assetDict setObject:asset.burstIdentifier forKey:@"burstIdentifier"];
+                    }
                     
-                    [assetArray addObject:@{
-                                             @"dateTaken":[dateFormatter stringFromDate:asset.creationDate],
-                                             @"burstIdentifier":asset.burstIdentifier,
-                                             @"burstSelectionTypes":@(asset.burstSelectionTypes),
-                                             @"representsBurst":@(asset.representsBurst)
-                                             }];
+                    [assetArray addObject:assetDict];
+                    
                 }
                 [moment setObject:assetArray forKey:@"assets"];
                 
@@ -202,20 +204,24 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
         for(PHAsset *asset in assets) {
             // [resultArray addObject:@{@"UUID":asset.localIdentifier,
             //                          @"dateTaken":[dateFormatter stringFromDate:asset.creationDate]}];
-            [resultArray addObject:@{
-                    @"UUID":asset.localIdentifier,
-                    @"dateTaken":[dateFormatter stringFromDate:asset.creationDate],
-                    // @"UIImageOrientation":@(asset.imageOrientation),
-                    @"mediaType":@(asset.mediaType),
-                    @"mediaSubTypes":@(asset.mediaSubtypes),
-                    @"hidden":@(asset.hidden),
-                    @"favorite":@(asset.favorite),
-                    @"originalWidth":@(asset.pixelWidth),
-                    @"originalHeight":@(asset.pixelHeight),
-                    @"burstIdentifier":asset.burstIdentifier,
-                    @"burstSelectionTypes":@(asset.burstSelectionTypes),
-                    @"representsBurst":@(asset.representsBurst)
-                }];
+            
+            NSMutableDictionary *assetDict = [@{
+                                                @"UUID":asset.localIdentifier,
+                                                @"mediaType":@(asset.mediaType),
+                                                @"mediaSubTypes":@(asset.mediaSubtypes),
+                                                @"hidden":@(asset.hidden),
+                                                @"favorite":@(asset.favorite),
+                                                @"originalWidth":@(asset.pixelWidth),
+                                                @"originalHeight":@(asset.pixelHeight),
+                                                @"dateTaken":[dateFormatter stringFromDate:asset.creationDate],
+                                                @"burstSelectionTypes":@(asset.burstSelectionTypes),
+                                                @"representsBurst":@(asset.representsBurst)
+                                                } mutableCopy];
+            if (asset.burstIdentifier.length) {
+                [assetDict setObject:asset.burstIdentifier forKey:@"burstIdentifier"];
+            }
+            
+            [resultArray addObject:assetDict];
         }
         
         CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultArray];
