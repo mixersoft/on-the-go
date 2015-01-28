@@ -164,9 +164,6 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                                                         @"originalWidth":@(asset.pixelWidth),
                                                         @"originalHeight":@(asset.pixelHeight),
                                                         } mutableCopy];
-                    if (datet) {
-                        <#statements#>
-                    }
                     
                     [assetArray addObject:@{
                                              @"dateTaken":[dateFormatter stringFromDate:asset.creationDate],
@@ -191,7 +188,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
 
 -(void)mapAssetsLibrary:(CDVInvokedUrlCommand*) command {
     
-    [self mapCollections:command];
+    //[self mapCollections:command];
     
     [self.commandDelegate runInBackground:^{
         PHFetchOptions *opts = [PHFetchOptions new];
