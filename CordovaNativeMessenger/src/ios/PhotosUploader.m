@@ -24,10 +24,12 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
 }
 
 - (void)creteNewSession:(NSString *)identifier {
+    
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:identifier];
     [config setDiscretionary:YES];
     [config setAllowsCellularAccess:YES];
     [config setSessionSendsLaunchEvents:YES];
+    
     _backgroundUploadSession = [NSURLSession sessionWithConfiguration:config delegate:(id<NSURLSessionDelegate>)self delegateQueue:[NSOperationQueue mainQueue]];
     
     _delegates = [NSHashTable hashTableWithOptions:NSHashTableWeakMemory];
@@ -36,6 +38,8 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
 
 -(instancetype)initInternalWithIdentifier:(NSString *)identifier {
     if (self = [super init]) {
+        BOOL allowsCell = [[NSUserDefaults.standardUserDefaults objectForKey:@"prefs"][@"option"][@"allowsCellularAccess"] boolValue];
+        [self setAllowsCellularAccess:allowsCell];
         [self creteNewSession:identifier];
     }
     return self;
@@ -63,6 +67,14 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
 
 +(PhotosUploader *)sharedInstance {
     return [self uploaderWithSessionConfigurationIdentifier:sessionIdentifierKey];
+}
+
+-(void)setAllowsCellularAccess:(BOOL)allowsCellularAccess {
+    if (_allowsCellularAccess == allowsCellularAccess) {
+        return;
+    }
+    
+    
 }
 
 - (NSString *) uploaderStoreDirectory

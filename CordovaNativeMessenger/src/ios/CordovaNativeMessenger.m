@@ -107,9 +107,15 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     return _formatter;
 }
 
+-(void)setAllowsCellularAccess:(CDVInvokedUrlCommand*)command {
+    BOOL newCandidate = [[command argumentAtIndex:0] boolValue];
+    [PhotosUploader.sharedInstance setAllowsCellularAccess:newCandidate];
+}
+
+
 -(void)mapCollections:(CDVInvokedUrlCommand*) command {
  //ToDO: map the list of collections with label, date range and array of images ( "PHFetchResult" )
-    [self.commandDelegate runInBackground:^{
+   [self.commandDelegate runInBackground:^{
         PHFetchOptions *options = [PHFetchOptions new];
         [options setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"startDate" ascending:NO]]];
     
@@ -201,7 +207,9 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
 }
 
 -(void)mapAssetsLibrary:(CDVInvokedUrlCommand*) command {
-    
+     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+    NSData *data = [d objectForKey:@"prefs"];
+    id t = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
     [self.commandDelegate runInBackground:^{
         PHFetchOptions *opts = [PHFetchOptions new];
         opts.includeAllBurstAssets = YES;

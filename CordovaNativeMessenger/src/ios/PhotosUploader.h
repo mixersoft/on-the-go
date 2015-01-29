@@ -24,7 +24,8 @@
 
 @interface PhotosUploader : NSObject
 
-@property (nonatomic, assign) BOOL convertTo720p;
+@property (nonatomic, assign) BOOL allowsCellularAccess;
+
 
 +(PhotosUploader *)uploaderWithSessionConfigurationIdentifier:(NSString *)identifier;
 +(PhotosUploader *)sharedInstance;
