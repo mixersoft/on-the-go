@@ -210,9 +210,6 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
                         }
                     }
                 }
-                if(idx == localPHAssetIdentifiers.count-1) {
-                    [self unscheduleAllAssets];
-                }
             }];
             
         }];
