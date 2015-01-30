@@ -14,7 +14,7 @@
 @protocol PhotosUploaderDelegate <NSObject>
 @optional
 -(void)photoUploader:(PhotosUploader *)uploader didCancelUploadAssetIdentifier:(NSString *)assetIdentifier;
--(void)photoUploader:(PhotosUploader *)uploader didFinishUploadAssetIdentifier:(NSString *)assetIdentifier responseData:(NSData *)data withError:(NSError *)error state:(NSURLSessionTaskState)state;
+-(void)photoUploader:(PhotosUploader *)uploader didFinishUploadAssetIdentifier:(NSString *)assetIdentifier responseData:(NSData *)data withError:(NSError *)error;
 -(void)photoUploader:(PhotosUploader *)uploader didScheduleUploadForAssetWithIdentifier:(NSString *)assetIdentifier;
 -(void)photoUploader:(PhotosUploader *)uploader didUploadDataForAssetWithIdentifier:(NSString *)asseetIdentifier totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend;
 
@@ -34,8 +34,6 @@
 -(void)unscheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers;
 
 -(void)unscheduleAllAssets;
--(void)suspendAllAssetUploadsWithCompletion:(void(^)(NSArray *))completion;
--(void)resumeAllAssetUplaodsWithCompletion:(void(^)(NSArray *))completion;
 
 -(void)addDelegate:(id<PhotosUploaderDelegate>)delegate;
 -(void)removeDelegate:(id<PhotosUploaderDelegate>)delegate;

@@ -207,9 +207,6 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
 }
 
 -(void)mapAssetsLibrary:(CDVInvokedUrlCommand*) command {
-     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
-    NSData *data = [d objectForKey:@"prefs"];
-    id t = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
     [self.commandDelegate runInBackground:^{
         PHFetchOptions *opts = [PHFetchOptions new];
         opts.includeAllBurstAssets = YES;
@@ -399,20 +396,6 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
 }
 
--(void)suspendAllAssetUploads:(CDVInvokedUrlCommand*) command {
-    [PhotosUploader.sharedInstance suspendAllAssetUploadsWithCompletion:^(NSArray *resultArray) {
-        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultArray];
-        [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
-    }];
-}
-
--(void)resumeAllAssetUploads:(CDVInvokedUrlCommand*) command {
-    [PhotosUploader.sharedInstance resumeAllAssetUplaodsWithCompletion:^(NSArray *resultArray) {
-        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultArray];
-        [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
-    }];
-}
-
 -(void)sendEvent:(NSDictionary *)eventData {
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:eventData];
     [result setKeepCallbackAsBool:YES];
@@ -547,15 +530,20 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     [self.class sendMessage:@{@"assets":@[assetIdentifier]} WithCommand:kUnscheduleAssetsForUploadCommandValue];
 }
 
--(void)photoUploader:(PhotosUploader *)uploader didFinishUploadAssetIdentifier:(NSString *)assetIdentifier responseData:(NSData *)data withError:(NSError *)error state:(NSURLSessionTaskState)state {
+-(void)photoUploader:(PhotosUploader *)uploader didFinishUploadAssetIdentifier:(NSString *)assetIdentifier responseData:(NSData *)data withError:(NSError *)error {
     
-    NSMutableDictionary *dict = [@{@"asset":assetIdentifier, @"success":@(error==nil), @"state":@(state)} mutableCopy];
-    if (!error && data.length) {
+    NSMutableDictionary *dict = [@{@"asset":assetIdentifier, @"success":@(error == nil)} mutableCopy];
+    if (error) {
+        [dict setObject:@(NO) forKey:@"success"];
+        [dict setObject:@(error.code) forKey:@"errorCode"];
+    }
+    
+    if (data.length) {
         NSError *parseError = nil;
         NSDictionary *d = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:&parseError];
         [dict addEntriesFromDictionary:d];
-        [dict setObject:@(parseError==nil) forKey:@"success"];
     }
+    
     [self.class sendMessage:dict WithCommand:kDidFinishAssetUploadCommandValue];
     
 }

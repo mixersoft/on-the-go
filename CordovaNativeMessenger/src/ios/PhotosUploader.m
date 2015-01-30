@@ -21,6 +21,7 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
     NSURLSession *_backgroundUploadSession;
     NSHashTable *_delegates;
     NSMutableDictionary *_responseDataWrappers;
+    PHImageManager *_cachingImageManager;
 }
 
 - (void)creteNewSession:(NSString *)identifier {
@@ -38,10 +39,15 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
 
 -(instancetype)initInternalWithIdentifier:(NSString *)identifier {
     if (self = [super init]) {
+        _cachingImageManager = [PHImageManager new];
         NSData *prefsData = [NSUserDefaults.standardUserDefaults objectForKey:@"prefs"];
-        id prefs = [NSJSONSerialization JSONObjectWithData:prefsData options:0 error:nil];
-        BOOL allowsCell = [[prefs objectForKey:@"upload"][@"use-cellular-data"] boolValue];
-        [self setAllowsCellularAccess:allowsCell];
+        [self setAllowsCellularAccess:NO];
+        if (prefsData) {
+            id prefs = [NSJSONSerialization JSONObjectWithData:prefsData options:0 error:nil];
+            BOOL allowsCell = [[prefs objectForKey:@"upload"][@"use-cellular-data"] boolValue];
+             [self setAllowsCellularAccess:allowsCell];
+        }
+       
         [self creteNewSession:identifier];
     }
     return self;
@@ -79,15 +85,19 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
     
 }
 
+- (NSString *)applicationDocumentsDirectory {
+    return [[[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
+                                                   inDomains:NSUserDomainMask] lastObject] path];
+}
+
 - (NSString *) uploaderStoreDirectory
 {
     static NSString *path = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
-        NSString *basePath = ([paths count] > 0) ? [paths objectAtIndex:0] : nil;
         
-        path = [basePath stringByAppendingString:@"PhotosUploadStore"];
+        
+        path = [[self applicationDocumentsDirectory] stringByAppendingPathComponent:@"PhotosUploadStore"];
         if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
             [NSFileManager.defaultManager createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:nil];
         }
@@ -135,43 +145,21 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
 }
 
 -(void)unscheduleAllAssets {
-    NSString *identifier = _backgroundUploadSession.configuration.identifier;
-    [_backgroundUploadSession invalidateAndCancel];
-    [self creteNewSession:identifier];
-}
-
--(void)suspendAllAssetUploadsWithCompletion:(void(^)(NSArray *))completion {
     [_backgroundUploadSession getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
         NSMutableArray *new = [NSMutableArray arrayWithCapacity:uploadTasks.count];
         [uploadTasks enumerateObjectsUsingBlock:^(NSURLSessionUploadTask *obj, NSUInteger idx, BOOL *stop) {
             if (obj.state == NSURLSessionTaskStateRunning) {
-                [obj suspend];
+                [obj cancel];
                 NSString *identifier = obj.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
                 [new addObject:identifier];
             }
         }];
-    }];
-}
-
--(void)resumeAllAssetUplaodsWithCompletion:(void(^)(NSArray *))completion {
-    [_backgroundUploadSession getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
-        NSMutableArray *new = [NSMutableArray arrayWithCapacity:uploadTasks.count];
-        [uploadTasks enumerateObjectsUsingBlock:^(NSURLSessionUploadTask *obj, NSUInteger idx, BOOL *stop) {
-            if (obj.state == NSURLSessionTaskStateSuspended) {
-                [obj resume];
-                NSString *identifier = obj.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-                [new addObject:identifier];
-            }
-            
-        }];
-        
-        
     }];
 }
 
 -(void)scheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers options:(NSDictionary *)options {
     PHFetchResult *assets = [PHAsset fetchAssetsWithLocalIdentifiers:localPHAssetIdentifiers options:nil];
-    PHImageManager *cachingImageManager = [PHImageManager new];
+    
     NSLog(@"Assets Count: %lu", (unsigned long)localPHAssetIdentifiers.count);
     
     
@@ -182,6 +170,9 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
             [opts setDeliveryMode:PHImageRequestOptionsDeliveryModeHighQualityFormat];
             [opts setVersion:PHImageRequestOptionsVersionOriginal];
             [opts setResizeMode:PHImageRequestOptionsResizeModeExact];
+            [opts setProgressHandler:^(double progress, NSError *error, BOOL *stop, NSDictionary *info) {
+                
+            }];
             
             CGSize originalImageSize = CGSizeMake(obj.pixelWidth, obj.pixelHeight);
             NSNumber *maxWidth = options[@"maxWidth"];
@@ -189,8 +180,7 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
                 CGFloat scale = (maxWidth.floatValue / obj.pixelWidth);
                 originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
             }
-            
-            [cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
+            [_cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
                 if ([info[PHImageResultIsDegradedKey] boolValue]) {
                     return;
                 }
@@ -220,7 +210,11 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
                         }
                     }
                 }
+                if(idx == localPHAssetIdentifiers.count-1) {
+                    [self unscheduleAllAssets];
+                }
             }];
+            
         }];
         
     }];
@@ -321,10 +315,10 @@ didCompleteWithError:(NSError *)error {
     NSData *responseData = [self responseDataForTask:task];
     [self deleteDataForTask:task];
     NSLog(@"Finished task with image identifier: %@ responseDataLength: %lu with error:%@", identifier, (unsigned long)responseData.length, error);
-    
+
     for (id<PhotosUploaderDelegate>delegate in _delegates) {
-        if ([delegate respondsToSelector:@selector(photoUploader:didFinishUploadAssetIdentifier:responseData:withError:state:)]) {
-            [delegate photoUploader:self didFinishUploadAssetIdentifier:identifier responseData:responseData withError:error state:task.state];
+        if ([delegate respondsToSelector:@selector(photoUploader:didFinishUploadAssetIdentifier:responseData:withError:)]) {
+            [delegate photoUploader:self didFinishUploadAssetIdentifier:identifier responseData:responseData withError:error];
         }
     }
     UILocalNotification* n1 = [[UILocalNotification alloc] init];
