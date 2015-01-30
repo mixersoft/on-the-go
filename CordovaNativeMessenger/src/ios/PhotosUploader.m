@@ -38,7 +38,9 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
 
 -(instancetype)initInternalWithIdentifier:(NSString *)identifier {
     if (self = [super init]) {
-        BOOL allowsCell = [[NSUserDefaults.standardUserDefaults objectForKey:@"prefs"][@"option"][@"allowsCellularAccess"] boolValue];
+        NSData *prefsData = [NSUserDefaults.standardUserDefaults objectForKey:@"prefs"];
+        id prefs = [NSJSONSerialization JSONObjectWithData:prefsData options:0 error:nil];
+        BOOL allowsCell = [[prefs objectForKey:@"upload"][@"use-cellular-data"] boolValue];
         [self setAllowsCellularAccess:allowsCell];
         [self creteNewSession:identifier];
     }
@@ -249,6 +251,9 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
 -(NSData *)responseDataForTask:(NSURLSessionTask *)task {
      NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
     NSMutableData *data = [_responseDataWrappers objectForKey:identifier];
+    if (!data.length) {
+        data = [NSMutableData dataWithContentsOfURL:[self fileURLOfDataForTask:task]];
+    }
     return  data;
 }
 
@@ -256,7 +261,7 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
     if (!identifier.length) return nil;
     
-     NSString *dir = [[self uploaderStoreDirectory] stringByAppendingPathComponent:identifier];
+     NSString *dir = [[self uploaderStoreDirectory] stringByAppendingPathComponent:[identifier stringByReplacingOccurrencesOfString:@"/" withString:@"-" options:NSCaseInsensitiveSearch range:NSMakeRange(0, identifier.length)]];
     return [NSURL fileURLWithPath:dir];
 }
 
@@ -285,6 +290,8 @@ static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIde
     //delete data
     [_responseDataWrappers removeObjectForKey:identifier];
     [NSFileManager.defaultManager removeItemAtURL:[self fileURLOfDataForTask:task] error:nil];
+    NSString *path = [self imagePathForAssetIdentifier:identifier];
+    [NSFileManager.defaultManager removeItemAtPath:path error:nil];
     for (id<PhotosUploaderDelegate>delegate in _delegates) {
         if ([delegate respondsToSelector:@selector(photoUploader:didCancelUploadAssetIdentifier:)]) {
             [delegate photoUploader:self didCancelUploadAssetIdentifier:identifier];
@@ -310,14 +317,10 @@ totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
  */
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
 didCompleteWithError:(NSError *)error {
-    [self deleteDataForTask:task];
-    
     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-    
-    NSString *path = [self imagePathForAssetIdentifier:identifier];
-    [NSFileManager.defaultManager removeItemAtPath:path error:nil];
     NSData *responseData = [self responseDataForTask:task];
-    NSLog(@"Finished task with image identifier: %@ responseDataLength: %d with error:%@", identifier, responseData.length, error);
+    [self deleteDataForTask:task];
+    NSLog(@"Finished task with image identifier: %@ responseDataLength: %lu with error:%@", identifier, (unsigned long)responseData.length, error);
     
     for (id<PhotosUploaderDelegate>delegate in _delegates) {
         if ([delegate respondsToSelector:@selector(photoUploader:didFinishUploadAssetIdentifier:responseData:withError:state:)]) {

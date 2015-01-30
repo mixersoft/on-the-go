@@ -550,7 +550,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
 -(void)photoUploader:(PhotosUploader *)uploader didFinishUploadAssetIdentifier:(NSString *)assetIdentifier responseData:(NSData *)data withError:(NSError *)error state:(NSURLSessionTaskState)state {
     
     NSMutableDictionary *dict = [@{@"asset":assetIdentifier, @"success":@(error==nil), @"state":@(state)} mutableCopy];
-    if (!error) {
+    if (!error && data.length) {
         NSError *parseError = nil;
         NSDictionary *d = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:&parseError];
         [dict addEntriesFromDictionary:d];
