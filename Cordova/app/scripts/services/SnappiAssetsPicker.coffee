@@ -708,9 +708,10 @@ angular
         #
         #  native CameraRoll picker control
         #
-        # scheduleAssetsForUpload : (handler)-> 
-        #   #  assets:{array of phasset ids}
-        #   return window.Messenger.on( 'scheduleAssetsForUpload', handler )
+
+        didFailToScheduleAsset : (handler)-> 
+          #  resp = { asset, errorCode }
+          return window.Messenger.on( 'didFailToScheduleAsset', handler )
 
         unscheduleAssetsForUpload : (handler)-> 
           #   assets:{array of phasset ids}
@@ -751,7 +752,7 @@ angular
           assets: assetIds
           options: options
         }
-        console.log "\n\n*** scheduleAssetsForUpload, data=" + JSON.stringify( data )
+        console.log "\n\n*** scheduleAssetsForUpload, data=\n" + JSON.stringify( data )
         return _MessengerPLUGIN._callP( 'scheduleAssetsForUpload', data )  
 
       getScheduledAssetsP : ()-> 

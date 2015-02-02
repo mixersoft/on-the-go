@@ -568,7 +568,7 @@ angular
 
     # respond to changes of app.settings
     $scope.$watch 'config', (newVal, oldVal)->
-        console.log "app: enabled=" + newVal.upload['enabled']
+        # console.log "app: upload=" + JSON.stringify newVal.upload
         return _prefs.store newVal, oldVal
       , true
 
@@ -579,7 +579,7 @@ angular
         if plugins?.appPreferences?
           prefs = plugins.appPreferences
           ok = ()-> # appPreferences.store returns "OK"
-            console.log "NSUserDefaults save OK"
+            # console.log "NSUserDefaults save OK"
             # prefs.fetch okAlert, fail, 'prefs'
             return
 

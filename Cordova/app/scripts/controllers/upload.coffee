@@ -55,7 +55,7 @@ angular.module('ionBlankApp')
         if newVal['auto-upload'] != oldVal['auto-upload'] 
           $rootScope.config['upload']['enabled'] = $rootScope.config['upload']['auto-upload'] 
         
-        _CHUNKSIZE = newVal['_CHUNKSIZE'] if newVal['_CHUNKSIZE']
+        _CHUNKSIZE = newVal['CHUNKSIZE'] if newVal['CHUNKSIZE']
 
         return
       , true
@@ -202,13 +202,22 @@ angular.module('ionBlankApp')
 
         
         assetIds = _bkgFileUploader._readyToSchedule.splice(0,_CHUNKSIZE)  
+        if _.isEmpty assetIds
+          # all done!
+          return self.clearQueueP().then ()->
+            console.log "\n\n >>> otgUploader background upload queue is empty. DONE"
+            self.remaining( _bkgFileUploader.count() )
+            onDone() if onDone
+            return assetIds
+
+
         _.defaults( _bkgFileUploader._scheduled, _.object(assetIds) )
         return $q.when() if assetIds.length == 0
           
         # enabled
         options = _.pick _bkgFileUploader.cfg, ['allowsCellularAccess', 'maxWidth', 'auto-rotate']  
         return PLUGIN.scheduleAssetsForUploadP(assetIds, options).then ()->
-          console.log "\n>>> queueP > scheduleAssetsForUploadP complete"
+          console.log "\n>>> otgUploader.queueP(): scheduleAssetsForUploadP complete\n\n"
           return _.keys _bkgFileUploader._scheduled
         .catch (err)->
           console.warn "\n >>> ERROR PLUGIN.scheduleAssetsForUploadP() " + JSON.stringify err
@@ -222,8 +231,7 @@ angular.module('ionBlankApp')
 
       pauseQueueP: ()->
         return PLUGIN.unscheduleAllAssetsP().then (resp)->
-          console.log "unscheduleAllAssetsP complete"
-          console.log resp
+          console.log "unscheduleAllAssetsP complete" + JSON.stringify resp
           # remainingScheduled at the front of the queue
           remainingScheduledAssetIds = _.reduce _bkgFileUploader._scheduled, (result, v,k)->
               return result if v==1  # onProgress Done
@@ -243,10 +251,11 @@ angular.module('ionBlankApp')
           console.log scheduledAssetIds
 
       clearQueueP: ()->
-        return PLUGIN.getScheduledAssetsP()
-        .then (resp)->
-          PLUGIN.unscheduleAllAssetsP()
-          return resp
+        return PLUGIN.unscheduleAllAssetsP().then ()->
+          _bkgFileUploader._scheduled = {}
+          _bkgFileUploader._complete = {}
+          _bkgFileUploader._readyToSchedule = []
+          return 
 
       oneBegan: (resp)->
         try
@@ -255,6 +264,13 @@ angular.module('ionBlankApp')
         catch e
           # ...
         
+      oneScheduleError : (resp)->
+        # resp.asset
+        # resp.errorCode
+        resp['success'] = false
+        resp['message'] = 'error: failed to schedule'
+        return self.oneComplete(resp)
+
         
 
       oneProgress: (resp)->
@@ -272,10 +288,9 @@ angular.module('ionBlankApp')
           # refactor: otgWorkorderSync.queueDateRangeFilesP() callbacks
           photo = {
             UUID: resp.asset
-            src: if resp.success then resp.url else 'error: native-uploader'
+            src: if resp.success then resp.url else resp.message || 'error: native-uploader'
           }
-          console.log "\n\n >>> oneComplete"
-          console.log resp
+          console.log "\n\n >>> oneComplete" + JSON.stringify resp
 
           return otgParse.updatePhotoP( photo, 'src')
           .then (photoObj)->
@@ -291,7 +306,7 @@ angular.module('ionBlankApp')
               # add back to _readyToSchedule
               _bkgFileUploader._readyToSchedule.unshift( photo.UUID )
             else if resp.success == false
-              _bkgFileUploader.complete[photo.UUID] = resp.errorCode # errorCode < 0
+              _bkgFileUploader.complete[photo.UUID] = resp.errorCode  || resp.message # errorCode < 0
               onError(resp) if onError
             else 
               _bkgFileUploader._complete[photo.UUID] = 1
@@ -312,6 +327,8 @@ angular.module('ionBlankApp')
 
       oneError: ()->
       allComplete: ()->
+
+
       onNetworkAccessChanged: (allowsCellularAccess)->
         PLUGIN?.setAllowsCellularAccessP(allowsCellularAccess).then ()->
           console.log "_bkgFileUploader: scheduled tasks reset to allowsCellularAccess="+allowsCellularAccess
@@ -335,6 +352,12 @@ angular.module('ionBlankApp')
 
         PLUGIN.on.didBeginAssetUpload (resp)->
           return _bkgFileUploader.oneBegan(resp)
+
+        PLUGIN.on.didFailToScheduleAsset (resp)->
+          return _bkgFileUploader.oneScheduleError(resp)
+
+        return
+            
     }
 
 
@@ -414,7 +437,7 @@ angular.module('ionBlankApp')
         # toggle $scope['config']['upload']['enabled'] & $scope.$watch 'config.upload.enabled'
         target = angular.element(ev.currentTarget)
         target.addClass('down') # .activated is same as .enabled
-        console.log "press button"
+        # console.log "press button"
         if otgUploader.enable('toggle')
           target.addClass('enabled') 
         else 
@@ -460,8 +483,6 @@ angular.module('ionBlankApp')
     $scope.$on '$ionicView.beforeEnter', ()->
       # cached view becomes active 
       _fetchWarnings()
-      otgUploader.uploader?._registerBkgUploaderHandlers()
-
 
       _force = !otgWorkorderSync._workorderColl['owner'].length
       return if !_force 
