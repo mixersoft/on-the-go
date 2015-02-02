@@ -586,7 +586,7 @@ angular
               $rootScope.user.password = ''
               $rootScope.user.email = ''
               console.warn "parse User.signUp error, msg=" + JSON.stringify error
-              return dfd.reject(userCred)
+              return dfd.reject(error)
           }
         return dfd.promise
 
@@ -605,9 +605,11 @@ angular
 
 
             return user
-        , (user, error)->
+        , (error)->
             $rootScope.sessionUser = null
-            $q.reject("User login error. msg=" + JSON.stringify error)
+            console.warn "User login error. msg=" + JSON.stringify error
+            $q.reject(error)
+
 
       logoutSession: (anonUser)->
         Parse.User.logOut()
@@ -628,8 +630,9 @@ angular
         }
         self.signUpP(anon).then (userCred)->
               return dfd.resolve(userCred)
-            , (error)->
-              return dfd.reject "parseUser anonSignUpP() FAILED" 
+            , (userCred, error)->
+              console.warn "parseUser anonSignUpP() FAILED, userCred=" + JSON.stringify userCred 
+              return dfd.reject( error )
         return dfd.promise
 
       checkSessionUserP: ()-> 
@@ -675,7 +678,13 @@ angular
           promise = self.checkSessionUserP().then ()->
             _.each updateKeys, (key)->
                 $rootScope.sessionUser.set(key, $rootScope.user[key])
-            return $rootScope.sessionUser.save()
+            return $rootScope.sessionUser.save().then null, (error)->
+                $rootScope.sessionUser = null
+                $rootScope.user.username = ''
+                $rootScope.user.password = ''
+                $rootScope.user.email = ''
+                console.warn "parse User.save error, msg=" + JSON.stringify error
+                return $q.reject(error)
 
         promise.then ()->
               $rootScope.sessionUser = Parse.User.current()

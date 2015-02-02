@@ -4,6 +4,9 @@
         <i class="icon ion-person"> Sign In</i>
       </div>
 
+  <div ng-show="otgProfile.errorMessage">
+    <div  class="error-message padding">{{otgProfile.errorMessage}}</div>
+  </div>
   <label class="item item-input item-icon-right">
     <span class="input-label">Username</span>
     <input type="text" ng-model="user.username" placeholder="HappiGuy"

@@ -108,8 +108,7 @@ angular.module('ionBlankApp')
           #   $rootScope.user['emailVerified'] = false
           #   updateKeys.push('emailVerified')
           return
-        return otgParse.saveSessionUserP(updateKeys).then ()->
-        # return otgParse.checkSessionUserP().then ()->
+        return otgParse.saveSessionUserP(updateKeys).finally ()->
           self.dirty = _username.dirty = _password.dirty = _email.dirty = false
           return $q.when()
 
@@ -142,6 +141,7 @@ angular.module('ionBlankApp')
       username: _username
       password: _password
       email: _email
+      errorMessage: ''
       dirty: false
     }
     
@@ -189,6 +189,7 @@ angular.module('ionBlankApp')
       otgWorkorderSync.clear()
       $rootScope.user = _.pick $scope.user, ['username', 'password']
       return otgProfile.signInP().then ()->
+          otgProfile.errorMessage = ''
           target = 'app.settings.main'
           target = 'app.workorders.all' if /workorders/.test($scope.SideMenuSwitcher?.leftSide.src)
           $ionicHistory.nextViewOptions({
@@ -197,27 +198,57 @@ angular.module('ionBlankApp')
           # refresh everything, including topPicks
           otgWorkorderSync.clear()
           $state.transitionTo(target)
+
         , (error)->
           _.extend $scope.user, $rootScope.user
-          $scope.user.password ==''
+          $scope.user.password == ''
           otgProfile.username.dirty = !! $scope.user.username
           $state.transitionTo('app.settings.sign-in')
-          alertPopup = $ionicPopup.alert {
-            title: "Sign In"
-            subTitle: "The Username and Password combination was not found. Please try again."
-          }
-          alertPopup.then()
-          $timeout ()->
-              return alertPopup.close()
-            , 3000
+          switch error.code 
+            when 101
+              message = "The Username and Password combination was not found. Please try again."
+            else
+              message = "Sign-in unsucessful. Please try again."
+          otgProfile.errorMessage = message
           return 
-        
+
+    $scope.submit = (ev)->
+      # either update or CREATE
+      isCreate = if _.isEmpty($rootScope.sessionUser) then true else false
+      return otgProfile.submitP()
+      .then ()->
+        otgProfile.errorMessage = ''
+        if isCreate
+          $ionicHistory.nextViewOptions({
+            historyRoot: true
+          })
+          target = 'app.settings.main'
+          $state.transitionTo(target)
+        # else stay on app.settings.profile page
+      .catch (error)->
+        _.extend $scope.user, $rootScope.user
+        otgProfile.password.passwordAgainModel = ''
+        switch error.code 
+          when 202
+            message = "That Username was already taken. Please try again."
+          when 203
+            message = "That Email address was already taken. Please try again."
+          else
+            message = "Sign-up unsucessful. Please try again."
+        $scope.otgProfile.errorMessage = message
+        return 
+      return 
+
+
+
+
     $scope.$on '$ionicView.loaded', ()->
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
       _.extend $scope.watch.imgCache, imageCacheSvc.stashStats()
       _.extend $scope.user, $rootScope.user
+      otgProfile.errorMessage = ''
       return
 
     $scope.$on '$ionicView.leave', ()->

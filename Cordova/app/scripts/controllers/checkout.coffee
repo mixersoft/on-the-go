@@ -118,7 +118,26 @@ angular.module('ionBlankApp')
         switch $state.current.name
           when 'app.checkout.sign-up'
             # return false on error by promise
-            return $scope.otgProfile.submitP() if $scope.otgProfile.dirty
+            if $scope.otgProfile.dirty
+              return $scope.otgProfile.submitP()
+              .then ()->
+                otgProfile.errorMessage = ''
+                return true
+              .catch (error)->
+                # reset
+                _.extend $scope.user, $rootScope.user
+                otgProfile.password.passwordAgainModel = ''
+                switch error.code 
+                  when 101
+                    message = "The Username and Password combination was not found. Please try again."
+                  when 202
+                    message = "That Username was already taken. Please try again."
+                  when 203
+                    message = "That Email address was already taken. Please try again."  
+                  else
+                    message = "Sign-up unsucessful. Please try again."
+                $scope.otgProfile.errorMessage = message
+                return $q.reject(false)  
 
           when 'app.checkout.payment'
             if !$scope.user.tosAgree
@@ -199,7 +218,8 @@ angular.module('ionBlankApp')
 
 
       hide : (swipeCard)->
-        swipeCard.el.parentNode.className += ' hide '
+        # swipeCard.el.parentNode.className += ' hide '
+        return
     }
 
     $scope.otgProfile = otgProfile
