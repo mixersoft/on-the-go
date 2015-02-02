@@ -593,8 +593,8 @@ angular
       loginP: (userCred)->
         if _.isArray(userCred)
           userCred = {
-            username: $rootScope.user[userCred[0]]
-            password: $rootScope.user[userCred[1]]
+            username: $rootScope.user[userCred[0]] || ''
+            password: $rootScope.user[userCred[1]] || ''
           }
         return deviceReady.waitP().then ()->
           return Parse.User.logIn( userCred.username.toLowerCase(), userCred.password )

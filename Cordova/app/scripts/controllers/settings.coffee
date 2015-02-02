@@ -134,8 +134,11 @@ angular.module('ionBlankApp')
       displaySessionUsername: ()->
         return "anonymous" if self.isAnonymous()
         return $rootScope.sessionUser.get('username')
+
       signOut: ()->
-        return otgParse.logoutSession()
+        otgParse.logoutSession()
+        return 
+
       username: _username
       password: _password
       email: _email
@@ -155,7 +158,6 @@ angular.module('ionBlankApp')
     }
     
     $scope.otgProfile = otgProfile
-    $scope.user = $rootScope.user
 
     $scope.watch = {
       imgCache: 
@@ -169,8 +171,9 @@ angular.module('ionBlankApp')
     }
 
     $scope.signOut = (ev)->
-      ev.preventDefault()   
+      ev.preventDefault()    
       otgProfile.signOut()
+      _.extend $scope.user, $rootScope.user
       otgWorkorderSync.clear()
       $rootScope.counts = {
         'top-picks': 0
@@ -178,15 +181,14 @@ angular.module('ionBlankApp')
         orders: 0
       }
       otgUploader.uploader.clearQueueP()
-      $scope.user = $rootScope.user
       $state.transitionTo('app.settings.sign-in')
       return     
     
     $scope.signIn = (ev)->
       ev.preventDefault()
       otgWorkorderSync.clear()
+      $rootScope.user = _.pick $scope.user, ['username', 'password']
       return otgProfile.signInP().then ()->
-          $scope.user = $rootScope.user
           target = 'app.settings.main'
           target = 'app.workorders.all' if /workorders/.test($scope.SideMenuSwitcher?.leftSide.src)
           $ionicHistory.nextViewOptions({
@@ -196,7 +198,7 @@ angular.module('ionBlankApp')
           otgWorkorderSync.clear()
           $state.transitionTo(target)
         , (error)->
-          $scope.user = $rootScope.user
+          _.extend $scope.user, $rootScope.user
           $scope.user.password ==''
           otgProfile.username.dirty = !! $scope.user.username
           $state.transitionTo('app.settings.sign-in')
@@ -215,6 +217,7 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.beforeEnter', ()->
       _.extend $scope.watch.imgCache, imageCacheSvc.stashStats()
+      _.extend $scope.user, $rootScope.user
       return
 
     $scope.$on '$ionicView.leave', ()->
