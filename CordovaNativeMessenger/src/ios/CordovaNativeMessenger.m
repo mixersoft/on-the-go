@@ -27,6 +27,7 @@ NSString *kUnscheduleDayRangeForUploadCommandValue = @"unscheduleDayRangeForUplo
 NSString *kDidBeginAssetUploadCommandValue = @"didBeginAssetUpload";
 NSString *kDidFinishAssetUploadCommandValue = @"didFinishAssetUpload";
 NSString *kDidUploadAssetProgressCommandValue = @"didUploadAssetProgress";
+NSString *kDidFailToScheduleAssetCommandValue = @"didFailToScheduleAsset";
 
 NSString *kLastImageAssetIDCommandValue = @"lastImageAssetID";
 
@@ -566,6 +567,17 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                               }
                 WithCommand:kDidUploadAssetProgressCommandValue];
     
+}
+
+-(void)photoUploader:(PhotosUploader *)uploader didFailToScheduleAssetIdentifier:(NSString *)assetIdentifier isMissing:(BOOL)isMissing error:(NSError *)error {
+    NSMutableDictionary *dict = [@{@"asset" : assetIdentifier} mutableCopy];
+    if (isMissing) {
+        [dict setObject:@(isMissing) forKeyedSubscript:@"isMissing"];
+    }
+    if (error) {
+        [dict setObject:@(error.code) forKeyedSubscript:@"errorCode"];
+    }
+    [self.class sendMessage:dict WithCommand:kDidFailToScheduleAssetCommandValue];
 }
 
 @end

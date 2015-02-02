@@ -30,20 +30,19 @@ static NSOperationQueue *serialQueue;
 }
 
 - (void)creteNewSession:(NSString *)identifier {
+
+    NSURLSessionConfiguration *config = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:identifier];
+    [config setDiscretionary:YES];
+    [config setAllowsCellularAccess:YES];
+    [config setSessionSendsLaunchEvents:YES];
     
+    _backgroundUploadSession = [NSURLSession sessionWithConfiguration:config delegate:(id<NSURLSessionDelegate>)self delegateQueue:[NSOperationQueue mainQueue]];
+    
+    _delegates = [NSHashTable hashTableWithOptions:NSHashTableWeakMemory];
+    _responseDataWrappers = [NSMutableDictionary new];
     [serialQueue addBlock:^(void(^operation)(void)) {
-        
-        NSURLSessionConfiguration *config = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:identifier];
-        [config setDiscretionary:YES];
-        [config setAllowsCellularAccess:YES];
-        [config setSessionSendsLaunchEvents:YES];
-        
-        _backgroundUploadSession = [NSURLSession sessionWithConfiguration:config delegate:(id<NSURLSessionDelegate>)self delegateQueue:[NSOperationQueue mainQueue]];
-        
-        _delegates = [NSHashTable hashTableWithOptions:NSHashTableWeakMemory];
-        _responseDataWrappers = [NSMutableDictionary new];
         [_backgroundUploadSession getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
-           
+            
             [uploadTasks enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
                 [scheduledTasks addObject:obj];
             }];
@@ -145,7 +144,7 @@ static NSOperationQueue *serialQueue;
             
             [assets addObject:identifier];
         }];
-        
+        operation();
         [[NSOperationQueue mainQueue] addOperationWithBlock:^{
             completion(assets);
         }];
@@ -172,6 +171,7 @@ static NSOperationQueue *serialQueue;
                 [obj cancel];
             }
         }];
+        operation();
     }];
 }
 
@@ -181,34 +181,63 @@ static NSOperationQueue *serialQueue;
 }
 
 -(void)scheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers options:(NSDictionary *)options {
-    PHFetchResult *assets = [PHAsset fetchAssetsWithLocalIdentifiers:localPHAssetIdentifiers options:nil];
+    
+    PHFetchOptions *fetchOptions = [PHFetchOptions new];
+    fetchOptions.includeAllBurstAssets = YES;
+    
+    PHFetchResult *assets = [PHAsset fetchAssetsWithLocalIdentifiers:localPHAssetIdentifiers options:fetchOptions];
+    if(assets.count != localPHAssetIdentifiers.count) {
+        NSMutableArray *missingObjects = [localPHAssetIdentifiers mutableCopy];
+        for(PHAsset *asset in assets) {
+            [missingObjects removeObject:asset.localIdentifier];
+        }
+        
+       [missingObjects enumerateObjectsUsingBlock:^(NSString *obj, NSUInteger idx, BOOL *stop) {
+           for (id<PhotosUploaderDelegate>delegate in _delegates) {
+               if ([delegate respondsToSelector:@selector(photoUploader:didFailToScheduleAssetIdentifier:isMissing:error:)]) {
+                   [delegate photoUploader:self didFailToScheduleAssetIdentifier:obj isMissing:YES error:nil];
+               }
+           }
+       }];
+    }
     
     NSLog(@"Assets Count: %lu", (unsigned long)localPHAssetIdentifiers.count);
     
-    [serialQueue addBlock:^(void(^operation)(void)) {
-        [assets enumerateObjectsUsingBlock:^(PHAsset *obj, NSUInteger idx, BOOL *stop) {
-            BOOL alreadyScheduled = [self isAssetScheduled:obj];
-            if (alreadyScheduled) {
-                return;
-            }
-
-            //get image
-            PHImageRequestOptions *opts = [PHImageRequestOptions new];
-            [opts setDeliveryMode:PHImageRequestOptionsDeliveryModeHighQualityFormat];
-            [opts setVersion:PHImageRequestOptionsVersionOriginal];
-            [opts setResizeMode:PHImageRequestOptionsResizeModeExact];
-            [opts setProgressHandler:^(double progress, NSError *error, BOOL *stop, NSDictionary *info) {
-                
-            }];
+    [assets enumerateObjectsUsingBlock:^(PHAsset *obj, NSUInteger idx, BOOL *stop) {
+        BOOL alreadyScheduled = [self isAssetScheduled:obj];
+        if (alreadyScheduled) {
+            return;
+        }
+        
+        //get image
+        PHImageRequestOptions *opts = [PHImageRequestOptions new];
+        [opts setDeliveryMode:PHImageRequestOptionsDeliveryModeHighQualityFormat];
+        [opts setVersion:PHImageRequestOptionsVersionOriginal];
+        [opts setResizeMode:PHImageRequestOptionsResizeModeExact];
+        [opts setProgressHandler:^(double progress, NSError *error, BOOL *stop, NSDictionary *info) {
             
-            CGSize originalImageSize = CGSizeMake(obj.pixelWidth, obj.pixelHeight);
-            NSNumber *maxWidth = options[@"maxWidth"];
-            if (maxWidth && obj.pixelWidth > maxWidth.floatValue) {
-                CGFloat scale = (maxWidth.floatValue / obj.pixelWidth);
-                originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
-            }
+        }];
+        
+        CGSize originalImageSize = CGSizeMake(obj.pixelWidth, obj.pixelHeight);
+        NSNumber *maxWidth = options[@"maxWidth"];
+        if (maxWidth && obj.pixelWidth > maxWidth.floatValue) {
+            CGFloat scale = (maxWidth.floatValue / obj.pixelWidth);
+            originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
+        }
+        [serialQueue addBlock:^(void(^operation)(void)) {
             [_cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
                 if ([info[PHImageResultIsDegradedKey] boolValue]) {
+                    operation();
+                    return;
+                }
+                NSError *err = info[PHImageErrorKey];
+                if (err) {
+                    for (id<PhotosUploaderDelegate>delegate in _delegates) {
+                        if ([delegate respondsToSelector:@selector(photoUploader:didFailToScheduleAssetIdentifier:isMissing:error:)]) {
+                            [delegate photoUploader:self didFailToScheduleAssetIdentifier:obj.localIdentifier isMissing:NO error:err];
+                        }
+                    }
+                    operation();
                     return;
                 }
                 NSData *data = UIImageJPEGRepresentation(result, 1);
@@ -216,8 +245,10 @@ static NSOperationQueue *serialQueue;
                 if (data.length) {
                     //store image
                     NSString *fullPath = [self imagePathForAssetIdentifier:obj.localIdentifier];
-                    if (![data writeToFile:fullPath atomically:YES])
+                    if (![data writeToFile:fullPath atomically:YES]) {
+                        operation();
                         return;
+                    }
                     
                     NSLog(@"image:%@ with size:%@", fullPath.lastPathComponent, NSStringFromCGSize(result.size));
                     NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", fullPath.lastPathComponent];
@@ -232,7 +263,7 @@ static NSOperationQueue *serialQueue;
                     NSURLSessionUploadTask *task = [_backgroundUploadSession uploadTaskWithRequest:request fromFile:[NSURL fileURLWithPath:fullPath]];
                     [task resume];
                     [scheduledTasks addObject:task];
-                    
+                    operation();
                     for (id<PhotosUploaderDelegate>delegate in _delegates) {
                         if ([delegate respondsToSelector:@selector(photoUploader:didScheduleUploadForAssetWithIdentifier:)]) {
                             [delegate photoUploader:self didScheduleUploadForAssetWithIdentifier:obj.localIdentifier];
@@ -240,7 +271,6 @@ static NSOperationQueue *serialQueue;
                     }
                 }
             }];
-            
         }];
         
     }];
@@ -259,7 +289,7 @@ static NSOperationQueue *serialQueue;
                 [self deleteDataForTask:obj];
             }
         }];
-        
+        operation();
         if (completion) {
             [[NSOperationQueue mainQueue] addOperationWithBlock:^{
                 completion(found);
@@ -315,7 +345,7 @@ static NSOperationQueue *serialQueue;
         [NSFileManager.defaultManager removeItemAtPath:path error:nil];
         
         [scheduledTasks removeObject:task];
-        
+        operation();
         [[NSOperationQueue mainQueue] addOperationWithBlock:^{
             
             for (id<PhotosUploaderDelegate>delegate in _delegates) {

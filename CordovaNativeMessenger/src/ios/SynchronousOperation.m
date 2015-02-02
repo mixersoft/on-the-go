@@ -58,9 +58,9 @@
     
     // If the operation is not canceled, begin executing the task.
     [self willChangeValueForKey:@"isExecuting"];
-    [self main];
     executing = YES;
     [self didChangeValueForKey:@"isExecuting"];
+    [self main];
 }
 
 - (void)main {
