@@ -107,91 +107,106 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     return _formatter;
 }
 
+-(void)setAllowsCellularAccess:(CDVInvokedUrlCommand*)command {
+    BOOL newCandidate = [[command argumentAtIndex:0] boolValue];
+    [PhotosUploader.sharedInstance setAllowsCellularAccess:newCandidate];
+}
+
+
 -(void)mapCollections:(CDVInvokedUrlCommand*) command {
  //ToDO: map the list of collections with label, date range and array of images ( "PHFetchResult" )
-    [self.commandDelegate runInBackground:^{
+   [self.commandDelegate runInBackground:^{
         PHFetchOptions *options = [PHFetchOptions new];
         [options setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"startDate" ascending:NO]]];
+    
         
-        NSMutableArray *_moments = [NSMutableArray new];
+        NSMutableArray *_collections = [NSMutableArray new];
         
-        PHFetchResult *collections = [PHCollectionList fetchMomentListsWithSubtype:PHCollectionListSubtypeMomentListCluster options:options];
-        for (PHCollectionList * collection in collections) {
+        PHFetchResult *s = [PHCollectionList fetchCollectionListsWithType:PHCollectionListTypeMomentList subtype:PHCollectionListSubtypeMomentListCluster options:options];
+        
+        for (PHCollectionList * collection in s) {
             
-            PHFetchResult * momentsInCollection = [PHCollection fetchCollectionsInCollectionList:collection options:options];
-            [momentsInCollection enumerateObjectsUsingBlock:^(PHAssetCollection * momentsAssetCollection, NSUInteger idx, BOOL *stop) {
+            NSMutableDictionary *collectionInfoDict = [@{
+                                                         @"collectionListType" : @(collection.collectionListType),
+                                                         @"collectionListSubtype" : @(collection.collectionListSubtype),
+                                                         @"startDate" : [self.class.dateFormatter stringFromDate:collection.startDate],
+                                                         @"endDate" : [self.class.dateFormatter stringFromDate:collection.endDate],
+                                                         
+                                                         } mutableCopy];
+            if (collection.localizedLocationNames.count) {
+                [collectionInfoDict setObject:collection.localizedLocationNames forKey:@"localizedLocationNames"];
+            }
+            if (collection.localizedTitle.length) {
+                [collectionInfoDict setObject:collection.localizedTitle forKey:@"localizedTitle"];
+            }
+            
+            [_collections addObject:collectionInfoDict];
+            
+            PHFetchResult *res = [PHAssetCollection fetchCollectionsInCollectionList:collection options:options];
+            NSMutableArray *_moments = [NSMutableArray arrayWithCapacity:res.count];
+            [collectionInfoDict setObject:_moments forKey:@"moments"];
+            //fetch moments within collection
+            for (PHAssetCollection *momentObj in res) {
                 PHFetchOptions *op = [PHFetchOptions new];
                 [op setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"creationDate" ascending:NO]]];
                 [op setPredicate:[NSPredicate predicateWithFormat:@"(mediaType = %d)", PHAssetMediaTypeImage]];
-                PHFetchResult *result = [PHAsset fetchAssetsInAssetCollection:momentsAssetCollection options:op];
+                PHFetchResult *result = [PHAsset fetchAssetsInAssetCollection:(PHAssetCollection *)momentObj options:op];
                 
                 if (!result.count) {
-                    return;
+                    continue;
                 }
                 
                 NSMutableDictionary *moment = [NSMutableDictionary new];
                 
-                NSMutableDictionary *momentInfoDict = [@{
-                                                        @"assetCollectionType" : @(momentsAssetCollection.assetCollectionType),
-                                                        @"assetCollectionSubtype" : @(momentsAssetCollection.assetCollectionSubtype),
-                                                        @"estimatedAssetCount" : @(momentsAssetCollection.estimatedAssetCount),
-                                                        @"startDate" : [self.class.dateFormatter stringFromDate:momentsAssetCollection.startDate],
-                                                        @"endDate" : [self.class.dateFormatter stringFromDate:momentsAssetCollection.endDate],
-                                                        
-                                                        } mutableCopy];
-                if (momentsAssetCollection.approximateLocation) {
-                    [momentInfoDict setObject:@(momentsAssetCollection.approximateLocation.coordinate.latitude) forKey:@"approximateLocationLatitude"];
-                    [momentInfoDict setObject:@(momentsAssetCollection.approximateLocation.coordinate.longitude) forKey:@"approximateLocationLongitude"];
-                }
-                if (momentsAssetCollection.localizedLocationNames.count) {
-                    [momentInfoDict setObject:momentsAssetCollection.localizedLocationNames forKey:@"localizedLocationNames"];
-                }
-                if (momentsAssetCollection.localizedTitle.length) {
-                    [momentInfoDict setObject:momentsAssetCollection.localizedTitle forKey:@"localizedTitle"];
-                }
-                
-                [moment setObject:momentInfoDict forKey:@"momentInfo"];
-                
-                [moment setObject:result forKey:@"assets"];
-                NSMutableArray *assetArray = [NSMutableArray new];
-                for(PHAsset *asset in result) {
-                    NSMutableDictionary *assetDict = [@{
-                                                        @"UUID":asset.localIdentifier,
-                                                        @"mediaType":@(asset.mediaType),
-                                                        @"mediaSubTypes":@(asset.mediaSubtypes),
-                                                        @"hidden":@(asset.hidden),
-                                                        @"favorite":@(asset.favorite),
-                                                        @"originalWidth":@(asset.pixelWidth),
-                                                        @"originalHeight":@(asset.pixelHeight),
-                                                        @"dateTaken":[dateFormatter stringFromDate:asset.creationDate],
-                                                        @"burstSelectionTypes":@(asset.burstSelectionTypes),
-                                                        @"representsBurst":@(asset.representsBurst)
-                                                        } mutableCopy];
-                    if (asset.burstIdentifier.length) {
-                        [assetDict setObject:asset.burstIdentifier forKey:@"burstIdentifier"];
-                    }
-                    
-                    [assetArray addObject:assetDict];
-                    
-                }
-                [moment setObject:assetArray forKey:@"assets"];
-                
-                [_moments addObject:moment];
-            }];
-        }
+                moment[@"assetCollectionType"] = @(momentObj.assetCollectionType);
+                moment[@"assetCollectionSubtype"] = @(momentObj.assetCollectionSubtype);
+                moment[@"estimatedAssetCount"] = @(momentObj.estimatedAssetCount);
+                moment[@"startDate"] = [self.class.dateFormatter stringFromDate:momentObj.startDate];
+                moment[@"endDate"] = [self.class.dateFormatter stringFromDate:momentObj.endDate];
+
+                if (momentObj.localizedLocationNames.count) {
+                    [moment setObject:collection.localizedLocationNames forKey:@"localizedLocationNames"];
+                 }
+                 if (momentObj.localizedTitle.length) {
+                     [moment setObject:collection.localizedTitle forKey:@"localizedTitle"];
+                 }
+                 
+                 [moment setObject:result forKey:@"assets"];
+                 NSMutableArray *assetArray = [NSMutableArray new];
+                 for(PHAsset *asset in result) {
+                     NSMutableDictionary *assetDict = [@{
+                                                         @"UUID":asset.localIdentifier,
+                                                         @"mediaType":@(asset.mediaType),
+                                                         @"mediaSubTypes":@(asset.mediaSubtypes),
+                                                         @"hidden":@(asset.hidden),
+                                                         @"favorite":@(asset.favorite),
+                                                         @"originalWidth":@(asset.pixelWidth),
+                                                         @"originalHeight":@(asset.pixelHeight),
+                                                         @"dateTaken":[dateFormatter stringFromDate:asset.creationDate],
+                                                         @"burstSelectionTypes":@(asset.burstSelectionTypes),
+                                                         @"representsBurst":@(asset.representsBurst)
+                                                         } mutableCopy];
+                     if (asset.burstIdentifier.length) {
+                         [assetDict setObject:asset.burstIdentifier forKey:@"burstIdentifier"];
+                     }
+                     
+                     [assetArray addObject:assetDict];
+                     
+                 }
+                 [moment setObject:assetArray forKey:@"assets"];
+                 [_moments addObject:moment];
+                 
+             }
+         }
         
-        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:_moments];
+        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:_collections];
         [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
     }];
-    
     
     // test image change notifications
 }
 
 -(void)mapAssetsLibrary:(CDVInvokedUrlCommand*) command {
-    
-    //[self mapCollections:command];
-    
     [self.commandDelegate runInBackground:^{
         PHFetchOptions *opts = [PHFetchOptions new];
         opts.includeAllBurstAssets = YES;
@@ -199,11 +214,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
         
         NSMutableArray *resultArray = [NSMutableArray arrayWithCapacity:assets.count];
         
-        
-        
         for(PHAsset *asset in assets) {
-            // [resultArray addObject:@{@"UUID":asset.localIdentifier,
-            //                          @"dateTaken":[dateFormatter stringFromDate:asset.creationDate]}];
             
             NSMutableDictionary *assetDict = [@{
                                                 @"UUID":asset.localIdentifier,
@@ -246,7 +257,10 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
         
         __block NSUInteger requestsLeft = identifiers.count;
         
-        PHFetchResult *fetchResults = [PHAsset fetchAssetsWithLocalIdentifiers:identifiers options:nil];
+        PHFetchOptions *fetchOptions = [PHFetchOptions new];
+        fetchOptions.includeAllBurstAssets = YES;
+        fetchOptions.includeHiddenAssets = YES;
+        PHFetchResult *fetchResults = [PHAsset fetchAssetsWithLocalIdentifiers:identifiers options:fetchOptions];
         
         if(fetchResults.count != identifiers.count) {
             NSMutableArray *missingObjects = [identifiers mutableCopy];
@@ -385,20 +399,6 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
 }
 
--(void)suspendAllAssetUploads:(CDVInvokedUrlCommand*) command {
-    [PhotosUploader.sharedInstance suspendAllAssetUploadsWithCompletion:^(NSArray *resultArray) {
-        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultArray];
-        [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
-    }];
-}
-
--(void)resumeAllAssetUploads:(CDVInvokedUrlCommand*) command {
-    [PhotosUploader.sharedInstance resumeAllAssetUplaodsWithCompletion:^(NSArray *resultArray) {
-        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultArray];
-        [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
-    }];
-}
-
 -(void)sendEvent:(NSDictionary *)eventData {
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:eventData];
     [result setKeepCallbackAsBool:YES];
@@ -533,15 +533,20 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     [self.class sendMessage:@{@"assets":@[assetIdentifier]} WithCommand:kUnscheduleAssetsForUploadCommandValue];
 }
 
--(void)photoUploader:(PhotosUploader *)uploader didFinishUploadAssetIdentifier:(NSString *)assetIdentifier responseData:(NSData *)data withError:(NSError *)error state:(NSURLSessionTaskState)state {
+-(void)photoUploader:(PhotosUploader *)uploader didFinishUploadAssetIdentifier:(NSString *)assetIdentifier responseData:(NSData *)data withError:(NSError *)error {
     
-    NSMutableDictionary *dict = [@{@"asset":assetIdentifier, @"success":@(error==nil), @"state":@(state)} mutableCopy];
-    if (!error) {
+    NSMutableDictionary *dict = [@{@"asset":assetIdentifier, @"success":@(error == nil)} mutableCopy];
+    if (error) {
+        [dict setObject:@(NO) forKey:@"success"];
+        [dict setObject:@(error.code) forKey:@"errorCode"];
+    }
+    
+    if (data.length) {
         NSError *parseError = nil;
         NSDictionary *d = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:&parseError];
         [dict addEntriesFromDictionary:d];
-        [dict setObject:@(parseError==nil) forKey:@"success"];
     }
+    
     [self.class sendMessage:dict WithCommand:kDidFinishAssetUploadCommandValue];
     
 }
@@ -562,4 +567,3 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
 }
 
 @end
-
