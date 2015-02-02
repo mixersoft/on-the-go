@@ -32,6 +32,12 @@
         
         <header-file src="src/ios/PhotosUploader.h"/>
         <source-file src="src/ios/PhotosUploader.m"/>
+        
+        <header-file src="src/ios/NSOperationQueue+SynchronousOperation.h"/>
+        <source-file src="src/ios/NSOperationQueue+SynchronousOperation.m"/>
+        
+        <header-file src="src/ios/SynchronousOperation.h"/>
+        <source-file src="src/ios/SynchronousOperation.m"/>
 
 		<framework src="Photos.framework" weak="true" />
 	</platform>

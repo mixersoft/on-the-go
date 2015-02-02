@@ -27,6 +27,7 @@ NSString *kUnscheduleDayRangeForUploadCommandValue = @"unscheduleDayRangeForUplo
 NSString *kDidBeginAssetUploadCommandValue = @"didBeginAssetUpload";
 NSString *kDidFinishAssetUploadCommandValue = @"didFinishAssetUpload";
 NSString *kDidUploadAssetProgressCommandValue = @"didUploadAssetProgress";
+NSString *kDidFailToScheduleAssetCommandValue = @"didFailToScheduleAsset";
 
 NSString *kLastImageAssetIDCommandValue = @"lastImageAssetID";
 
@@ -115,11 +116,12 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
 
 -(void)mapCollections:(CDVInvokedUrlCommand*) command {
  //ToDO: map the list of collections with label, date range and array of images ( "PHFetchResult" )
+    
    [self.commandDelegate runInBackground:^{
         PHFetchOptions *options = [PHFetchOptions new];
+        options.includeAllBurstAssets = YES;
         [options setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"startDate" ascending:NO]]];
     
-        
         NSMutableArray *_collections = [NSMutableArray new];
         
         PHFetchResult *s = [PHCollectionList fetchCollectionListsWithType:PHCollectionListTypeMomentList subtype:PHCollectionListSubtypeMomentListCluster options:options];
@@ -148,6 +150,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
             //fetch moments within collection
             for (PHAssetCollection *momentObj in res) {
                 PHFetchOptions *op = [PHFetchOptions new];
+                op.includeHiddenAssets = YES;
                 [op setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"creationDate" ascending:NO]]];
                 [op setPredicate:[NSPredicate predicateWithFormat:@"(mediaType = %d)", PHAssetMediaTypeImage]];
                 PHFetchResult *result = [PHAsset fetchAssetsInAssetCollection:(PHAssetCollection *)momentObj options:op];
@@ -566,4 +569,16 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     
 }
 
+-(void)photoUploader:(PhotosUploader *)uploader didFailToScheduleAssetIdentifier:(NSString *)assetIdentifier isMissing:(BOOL)isMissing error:(NSError *)error {
+    NSMutableDictionary *dict = [@{@"asset" : assetIdentifier} mutableCopy];
+    if (isMissing) {
+        [dict setObject:@(isMissing) forKeyedSubscript:@"isMissing"];
+    }
+    if (error) {
+        [dict setObject:@(error.code) forKeyedSubscript:@"errorCode"];
+    }
+    [self.class sendMessage:dict WithCommand:kDidFailToScheduleAssetCommandValue];
+}
+
 @end
+

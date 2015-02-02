@@ -26,7 +26,9 @@ angular
 
     _dataURItoBlob = (dataURI)-> 
       #convert base64 to raw binary data held in a string
-      byteString = atob(dataURI.split(',')[1])
+      base64raw = dataURI.split(',')[1]
+      base64raw = base64raw.replace(/\s/g, '');
+      byteString = atob(base64raw)
 
       #separate out the mime component
       mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
@@ -293,10 +295,14 @@ angular
 
 
       cordovaFile_WRITE_P: (UUID, size, dataURL)->
-        
         filePath = self.getFilename(UUID, size, dataURL)
         return $q.reject('ERROR: unable to get valid Filename') if !filePath
-        blob = _dataURItoBlob(dataURL)
+        
+        try
+          blob = _dataURItoBlob(dataURL)
+        catch error
+          console.warn "error: cordovaFile_WRITE_P="+ dataURL[0...100]
+          console.warn error
 
         console.log "\n >>> $ngCordovaFile.writeFile() for file=" + filePath
         return $cordovaFile.writeFile( self.CACHE_DIR + filePath, blob, {'append': false} )
