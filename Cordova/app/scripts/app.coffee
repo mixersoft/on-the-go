@@ -555,7 +555,7 @@ angular
     #   role: 'owner'
     # } 
     # $rootScope.user = otgParse.mergeSessionUser(testUser)
-    $rootScope.user = otgParse.mergeSessionUser()
+    $rootScope.user = $scope.user = otgParse.mergeSessionUser()
 
     $scope.$watch 'user.tosAgree', (newVal, oldVal)->
       return if newVal == oldVal
@@ -835,7 +835,7 @@ angular
     init()
 
     window.debug = _.extend window.debug || {} , {
-      user: $scope.user
+      user: $rootScope.user
       cameraRoll: cameraRoll
       workorders: otgWorkorderSync._workorderColl
       imgCache: imageCacheSvc

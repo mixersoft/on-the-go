@@ -171,15 +171,22 @@ angular.module('ionBlankApp')
     $scope.signOut = (ev)->
       ev.preventDefault()   
       otgProfile.signOut()
-      $state.transitionTo('app.settings.sign-in')
       otgWorkorderSync.clear()
-      $scope.menu.uploader.count = otgUploader.clear()
+      $rootScope.counts = {
+        'top-picks': 0
+        uploaderRemaining: 0
+        orders: 0
+      }
+      otgUploader.uploader.clearQueueP()
+      $scope.user = $rootScope.user
+      $state.transitionTo('app.settings.sign-in')
       return     
     
     $scope.signIn = (ev)->
       ev.preventDefault()
       otgWorkorderSync.clear()
       return otgProfile.signInP().then ()->
+          $scope.user = $rootScope.user
           target = 'app.settings.main'
           target = 'app.workorders.all' if /workorders/.test($scope.SideMenuSwitcher?.leftSide.src)
           $ionicHistory.nextViewOptions({
@@ -189,6 +196,7 @@ angular.module('ionBlankApp')
           otgWorkorderSync.clear()
           $state.transitionTo(target)
         , (error)->
+          $scope.user = $rootScope.user
           $scope.user.password ==''
           otgProfile.username.dirty = !! $scope.user.username
           $state.transitionTo('app.settings.sign-in')

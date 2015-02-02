@@ -575,6 +575,7 @@ angular
         user = new Parse.User();
         user.set("username", userCred.username.toLowerCase())
         user.set("password", userCred.password)
+        user.set("email", userCred.email) 
         user.signUp null, {
             success: (user)->
               $rootScope.sessionUser = Parse.User.current()
@@ -583,6 +584,7 @@ angular
               $rootScope.sessionUser = null
               $rootScope.user.username = ''
               $rootScope.user.password = ''
+              $rootScope.user.email = ''
               console.warn "parse User.signUp error, msg=" + JSON.stringify error
               return dfd.reject(userCred)
           }
@@ -664,13 +666,22 @@ angular
           return $q.when(userCred)
 
       saveSessionUserP : (updateKeys)->
-        _.each updateKeys, (key)->
-            $rootScope.sessionUser.set(key, $rootScope.user[key])
-        return $rootScope.sessionUser.save().then (user)->
-            $rootScope.sessionUser = Parse.User.current()
-            return $q.when($rootScope.sessionUser)
-          , (error)->
-            throw error # end of line
+        # update or create
+        if _.isEmpty($rootScope.sessionUser)
+          # create
+          promise = self.signUpP($rootScope.user)
+        else 
+          # update
+          promise = self.checkSessionUserP().then ()->
+            _.each updateKeys, (key)->
+                $rootScope.sessionUser.set(key, $rootScope.user[key])
+            return $rootScope.sessionUser.save()
+
+        promise.then ()->
+              $rootScope.sessionUser = Parse.User.current()
+              return $q.when($rootScope.sessionUser)
+            , (error)->
+              throw error # end of line
 
       checkSessionUserRoleP : (o)->
         # Placeholder: for workorders, check for role=EDITOR and Assignment
