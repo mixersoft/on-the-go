@@ -18,6 +18,12 @@
     BOOL        finished;
 }
 
++(instancetype)operationWithRunBlock:(void (^)(void(^operation)(void)))block {
+    id op = [[self alloc] init];
+    [op setRunOperation:block];
+    return op;
+}
+
 - (id)init {
     self = [super init];
     if (self) {

@@ -10,7 +10,7 @@
 
 @interface NSOperationQueue (SynchronousOperation)
 
-+(NSOperationQueue *)serialQueue;
++(NSOperationQueue *)createSerialQueue;
 
 -(void)addBlock:(void(^)(void(^operation)(void)))block;
 

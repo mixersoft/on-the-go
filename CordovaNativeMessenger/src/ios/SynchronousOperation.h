@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SynchronousOperation : NSOperation
-
++(instancetype)operationWithRunBlock:(void (^)(void(^operation)(void)))block;
 @property (nonatomic, copy) void (^runOperation)(void(^operation)(void));
 
 @end

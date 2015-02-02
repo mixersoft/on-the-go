@@ -11,7 +11,7 @@
 
 @implementation NSOperationQueue (SynchronousOperation)
 
-+(NSOperationQueue *)serialQueue {
++(NSOperationQueue *)createSerialQueue {
     
     NSOperationQueue *queue = [NSOperationQueue new];
     queue.maxConcurrentOperationCount = 1;
