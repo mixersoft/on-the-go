@@ -249,53 +249,66 @@ angular.module('ionBlankApp')
           return resp
 
       oneBegan: (resp)->
-        _bkgFileUploader._scheduled[resp.asset] = 0
-        console.log "\n >>> native-uploader Began: for assetId="+resp.asset
+        try
+          console.log "\n >>> native-uploader Began: for assetId="+resp.asset
+          _bkgFileUploader._scheduled[resp.asset] = 0
+        catch e
+          # ...
+        
+        
 
       oneProgress: (resp)->
-        progress = resp.totalBytesSent / resp.totalBytesExpectedToSend
-        resp.progress = _bkgFileUploader._scheduled[resp.asset] = Math.round(progress*100)/100
-        console.log "\n >>> native-uploader Progress: " + JSON.stringify _.pick resp, ['asset', 'progress'] 
+        try
+          progress = resp.totalBytesSent / resp.totalBytesExpectedToSend
+          resp.progress = Math.round(progress*100)/100
+          console.log "\n >>> native-uploader Progress: " + JSON.stringify _.pick resp, ['asset', 'progress'] 
+          _bkgFileUploader._scheduled[resp.asset] = resp.progress
+        catch e
+          # ...
+        
 
       oneComplete: (resp, onEach)->
-        # refactor: otgWorkorderSync.queueDateRangeFilesP() callbacks
-        photo = {
-          UUID: resp.asset
-          src: if resp.success then resp.url else 'error: native-uploader'
-        }
-        console.log "\n\n >>> oneComplete"
-        console.log resp
+        try
+          # refactor: otgWorkorderSync.queueDateRangeFilesP() callbacks
+          photo = {
+            UUID: resp.asset
+            src: if resp.success then resp.url else 'error: native-uploader'
+          }
+          console.log "\n\n >>> oneComplete"
+          console.log resp
 
-        return otgParse.updatePhotoP( photo, 'src')
-        .then (photoObj)->
-          # update JS queue
-          # remove from  _bkgFileUploader._scheduled and save on _complete
+          return otgParse.updatePhotoP( photo, 'src')
+          .then (photoObj)->
+            # update JS queue
+            # remove from  _bkgFileUploader._scheduled and save on _complete
 
-          if _.keys( _bkgFileUploader._scheduled).length < 3
-            # schedule another chunk
-            promise = _bkgFileUploader.queueP()
+            if _.keys( _bkgFileUploader._scheduled).length < 3
+              # schedule another chunk
+              promise = _bkgFileUploader.queueP()
 
-          ERROR_CANCELLED = -999
-          if !resp.success && resp.errorCode == ERROR_CANCELLED
-            # add back to _readyToSchedule
-            _bkgFileUploader._readyToSchedule.unshift( photo.UUID )
-          else if resp.success == false
-            _bkgFileUploader.complete[photo.UUID] = resp.errorCode # errorCode < 0
-            onError(resp) if onError
-          else 
-            _bkgFileUploader._complete[photo.UUID] = 1
-            onEach(resp) if onEach
+            ERROR_CANCELLED = -999
+            if !resp.success && resp.errorCode == ERROR_CANCELLED
+              # add back to _readyToSchedule
+              _bkgFileUploader._readyToSchedule.unshift( photo.UUID )
+            else if resp.success == false
+              _bkgFileUploader.complete[photo.UUID] = resp.errorCode # errorCode < 0
+              onError(resp) if onError
+            else 
+              _bkgFileUploader._complete[photo.UUID] = 1
+              onEach(resp) if onEach
 
 
-          delete _bkgFileUploader._scheduled[photo.UUID] 
-          remaining = self.remaining( _bkgFileUploader.count() )
-          console.log "onComplete: remaining files=" + remaining
-          return photoObj
-        .then null, (err)->
-            console.warn "\n\noneComplete otgParse.updatePhotoP error"
-            console warn err
-            _bkgFileUploader.complete[photo.UUID] = err.message || err
-            return $q.reject(err)
+            delete _bkgFileUploader._scheduled[photo.UUID] 
+            remaining = self.remaining( _bkgFileUploader.count() )
+            console.log "onComplete: remaining files=" + remaining
+            return photoObj
+          .then null, (err)->
+              console.warn "\n\noneComplete otgParse.updatePhotoP error"
+              console warn err
+              _bkgFileUploader.complete[photo.UUID] = err.message || err
+              return $q.reject(err)
+        catch e
+          # ...
 
       oneError: ()->
       allComplete: ()->
@@ -313,7 +326,7 @@ angular.module('ionBlankApp')
       _complete:{}
       _registerBkgUploaderHandlers: ()->
         # TODO: confirm callbacks are set
-        # PLUGIN.on.didBeginAssetUpload()
+        console.log "PLUGIN event handlers registered!!!"
         PLUGIN.on.didFinishAssetUpload (resp)->
           return _bkgFileUploader.oneComplete(resp)
 

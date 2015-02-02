@@ -744,19 +744,19 @@ angular
       # register handlers for native uploader
       assetIds = _.pluck cameraRoll.map(), 'UUID'
 
-      snappiMessengerPluginService.on.didFinishAssetUpload ( resp )->
-          console.log '\n\n ***** TEST_nativeUploader: handler for didFinishAssetUpload'
-          console.log resp
-          return 
+      # snappiMessengerPluginService.on.didFinishAssetUpload ( resp )->
+      #     console.log '\n\n ***** TEST_nativeUploader: handler for didFinishAssetUpload'
+      #     console.log resp
+      #     return 
 
-      snappiMessengerPluginService.on.didUploadAssetProgress ( resp )->
-          _logOnce resp.asset, '\n\n ***** TEST_nativeUploader: handler for didUploadAssetProgress' + JSON.stringify resp
-          return     
+      # snappiMessengerPluginService.on.didUploadAssetProgress ( resp )->
+      #     _logOnce resp.asset, '\n\n ***** TEST_nativeUploader: handler for didUploadAssetProgress' + JSON.stringify resp
+      #     return     
 
-      snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
-          console.log "\n\n ***** TEST_nativeUploader: didBeginAssetUpload"
-          console.log resp
-          return
+      # snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
+      #     console.log "\n\n ***** TEST_nativeUploader: didBeginAssetUpload"
+      #     console.log resp
+      #     return
 
       # add to nativeUploader queue
       assetIds = assetIds[0...3]
