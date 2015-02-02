@@ -157,7 +157,6 @@ angular
           }
 
           workorderObj.set('workorderMoment', [ workorderMoment ] )
-          # self.updateWorkorderCounts(woObj, workorderMoment) # do after resolve()
 
           # console.log " \n\n 1b: &&&&& fetchWorkorderPhotosP from backend.coffee "
           # console.log "\n\n*** inspect workorderMoment for Workorder: " 
@@ -165,46 +164,183 @@ angular
 
           return photosColl
 
-      queueMissingPhotos : (workorderObj, photosColl)->
-        photos = photosColl.toJSON()
 
-        console.log "\n\n workorder photo assetIds, length=" + photos.length
-        uploadedAssetIds = _.pluck photos, 'assetId'
-
-        # compare against selectedMoment UUIDs
-        # dateRange = otgWorkorder.on.selectByCalendar workorderObj.get('fromDate'), workorderObj.get('toDate')
-        # NOTE: using otgWorkorder has the side effect of setting days in directive:otgMoment
+      # replaces queueMissingPhotos
+      syncWorkorderPhotosP : (workorderObj, photosColl, role='owner')->
         dateRange = {
+          workorderObj: workorderObj
           from: workorderObj.get('fromDate')
           to: workorderObj.get('toDate')
         }
-        otgWorkorder.existingOrders.addExistingOrder(dateRange) # for cameraRoll otgMoment
 
-        # compare vs. map because cameraRoll.photos is incomplete
-        mappedPhotos = cameraRoll.map() 
-        mappedPhotos = cameraRoll.photos if _.isEmpty mappedPhotos
+        # for displaying existing workorders in app.choose.cameraRoll otgMoment
+        otgWorkorder.existingOrders.addExistingOrder(dateRange) if role=='owner'
 
-        mappedAssetIdsFromWorkorderDateRange = _.reduce mappedPhotos, (result, o)->
-            o.date = cameraRoll.getDateFromLocalTime o.dateTaken if !o.date
-            result.push o.UUID if dateRange.from <= o.date <= dateRange.to
-            return result
-          , []
+        self.syncDateRange_Photos_P(dateRange, photosColl, role) 
+        .then (sync)->
+          # sync Parse.PhotoObj rows for WorkorderObj
+          promises = {
+            add: []
+            remove: [] 
+          }
+          if !_.isEmpty sync['remove']
+            $timeout ()->
+              # move to otgParse.remove(assetIds)
+              _.each sync['remove'], (UUID)->
+                promises['remove'].push otgParse.updatePhotoP({UUID:UUID,remove:true}, 'remove')
+                # unscheduleFile
+                return
 
-        console.log "workorder.count_expected="+mappedAssetIdsFromWorkorderDateRange.length
-
-        missingPhotos = _.difference mappedAssetIdsFromWorkorderDateRange, uploadedAssetIds
-        otgUploader.queue(workorderObj, missingPhotos) if !_.isEmpty missingPhotos
-        console.log "*** missing photos queued, woid="+workorderObj.id+", count=" + missingPhotos.length
-
-        removePhotos = _.difference uploadedAssetIds, mappedAssetIdsFromWorkorderDateRange
-
-        if !_.isEmpty removePhotos
-          $timeout ()->
-            _.each removePhotos, (UUID)->
-              promise = otgParse.updatePhotoP({UUID:UUID,remove:true}, 'remove')
+          if !_.isEmpty sync['add']
+            mappedPhotos = cameraRoll.map()
+            # move to otgParse.add(assetIds)
+            
+            _.each sync['add'], (UUID)->
+              # find the photo, if we have it
+              # WARNING: originalWidth/Height from map() may not be auto-rotated!!!!!
+              # found = cameraRoll.getPhoto(UUID) 
+              found = _.find mappedPhotos, {UUID: UUID}
+              promises['add'].push otgParse.uploadPhotoMetaP(workorderObj, found).then (o)->
+                        sync['queued'].push found.UUID
+                        return found
+                      , (err)->
+                        sync['errors'].push found.UUID
+                        return found
               return
+              # # use this is originalWidth/Height is not autoRotated
+              # p = $q.when(found).then (found)->
+              #     if !found
+              #       return cameraRoll.getDataURL_P( UUID, self.UPLOAD_IMAGE_SIZE) 
+              #     return found
+              #   .then (found)->
+              #     if !found 
+              #       return {
+              #         error: "ERROR: otgWorkorderSync trying to add UUID not found in cameraRoll. deleted?, UUID=" + UUID
+              #       }
+              #     if found.src == 'queued' 
+              #       found.status = 'queued' 
+              #       # skip, photoMeta already uploaded. move to top???
+              #       return found 
+              #     return otgParse.uploadPhotoMetaP(workorderObj, found).then (o)->
+              #           found.status = 'queued'
+              #           return found
+              #         , (err)->
+              #           found.status = 'error: photo meta'
+              #           return found
+              # promises.push p                
+              # return 
+          cleanupP = []
+          if promises['remove'].length
+            cleanupP.push $q.all(promises['remove']).then (removed)->
+              sync['removed'] = removed
+              sync['remove'] = []
+              return sync
 
-        return missingPhotos
+          if promises['add'].length
+            cleanupP.push $q.all(promises['add']).then (added)->
+              sync['added'] = added
+              sync['add'] = []
+              return sync
+          
+          if cleanupP.length
+            return $q.all(cleanupP).then ()->
+              return sync
+          else 
+            return $q.when sync
+        .then (sync)->
+          # upload/remove parseFiles, using either JS API or bkg-uploader
+          return self.queueDateRangeFilesP( sync ).then (resp)->
+            console.log "\n\n *** syncWorkorderPhotosP: sync complete for dataRange="+JSON.stringify dateRange
+            return sync
+        .catch (err)->
+          console.warn "\n\nError: syncWorkorderPhotosP: "+ JSON.stringify err
+
+      ### 
+      syncDateRange_PhotosP(dateRange).then
+       resp = {
+        add: [assetIds]     # in cameraRoll but NOT PhotoObj
+        remove: [assetIds]     # in cameraRoll but NOT PhotoObj
+        queued: [assetIds]  # PhotoObj.src == 'queued'
+        errors: [assetIds]  # PhotoObj.src[0...5] == 'error' or 'Base6'
+        complete: [assetIds] # complete
+      }
+      ###
+      syncDateRange_Photos_P: (dateRange, photosColl, role='owner')->
+        if role=='editor' && !(photosColl?.toJSON)
+          throw "syncDateRange_Photos_P invalid workorder photosColl for role=editor"
+
+        parsePhotos = photosColl?.toJSON?() || []
+        parsePhotos = _.filter parsePhotos, (photo)->
+          return photo.deviceId == $rootScope.deviceId 
+
+        parseSync = {
+          'woid': dateRange.workorderObj?.id
+          'add' : []
+          'remove' : []
+          'complete': []
+          'queued': []
+          'errors': []
+        }
+        if role == 'editor' || deviceReady.isWebView() == false
+          promise = $q.when()
+        else if role == 'owner'
+          forceMapCameraRoll = true  
+          promise = cameraRoll.mapP(null, forceMapCameraRoll).then (mappedPhotos)->
+
+            cameraRollInDateRange = _.filter mappedPhotos, (o)->
+              o.date = cameraRoll.getDateFromLocalTime o.dateTaken if !o.date
+              return dateRange.from <= o.date <= dateRange.to
+
+            cameraRollAssetIds = _.pluck(cameraRollInDateRange, 'UUID')
+            parseAssetIds = _.pluck( parsePhotos,'UUID' )
+
+            parseSync['add'] = _.difference cameraRollAssetIds, parseAssetIds
+            parseSync['remove'] = _.difference parseAssetIds, cameraRollAssetIds
+        else
+          throw "syncDateRange_Photos_P: invalid role"
+        
+        return promise.then ()->
+          if parseSync['remove'].length
+            parsePhotos = _.filter parsePhotos, (o)->
+              return true if parseSync['remove'].indexOf(o.UUID) == -1
+              return false
+
+          _.each parsePhotos, (o)->
+            parseSync['complete'].push( o.UUID ) if o.src[0...4] == 'http'
+            parseSync['queued'].push( o.UUID ) if o.src == 'queued'
+            # parse photoObj.src errors
+            parseSync['errors'].push( o.UUID ) if o.src[0...5] == 'error'
+            # getPhotoById errors
+            parseSync['errors'].push( o.UUID ) if o.src[0...6] == 'Base64' 
+            parseSync['errors'].push( o.UUID ) if o.src == "Not found!"
+          return parseSync
+
+
+      queueDateRangeFilesP: (sync, retryErrors=true)-> 
+        # sync: # see syncDateRange_Photos_P()
+          # 'add': 
+          # 'remove':
+          # 'complete':
+          # 'queued':
+          # 'errors':
+        return otgUploader.uploader.getQueueP()
+        .then (queuedAssetIds)->
+          dfd = $q.defer()
+          sync['addFile'] = _.difference sync['queued'], queuedAssetIds
+          sync['addFile'] = sync['addFile'].concat _.difference sync['errors'], queuedAssetIds if retryErrors
+          onEach = (resp)->
+            return
+          onErr = (resp)->
+            return
+          onDone = (resp)->
+            # dfd.resolve(resp)
+            return
+          promise = otgUploader.uploader.queueP( sync['addFile'], onEach, onErr, onDone )
+          .then (resp)->
+            return dfd.resolve(sync)
+          .catch (err)->
+            return dfd.reject(err)
+          return dfd.promise
 
 
       _PATCH_WorkorderAssets:(parsePhotosColl, patchKeys)->
@@ -244,32 +380,36 @@ angular
             self.fetchWorkordersP( options , force ).then (workorderColl)->
 
                 promises = []
-                scope.menu.orders.count = openOrders = 0
+                $rootScope.counts['orders'] = openOrders = 0
                 workorderColl.each (workorderObj)->
-
                   return if workorderObj.get('status') == 'complete'
+
                   openOrders++
-                  $timeout ()->
-                      promises.push self.fetchWorkorderPhotosP(workorderObj, options, force ).then (photosColl)->
+                  p = self.fetchWorkorderPhotosP(workorderObj, options, force )
+                  .then (photosColl)->
 
-                        # see also: otgParse._patchParsePhotos()
-                        if PATCH_WorkorderAssetKeys
-                          self._PATCH_WorkorderAssets( photosColl , PATCH_WorkorderAssetKeys)
+                    # see also: otgParse._patchParsePhotos()
+                    if PATCH_WorkorderAssetKeys
+                      self._PATCH_WorkorderAssets( photosColl , PATCH_WorkorderAssetKeys)
 
-                        missing = self.queueMissingPhotos( workorderObj, photosColl )
-                        console.log "\n\n *** SYNC_ORDERS: woid=" + workorderObj.id
-                        console.log "queueMissingPhotos.length=" + missing.length
-                        self.updateWorkorderCounts(workorderObj, missing) # expect workorderObj.workorderMoment to be set
-                        scope.menu.uploader.count = otgUploader.queueLength()
+                    # missing = self.queueMissingPhotos( workorderObj, photosColl )
+                    return self.syncWorkorderPhotosP( workorderObj, photosColl, 'owner' )
+                  .then (sync)->
+                      console.log "\n\n *** SYNC_ORDERS: woid=" + workorderObj.id
+                      # console.log "sync=" + JSON.stringify sync
+                      self.updateWorkorderCounts(workorderObj, sync) 
 
-                        scope.workorders = workorderColl.toJSON()
-                    , DELAY
 
-                  scope.menu.orders.count = openOrders 
+                  promises.push p
+                  scope.workorders = workorderColl.toJSON()
+                  $rootScope.counts['orders'] = openOrders || 0
                   return
+
                 $q.all( promises ).then (o)->
-                  console.log "\n\n*** Workorder SYNC complete for role=" + options.role + "\n"
+                  console.log "\n\n*** ORDER SYNC complete for role=" + options.role + "\n"
                   return whenDoneP(workorderColl) if whenDoneP
+
+
           , DELAY
 
       # wrap in timeouts 
@@ -290,43 +430,40 @@ angular
                 promises = []
                 openOrders = 0
                 workorderColl.each (workorderObj)->
-
                   return if workorderObj.get('status') == 'complete'
-                  openOrders++
-                  $timeout ()->
-                      promises.push self.fetchWorkorderPhotosP(workorderObj, options, force ).then (photosColl)->
-                        self.updateWorkorderCounts(workorderObj) # expect workorderObj.workorderMoment to be set
-                        # fetch all workorder photos to set workorderMoment
-                        # update workorder.selecteMoments
-                        # TODO: save workorderMoment to workorderObj os we don't have to repeat
-                        scope.workorders = workorderColl.toJSON()  
-                        return photosColl
-                    , DELAY
 
-                  scope.menu.orders.count = openOrders 
+                  openOrders++
+                  promises.push self.fetchWorkorderPhotosP(workorderObj, options, force )
+                  .then (photosColl)->
+                    return self.syncWorkorderPhotosP( workorderObj, photosColl, 'editor' )
+                  .then (sync)->
+                    self.updateWorkorderCounts(workorderObj, sync)  # expect workorderObj.workorderMoment to be set
+                    scope.workorders = workorderColl.toJSON()  
+                    return photosColl
+
+                  $rootScope.counts['orders'] = openOrders 
                   return
+
                 $q.all( promises ).then (o)->
                   scope.workorders = workorderColl.toJSON()  
                   console.log "\n\n*** Workorder SYNC complete for role=" + options.role + "\n"
                   return whenDoneP(workorderColl) if whenDoneP
           , DELAY
 
-      updateWorkorderCounts: (woObj, missing)->
-        updates = {}
-        woMoment = woObj.get('workorderMoment') 
-        received = if !_.isEmpty woMoment then woMoment[0].value[0].value.length else 0
-        updates['count_received'] = received 
-
-        if missing?.length && deviceReady.isWebView() && woObj.get('owner').id == $rootScope.sessionUser.id
-          updates['count_expected'] = missing.length + received 
-
-        # count_duplicate: query(photosObj) by Owner and indexBy workorderObj.id
-
+      updateWorkorderCounts: (woObj, sync)->
+        # sync: # see syncDateRange_Photos_P()
+          # 'add': 
+          # 'remove':
+          # 'complete':
+          # 'queued':
+          # 'errors':
+        return console.warn "ERROR: updateWorkorderCounts, sync is null" if !sync?
+        updates = {
+          'count_received': sync['complete'].length
+          'count_expected': sync['complete'].length + sync['queued'].length + sync['errors'].length
+        }
         return if _.isEmpty updates
-        $timeout ()->
-            return woObj.save( updates ) 
-          , 100
-
+        return woObj.save( updates ) 
     }
     return self
 
@@ -654,6 +791,7 @@ angular
 
         query.equalTo('workorder', workorderObj) 
         query.equalTo('owner', $rootScope.sessionUser) if options.owner
+        query.notEqualTo('remove', true) if options.owner
         if options.editor
           options.editor = $rootScope.sessionUser if options.editor == true
           console.warn "\n\n ***  WARNING: using workorder.owner as a proxy for workorder.editor for the moment\n"
@@ -680,12 +818,14 @@ angular
       updatePhotoP: (photo, pick)->
         # find photoObj   
         query = new Parse.Query( parseClass.PhotoObj )
-        query.equalTo 'assetId', photo.UUID
-        query.first().then (photoObj)->
+        query.equalTo 'UUID', photo.UUID
+        if $rootScope.user.role == 'owner'
+          query.equalTo('owner', $rootScope.sessionUser) 
+        return query.first().then (photoObj)->
           update = _.pick photo, pick
-          photoObj.save(update).then ()->
-            update.UUID = photo.UUID
-            console.log "\n\n ### PARSE: photoObj saved, attrs=" + JSON.stringify pick
+          photoObj.save(update).then (resp)->
+            console.log "\n\n ### PARSE: photoObj saved, attrs=" + JSON.stringify update
+            return $q.when(resp)
 
       fetchPhotosByOwnerP : (owner)->
         owner = $rootScope.sessionUser if !owner
@@ -706,28 +846,6 @@ angular
         # simple pass thru
         return obj.save(data)
         
-
-      resampleP : (imgOrSrc, W=320, H=null)->
-        return $q.reject('Missing Image') if !imgOrSrc
-        console.log "*** resize & convert to base64 using Resample.js ******* imgOrSrc=" + imgOrSrc
-        dfd = $q.defer()
-        done = (dataURL)->
-          console.log "resampled data=" + JSON.stringify {
-            size: dataURL.length
-            data: dataURL[0..60]
-          }
-          dfd.resolve(dataURL)
-          return
-        try 
-          Resample.one()?.resample imgOrSrc
-            ,   W
-            ,   H    # targetHeight
-            ,   dfd
-            ,   "image/jpeg"
-        catch ex  
-          dfd.reject(imgOrSrc)
-        return dfd.promise
-
       uploadFileP : (base64src, photo)->
         if /^data:image/.test(base64src)
           # expecting this prefix: 'data:image/jpg;base64,' + rawBase64
@@ -751,100 +869,72 @@ angular
         return parseFile.save()
   
 
-      uploadPhotoP : (workorder, photoOrMapItem)->
-        UPLOAD_IMAGE_SIZE = 'preview'
+      uploadPhotoMetaP: (workorderObj, photo)->
+        return $q.reject("uploadPhotoMetaP: photo is empty") if !photo
+        # upload photo meta BEFORE file upload from native uploader
+        # photo.src == 'queued'
+        return deviceReady.waitP().then self.checkSessionUserP()
+        .then ()-> 
+          extendedAttrs = _.pick photo, ['dateTaken', 'originalWidth', 'originalHeight', 'rating', 'favorite', 'caption', 'exif', 'orientation']
+          # console.log extendedAttrs
 
-        # # upgrade to named user
-        # if $rootScope.sessionUser.get('username') != $rootScope.user.username
-        #   _.each ['username', 'password', 'email'], (key)->
-        #     $rootScope.sessionUser.set(key, $rootScope.user[key])
-        photo = if photoOrMapItem?.UUID then photoOrMapItem else { UUID:photoOrMapItem }
-        return throw "ERROR: cannot upload without valid workorder" if !workorder
+          parseData = _.extend {
+                assetId: photo.UUID  # deprecate
+                UUID: photo.UUID
+                owner: $rootScope.sessionUser
+                workorder : workorderObj
+                deviceId: $rootScope.deviceId
+                src: "queued"
+            }
+            , extendedAttrs # , classDefaults
+
+          photoObj = new parseClass.PhotoObj parseData , {initClass: false }
+          return photoObj.save()
+        .then (o)->
+            return console.log "photoObj.save() complete: " + JSON.stringify o        
+          , (err)->
+            console.warn "ERROR: uploadPhotoMetaP photoObj.save(), err=" + JSON.stringify err
+            return $q.reject(err)
+
+      uploadPhotoFileP : (UUID, size)->
+        # called by parseUploader, _uploadNext()
+        throw "WARNING: uploader type should be 'parse'" if otgUploader.uploader.type != 'parse'
+        # upload file then update PhotoObj photo.src, does not know workorder
+        # return parseFile = { UUID:, url(): }
+        UPLOAD_IMAGE_SIZE = size || 'preview'
         return deviceReady.waitP().then self.checkSessionUserP() 
           .then ()->
-            if deviceReady.isWebView()
-              # FORCE dataURL, do NOT use stashed File
-              # found = cameraRoll.getDataURL(photo.UUID, UPLOAD_IMAGE_SIZE)
-              # if found
-              #   photo = _.find cameraRoll.photos, {UUID: photo.UUID}
-              #   # photo is set by closure
-              #   return found # is a dataURL
-
-              # fetch with promise
-              return cameraRoll.getDataURL_P( photo.UUID, UPLOAD_IMAGE_SIZE, 'dataURL' )
-              .catch (error)->
-                error = error.shift() if _.isArray(error)
-                if error.message == "Base64 encoding failed"
-                  console.error "WARNING: there is a problem getting photo, UUID="+error.UUID
-                if error.message = "Not found!"
-                  console.error "WARNING: Messenger.getPhotoById() not found, but in mapAssetsLibrary(), UUID="+photo.UUID
-                $q.reject(error)
-
-              .then (oPhoto)->
-                dataURL = oPhoto.data
-                console.log "\n*** cameraRoll.getDataURL_P() resolved with:" + dataURL[0...50]
-                
-                photo = _.find cameraRoll.photos, {UUID: oPhoto.UUID}
-                # photo is set by closure
-                throw "ERROR in uploadPhotoP, photo not found" if !photo 
-
-                return dataURL
-
-            # browser with dataURL
-            photo = _.find cameraRoll.photos, {UUID: photo.UUID}
-            if /^data:image/.test( photo.src )
-              dataURL = photo.src
-              return $q.when( dataURL )
-
-            return self.resampleP(photo.src, 320)
-            # should reject because of SecurityError
-          .then (base64src)->
-              # console.log "\n\n *** base64src=" + base64src[0...50]
-              # console.log photo # $$$
-              return self.uploadFileP(base64src, photo)
-            , (error)->
-              if error == 'Missing Image' || error.name == "SecurityError" && _.isString error.src
-                fakeParseFile = {
-                  url: ()-> return error.src
-                }
-                return $q.when fakeParseFile
-              else if error.message == "Base64 encoding failed"
-                # from window.Messenger.getPhotoById 
-                skipErrorFile = {
-                  UUID: error.UUID
-                  url: ()-> return error.message
-                }
+            if deviceReady.isWebView() == false
+              return $q.reject( {
+                UUID: UUID
+                message: "error: file upload not available from browser"
+              }) 
+          .then ()->
+            # fetch with promise
+            return cameraRoll.getDataURL_P( UUID, UPLOAD_IMAGE_SIZE, 'noCache' )
+            .catch (error)->
+              error = error.shift() if _.isArray(error)
+              if error.message == "Base64 encoding failed"
+                error.message == "error: Base64 encoding failed"
+              if error.message = "Not found!"
+                error.message = "error: UUID not found in CameraRoll"
+              $q.reject(error)
+          .then (photo)->
+            # photo.UUID, photo.data = dataURL
+            return self.uploadFileP(photo.data, photo)
+          .catch (error)->
+            skipErrorFile = {
+              UUID: error.UUID
+              url: ()-> return error.message
+            }
+            switch error.message
+              when "error: Base64 encoding failed", "Base64 encoding failed"
                 return $q.when skipErrorFile
-              else if error.message = "Not found!"
-                skipErrorFile = {
-                  UUID: error.UUID
-                  url: ()-> "error: getPhotoById() not found"
-                }
-                $q.when skipErrorFile
+              when "error: UUID not found in CameraRoll", "Not found!"
+                return $q.when skipErrorFile
               else 
-                throw error
-          .then (parseFile)->
-              console.log "\n *** parseFile uploaded, check url=" + parseFile.url()
+                throw error      
 
-              extendedAttrs = _.pick photo, ['dateTaken', 'originalWidth', 'originalHeight', 'rating', 'favorite', 'caption', 'exif', 'orientation']
-              # console.log extendedAttrs
-
-              parseData = _.extend {
-                    assetId: photo.UUID  # deprecate
-                    UUID: photo.UUID
-                    owner: $rootScope.sessionUser
-                    workorder : workorder
-                    deviceId: $rootScope.deviceId
-                    src: parseFile.url()
-                  }
-                , extendedAttrs # , classDefaults
-
-              photoObj = new parseClass.PhotoObj parseData , {initClass: false }
-              return photoObj.save().fail (err)->
-                console.warn "ERROR: parseFile.save() JPG file, err=" + JSON.stringify err
-                throw err
-          .then (o)->
-            console.log "photoObj.save() complete: " + JSON.stringify o
     }
     return self
 ]

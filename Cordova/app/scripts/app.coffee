@@ -469,7 +469,7 @@ angular
     $scope.hideSplash = ()->
       deviceReady.waitP()
       .then ()->
-        navigator.splashscreen.hide() if deviceReady.isWebView()
+        navigator.splashscreen?.hide() if deviceReady.isWebView()
         return
 
     window.i18n = $rootScope.i18n = $scope.i18n = i18n;
@@ -501,6 +501,7 @@ angular
         'use-cellular-data': false
         'use-720p-service': true
         'rate-control': 80
+        'CHUNKSIZE': 10
       archive:
         'copy-top-picks': false
         'copy-favorites': true  
@@ -519,7 +520,11 @@ angular
           'photos': false
           'todo' : false
           'picks' : false
-
+    }
+    $rootScope.counts = {
+      'top-picks': 0
+      uploaderRemaining: 0
+      orders: 0
     }
 
     $scope.on = {
@@ -563,14 +568,8 @@ angular
 
     # respond to changes of app.settings
     $scope.$watch 'config', (newVal, oldVal)->
-        # console.log "enabled=" + newVal.upload['enabled']
+        console.log "app: enabled=" + newVal.upload['enabled']
         return _prefs.store newVal, oldVal
-      , true
-
-    $scope.$watch 'config.upload', (newVal, oldVal)->
-        if newVal['auto-upload'] != oldVal['auto-upload']
-          return newVal['enabled'] = newVal['auto-upload']
-        return
       , true
 
 
@@ -579,8 +578,8 @@ angular
       store: (newVal, oldVal)->
         if plugins?.appPreferences?
           prefs = plugins.appPreferences
-          ok = (value)-> # appPreferences.store returns "OK"
-            console.log "NSUserDefaults save: value=" + value
+          ok = ()-> # appPreferences.store returns "OK"
+            console.log "NSUserDefaults save OK"
             # prefs.fetch okAlert, fail, 'prefs'
             return
 
@@ -616,6 +615,31 @@ angular
 
         return promise.promise
     }
+
+    $scope.SYNC_cameraRoll_Orders = ()->
+      console.log ">>> $scope.SYNC_cameraRoll_Orders"
+      $scope.showLoading(true)
+      onComplete = ()->
+        $scope.hideLoading()
+        $scope.$broadcast('scroll.refreshComplete')
+        return
+      cameraRoll.loadCameraRollP(null, 'force').finally ()->
+        return onComplete() if !$scope.deviceReady.isOnline()
+        otgWorkorderSync.SYNC_ORDERS(
+          $scope, 'owner', 'force'
+          , ()->
+            return onComplete()
+        )
+      return
+    window.syncAll = $scope.DEBOUNCED_SYNC_cameraRoll_Orders = _.debounce ()->
+          console.log "\n\n >>> DEBOUNCED!!!"
+          $scope.SYNC_cameraRoll_Orders()
+          
+        , 5000 # 5*60*1000
+        , {
+          leading: true
+          trailing: false
+        }
 
     _LOAD_MOMENTS_FROM_CAMERA_ROLL_P = ()->  # on button click
       IMAGE_FORMAT = 'thumbnail'    # [thmbnail, preview, previewHD]
@@ -716,8 +740,58 @@ angular
 
      
 
+    $scope._TEST_nativeUploader = ()->
+      # register handlers for native uploader
+      assetIds = _.pluck cameraRoll.map(), 'UUID'
+
+      snappiMessengerPluginService.on.didFinishAssetUpload ( resp )->
+          console.log '\n\n ***** TEST_nativeUploader: handler for didFinishAssetUpload'
+          console.log resp
+          return 
+
+      snappiMessengerPluginService.on.didUploadAssetProgress ( resp )->
+          _logOnce resp.asset, '\n\n ***** TEST_nativeUploader: handler for didUploadAssetProgress' + JSON.stringify resp
+          return     
+
+      snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
+          console.log "\n\n ***** TEST_nativeUploader: didBeginAssetUpload"
+          console.log resp
+          return
+
+      # add to nativeUploader queue
+      assetIds = assetIds[0...3]
 
 
+      data = {
+        assets: assetIds
+        options: 
+          # targetWidth: 640
+          # targetHeight: 640
+          # resizeMode: 'aspectFit'
+          autoRotate: true       # always true with PHImageContentModeAspectFit?
+          maxWidth: 720
+
+      }
+      snappiMessengerPluginService.scheduleAssetsForUploadP(data.assets, data.options)
+      # window.Messenger['scheduleAssetsForUpload'](  data
+      #     , (resp)->
+      #       return console.log "test: scheduleAssetsForUpload.onSuccess, count=" + assetIds.length
+      #     , (err)->
+      #       return console.log "test: scheduleAssetsForUpload.onError. Timeout?"
+      #   )
+
+      $timeout ()->
+          snappiMessengerPluginService.getScheduledAssetsP().then (assetIds)->
+            console.log "\n\n*** onSuccess getScheduledAssetsP()"
+            console.log assetIds
+        , 3000
+
+      $timeout ()->
+          window.Messenger['getScheduledAssets']( (assetIds)->
+            console.log "\n\n*** onSuccess DIRECT getScheduledAssets()"
+            console.log assetIds
+          )
+        , 3000
 
     init = ()->
       _LOAD_MODALS()
@@ -728,7 +802,10 @@ angular
         $scope.config['no-view-headers'] = deviceReady.isWebView() && false
         $rootScope.deviceId = deviceReady.deviceId()
 
+        # snappiMessengerPluginService.unscheduleAllAssetsP()
+
         _LOAD_MOMENTS_FROM_CAMERA_ROLL_P()
+        
         .finally ()->
           $timeout ()->
               # promise = otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.$state.includes('app.workorders')

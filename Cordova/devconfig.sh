@@ -82,3 +82,14 @@ gulp; ionic build ios;
 
 ### run, or open ./platforms/ios/ion-OnTheGo.xcodeproj
 #ionic emulate
+
+
+
+
+# rebuild project with plugin updates
+ionic platform remove ios; ionic platform add ios;
+cp -R ./resources/* ./platforms/ios/On-the-Go/Resources/
+ionic plugin rm com.snaphappi.native-messenger.Messenger; ionic plugin add ../CordovaNativeMessenger
+gulp; ionic build ios;
+
+

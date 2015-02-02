@@ -314,16 +314,10 @@ angular.module('ionBlankApp')
             scope.swipeCard.swipeOver('right')
 
       refresh: ()->
-        promise = cameraRoll.loadCameraRollP().finally ()->
-          return $scope.$broadcast('scroll.refreshComplete') if !$scope.deviceReady.isOnline()
-          otgWorkorderSync.SYNC_ORDERS(
-            $scope, 'owner', 'force'
-            , ()->
-              return $scope.$broadcast('scroll.refreshComplete')
-          )
-        return
+        return $scope.SYNC_cameraRoll_Orders()
 
       test: ()->
+        $scope._TEST_nativeUploader()
         # _TEST_imageCacheSvc()
         # $scope.loadMomentsFromCameraRollP().then ()->
         #   $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks')
@@ -341,9 +335,9 @@ angular.module('ionBlankApp')
       setFilter( $state.current )
       # update menu banner
       if $state.current.name == 'app.top-picks' 
-        $scope.menu.top_picks.count = $scope.filteredPhotos.length 
+        $rootScope.counts['top-picks'] = $scope.filteredPhotos.length 
       else 
-        $scope.menu.top_picks.count = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks').length
+        $rootScope.counts['top-picks'] = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks').length
       return
 
     $scope.$on '$ionicView.loaded', ()->
@@ -357,14 +351,8 @@ angular.module('ionBlankApp')
       _force = !otgWorkorderSync._workorderColl['owner'].length
       return if !_force 
       return if !deviceReady.isOnline()
-      $scope.showLoading(true)
-      otgWorkorderSync.SYNC_ORDERS(
-        $scope, 'owner', 'force'
-        , ()->
-          $scope.hideSplash()
-          return $scope.hideLoading(300)
-        )
-      return
+      $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
+      $timeout ()->$scope.hideSplash()
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 

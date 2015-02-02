@@ -30,8 +30,8 @@ ng-class="{'no-view-headers':config['no-view-headers']}">
         <ion-item class="item-icon-left item-icon-right" nav-clear menu-close ui-sref="app.top-picks.top-picks">
         <i class="icon ion-images positive"></i>
           Top Picks
-          <span class="badge badge-balanced" ng-show="menu.top_picks.count"
-          >{{menu.top_picks.count}}</span>
+          <span class="badge badge-balanced" ng-show="$root.counts['top-picks']"
+          >{{$root.counts['top-picks']}}</span>
         </ion-item>
         <ion-item class="item-icon-left" nav-clear menu-close ui-sref="app.choose.camera-roll">
           <i class="icon ion-calendar positive"></i>
@@ -40,14 +40,14 @@ ng-class="{'no-view-headers':config['no-view-headers']}">
         <ion-item class="item-icon-left item-icon-right" nav-clear menu-close ui-sref="app.orders">
           <i class="icon ion-archive positive"></i>
           My Orders
-          <span class="badge badge-balanced" ng-show="menu.orders.count"
-          >{{menu.orders.count}}</span>
+          <span class="badge badge-balanced" ng-show="$root.counts.orders"
+          >{{$root.counts.orders}}</span>
         </ion-item>
         <ion-item class="item-icon-left  item-icon-right" nav-clear menu-close ui-sref="app.uploader">
           <i class="icon ion-ios7-cloud-upload positive"></i>
           Uploader
-          <span class="badge badge-assertive" ng-show="menu.uploader.count"
-          >{{menu.uploader.count}}</span>
+          <span class="badge badge-assertive" ng-show="$root.counts.uploaderRemaining"
+          >{{$root.counts.uploaderRemaining}}</span>
         </ion-item>
         <ion-item class="item-icon-left" nav-clear menu-close ui-sref="app.settings.main">
           <i class="icon ion-gear-b positive"></i>

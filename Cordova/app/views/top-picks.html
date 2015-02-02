@@ -39,7 +39,7 @@
         {{i18n.tr('header-card').body}}
 
         <button class="button icon ion-image button-assertive button-full"
-        ng-if='0'
+        ng-if='1'
         ng-click="on.test()"> Test</button>
       </div>
       <div class="empty-list" ng-if="filteredPhotos.length==0 && $state.$current.name=='app.top-picks.top-picks'"> 
@@ -55,6 +55,9 @@
                   ui-sref="app.choose.camera-roll">{{i18n.tr('empty-list').buttonLabel}}</button> 
                 </div>
             </div>
+            <button class="button icon ion-image button-assertive button-full"
+            ng-if='1'
+            ng-click="on.test()"> Test</button>
         </div>
       </div>      
       <div class="item item-divider item-footer">

@@ -11,8 +11,11 @@ angular.module('ionBlankApp')
 .controller 'CheckoutCtrl', [
   '$scope', '$rootScope', '$state', '$q', 
   '$ionicNavBarDelegate', '$ionicHistory', '$ionicModal', '$ionicScrollDelegate'
-  'otgData', 'otgWorkorder', 'otgUploader', 'otgParse', 'otgProfile', 'cameraRoll',  'TEST_DATA',
-  ($scope, $rootScope, $state, $q, $ionicNavBarDelegate, $ionicHistory, $ionicModal, $ionicScrollDelegate, otgData, otgWorkorder, otgUploader, otgParse, otgProfile, cameraRoll, TEST_DATA) ->
+  'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgUploader', 'otgParse', 'otgProfile'
+  'deviceReady', 'cameraRoll',  'TEST_DATA',
+  ($scope, $rootScope, $state, $q, $ionicNavBarDelegate, $ionicHistory, $ionicModal, $ionicScrollDelegate, 
+    otgData, otgWorkorder, otgWorkorderSync, otgUploader, otgParse, otgProfile
+    deviceReady, cameraRoll, TEST_DATA) ->
     $scope.label = {
       title: "Checkout"
       header_card: 
@@ -132,8 +135,14 @@ angular.module('ionBlankApp')
 
           when 'app.checkout.submit'
             # return false on error by promise
-            return parse._createWorkorderP( $scope.checkout, $scope.watch.servicePlan ).then (workorderObj)->
+            if !deviceReady.isOnline()
+              console.warn "Error: network unavilable at checkout" 
+              return false
+            return parse._createWorkorderP( $scope.checkout, $scope.watch.servicePlan )
+              .then (workorderObj)->
                 $ionicNavBarDelegate.showBackButton(false)
+                $scope.workorderObj = workorderObj
+                $scope.showLoading(true)
                 return
           when 'app.checkout.complete'
             return true
@@ -166,7 +175,8 @@ angular.module('ionBlankApp')
 
           when 'app.checkout.complete'
             # AFTER submit, queue photos
-            parse._queueSelectedMoments $scope.checkout, $scope.workorderObj
+            otgWorkorderSync.syncWorkorderPhotosP($scope.workorderObj, null, 'owner')
+            $scope.showLoading(false)
 
 
         # put on on $rootScope.$on '$stateChangeSuccess'
@@ -298,8 +308,10 @@ angular.module('ionBlankApp')
           $scope.workorderObj = workorderObj
           return workorderObj
 
-      _queueSelectedMoments : (checkout, workorderObj)->
+      XXX_queueSelectedMoments : (checkout, workorderObj)->
         workorderObj = $scope.workorderObj if !workorderObj
+
+
 
         # photos = parse.DEPRECATED_getPhotosFromMoments(checkout.selectedMoments)
         # TODO: need to push from cameraRoll.map() because not all photos are in cameraRoll.photos

@@ -310,15 +310,10 @@ angular.module('ionBlankApp')
 
 
     $scope.$on '$ionicView.beforeEnter', ()->
-      switch $state.current.name
-        when 'app.choose.calendar'
-          # initialize calendar/datepicker
-          return _datepicker.activate()
-        when 'app.choose.camera-roll'  
-          return cameraRoll.loadMomentThumbnailsP() 
+      return 
 
     $scope.$on '$ionicView.enter', ()->
-      return true
+      return 
 
 
     $scope.$on '$ionicView.beforeLeave', ()->
@@ -374,7 +369,9 @@ angular.module('ionBlankApp')
       calendarDeselected : (value)->
         _datepicker.deactivate()
         return
-
+      cameraRollSelected : (value)->
+        cameraRoll.loadMomentThumbnailsP()
+        return true
 
     }
 

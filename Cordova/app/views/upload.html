@@ -3,6 +3,10 @@
     <button menu-toggle="left"class="button button-icon icon ion-navicon"></button>
   </ion-nav-buttons>
   <ion-content id="upload" class="inverse has-header">
+    <ion-refresher
+      pulling-text=""
+      on-refresh="on.refresh()">
+    </ion-refresher>
     <div class="big-red-button"
       on-touch="redButton.press($event)"
       on-release="redButton.release($event)"
@@ -12,12 +16,12 @@
         <i class="icon "
         ng-class="{'enabled ion-ios7-cloud-upload': otgUploader.enable(), 
         'ion-spin':otgUploader.isActive(),
-        'ion-pause': (otgUploader.queueLength() && !otgUploader.enable()),
-        'ion-ios7-cloud-upload': (!otgUploader.queueLength() && !otgUploader.enable()),
+        'ion-pause': ($root.counts.uploaderRemaining && !otgUploader.enable()),
+        'ion-ios7-cloud-upload': (!$root.counts.uploaderRemaining && !otgUploader.enable()),
         'warning': !!warnings
          }"
          ></i>
-        <div class="fine">{{otgUploader.queueLength()}} Photos</div>
+        <div class="fine">{{$root.counts.uploaderRemaining}} Photos</div>
       </div>
     </div>
         

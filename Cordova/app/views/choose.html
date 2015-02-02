@@ -11,7 +11,8 @@
     <!-- ion-tab: camera-roll -->
     <ion-tab title="Camera Roll" 
     icon="ion-camera"  
-    ui-sref='app.choose.camera-roll'>
+    ui-sref='app.choose.camera-roll'
+    on-select="on.cameraRollSelected()">
       <ion-nav-view name="chooseCameraRoll" animation='slide-left-right'></ion-nav-view>
     </ion-tab>
 
