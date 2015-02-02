@@ -257,7 +257,10 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
         
         __block NSUInteger requestsLeft = identifiers.count;
         
-        PHFetchResult *fetchResults = [PHAsset fetchAssetsWithLocalIdentifiers:identifiers options:nil];
+        PHFetchOptions *fetchOptions = [PHFetchOptions new];
+        fetchOptions.includeAllBurstAssets = YES;
+        fetchOptions.includeHiddenAssets = YES;
+        PHFetchResult *fetchResults = [PHAsset fetchAssetsWithLocalIdentifiers:identifiers options:fetchOptions];
         
         if(fetchResults.count != identifiers.count) {
             NSMutableArray *missingObjects = [identifiers mutableCopy];
