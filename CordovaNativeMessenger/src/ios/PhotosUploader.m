@@ -164,13 +164,18 @@ static NSOperationQueue *serialQueue;
     }];
 }
 
--(void)unscheduleAllAssets {
+-(void)unscheduleAllAssetsWithCompletion:(void(^)(void))completion {
     [serialQueue addBlock:^(void(^operation)(void)) {
         [scheduledTasks enumerateObjectsUsingBlock:^(NSURLSessionUploadTask *obj, BOOL *stop) {
             if (obj.state == NSURLSessionTaskStateRunning) {
                 [obj cancel];
             }
         }];
+        if (completion) {
+            [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+                completion();
+            }];
+        }
         operation();
     }];
 }

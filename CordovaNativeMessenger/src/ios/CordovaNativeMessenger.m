@@ -114,9 +114,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
 }
 
 
--(void)mapCollections:(CDVInvokedUrlCommand*) command {
- //ToDO: map the list of collections with label, date range and array of images ( "PHFetchResult" )
-    
+-(void)mapCollections:(CDVInvokedUrlCommand*) command {    
    [self.commandDelegate runInBackground:^{
         PHFetchOptions *options = [PHFetchOptions new];
         options.includeAllBurstAssets = YES;
@@ -397,9 +395,9 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
 }
 
 -(void)unscheduleAllAssets:(CDVInvokedUrlCommand*) command {
-    [PhotosUploader.sharedInstance unscheduleAllAssets];
-    
-    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
+    [PhotosUploader.sharedInstance unscheduleAllAssetsWithCompletion:^{
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
+    }];
 }
 
 -(void)sendEvent:(NSDictionary *)eventData {
