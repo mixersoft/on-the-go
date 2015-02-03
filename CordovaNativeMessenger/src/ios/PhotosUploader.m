@@ -176,8 +176,13 @@ static NSOperationQueue *serialQueue;
 }
 
 -(BOOL)isAssetScheduled:(PHAsset *)asset {
-    NSSet *t = [scheduledTasks filteredSetUsingPredicate:[NSPredicate predicateWithFormat:@"localIdentifier == %@", asset.localIdentifier]];
-    return t.count > 0;
+    if (scheduledTasks.count == 0 || !asset) return NO;
+    __block BOOL exists = NO;
+    [scheduledTasks enumerateObjectsUsingBlock:^(NSURLSessionTask *obj, BOOL *stop) {
+         NSString *identifier = obj.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+        *stop = exists = [identifier isEqualToString:asset.localIdentifier];
+    }];
+    return exists;
 }
 
 -(void)scheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers options:(NSDictionary *)options {
@@ -201,9 +206,8 @@ static NSOperationQueue *serialQueue;
        }];
     }
     
-    NSLog(@"Assets Count: %lu", (unsigned long)localPHAssetIdentifiers.count);
-    
-    [assets enumerateObjectsUsingBlock:^(PHAsset *obj, NSUInteger idx, BOOL *stop) {
+    NSLog(@"Assets Count: %lu", (unsigned long)assets.count);
+    for (PHAsset *obj in assets) {
         BOOL alreadyScheduled = [self isAssetScheduled:obj];
         if (alreadyScheduled) {
             return;
@@ -248,7 +252,6 @@ static NSOperationQueue *serialQueue;
                     //store image
                     NSString *fullPath = [self imagePathForAssetIdentifier:obj.localIdentifier];
                     if (![data writeToFile:fullPath atomically:YES]) {
-                        operation();
                         return;
                     }
                     
@@ -276,7 +279,7 @@ static NSOperationQueue *serialQueue;
             }];
         }];
         
-    }];
+    }
 }
 
 -(void)stopUploadingAssetWithID:(NSString *)assetID completion:(void(^)(bool fond))completion {
