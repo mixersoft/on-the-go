@@ -10,8 +10,8 @@
 angular.module('ionBlankApp')
 
 .controller 'OrdersCtrl', [
-  '$scope', '$timeout', '$q', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgParse', 'otgUploader', 'cameraRoll','TEST_DATA',
-  ($scope, $timeout, $q, $ionicTabsDelegate, otgData, otgWorkorder, otgWorkorderSync, otgParse, otgUploader, cameraRoll, TEST_DATA) ->
+  '$scope', '$rootScope', '$timeout', '$q', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgParse', 'otgUploader', 'cameraRoll','TEST_DATA',
+  ($scope, $rootScope, $timeout, $q, $ionicTabsDelegate, otgData, otgWorkorder, otgWorkorderSync, otgParse, otgUploader, cameraRoll, TEST_DATA) ->
     $scope.label = {
       title: "Order History"
       subtitle: "Share something great today!"
@@ -44,32 +44,24 @@ angular.module('ionBlankApp')
 
     $scope.on = {
       refresh: ()->
-        return $scope.SYNC_cameraRoll_Orders()     
+        $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
+        return      
     }
 
-    $scope.workorders = []
-
-
+    # NOTE: ng-repat = order in filteredOrders = (workorders = $root.orders | filter:filterStatusNotComplete )
+    # set by $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
+    _workorders = $rootScope.orders
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
       return if !$scope.deviceReady.isOnline()
-         
-
       $scope.showLoading(true)
-      otgWorkorderSync.SYNC_ORDERS(
-        $scope, 
-        'owner', 
-        'force', 
-        ()->return $scope.hideLoading(1000)
-      )
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
-      _force = !otgWorkorderSync._workorderColl['owner'].length
-      return if !_force 
       return if !$scope.deviceReady.isOnline()
-      return $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
+      $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
+      return
 
 
     $scope.$on '$ionicView.leave', ()->

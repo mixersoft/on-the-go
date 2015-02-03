@@ -343,14 +343,14 @@ angular.module('ionBlankApp')
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info
+      return if !$scope.deviceReady.isOnline()
+      $scope.showLoading(true)
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
       # cached view becomes active 
       setFilter( $state.current )
-      _force = !otgWorkorderSync._workorderColl['owner'].length
-      return if !_force 
-      return if !deviceReady.isOnline()
+      return if !$scope.deviceReady.isOnline()
       $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
       $timeout ()->$scope.hideSplash()
 

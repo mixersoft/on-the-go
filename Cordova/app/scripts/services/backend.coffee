@@ -266,17 +266,6 @@ angular
       }
       ###
       syncDateRange_Photos_P: (dateRange, photosColl, role='owner')->
-        switch role
-          when 'editor'
-            throw "syncDateRange_Photos_P invalid workorder photosColl for role=editor" if !(photosColl?.toJSON)
-            parsePhotos = photosColl.toJSON()
-
-          when 'owner'
-            parsePhotos = photosColl?.toJSON?() || []
-            parsePhotos = _.filter parsePhotos, (photo)->
-              return photo.deviceId == $rootScope.deviceId 
-
-
         parseSync = {
           'woid': dateRange.workorderObj?.id
           'add' : []
@@ -285,12 +274,15 @@ angular
           'queued': []
           'errors': []
         }
-        if role == 'editor' || deviceReady.isWebView() == false
+        parsePhotos = photosColl?.toJSON?() || []
+        checkDeviceId = deviceReady.isWebView() && $rootScope.$state.includes('app.workorders') == false
+        if checkDeviceId == false
           promise = $q.when()
-        else if role == 'owner'
-          forceMapCameraRoll = true  
+        else 
+          parsePhotos = _.filter parsePhotos, (photo)->
+              return photo.deviceId == $rootScope.deviceId
+          forceMapCameraRoll = true 
           promise = cameraRoll.mapP(null, forceMapCameraRoll).then (mappedPhotos)->
-
             cameraRollInDateRange = _.filter mappedPhotos, (o)->
               o.date = cameraRoll.getDateFromLocalTime o.dateTaken if !o.date
               return dateRange.from <= o.date <= dateRange.to
@@ -300,8 +292,7 @@ angular
 
             parseSync['add'] = _.difference cameraRollAssetIds, parseAssetIds
             parseSync['remove'] = _.difference parseAssetIds, cameraRollAssetIds
-        else
-          throw "syncDateRange_Photos_P: invalid role"
+            return
         
         return promise.then ()->
           if parseSync['remove'].length
@@ -400,6 +391,7 @@ angular
 
                   promises.push p
                   scope.workorders = workorderColl.toJSON()
+                  $rootScope.orders = scope.workorders
                   $rootScope.counts['orders'] = openOrders || 0
                   return
 

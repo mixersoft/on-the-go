@@ -32,8 +32,10 @@ angular.module('ionBlankApp')
       if o.className == 'WorkorderObj'
         return o if o.get('status') !='complete'
 
-
     $scope.on = {
+      refresh: ()->
+        $scope.DEBOUNCED_SYNC_workorders()
+
       reUploadPhotos: (order)->
         # console.log order.objectId
         return otgParse.getWorkorderByIdP(order.objectId)
@@ -69,16 +71,32 @@ angular.module('ionBlankApp')
     $scope.workorders = []
     $scope.workorder = null
 
+    $scope.DEBOUNCED_SYNC_workorders = _.debounce ()->
+      console.log "\n\n >>> DEBOUNCED!!!"
+      onComplete = ()->
+        $scope.hideLoading()
+        $scope.$broadcast('scroll.refreshComplete')
+        return
+      otgWorkorderSync.SYNC_WORKORDERS($scope, 'editor', 'force', onComplete)
+    , 5000 # 5*60*1000
+    , {
+      leading: true
+      trailing: false
+    }
+
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
+      return if !$scope.deviceReady.isOnline()
+      $scope.showLoading(true)
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
+      return if !$scope.deviceReady.isOnline()
       # cached view becomes active 
       # dynamically update left side menu
       $scope.SideMenuSwitcher.leftSide.src = 'partials/workorders/left-side-menu'
       $scope.SideMenuSwitcher.watch['workorder'] = null
-      otgWorkorderSync.SYNC_WORKORDERS($scope, 'editor', 'force')
+      $scope.DEBOUNCED_SYNC_workorders()
       return
 
     $scope.$on '$ionicView.leave', ()->

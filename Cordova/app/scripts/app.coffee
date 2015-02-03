@@ -618,7 +618,6 @@ angular
 
     $scope.SYNC_cameraRoll_Orders = ()->
       console.log ">>> $scope.SYNC_cameraRoll_Orders"
-      $scope.showLoading(true)
       onComplete = ()->
         $scope.hideLoading()
         $scope.$broadcast('scroll.refreshComplete')
@@ -631,10 +630,10 @@ angular
             return onComplete()
         )
       return
-    window.syncAll = $scope.DEBOUNCED_SYNC_cameraRoll_Orders = _.debounce ()->
+    $scope.DEBOUNCED_SYNC_cameraRoll_Orders = _.debounce ()->
           console.log "\n\n >>> DEBOUNCED!!!"
           $scope.SYNC_cameraRoll_Orders()
-          
+          return
         , 5000 # 5*60*1000
         , {
           leading: true
