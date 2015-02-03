@@ -332,14 +332,8 @@ angular
           dfd = $q.defer()
           sync['addFile'] = _.difference sync['queued'], queuedAssetIds
           sync['addFile'] = sync['addFile'].concat _.difference sync['errors'], queuedAssetIds if retryErrors
-          onEach = (resp)->
-            return
-          onErr = (resp)->
-            return
-          onDone = (resp)->
-            # dfd.resolve(resp)
-            return
-          promise = otgUploader.uploader.queueP( sync['addFile'], onEach, onErr, onDone )
+
+          promise = otgUploader.uploader.queueP( sync['addFile'])
           .then (resp)->
             return dfd.resolve(sync)
           .catch (err)->
@@ -604,7 +598,7 @@ angular
             password: $rootScope.user[userCred[1]] || ''
           }
         return deviceReady.waitP().then ()->
-          return Parse.User.logIn( userCred.username.toLowerCase(), userCred.password )
+          return Parse.User.logIn( userCred.username.trim().toLowerCase(), userCred.password )
         .then (user)->  
             $rootScope.sessionUser = Parse.User.current()
             $rootScope.user.isRegistered = true
@@ -843,17 +837,28 @@ angular
         photoObj.set(data)
         return photoObj.save()
 
-      updatePhotoP: (photo, pick)->
+      updatePhotoP: (photo, pick, isDevice=true)->
         # find photoObj   
+        update = _.pick photo, pick
         query = new Parse.Query( parseClass.PhotoObj )
         query.equalTo 'UUID', photo.UUID
-        if $rootScope.user.role == 'owner'
+        if isDevice || $rootScope.user.role == 'owner'
           query.equalTo('owner', $rootScope.sessionUser) 
-        return query.first().then (photoObj)->
-          update = _.pick photo, pick
-          photoObj.save(update).then (resp)->
-            console.log "\n\n ### PARSE: photoObj saved, attrs=" + JSON.stringify update
-            return $q.when(resp)
+          query.equalTo('deviceId', $rootScope.deviceId) 
+        return query.find().then (photos)->
+          return $q.reject("not found") if _.isEmpty photos,
+          promises = []
+          _.each photos, (photoObj)->
+              p = photoObj.save(update).then (phObj)->
+                console.log "\n\n ### PARSE: 1 photoObj saved, attrs=" + JSON.stringify _.pick photoObj.toJSON(), ['UUID', 'src']
+                return photoObj
+              promises.push p 
+          return $q.all(promises).then (o)->
+            if o.length > 1
+              update.count = o.length
+              console.log "\n\n ### PARSE: ALL photoObj saved, resp=" + JSON.stringify update
+            return $q.when(o)
+
 
       fetchPhotosByOwnerP : (owner)->
         owner = $rootScope.sessionUser if !owner
