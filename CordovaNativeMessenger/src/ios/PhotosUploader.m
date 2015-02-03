@@ -212,8 +212,9 @@ static NSOperationQueue *serialQueue;
         //get image
         PHImageRequestOptions *opts = [PHImageRequestOptions new];
         [opts setDeliveryMode:PHImageRequestOptionsDeliveryModeHighQualityFormat];
-        [opts setVersion:PHImageRequestOptionsVersionOriginal];
+        [opts setVersion:PHImageRequestOptionsVersionCurrent];
         [opts setResizeMode:PHImageRequestOptionsResizeModeExact];
+        [opts setSynchronous:YES];
         [opts setProgressHandler:^(double progress, NSError *error, BOOL *stop, NSDictionary *info) {
             
         }];
@@ -223,11 +224,12 @@ static NSOperationQueue *serialQueue;
         if (maxWidth && obj.pixelWidth > maxWidth.floatValue) {
             CGFloat scale = (maxWidth.floatValue / obj.pixelWidth);
             originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
+            CGFloat side = round(obj.pixelHeight * scale);
+            originalImageSize = CGSizeMake(side,side);
         }
         [serialQueue addBlock:^(void(^operation)(void)) {
             [_cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
                 if ([info[PHImageResultIsDegradedKey] boolValue]) {
-                    operation();
                     return;
                 }
                 NSError *err = info[PHImageErrorKey];
@@ -250,7 +252,7 @@ static NSOperationQueue *serialQueue;
                         return;
                     }
                     
-                    NSLog(@"image:%@ with size:%@", fullPath.lastPathComponent, NSStringFromCGSize(result.size));
+                    //NSLog(@"image:%@ with size:%@", fullPath.lastPathComponent, NSStringFromCGSize(result.size));
                     NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", fullPath.lastPathComponent];
                     //NSString *path = [NSString stringWithFormat:@"http://151.237.16.170:1337/files/%@", fullPath.lastPathComponent];
                     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60];
@@ -263,13 +265,14 @@ static NSOperationQueue *serialQueue;
                     NSURLSessionUploadTask *task = [_backgroundUploadSession uploadTaskWithRequest:request fromFile:[NSURL fileURLWithPath:fullPath]];
                     [task resume];
                     [scheduledTasks addObject:task];
-                    operation();
+                    
                     for (id<PhotosUploaderDelegate>delegate in _delegates) {
                         if ([delegate respondsToSelector:@selector(photoUploader:didScheduleUploadForAssetWithIdentifier:)]) {
                             [delegate photoUploader:self didScheduleUploadForAssetWithIdentifier:obj.localIdentifier];
                         }
                     }
                 }
+                operation();
             }];
         }];
         
