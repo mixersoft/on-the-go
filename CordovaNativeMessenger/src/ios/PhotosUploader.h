@@ -34,7 +34,7 @@
 -(void)scheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers options:(NSDictionary *)options;
 -(void)unscheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers;
 
--(void)unscheduleAllAssets;
+-(void)unscheduleAllAssetsWithCompletion:(void(^)(void))completion;
 
 -(void)addDelegate:(id<PhotosUploaderDelegate>)delegate;
 -(void)removeDelegate:(id<PhotosUploaderDelegate>)delegate;

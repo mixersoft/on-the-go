@@ -38,6 +38,9 @@
         
         <header-file src="src/ios/SynchronousOperation.h"/>
         <source-file src="src/ios/SynchronousOperation.m"/>
+        
+        <header-file src="src/ios/PHAsset+DataSourceAdditions.h"/>
+        <source-file src="src/ios/PHAsset+DataSourceAdditions.m"/>
 
 		<framework src="Photos.framework" weak="true" />
 	</platform>
