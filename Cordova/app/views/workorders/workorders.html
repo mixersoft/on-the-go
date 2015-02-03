@@ -140,17 +140,30 @@
       </div>
       <button class="button button-full"
         ng-class="watch.ngClass_UploadStatus(order, 'button')" 
-        ui-sref="app.workorders.photos({woid:order.objectId})">Open</button>
+        ui-sref="app.workorders.photos({woid:order.objectId})">Open
+      </button>
     </div>
 
 
-    <div class="item item-complex" 
-    ng-if="order.count_expected">
+    <div class="item item-complex" ng-if="order.count_expected">
       <otg-moment-date-range otg-model="order.workorderMoment"></otg-moment-date-range>
     </div>
+
+
+
+    <div class="item item-complex item-icon-left text-center">
+        <button class="button button-assertive button-full" ng-click="on.reUploadPhotos(order)">
+          <i class="icon ion-ios7-cloud-upload"></i> 
+          &nbsp;Re-queue Uploaded Photos
+        </button>
+    <div>
+
+
     <div class="item item-divider item-assertive">
     <!-- footer  -->
     </div>
+
+
   </div><!--  end workorder-card  -->
 </script> 
  

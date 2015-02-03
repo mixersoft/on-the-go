@@ -33,6 +33,29 @@ angular.module('ionBlankApp')
         return o if o.get('status') !='complete'
 
 
+    $scope.on = {
+      reUploadPhotos: (order)->
+        # console.log order.objectId
+        return otgParse.getWorkorderByIdP(order.objectId)
+        .then (workorder)->
+          # console.log workorder
+          return otgParse.fetchWorkorderPhotosByWoIdP({workorder: workorder})
+        .then (photosColl)->
+          promises = []
+          photosColl.each (photo)->
+            p = photo.set('src','queued').save().then (o)->
+                # console.log o
+                return
+              , (err)->
+                console.log "ERROR reUploadPhotos, errr=" + JSON.stringify err
+            promises.push p
+          $q.all(promises).then ()->
+            console.log "reUploadPhotos() complete for workorder.id=" + order.objectId
+
+
+
+
+    }
     $scope.watch = _watch = {
       ngClass_UploadStatus: (order, prefix='badge')->
         return prefix + '-balanced' if order.count_expected == (order.count_received + order.count_duplicate)

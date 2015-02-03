@@ -433,8 +433,10 @@ angular
                   return if workorderObj.get('status') == 'complete'
 
                   openOrders++
-                  promises.push self.fetchWorkorderPhotosP(workorderObj, options, force )
-                  .then (photosColl)->
+                  photosColl = null
+                  p = self.fetchWorkorderPhotosP(workorderObj, options, force )
+                  .then (resp)->
+                    photosColl = resp
                     return self.syncWorkorderPhotosP( workorderObj, photosColl, 'editor' )
                   .then (sync)->
                     self.updateWorkorderCounts(workorderObj, sync)  # expect workorderObj.workorderMoment to be set
@@ -442,6 +444,7 @@ angular
                     return photosColl
 
                   $rootScope.counts['orders'] = openOrders 
+                  promises.push p
                   return
 
                 $q.all( promises ).then (o)->
@@ -726,6 +729,7 @@ angular
         # # or query on relation
         # contributors = parseClass.workorderObj.getRelation('contributors')
         # contrib = new Parse.Query(contributors)
+        query.equalTo('objectId', options.id) if options.id
         query.equalTo('status', options.status) if options.status
         query.equalTo('fromDate', options.dateRange.from) if options.dateRange
         query.equalTo('fromDate', options.fromDate) if options.fromDate
