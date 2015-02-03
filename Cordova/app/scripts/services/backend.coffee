@@ -266,12 +266,16 @@ angular
       }
       ###
       syncDateRange_Photos_P: (dateRange, photosColl, role='owner')->
-        if role=='editor' && !(photosColl?.toJSON)
-          throw "syncDateRange_Photos_P invalid workorder photosColl for role=editor"
+        switch role
+          when 'editor'
+            throw "syncDateRange_Photos_P invalid workorder photosColl for role=editor" if !(photosColl?.toJSON)
+            parsePhotos = photosColl.toJSON()
 
-        parsePhotos = photosColl?.toJSON?() || []
-        parsePhotos = _.filter parsePhotos, (photo)->
-          return photo.deviceId == $rootScope.deviceId 
+          when 'owner'
+            parsePhotos = photosColl?.toJSON?() || []
+            parsePhotos = _.filter parsePhotos, (photo)->
+              return photo.deviceId == $rootScope.deviceId 
+
 
         parseSync = {
           'woid': dateRange.workorderObj?.id

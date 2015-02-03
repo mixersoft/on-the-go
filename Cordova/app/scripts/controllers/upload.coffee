@@ -36,6 +36,9 @@ angular.module('ionBlankApp')
             console.log "otgUploader init: PAUSE queue"
             self.uploader.pauseQueueP()
 
+          #debug
+          window.debug.up = self.uploader
+
         else # when "parse"
           self.uploader = _parseFileUploader
           self.type = self.uploader.type

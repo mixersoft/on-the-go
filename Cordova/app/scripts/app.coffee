@@ -501,7 +501,7 @@ angular
         'use-cellular-data': false
         'use-720p-service': true
         'rate-control': 80
-        'CHUNKSIZE': 10
+        'CHUNKSIZE': 5
       archive:
         'copy-top-picks': false
         'copy-favorites': true  

@@ -390,7 +390,7 @@ angular
         if self.isDataURL(imgSrc) # cacheDataURLs
           $timeout ()->
               promise = imageCacheSvc.cordovaFile_CACHE_P( options.UUID, size, imgSrc).then (fileURL)->
-                console.log "\n\n imageCacheSvc has cached dataURL, path=" + fileURL
+                # console.log "\n\n imageCacheSvc has cached dataURL, path=" + fileURL
                 self.dataURLs[size][options.UUID] = fileURL
             , 10 
         # console.log "\n\n added!! ************* " 
