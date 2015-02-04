@@ -54,12 +54,11 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
-      return if !$scope.deviceReady.isOnline()
-      $scope.showLoading(true)
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
       return if !$scope.deviceReady.isOnline()
+      $scope.showLoading(true)
       $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
       return
 

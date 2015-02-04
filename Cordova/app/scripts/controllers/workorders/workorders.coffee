@@ -36,6 +36,12 @@ angular.module('ionBlankApp')
       refresh: ()->
         $scope.DEBOUNCED_SYNC_workorders()
 
+      confirmReUploadPhotos: (order)->
+        msg = "Are you sure you want to\nre-upload all photos for this order?"
+        resp = window.confirm(msg)
+        this.reUploadPhotos(order) if resp 
+        return
+
       reUploadPhotos: (order)->
         # console.log order.objectId
         return otgParse.getWorkorderByIdP(order.objectId)

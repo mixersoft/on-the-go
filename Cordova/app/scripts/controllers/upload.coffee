@@ -167,6 +167,28 @@ angular.module('ionBlankApp')
     }
 
     PLUGIN = snappiMessengerPluginService
+    # call LastProgress.callback() after timeout, which is 'reset' after each call to restart()
+    # used by oneProgress in case progress stops because network unavailable
+    LastProgress = {
+      callback: ()->return console.log "LastProgress Timeout" # override, fires when timer fires
+      delay: 10000
+      _timestamp: null
+      _timer: null
+      restart: ()->
+        LastProgress._timestamp = new Date().getTime()
+        return if LastProgress._timer?
+        LastProgress._timer = $timeout ()->
+          now = new Date().getTime()
+          if ((now - LastProgress._timestamp) < LastProgress.delay )
+            $timeout.cancel(LastProgress._timer)
+            LastProgress._timer = null          # start a NEW timer
+            LastProgress.restart()
+          else 
+            LastProgress.callback?()
+          return 
+        , LastProgress.delay 
+      }
+
     _bkgFileUploader = { # uses snappiMessengerPluginService
       type: 'background' 
       isEnabled: false
@@ -300,6 +322,7 @@ angular.module('ionBlankApp')
           resp.progress = Math.round(progress*100)/100
           console.log "\n >>> native-uploader Progress: " + JSON.stringify _.pick resp, ['asset', 'progress'] 
           _bkgFileUploader._scheduled[resp.asset] = resp.progress
+          LastProgress.restart()
         catch e
           # ...
         
@@ -396,7 +419,6 @@ angular.module('ionBlankApp')
 
     self = {
       _allowCellularNetwork: false
-      _queue : []
       callbacks:
         onEach: null
         onError: null
@@ -404,6 +426,10 @@ angular.module('ionBlankApp')
       state :
         isActive : false
         isEnabled : null
+
+      onLastProgressTimeout: (callback)->
+        return if self.uploader.type != 'background'
+        LastProgress.callback = callback 
 
       ### states & classes
         $scope['config']['upload']['enabled'] => self.uploader.isEnabled 
@@ -512,6 +538,8 @@ angular.module('ionBlankApp')
         if otgUploader.isOffline()
           return $scope.warnings = i18n.tr('warning').offline
         if otgUploader.isCellularNetwork() && !otgUploader.allowCellularNetwork()
+          # TODO: remove this line when the native-uploader session checks for allowsCellularData
+          otgUploader.pauseQueueP()  
           return $scope.warnings = i18n.tr('warning').cellular
         return $scope.warnings = null
 
@@ -527,6 +555,7 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
+      otgUploader.onLastProgressTimeout( _fetchWarnings )
       return if !$scope.deviceReady.isOnline()
       $scope.showLoading(true)      
       return
