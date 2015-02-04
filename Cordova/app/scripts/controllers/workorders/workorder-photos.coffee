@@ -70,6 +70,8 @@ angular.module('ionBlankApp')
           $scope.filteredPhotos = $filter('workorderPhotoFilter')($scope.photos,'todo')
         when 'app.workorders.photos.picks'
           $scope.filteredPhotos = $filter('workorderPhotoFilter')($scope.photos,'picks')
+
+      $scope.filteredPhotos = $filter('orderBy')($scope.filteredPhotos, 'dateTaken')   # hack: collection-repeat does not work with orderBy    
       return    
 
     # use dot notation for prototypal inheritance in child scopes
@@ -101,7 +103,9 @@ angular.module('ionBlankApp')
         revert = item.topPick
         return if revert==false
         item.topPick = false
-        otgParse.savePhotoP(item, $scope.photosColl, 'topPick').then ()->
+        otgParse.savePhotoP(item, $scope.photosColl, 'topPick')
+        # otgParse.updatePhotoP(item, 'topPick')
+        .then ()->
             $scope.workorderAttr.progress.todo -= 1 if !revert && revert != false
             $scope.workorderAttr.progress.picks -= 1 if revert==true
             return $scope.$apply()
@@ -122,7 +126,9 @@ angular.module('ionBlankApp')
         revert = item.topPick
         return if revert==true
         item.topPick = true
-        otgParse.savePhotoP(item, $scope.photosColl, 'topPick').then ()->
+        otgParse.savePhotoP(item, $scope.photosColl, 'topPick')
+        # otgParse.updatePhotoP(item, 'topPick')
+        .then ()->
             $scope.workorderAttr.progress.todo -= 1 if !revert && revert != false
             $scope.workorderAttr.progress.picks += 1 if !revert
             return $scope.$apply()

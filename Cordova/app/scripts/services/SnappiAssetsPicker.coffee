@@ -275,7 +275,7 @@ angular
             return false 
 
           # only copy ready photos
-          self._mapAssetsLibrary.push _.pick photo, [
+          self._mapAssetsLibrary.push _.pick photo, [ 'objectId'
             'UUID', 'dateTaken', 'from', 'deviceId', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'exif'
             'originalWidth', 'originalHeight'
             "hidden", "mediaType",  "mediaSubTypes", "burstIdentifier", "burstSelectionTypes", "representsBurst",
@@ -284,9 +284,9 @@ angular
           self.dataURLs['preview'][photo.UUID] = photo.src
           return false 
         else if isLocal # update in map()
-          _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot'] # copy Edit fields
+          _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId'] # copy Edit fields
           foundInMap.from = 'CameraRoll<PARSE' 
-          console.log "%%% isLocal, photo=" + JSON.stringify _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot']
+          console.log "%%% isLocal, photo=" + JSON.stringify _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId']
           return true # triggers $broadcast cameraRoll.updated for topPicks refresh
         else if !isLocal && foundInMap # update Workorder Photo from Parse
           _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot'] # copy Edit fields
