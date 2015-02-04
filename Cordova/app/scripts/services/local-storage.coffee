@@ -82,19 +82,6 @@ angular
         return 'png' if /png/i.test(mimeType)
         return 
 
-      XXXwaitP: ()->
-        return _promise if _promise
-        deferred = $q.defer()
-        _cancel = $timeout ()->
-            return deferred.reject("ERROR: ImgCache.init TIMEOUT")
-          , _timeout
-          ImgCache.init ()->
-              return deferred.resolve("ImgCache.init() ready!")
-            , (error)->
-              return deferred.reject("ERROR: ImgCache.init TIMEOUT")
-        return _promise = deferred.promise
-
-
       getFilename: (UUID, size, dataURL)->
         ext = self.getExt(dataURL)
         return false if !ext || !UUID

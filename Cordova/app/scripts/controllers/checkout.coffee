@@ -328,25 +328,6 @@ angular.module('ionBlankApp')
           $scope.workorderObj = workorderObj
           return workorderObj
 
-      XXX_queueSelectedMoments : (checkout, workorderObj)->
-        workorderObj = $scope.workorderObj if !workorderObj
-
-
-
-        # photos = parse.DEPRECATED_getPhotosFromMoments(checkout.selectedMoments)
-        # TODO: need to push from cameraRoll.map() because not all photos are in cameraRoll.photos
-        dateRange = checkout.dateRange
-        mappedPhotos = cameraRoll.map() 
-        mappedPhotos = cameraRoll.photos if _.isEmpty mappedPhotos
-        photos = _.reduce mappedPhotos, (result, o)->
-            o.date = cameraRoll.getDateFromLocalTime o.dateTaken if !o.date && o.dateTaken
-            result.push o if dateRange.from <= o.date <= dateRange.to
-            return result
-          , []
-
-        queue = otgUploader.queue(workorderObj, photos)
-        console.log "workorder created successfully and photos queued, length=" + queue.length
-        return $q.when(queue)
     }
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams)->
