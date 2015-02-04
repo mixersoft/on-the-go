@@ -186,11 +186,11 @@ angular.module('ionBlankApp')
     setFilter = (toState)->
       switch toState.name
         when 'app.top-picks.top-picks'
-          $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks')
+          $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.map(),'topPicks')
         when 'app.top-picks.favorites'
-          $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'favorites')
+          $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.map(),'favorites')
         when 'app.top-picks.shared'
-          $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'shared')
+          $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.map(),'shared')
 
       $scope.filteredPhotos = $filter('orderBy')($scope.filteredPhotos, '-dateTaken')   # hack: collection-repeat does not work with orderBy    
       return    
@@ -313,6 +313,16 @@ angular.module('ionBlankApp')
           when 'right'
             scope.swipeCard.swipeOver('right')
 
+      cameraRollUpdated: ()->
+        console.log "\n\n %%% watched cameraRoll.map() change, update filter %%% \n\n"
+        setFilter( $state.current )
+        # update menu banner
+        if $state.current.name == 'app.top-picks' 
+          $rootScope.counts['top-picks'] = $scope.filteredPhotos.length 
+        else 
+          $rootScope.counts['top-picks'] = $filter('ownerPhotosByType')(cameraRoll.map(),'topPicks').length
+        return
+
       refresh: ()->
         return $scope.SYNC_cameraRoll_Orders()
 
@@ -320,38 +330,33 @@ angular.module('ionBlankApp')
         $scope._TEST_nativeUploader()
         # _TEST_imageCacheSvc()
         # $scope.loadMomentsFromCameraRollP().then ()->
-        #   $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks')
+        #   $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.map(),'topPicks')
         #   console.log "AFTER loading cameraRoll, filteredPhotos.length="+$scope.filteredPhotos.length
 
     }
 
+    $rootScope.$on 'cameraRoll.updated', ()->
+      $scope.on.cameraRollUpdated()
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
-      setFilter(toState)   
+      if $state.includes('app.top-picks')
+        setFilter(toState)   
 
     $scope.cameraRoll = cameraRoll
-    $scope.$watchCollection "cameraRoll.photos", (newV, oldV)->
-      # console.log "\n\n %%% watched cameraRoll.photos change, update filter %%% \n\n"
-      setFilter( $state.current )
-      # update menu banner
-      if $state.current.name == 'app.top-picks' 
-        $rootScope.counts['top-picks'] = $scope.filteredPhotos.length 
-      else 
-        $rootScope.counts['top-picks'] = $filter('ownerPhotosByType')(cameraRoll.photos,'topPicks').length
-      return
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
+      console.log '$ionicView.loaded'
       $scope.on.showInfo(true) if $scope.config['top-picks']?.info
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
       # cached view becomes active 
-      setFilter( $state.current )
+      $scope.on.cameraRollUpdated()
       return if !$scope.deviceReady.isOnline()
-      $scope.showLoading(true)
+      console.log "\n\n\n %%% ionicView.beforeEnter > DEBOUNCED_SYNC_cameraRoll_Orders "
       $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
-      $timeout ()->$scope.hideSplash()
+      
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 
@@ -360,8 +365,14 @@ angular.module('ionBlankApp')
     
 
     init = ()->
-      setFilter( $state.current )
       $scope.config['app-bootstrap'] = false
+      $scope.deviceReady.waitP().then ()->
+        # first time only
+        $scope.showLoading(true)
+        $scope.DEBOUNCED_SYNC_cameraRoll_Orders()  # first time only
+        # $scope.on.cameraRollUpdated()
+        $timeout ()->$scope.hideSplash()
+        return
       return
 
     init()

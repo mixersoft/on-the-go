@@ -102,13 +102,10 @@ angular
     self = {
       _queue: {}  # array of DataURLs to fetch, use with debounce
       _mapAssetsLibrary: []  # stash in loadMomentsFromCameraRoll()
-      # array of photos, use found = _.findWhere cameraRoll.photos, (UUID: uuid)
+      # array of photos, use found = _.findWhere cameraRoll.map(), (UUID: uuid)
       # props: id->UUID, date, src, caption, rating, favorite, topPick, shared, exif
       #   plugin adds: dateTaken, origH, origW, height, width, crop, orientation,
       #   parse adds: assetId, from, createdAt, updatedAt
-      photos: [] 
-      # TODO: merge photos & _mapAssetsLibrary
-      # NOTE: photos may include workorderPhots NOT in cameraRoll
       dataURLs: {
         preview: {}     # indexBy UUID
         thumbnail: {}   # indexBy UUID
@@ -134,15 +131,13 @@ angular
 
       getPhoto: (UUID)->
         # find the photo, if we have it
-        found = _.find self.photos, { UUID: UUID } 
-        # get from cameraRoll.map() if not in cameraRoll.photo
+        found = _.find self.map(), { UUID: UUID } 
         if !found
-          found = _.find self.map(), { UUID: UUID } 
-          cameraRoll.getDataURL UUID, 'thumbnail' # queue to add to cameraRoll.photos
+          console.error '\n\nERROR: cameraRoll.getPhoto(): is not found, UUID=' + UUID 
+          return null 
 
-        return found if found
-        console.error '\n\nERROR: cameraRoll.getPhoto(): is not found, UUID=' + UUID 
-        return null
+        cameraRoll.getDataURL UUID, 'thumbnail' # queue to add to cameraRoll.dataUrls
+        return found
 
       loadCameraRollP: (options, force=true)->
         defaults = {
@@ -197,7 +192,7 @@ angular
             return false if imageCacheSvc.isStashed( photo.UUID, 'thumbnail') 
             return false if self.dataURLs['thumbnail'][photo.UUID]?
             return true
-        console.log "\n\n\n*** preloading favorite previews for UUIDs: " 
+        console.log "\n\n\n*** preloading favorite previews for UUIDs, count=" + notCached.length 
         # console.log notCached
         return self.loadPhotosP(notCached, delay)
 
@@ -213,7 +208,7 @@ angular
             return true
         )
         console.log "\n\n\n*** preloading moment thumbnails for UUIDs, count=" + notCached.length 
-        console.log notCached
+        # console.log notCached
         return self.loadPhotosP(notCached, delay)
 
 
@@ -238,7 +233,7 @@ angular
               if false && "appConsole"
                 truncated = {
                   "desc": "cameraRoll.dataURLs"
-                  photos: cameraRoll.photos[0..TEST_LIMIT]
+                  photos: cameraRoll.map()[0..TEST_LIMIT]
                   dataURLs: {}
                 }
                 if deviceReady.isWebView()
@@ -260,113 +255,44 @@ angular
         self.photos = _.filter self.photos, (photo)->
             return photo.from != 'PARSE'
 
-      # standard eachPhoto callback
-      patchPhotoFromMap: (photo)->
-        foundInMap = _.find self._mapAssetsLibrary, {UUID: photo.UUID}
-        _.extend photo, _.pick foundInMap, ['favorite','mediaType', 'mediaSubTypes', 'hidden']  
-
-      patchPhoto: (photo)->
-
-        # photo.topPick = true 
-        # photo.topPick = true if /^[AB]/.test(photo.UUID) 
-
-        # otgParse._patchParsePhotos(): patched attrs will be saved back to PARSE
-        # cameraRoll.patchPhoto(): will just patch local attrs
-        # ???: where do we want to patch photo.from???
-        photo.date = self.getDateFromLocalTime(photo.dateTaken)
-        self.patchPhotoFromMap( photo )
-        # NOTE: originalWidth, originalHeight properties may not adjust for autoRotate
-        if photo.from == 'PARSE'
-          if photo.src == 'Base64 encoding failed'
-            photo.src = ''
-            photo.isInvalid = true
-            photo.originalHeight = 100
-            photo.originalWidth = 640
-
-        # commit patch    
-        self._addOrUpdatePhoto_FromCameraRoll(photo)
-
-        # add to dataURLs
-        if photo.from == 'PARSE'
-          # add src directly
-          self.dataURLs['preview'][photo.UUID] = photo.src
-          "NOTE: use imgCache.js to cache PARSE URLs"
-
-        else
-          self.addDataURL(photo.format, photo)    
-        return
-
-      _addOrUpdatePhoto_FromCameraRoll: (photo)->
-
-        # note = "called by getDataURLForAssets_P, which assumes UUID in map, but not in photos"
-        # note = "   includes cameraRoll attrs from Messenger Plugin"
-
-        # console.warn "\n\nERROR: photo.UUID 40 chars, iOS style, uuid=" + photo.UUID if photo.UUID.length > 36
-        attrs =  _.omit photo, ['data', 'elapsed', 'format', 'crop', 'targetWidth', 'targetHeight', 'assetId']
-        # self.photos.push attrs
-        foundAt = _.findIndex self.photos, {UUID: attrs.UUID}
-        # console.log "**** foundAt=" + foundAt + ", UUID: " + self.photos[foundAt].UUID + " == " + attrs.UUID if foundAt > -1
-        if foundAt > -1  # update
-          # console.log "\n\n *** _addOrUpdatePhoto_FromCameraRoll() updating photo found in cameraRoll.photos, UUID=" +attrs.UUID+ "\n\n"
-          _.extend self.photos[foundAt], attrs
-        else 
-          insertAt = _.sortedIndex self.photos, attrs, 'dateTaken'
-          self.photos.splice(insertAt, 0, attrs)
-
-        # console.log "**** END _addOrUpdatePhoto_FromCameraRoll ****\n\n\n"  
-        return attrs
-
-
       addOrUpdatePhoto_FromWorkorder: (photo)->
+        # photo could be in local cameraRoll, or if $rootScope.$state.includes('app.workorders') a workorder photo
+        isLocal = (photo.deviceId == $rootScope.deviceId)
+        # console.log "%%% isLocal=" + (photo.deviceId == $rootScope.deviceId) + ", values=" + JSON.stringify [photo.deviceId , $rootScope.deviceId]
+
+        foundInMap = _.find self.map(), {UUID: photo.UUID} # also putting workorder photos in map()
+
+        if isLocal && !foundInMap
+          console.warn "WARNING: this photo should be in the cameraRoll, UUID=" +photo.UUID
+          throw "\n\n %%% WARNING: this photo should be in the cameraRoll, UUID=" +photo.UUID
+
         # typically called from Editor Workstation in Browser, in this case, there is no local CameraRoll
-        # called from otgWorkorderSync._patchParsePhotos() after patching with ParseObj attrs
+        # called from otgWorkorderSync._patchParsePhotos() with photo.date, photo.from set
+        if !foundInMap # isWorkorder
+          if photo.src[0...4] != 'http'
+            # do not add inavlid photos
+            photo.isInvalid = true  # deprecate
+            return false 
 
-        # cameraRoll.getDataURL only works if UID in map()
-        # foundInMap = _.find cameraRoll._mapAssetsLibrary, (o)->return o.UUID[0...36] == photo.UUID[0...36]
-
-
-        foundInMap = _.find self._mapAssetsLibrary, {UUID: photo.UUID}
-        if !foundInMap 
-          # WARNING: UUID might still be in cameraRoll, but not cached
-          # photo.topPick = !!photo.topPick
-          self._mapAssetsLibrary.push _.pick photo, ['UUID', 'dateTaken', 'from']
-          # if its not in map() it cannot be in photos, so add
-          self.patchPhoto photo
-          
-
-          # add to DataURLs, as necessary
-          exists = self.dataURLs['preview'][photo.UUID]
-          if exists && self.isDataURL(exists)
-            # keep dataURL or replace with remote parsefile?
-          else if photo.src
-            self.dataURLs['preview'][photo.UUID] = photo.src 
-          # console.log "\n**** NEW photo from WORKORDER added to map() & photos, uuid=" + photo.UUID
-          return  
-
-
-
-        # note = "for browser, workorder photos will NOT be in map OR photos"
-        # note = "for device, workorder photos will be in map unless deleted , but may NOT be in photos"
-
-        # not found in map, but still check if photos, WORKORDER_SYNC may update Editor attrs
-        # foundInPhotos = _.find self.photos, (o)->return o.UUID[0...36] == photo.UUID[0...36]
-        foundInPhotos = _.find self.photos, {UUID: photo.UUID}
-
-
-        if !foundInPhotos && foundInMap 
-          photo = _.extend foundInMap, photo
-          photo.from = 'CameraRoll<PARSE'
-
-          # notFound because a) dataURL not yet retrieved, or b) not in map() (added above)
-          self.patchPhoto photo
-          console.log "\n**** NEW photo from WORKORDER added to photos, uuid=" + photo.UUID
-
-        else 
-          # merge values set by Editor
-          _.extend foundInPhotos, _.pick photo, ['topPick', 'favorite', 'shotId', 'isBestshot']
-          # console.log "\n**** MERGE photo from WORKORDER into cameraRoll for uuid=" + photo.UUID
-        return
-
+          # only copy ready photos
+          self._mapAssetsLibrary.push _.pick photo, [
+            'UUID', 'dateTaken', 'from', 'deviceId', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'exif'
+            'originalWidth', 'originalHeight'
+            "hidden", "mediaType",  "mediaSubTypes", "burstIdentifier", "burstSelectionTypes", "representsBurst",
+            'src'
+          ]
+          self.dataURLs['preview'][photo.UUID] = photo.src
+          return false 
+        else if isLocal # update in map()
+          _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot'] # copy Edit fields
+          foundInMap.from = 'CameraRoll<PARSE' 
+          console.log "%%% isLocal, photo=" + JSON.stringify _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot']
+          return true # triggers $broadcast cameraRoll.updated for topPicks refresh
+        else if !isLocal && foundInMap # update Workorder Photo from Parse
+          _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot'] # copy Edit fields
+          # self.dataURLs['preview'][photo.UUID] = photo.src
+          console.log "%%% NOT isLocal, photo=" + JSON.stringify _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot']
+          return false
 
 
       isDataURL : (src)->
@@ -534,7 +460,6 @@ angular
             throw "ERROR: original photo dimensions are missing"
           photo.scaledW = IMAGE_WIDTH  
           photo.scaledH = h
-          # console.log "index="+index+", scaledH="+h+" origH="+photo.originalHeight+", index.UUID="+cameraRoll.photos[index].UUID
         else 
           h = photo.scaledH
         return h

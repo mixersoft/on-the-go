@@ -62,8 +62,8 @@ angular
 ]
 
 .factory 'otgWorkorderSync', [
-  '$q', '$rootScope', '$timeout', 'deviceReady', 'otgParse', 'otgWorkorder', 'otgUploader', 'cameraRoll'
-  ($q, $rootScope, $timeout, deviceReady, otgParse, otgWorkorder, otgUploader, cameraRoll )->
+  '$q', '$rootScope', '$timeout', 'deviceReady', 'otgParse', 'otgWorkorder', 'otgUploader', 'cameraRoll', 'imageCacheSvc'
+  ($q, $rootScope, $timeout, deviceReady, otgParse, otgWorkorder, otgUploader, cameraRoll, imageCacheSvc )->
 
     self = {
       _workorderColl : {
@@ -101,12 +101,16 @@ angular
         cached = self._workorderColl[role]
         return $q.when( cached ) if cached.length && !force
 
-        return otgParse.checkSessionUserP().then ()->
+        return otgParse.checkSessionUserP()
+        .then ()->
           return otgParse.fetchWorkordersByOwnerP(options)
         .then (workorderColl)->
-          self._workorderColl[role] = workorderColl
-          console.log "\n *** fetchWorkordersP from backend.coffee, role=" + role
-          return workorderColl
+            self._workorderColl[role] = workorderColl
+            console.log "\n *** fetchWorkordersP from backend.coffee, role=" + role
+            return workorderColl
+          , (err)->
+            console.log "\n *** fetchWorkordersP catch, role=" + role
+            console.log error
 
       fetchWorkorderPhotosP : (workorderObj,  options={}, force)->
         options = {owner: true} if _.isEmpty options
@@ -160,7 +164,7 @@ angular
 
           # console.log " \n\n 1b: &&&&& fetchWorkorderPhotosP from backend.coffee "
           # console.log "\n\n*** inspect workorderMoment for Workorder: " 
-          console.log workorderObj.toJSON()
+          # console.log workorderObj.toJSON()
 
           return photosColl
 
@@ -250,7 +254,7 @@ angular
         .then (sync)->
           # upload/remove parseFiles, using either JS API or bkg-uploader
           return self.queueDateRangeFilesP( sync ).then (resp)->
-            console.log "\n\n *** syncWorkorderPhotosP: sync complete for dataRange="+JSON.stringify dateRange
+            console.log "\n\n *** syncWorkorderPhotosP: sync complete for dataRange="+JSON.stringify( _.omit dateRange, 'workorderObj' )
             return sync
         .catch (err)->
           console.warn "\n\nError: syncWorkorderPhotosP: "+ JSON.stringify err
@@ -281,8 +285,7 @@ angular
         else 
           parsePhotos = _.filter parsePhotos, (photo)->
               return photo.deviceId == $rootScope.deviceId
-          forceMapCameraRoll = true 
-          promise = cameraRoll.mapP(null, forceMapCameraRoll).then (mappedPhotos)->
+          promise = cameraRoll.mapP(null, false).then (mappedPhotos)->
             cameraRollInDateRange = _.filter mappedPhotos, (o)->
               o.date = cameraRoll.getDateFromLocalTime o.dateTaken if !o.date
               return dateRange.from <= o.date <= dateRange.to
@@ -333,14 +336,18 @@ angular
 
 
       _PATCH_WorkorderAssets:(parsePhotosColl, patchKeys)->
+        _alreadyPatched = {}
         PATCH_KEYS =  patchKeys  # ['originalWidth', 'originalHeight', 'date']
         parsePhotosColl.each ( phObj )->
-          crPhoto = _.findWhere cameraRoll.photos, { UUID: phObj.get('UUID') }
+          crPhoto = _.findWhere cameraRoll.map(), { UUID: phObj.get('UUID') }
           return if !crPhoto || crPhoto.from=='PARSE'
+          return if _alreadyPatched[crPhoto.UUID]
           updateFromCameraRoll = _.pick crPhoto, PATCH_KEYS
           return if _.isEmpty updateFromCameraRoll 
+
           phObj.save( updateFromCameraRoll ).then ()->
               updateFromCameraRoll.UUID = crPhoto.UUID
+              _alreadyPatched[UUID] = 1
               console.log "\n\n *** _PATCH_WorkorderAssets, patched:" + JSON.stringify updateFromCameraRoll
             , (error)->
               console.log "\n\n *** _PATCH_WorkorderAssets, error:"
@@ -359,8 +366,14 @@ angular
           owner: true
         }
 
-        PATCH_WorkorderAssetKeys =  false # ['originalWidth', 'originalHeight', 'date']
-        if PATCH_WorkorderAssetKeys
+        PATCH_ParsePhotoObjKeys =  [
+          'originalWidth', 'originalHeight', 
+          'rating', 'favorite', 'caption', "hidden"
+          'exif', 'orientation'
+          "mediaType",  "mediaSubTypes", "burstIdentifier", "burstSelectionTypes", "representsBurst",
+        ] # false # ['originalWidth', 'originalHeight', 'date']
+
+        if PATCH_ParsePhotoObjKeys
           imageCacheSvc.clearStashedP('preview') # force cameraRoll fetch
 
 
@@ -378,8 +391,9 @@ angular
                   .then (photosColl)->
 
                     # see also: otgParse._patchParsePhotos()
-                    if PATCH_WorkorderAssetKeys
-                      self._PATCH_WorkorderAssets( photosColl , PATCH_WorkorderAssetKeys)
+                    if PATCH_ParsePhotoObjKeys
+                      # save CameraRoll attrs to PARSE
+                      self._PATCH_WorkorderAssets( photosColl , PATCH_ParsePhotoObjKeys)
 
                     # missing = self.queueMissingPhotos( workorderObj, photosColl )
                     return self.syncWorkorderPhotosP( workorderObj, photosColl, 'owner' )
@@ -454,6 +468,7 @@ angular
         updates = {
           'count_received': sync['complete'].length
           'count_expected': sync['complete'].length + sync['queued'].length + sync['errors'].length
+          'count_errors': sync['errors'].length
         }
         return if _.isEmpty updates
         return woObj.save( updates ) 
@@ -758,19 +773,23 @@ angular
           throw error
 
       _patchParsePhotos : (photosColl)->
+        # add/update Parse photos to cameraRoll
+        changed = false
         photosColl.each (photoObj)->
-          # otgParse._patchParsePhotos(): patched attrs will be saved back to PARSE
           # cameraRoll.patchPhoto(): will just patch local attrs
-          photoObj.set('UUID', photoObj.get('assetId') ) # DEPRECATE, use UUID on PARSE
+          # photoObj.set('UUID', photoObj.get('assetId') ) # DEPRECATE, use UUID on PARSE
           # photoObj.set('date', cameraRoll.getDateFromLocalTime( photoObj.get('dateTaken') ) )
           # photoObj.set('from', 'PARSE' )
           photo = photoObj.toJSON()
           photo.date = cameraRoll.getDateFromLocalTime(photo.dateTaken)
           photo.from = "PARSE"
-          photo.UUID = photo.assetId if !photo.UUID
-          cameraRoll.addOrUpdatePhoto_FromWorkorder photo
-
+          photo.topPick = null if `photo.topPick==null` 
+          # if photo.topPick
+          #   console.log "%%% _patchParsePhotos topPick found!!! photo=" + JSON.stringify photo
+          updated = cameraRoll.addOrUpdatePhoto_FromWorkorder photo
+          changed = changed || updated
           return
+        $rootScope.$broadcast 'cameraRoll.updated'
         return 
 
 
@@ -816,8 +835,6 @@ angular
         # collection.comparator = (o)->
         #   return o.get('toDate')
         return collection.fetch().then (photosColl)->
-          # ???: patch photoObj means it will save to server
-          # patch .toJSON() instead?
           self._patchParsePhotos(photosColl)
           return photosColl
           
@@ -900,11 +917,17 @@ angular
         # photo.src == 'queued'
         return deviceReady.waitP().then self.checkSessionUserP()
         .then ()-> 
-          extendedAttrs = _.pick photo, ['dateTaken', 'originalWidth', 'originalHeight', 'rating', 'favorite', 'caption', 'exif', 'orientation']
+          attrsForParse = [
+            'dateTaken', 'originalWidth', 'originalHeight', 
+            'rating', 'favorite', 'caption', "hidden"
+            'exif', 'orientation'
+            "mediaType",  "mediaSubTypes", "burstIdentifier", "burstSelectionTypes", "representsBurst",
+          ]
+          extendedAttrs = _.pick photo, attrsForParse
           # console.log extendedAttrs
 
           parseData = _.extend {
-                assetId: photo.UUID  # deprecate
+                # assetId: photo.UUID  # deprecate
                 UUID: photo.UUID
                 owner: $rootScope.sessionUser
                 workorder : workorderObj

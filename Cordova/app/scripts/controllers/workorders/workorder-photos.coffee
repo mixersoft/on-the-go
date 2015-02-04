@@ -201,7 +201,7 @@ angular.module('ionBlankApp')
             uploadedPhotos = _.filter photosColl.toJSON(), (photo)->
               return photo.src[0...4] == 'http'
             uploadedPhotoIds = _.indexBy uploadedPhotos, 'UUID'
-            $scope.photos = _.filter cameraRoll.photos, (o)->
+            $scope.photos = _.filter cameraRoll.map(), (o)->
               return uploadedPhotoIds[o.UUID]?
             # add to sideMenu
             $scope.workorderAttr = workorderObj.toJSON()

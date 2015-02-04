@@ -640,12 +640,6 @@ angular
           trailing: false
         }
 
-    _LOAD_MOMENTS_FROM_CAMERA_ROLL_P = ()->  # on button click
-      IMAGE_FORMAT = 'thumbnail'    # [thmbnail, preview, previewHD]
-      # TEST_LIMIT = 5 # snappiMessengerPluginService.MAX_PHOTOS
-      return cameraRoll.loadCameraRollP( {size: IMAGE_FORMAT} ) 
-
-
     # Dev/Debug tools
     _LOAD_DEBUG_TOOLS = ()->
       # currently testing
@@ -655,27 +649,28 @@ angular
 
     _LOAD_BROWSER_TOOLS = ()->
       # load TEST_DATA
-      console.log "\n\n *** loading TEST_DATA: TODO: MOVE TO _LOAD_BROWSER_TOOLS ***\n\n"
-      cameraRoll.orders = TEST_DATA.orders
-      photos_ByDateUUID = TEST_DATA.cameraRoll_byDate
-      cameraRoll.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( photos_ByDateUUID ), 2
-      cameraRoll.photos = otgData.parsePhotosFromMoments cameraRoll.moments, 'TEST_DATA'
-      cameraRoll._mapAssetsLibrary = _.map cameraRoll.photos, (TEST_DATA_photo)->
-        return {UUID: TEST_DATA_photo.UUID, dateTaken: TEST_DATA_photo.date}
-      # add some test data for favorite and shared
-      TEST_DATA.addSomeTopPicks( cameraRoll.photos)
-      TEST_DATA.addSomeFavorites( cameraRoll.photos)
-      TEST_DATA.addSomeShared( cameraRoll.photos)
-      # add item.height for collection-repeat
+      if $rootScope.user?.role != 'editor'
+        console.log "\n\n *** loading TEST_DATA: TODO: MOVE TO _LOAD_BROWSER_TOOLS ***\n\n"
+        cameraRoll.orders = TEST_DATA.orders
+        photos_ByDateUUID = TEST_DATA.cameraRoll_byDate
+        cameraRoll.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( photos_ByDateUUID ), 2
+        _photos = otgData.parsePhotosFromMoments cameraRoll.moments, 'TEST_DATA'
+        cameraRoll._mapAssetsLibrary = _.map _photos, (TEST_DATA_photo)->
+          return {UUID: TEST_DATA_photo.UUID, dateTaken: TEST_DATA_photo.date}
+        # add some test data for favorite and shared
+        TEST_DATA.addSomeTopPicks( cameraRoll.map())
+        TEST_DATA.addSomeFavorites( cameraRoll.map())
+        TEST_DATA.addSomeShared( cameraRoll.map())
+        # add item.height for collection-repeat
 
 
 
-      _.each cameraRoll.photos, (e,i,l)->
-        e.originalHeight = if /^[EF]/.test(e.UUID) then 400 else 240
-        e.originalWidth = 320
-        e.dateTaken = e.date
-        e.src = TEST_DATA.lorempixel.getSrc(e.UUID, e.originalWidth, e.originalHeight, TEST_DATA)
-        return
+        _.each cameraRoll.map(), (e,i,l)->
+          e.originalHeight = if /^[EF]/.test(e.UUID) then 400 else 240
+          e.originalWidth = 320
+          e.dateTaken = e.date
+          e.src = TEST_DATA.lorempixel.getSrc(e.UUID, e.originalWidth, e.originalHeight, TEST_DATA)
+          return
 
       # refactor to AppCtrl or service
 
@@ -797,21 +792,15 @@ angular
 
       _LOAD_DEBUG_TOOLS()
 
-      deviceReady.waitP().then ()->
+      deviceReady.waitP()
+      .then ()->
         $scope.config['no-view-headers'] = deviceReady.isWebView() && false
         $rootScope.deviceId = deviceReady.deviceId()
 
-        # snappiMessengerPluginService.unscheduleAllAssetsP()
-
-        _LOAD_MOMENTS_FROM_CAMERA_ROLL_P()
-        
-        .finally ()->
-          $timeout ()->
-              # promise = otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.$state.includes('app.workorders')
-              promise = otgParse.checkBacklogP().then (backlog)->
-                $scope.config.system['order-standby'] = backlog.get('status') == 'standby'
-            , 3000  
-
+        console.log "\n\n\n %%% deviceReady >DEBOUNCED_SYNC_cameraRoll_Orders "
+        # _LOAD_MOMENTS_FROM_CAMERA_ROLL_P()
+        return cameraRoll.loadCameraRollP()
+      .finally ()->
         if !deviceReady.isWebView()
           # browser
           _LOAD_BROWSER_TOOLS() 
@@ -828,7 +817,9 @@ angular
             _.extend $scope.config, config
           return
 
-
+        # promise = otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.$state.includes('app.workorders')
+        promise = otgParse.checkBacklogP().then (backlog)->
+          $scope.config.system['order-standby'] = backlog.get('status') == 'standby'
         return  # end $ionicPlatform.ready
 
     init()
