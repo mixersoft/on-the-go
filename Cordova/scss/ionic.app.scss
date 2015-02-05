@@ -192,9 +192,6 @@ ion-side-menu-content .item > * {
 }
 
 .header-card {
-  margin: 0 auto;
-  padding: 10px;
-  box-shadow: none;
 
   .pull-right .icon.ion-person {
     font-weight: normal;
@@ -210,12 +207,11 @@ ion-side-menu-content .item > * {
 }
 
 
-.header-card .item.item-divider .icon-large-right {
+.header-card .item.item-divider .icon-large {
   font-size: 1.8em;
-  position: absolute;
-  right: 0;
-  top: 4px;
-  padding: 0px 10px;
+  height: 16px;
+  vertical-align: text-top;
+  margin-top: -4px;
 }
 
 .header-card.standby {
@@ -490,6 +486,15 @@ otg-moment-date-range {
 }
 
 #settings {
+  .username.badge {
+    background-color: transparent;
+    &.badge-positive {
+      color: $positive;
+    }
+    &.badge-assertive {
+      color: $assertive;
+    }
+  }
   .item {
     cursor: default ;
   }

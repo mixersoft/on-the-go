@@ -16,11 +16,13 @@ ng-class="isModal ? 'app-modal' : ''"
 
 
     <!-- ion-tab: terms-of-service -->
-    <ion-tab title="{{i18n.tr('tos', 'app.settings.legal')}}">
+    <ion-tab title="{{i18n.tr('tos', 'app.settings.legal')}}"
+    on-select='on.showSpinnerWhenIframeLoading("tos")'
+    >
       <ion-content class="has-header has-footer iframe-wrap">
         <!-- <div class="padding" ng-include="'legal/terms-of-service.html'">
         </div> -->
-        <iframe src="http://app.snaphappi.com/on-the-go.App/legal/terms-of-service.html"></iframe>
+        <iframe src="http://app.snaphappi.com/on-the-go.App/legal/terms-of-service.html"><i class="icon ion-load-b ion-spin"></i></iframe>
       </ion-content>
 
       <div class="bar bar-footer bar-calm">
@@ -32,10 +34,12 @@ ng-class="isModal ? 'app-modal' : ''"
     </ion-tab>
 
     <!-- ion-tabs: privacy-policy -->
-    <ion-tab title="{{i18n.tr('privacy', 'app.settings.legal')}}">
+    <ion-tab title="{{i18n.tr('privacy', 'app.settings.legal')}}"
+    on-select='on.showSpinnerWhenIframeLoading("privacy")'
+    >
       <ion-content class="has-header iframe-wrap">
         <!-- <div class="padding" ng-include="'legal/privacy-policy.html'"></div> -->
-        <iframe src="http://app.snaphappi.com/on-the-go.App/legal/privacy-policy.html"></iframe>
+        <iframe src="http://app.snaphappi.com/on-the-go.App/legal/privacy-policy.html"><i class="icon ion-load-b ion-spin"></i></iframe>
       </ion-content>
     </ion-tab>
 

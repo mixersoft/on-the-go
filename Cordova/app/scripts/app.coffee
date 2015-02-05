@@ -454,11 +454,11 @@ angular
     # loading backdrop
     # 
        
-    $scope.showLoading = (value = true)-> 
+    $scope.showLoading = (value = true, timeout=5000)-> 
       return $ionicLoading.hide() if !value
       $ionicLoading.show({
         template: '<i class="icon ion-load-b ion-spin"></i>'
-        duration: 5000
+        duration: timeout
       })
     $scope.hideLoading = (delay=0)->
       $timeout ()->

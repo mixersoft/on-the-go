@@ -84,7 +84,7 @@
     fly='left' 
     on-destroy="on.hide(this.swipeCard)">
       <div class="item item-divider item-balanced">
-        Special Promo Codes
+        {{i18n.tr('promo-card').header}}
       </div>
       <div class="item item-text-wrap">
         {{watch.promoCodeLabel.copy}}
@@ -103,12 +103,12 @@
 
     <div class="card">
       <ion-item class="item-divider item-calm">
-        Legal
+        {{i18n.tr('legal-card').header}}
       </ion-item>
       <ion-item class="item-text-wrap legal">
         <div class='button button-positive button-full' 
         ng-click="modal.legal.showTab('terms-of-service')">
-          Read our Terms of Use
+          {{i18n.tr('legal-card').tos}}
         </div>
         <ion-checkbox id='tos-checkbox' class="item-calm checkbox-balanced" 
         ng-model="user.tosAgree" 

@@ -28,14 +28,14 @@ angular.module('ionBlankApp')
           body: "Bon voyage! Have a great trip! It's so exciting to be On-The-Go - don't forget to snap a lot of photos.
           We'll keep an eye out for anything photos you take on these days: "
           footer: ""
-        'payment':
-          header: "Payment"
-          body: ""
-          footer: ""  
-        'sign-up':
-          header: "Sign-up"
-        'terms-of-service':
-          header: "Terms of Service"
+        # 'payment':
+        #   header: "Payment"
+        #   body: ""
+        #   footer: ""  
+        # 'sign-up':
+        #   header: "Sign-up"
+        # 'terms-of-service':
+        #   header: "Terms of Service"
         'submit':
           header: "Review"
           body: "Please review your order below"
@@ -171,24 +171,20 @@ angular.module('ionBlankApp')
         switch $state.current.name
           when 'app.checkout.payment'
             servicePlan = $scope.watch.servicePlan
+            promoCodes = i18n.tr('promoCodes')
             if servicePlan.plans.indexOf("Promo Code: " + "3DAYSFREE") == -1
-              promoCode = "3DAYSFREE"
-              promoCodeLabel = {
-                copy: "It's your lucky day! For a limited time, all the cool kids can get a special promo code!"
-                button: "I'm Cool, Gimme a Code!"
-              }
+              promo = promoCodes['3DAYSFREE']
+              promoCode = promo.code
+              promoCodeLabel = _.pick promo, ['copy', 'button']
             else if servicePlan.plans.indexOf("Promo Code: " + "IWILLGIVEFEEDBACK") == -1
-              promoCode = "IWILLGIVEFEEDBACK"
-              promoCodeLabel = {
-                copy: "Aw snap! It looks like you will need some extra love for this order!"
-                button: "I'll Have Another, Please :-D"
-              }
+              promo = promoCodes['IWILLGIVEFEEDBACK']
+              promoCode = promo.code
+              promoCodeLabel = _.pick promo, ['copy', 'button']
             else 
-              promoCode = null
-              promoCodeLabel = {
-                copy: "I'm sorry, you've gone over our limit for now..."
-                button: ""
-              }
+              promo = promoCodes['_NULL_']
+              promoCode = promo.code
+              promoCodeLabel = _.pick promo, ['copy', 'button']
+
             $scope.watch.promoCode = promoCode
             $scope.watch.promoCodeLabel = promoCodeLabel
 
@@ -360,14 +356,18 @@ angular.module('ionBlankApp')
       console.log "init: state="+$state.current.name
       $scope.checkout = otgWorkorder.checkout.getSelectedAsMoments()
       $scope.watch.servicePlan = _getTotal($scope.checkout)
+      if $scope.watch.servicePlan.total==0 && deviceReady.isWebView()==false
+        DEV.getSampleCheckout()
+
       _wizard.validateSteps()
 
       # initialize the wizard steps      
       if $state.params.from?
         _wizard.from($state.params.from)
+
+      # redirect if empty  
       if !otgWorkorder.isSelected()
         target = 'app.choose.' + $scope.on.getOrderType()
-        console.log "WARNING: checkout with no days selected!! redirecting, from="+target
         return $state.transitionTo(target)
 
       # get header_card data from state     
@@ -388,7 +388,14 @@ angular.module('ionBlankApp')
     );
 
 
-
+    DEV = {
+      getSampleCheckout: ()->
+        now = new Date()
+        from = new Date(); from.setDate(now.getDate()-33)
+        otgWorkorder.on.selectByCalendar(from.toJSON()[0...10], now.toJSON()[0...10])
+        $scope.checkout = otgWorkorder.checkout.getSelectedAsMoments()
+        $scope.watch.servicePlan = _getTotal($scope.checkout)
+    }
 
     window.debug = _.extend window.debug || {} , {
         watch: $scope.watch

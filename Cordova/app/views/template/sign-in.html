@@ -1,30 +1,35 @@
-<ion-content class="has-header">
+<ion-view><ion-content class="has-header">
     <div class="list card header-card">
       <div class="item item-divider item-energized">
         <i class="icon ion-person"> Sign In</i>
       </div>
 
-  <div ng-show="otgProfile.errorMessage">
-    <div  class="error-message padding">{{otgProfile.errorMessage}}</div>
-  </div>
-  <label class="item item-input item-icon-right">
-    <span class="input-label">Username</span>
-    <input type="text" ng-model="user.username" placeholder="HappiGuy"
-    ng-change="otgProfile.username.isChanged($event)">
-  </label>
+      <div ng-show="otgProfile.errorMessage">
+        <div  class="error-message padding">{{otgProfile.errorMessage}}</div>
+      </div>
+      <label class="item item-input item-icon-right">
+        <span class="input-label">{{i18n.tr('user')}}</span>
+        <input type="text" ng-model="user.username" placeholder="HappiGuy" tabindex="1" 
+        ng-change="otgProfile.username.isChanged($event)">
+      </label>
 
-  <label class="item item-input item-icon-right">
-    <span class="input-label">Password</span>
-    <input type="password" ng-model="user.password" placeholder="Required"
-    ng-change="otgProfile.password.isChanged($event)">
-  </label>
+      <label class="item item-input item-icon-right">
+        <span class="input-label">{{i18n.tr('pass')}}</span>
+        <input type="password" ng-model="user.password" placeholder="Required" tabindex="2"
+        ng-change="otgProfile.password.isChanged($event)">
+      </label>
 
-      <button class="button button-block button-energized padding-horizontal" 
-        ng-class="otgProfile.ngClassSignin()"
-        ng-click="signIn($event)"
-        >
-        Submit
-      </button>
+      <div class="item item-text-wrap item-icon-left padding">
+        <input type="submit" class="button button-block button-energized padding-horizontal"  tabindex="3"
+          ng-class="otgProfile.ngClassSignin()"
+          ng-click="signIn($event)"
+          >
+          {{i18n.tr('submit')}}
+        </input>
+      </div>
         
+      <div class="item item-divider item-energized">
+      </div> 
     </div>
 </ion-content>
+</ion-view>

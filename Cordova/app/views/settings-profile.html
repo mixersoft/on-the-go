@@ -1,5 +1,5 @@
 <ion-view title="Profile" id="profile">
-  <ion-content class="has-header">
+  <ion-content  id="settings" class="has-header">
 
 <div ng-if="otgProfile.isAnonymous()"> 
     <div ng-include="'partials/anonymous-signup'"></div> 
@@ -7,20 +7,27 @@
     <!-- header card : guest -->
     <div class="list card header-card">
       <div class="item item-divider item-energized">
-        <i class="icon ion-person"> Sign-up</i>
-        <i class="icon ion-log-in icon-large-right"
+        <i class="icon ion-person"> {{i18n.tr('aaa')['sign-up']}}</i>
+        <span class="pull-right"
         ng-click="signOut($event)"
-        ></i>
+        >{{i18n.tr('aaa')['sign-in']}} <i class="icon ion-log-in icon-large"></i>
+        </span>
       </div>
 
       <div ng-include src="'partials/anonymous-signup-fields'"></div>
 
-      <button class="button button-block button-energized padding-horizontal" 
-        ng-class="otgProfile.ngClassSubmit()"
-        ng-click="submit()"
-        >
-        Submit
-      </button>
+      
+      <div class="item item-text-wrap item-icon-left padding">
+        <input type="submit" class="button button-block button-energized" 
+          ng-class="otgProfile.ngClassSubmit()"
+          ng-click="submit($event)"
+          >
+          {{i18n.tr('aaa')['submit']}}
+        </input>
+      </div>   
+
+      <div class="item item-divider item-energized">
+      </div>          
         
     </div>
 </div>    
@@ -33,28 +40,34 @@
     <!-- header card : named user  -->
     <div class="list card header-card" >
       <div class="item item-divider item-energized">
-        <i class="icon ion-person"> Profile</i>
-        <i class="icon ion-log-out icon-large-right"
+        <i class="icon ion-person"> {{i18n.tr('aaa')['profile']}}</i>
+        <span class="pull-right"
         ng-click="signOut($event)"
-        ></i>
+        >{{i18n.tr('aaa')['sign-out']}} <i class="icon ion-log-in icon-large"></i>
+        </span>
       </div>
 
       <div ng-include src="'partials/anonymous-signup-fields'"></div>
 
       <!-- // anonymous only -->
-      <button class="button button-block button-assertive padding-horizontal" 
-      ng-if="!otgProfile.isAnonymous()"
-      ng-show="!otgProfile.email.dirty && !user.emailVerified"
-      ui-sref="app.settings.main">
-      Resend Email Verification
-      </button>
+      <div class="item item-text-wrap item-icon-left padding">
+        <button class="button button-block button-assertive" 
+        ng-if="!otgProfile.isAnonymous()"
+        ng-show="!otgProfile.email.dirty && !user.emailVerified"
+        ui-sref="app.settings.main">
+        {{i18n.tr('aaa')['email-verify']}}
+        </button>
 
-      <button class="button button-block button-energized padding-horizontal" 
-        ng-class="otgProfile.ngClassSubmit()"
-        ng-click="submit()"
-        >
-        Submit
-      </button>      
+        <input type="submit" class="button button-block button-energized"  tabindex="10"
+          ng-class="otgProfile.ngClass{{i18n.tr('aaa')['submit']}}()"
+          ng-click="submit($event)"
+          >
+          {{i18n.tr('aaa')['submit']}}
+        </input>  
+      </div>  
+
+      <div class="item item-divider item-energized">
+      </div>  
 
     </div>
 </div>

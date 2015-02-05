@@ -52,10 +52,42 @@ angular.module('onTheGo.i18n', [])
           header: "When will you be On-The-Go?"
           body: "Planning a trip? Choose the days you hope to re-live and go capture some beautiful moments. We'll take care of the rest."
           footer: "" 
+
+      'app.checkout':
+        title: 'Checkout'
       'app.checkout.order-detail': {}
-      'app.checkout.payment': {}
-      'app.checkout.sign-up': {}
-      'app.checkout.terms-of-service': {}
+      'app.checkout.payment': {
+        'header-card':
+          header: 'Payment'
+          body: ""
+          footer: ""    
+        'promo-card':
+          header: 'Special Promo Codes'
+        'legal-card':
+          header: 'Legal'
+          tos: 'Read our Terms of Use'
+        promoCodes:
+          '3DAYSFREE':
+            code: '3DAYSFREE'
+            copy: "It's your lucky day! For a limited time, all the cool kids can get a special promo code!"
+            button: "I'm Cool, Gimme a Code!"
+          'IWILLGIVEFEEDBACK':  
+            code: 'IWILLGIVEFEEDBACK'
+            copy: "Aw snap! It looks like you will need some extra love for this order!"
+            button: "I'll Have Another, Please :-D"
+          '_NULL_':
+            code: ''
+            copy: "I'm sorry, you've gone over our limit for now..."
+            button: ''            
+      }
+      'app.checkout.sign-up': {
+        'header-card':
+          header: 'Sign-up'
+      }
+      'app.checkout.terms-of-service': {
+        'header-card':
+          header: 'Terms of Service'
+      }
       'app.checkout.submit': 
         standby:
           header: 'Order Standby'
@@ -79,9 +111,28 @@ angular.module('onTheGo.i18n', [])
         warning:
           offline: "Please connect to a network."
           cellular: "Upload by cellular data is disabled."
+      'app.settings':
+        'error-codes':
+          '101': "The Username and Password combination was not found. Please try again."
+          '202': "That Username was already taken. Please try again."
+          '203': "That Email address was already taken. Please try again."
+          '10': "Sign-in unsucessful. Please try again."
+          '11': "Sign-up unsucessful. Please try again."
+
       'app.settings.main': {}
-      'app.settings.profile': {}
-      'app.settings.sign-in': {}
+      'app.settings.profile':
+        aaa: 
+          'submit': 'Submit'
+          'sign-in': 'Sign in'
+          'sign-out': 'Sign out'
+          'profile': 'Profile'
+          'email-verify': 'Resend Email Verification'
+
+      'app.settings.sign-in': 
+        'user': 'Username'
+        'pass': 'Password'
+        'submit': 'Submit'
+        
       'app.settings.legal':
         title: 'Legal'
         tos: "Terms of Use"

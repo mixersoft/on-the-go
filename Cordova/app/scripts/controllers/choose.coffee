@@ -364,7 +364,9 @@ angular.module('ionBlankApp')
           otgWorkorder.on.clearSelected(ev)
         return
       calendarSelected : (value)->
-        _datepicker.activate()
+        $timeout ()->
+          # wait until input is rendered
+          _datepicker.activate()
         return
       calendarDeselected : (value)->
         _datepicker.deactivate()

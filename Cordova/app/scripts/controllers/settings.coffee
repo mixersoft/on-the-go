@@ -165,6 +165,11 @@ angular.module('ionBlankApp')
         count: 0
     }
     $scope.on = {
+      showSpinnerWhenIframeLoading: (name)->
+        $scope.watch.iframeOpened = $scope.watch.iframeOpened || {}
+        return if $scope.watch.iframeOpened[name]?
+        $scope.showLoading(true, 3000)
+        $scope.watch.iframeOpened[name] = 1
       clearCache: ()->
         imageCacheSvc.clearStashedP().then ()->
           _.extend $scope.watch.imgCache, imageCacheSvc.stashStats()
@@ -186,6 +191,8 @@ angular.module('ionBlankApp')
     
     $scope.signIn = (ev)->
       ev.preventDefault()
+      return if otgProfile.ngClassSignin().indexOf('disabled') > -1
+      
       otgWorkorderSync.clear()
       $rootScope.user = _.pick $scope.user, ['username', 'password']
       return otgProfile.signInP().then ()->
@@ -206,13 +213,16 @@ angular.module('ionBlankApp')
           $state.transitionTo('app.settings.sign-in')
           switch error.code 
             when 101
-              message = "The Username and Password combination was not found. Please try again."
+              message = i18n.tr('error-codes','app.settings')[error.code] # "The Username and Password combination was not found. Please try again."
             else
-              message = "Sign-in unsucessful. Please try again."
+              message = i18n.tr('error-codes','app.settings')[10] # "Sign-in unsucessful. Please try again."
           otgProfile.errorMessage = message
           return 
 
     $scope.submit = (ev)->
+      ev.preventDefault()
+      return if otgProfile.ngClassSubmit().indexOf('disabled') > -1
+
       # either update or CREATE
       isCreate = if _.isEmpty($rootScope.sessionUser) then true else false
       return otgProfile.submitP()
@@ -230,16 +240,14 @@ angular.module('ionBlankApp')
         otgProfile.password.passwordAgainModel = ''
         switch error.code 
           when 202
-            message = "That Username was already taken. Please try again."
+            message = i18n.tr('error-codes','app.settings')[error.code] # "That Username was already taken. Please try again."
           when 203
-            message = "That Email address was already taken. Please try again."
+            message = i18n.tr('error-codes','app.settings')[error.code] # "That Email address was already taken. Please try again."
           else
-            message = "Sign-up unsucessful. Please try again."
+            message = i18n.tr('error-codes','app.settings')[11] # "Sign-up unsucessful. Please try again."
         $scope.otgProfile.errorMessage = message
         return 
       return 
-
-
 
 
     $scope.$on '$ionicView.loaded', ()->
