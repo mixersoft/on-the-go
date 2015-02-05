@@ -13,11 +13,27 @@
 @interface AppDelegate ()
 
 @property (nonatomic, copy) void (^sessionCompletionHandler)();
-@property (nonatomic, weak) PhotosUploader *backgroundUploader;
+@property (nonatomic, assign) PhotosUploader *backgroundUploader;
 
 @end
 
 @implementation AppDelegate (Additions)
+
+-(void)setSessionCompletionHandler:(void (^)())sessionCompletionHandler {
+    objc_setAssociatedObject(self, @selector(sessionCompletionHandler), sessionCompletionHandler, OBJC_ASSOCIATION_COPY);
+}
+
+-(void (^)())sessionCompletionHandler {
+    return objc_getAssociatedObject(self, _cmd);
+}
+
+-(void)setBackgroundUploader:(PhotosUploader *)backgroundUploader {
+    objc_setAssociatedObject(self, @selector(backgroundUploader), backgroundUploader, OBJC_ASSOCIATION_ASSIGN);
+}
+
+-(PhotosUploader *)backgroundUploader {
+    return objc_getAssociatedObject(self, _cmd);
+}
 
 +(void)swizzleSelector:(SEL)selector1 withSelector:(SEL)selector2 {
     Class class = [self class];
@@ -58,7 +74,6 @@
     self.sessionCompletionHandler = completionHandler;
     self.backgroundUploader = [PhotosUploader uploaderWithSessionConfigurationIdentifier:identifier];
     [self.backgroundUploader addDelegate:(id<PhotosUploaderDelegate>)self];
-    [self xxx_application:application handleEventsForBackgroundURLSession:identifier completionHandler:completionHandler];
 }
 
 #pragma mark PhotosUploaderDelegate

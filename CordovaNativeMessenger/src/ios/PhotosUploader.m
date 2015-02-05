@@ -58,8 +58,8 @@ static NSOperationQueue *serialQueue;
 }
 
 -(NSMutableDictionary *)sessionInfosDictionary {
-    NSMutableDictionary *infos = [[NSUserDefaults.standardUserDefaults objectForKey:sessionInfosKey] mutableCopy] ?: [NSMutableDictionary new];
-    return infos;
+    NSData *infosData = [[NSUserDefaults.standardUserDefaults objectForKey:sessionInfosKey] mutableCopy];
+    return [[NSKeyedUnarchiver unarchiveObjectWithData:infosData] mutableCopy] ?: [NSMutableDictionary new];
 }
 
 -(void)saveSessionInfos:(NSDictionary *)infos {
@@ -67,7 +67,8 @@ static NSOperationQueue *serialQueue;
         [NSUserDefaults.standardUserDefaults removeObjectForKey:sessionInfosKey];
     }
     else {
-        [NSUserDefaults.standardUserDefaults setObject:infos forKey:sessionInfosKey];
+        NSData *infosEncodedObject = [NSKeyedArchiver archivedDataWithRootObject:infos];
+        [NSUserDefaults.standardUserDefaults setObject:infosEncodedObject forKey:sessionInfosKey];
     }
     
     [NSUserDefaults.standardUserDefaults synchronize];
@@ -87,7 +88,7 @@ static NSOperationQueue *serialQueue;
     }
     
     [dict removeObjectForKey:identifier];
-    
+    [self saveSessionInfos:dict];
     return YES;
 }
 
@@ -378,8 +379,8 @@ static NSOperationQueue *serialQueue;
     //NSFileWrapperReadingImmediate
     bool success = YES;
      NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-    NSURLSessionTaskInfo *info = [self sessionInfosDictionary][identifier];
-    
+    NSDictionary *d = [self sessionInfosDictionary];
+    NSURLSessionTaskInfo *info = d[identifier];
     //NSMutableData *_data = [_responseDataWrappers objectForKey:identifier];
 //    if (!_data) {
 //        //create wrapper
@@ -391,7 +392,7 @@ static NSOperationQueue *serialQueue;
 //    NSError *error;
 //    [_data writeToURL:[self fileURLOfDataForTask:task] options:NSDataWritingAtomic error:&error];
 //    success = error == nil;
-    [self saveSessionInfos:self.sessionInfosDictionary];
+    [self saveSessionInfos:d];
     return success;
 }
 
@@ -416,9 +417,11 @@ static NSOperationQueue *serialQueue;
 totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
     
-    NSURLSessionTaskInfo *info = [self sessionInfosDictionary][identifier];
-    info.progress = totalBytesSent/totalBytesExpectedToSend;
-    [self saveSessionInfos:[self sessionInfosDictionary]];
+    NSDictionary *d = [self sessionInfosDictionary];
+    NSURLSessionTaskInfo *info = d[identifier];
+    double p = (double)totalBytesSent/(double)totalBytesExpectedToSend;
+    info.progress = p;
+    [self saveSessionInfos:d];
     
     for (id<PhotosUploaderDelegate>delegate in _delegates) {
         if ([delegate respondsToSelector:@selector(photoUploader:didUploadDataForAssetWithIdentifier:totalBytesSent:totalBytesExpectedToSend:)]) {
@@ -530,7 +533,8 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
 }
 
 -(void)URLSessionDidFinishEventsForBackgroundURLSession:(NSURLSession *)session {
-    for (id<PhotosUploaderDelegate>delegate in _delegates) {
+    NSArray *s = [_delegates allObjects];
+    for (id<PhotosUploaderDelegate>delegate in s) {
         if ([delegate respondsToSelector:@selector(photoUploaderFinishedProcessingBackgroundEvents:)]) {
             [delegate photoUploaderFinishedProcessingBackgroundEvents:self];
         }
