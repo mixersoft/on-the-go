@@ -10,6 +10,7 @@
 #import "PhotosUploader.h"
 #import <Photos/Photos.h>
 #import <CoreLocation/CoreLocation.h>
+#import "UIImage+FixOrientation.h"
 
 NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeMessageNotification";
 
@@ -239,7 +240,48 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
         CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultArray];
         [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
     }];
-    
+}
+
+-(void)allSessionTaskInfos:(CDVInvokedUrlCommand*) command {
+    NSMutableArray *arr = [NSMutableArray new];
+    [[PhotosUploader.sharedInstance allSessionTaskInfos] enumerateObjectsUsingBlock:^(NSURLSessionTaskInfo *obj, NSUInteger idx, BOOL *stop) {
+        [arr  addObject:@{
+                          @"identifier" : obj.identifier,
+                          @"progress" : @(obj.progress),
+                          @"hasFinished" : @(obj.hasFinished),
+                          @"errorCode" : @(obj.error.code),
+                          @"success" : @(obj.error == nil)
+                          }];
+    }];
+    CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:arr];
+    [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
+}
+
+-(void)removeSessionTaskInfoWithIdentifier:(CDVInvokedUrlCommand*) command {
+    NSString *str = command.arguments[0];
+    BOOL success = [PhotosUploader.sharedInstance removeSessionTaskInfoWithIdentifier:str];
+    CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:success?CDVCommandStatus_OK:CDVCommandStatus_ERROR];
+    [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
+}
+
+-(void)sessionTaskInfoForIdentifier:(CDVInvokedUrlCommand*) command {
+    NSString *str = command.arguments[0];
+    NSURLSessionTaskInfo *obj = [PhotosUploader.sharedInstance sessionTaskInfoForIdentifier:str];
+    if (!obj) {
+        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+        [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
+    }
+    else {
+        
+        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:@{
+                                                                                                                     @"identifier" : obj.identifier,
+                                                                                                                     @"progress" : @(obj.progress),
+                                                                                                                     @"hasFinished" : @(obj.hasFinished),
+                                                                                                                     @"errorCode" : @(obj.error.code),
+                                                                                                                     @"success" : @(obj.error == nil)
+                                                                                                                     }];
+        [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
+    }
 }
 
 -(void)getPhotoById:(CDVInvokedUrlCommand*) command {
@@ -339,7 +381,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                 [weakself.commandDelegate runInBackground:^{
                     
                     if(autoRotate) {
-                        resultImage = [weakself rotateImageBasedOnEXIF:resultImage];
+                        resultImage = [resultImage imageWithFixedOrientationSized:resultImage.size];
                     }
                     
                     NSData *bytes = UIImageJPEGRepresentation(resultImage, 1);
@@ -439,82 +481,6 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     
 }
 
--(UIImage*)rotateImageBasedOnEXIF:(UIImage*)original{
-    
-    
-    if (original.imageOrientation == UIImageOrientationUp) return original;
-    CGAffineTransform transform = CGAffineTransformIdentity;
-    
-    switch (original.imageOrientation) {
-        case UIImageOrientationDown:
-        case UIImageOrientationDownMirrored:
-            transform = CGAffineTransformTranslate(transform, original.size.width, original.size.height);
-            transform = CGAffineTransformRotate(transform, M_PI);
-            break;
-            
-        case UIImageOrientationLeft:
-        case UIImageOrientationLeftMirrored:
-            transform = CGAffineTransformTranslate(transform, original.size.width, 0);
-            transform = CGAffineTransformRotate(transform, M_PI_2);
-            break;
-            
-        case UIImageOrientationRight:
-        case UIImageOrientationRightMirrored:
-            transform = CGAffineTransformTranslate(transform, 0, original.size.height);
-            transform = CGAffineTransformRotate(transform, -M_PI_2);
-            break;
-        case UIImageOrientationUp:
-        case UIImageOrientationUpMirrored:
-            break;
-    }
-    
-    switch (original.imageOrientation) {
-        case UIImageOrientationUpMirrored:
-        case UIImageOrientationDownMirrored:
-            transform = CGAffineTransformTranslate(transform, original.size.width, 0);
-            transform = CGAffineTransformScale(transform, -1, 1);
-            break;
-            
-        case UIImageOrientationLeftMirrored:
-        case UIImageOrientationRightMirrored:
-            transform = CGAffineTransformTranslate(transform, original.size.height, 0);
-            transform = CGAffineTransformScale(transform, -1, 1);
-            break;
-        case UIImageOrientationUp:
-        case UIImageOrientationDown:
-        case UIImageOrientationLeft:
-        case UIImageOrientationRight:
-            break;
-    }
-    
-    // Now we draw the underlying CGImage into a new context, applying the transform
-    // calculated above.
-    CGContextRef ctx = CGBitmapContextCreate(NULL, original.size.width, original.size.height,
-                                             CGImageGetBitsPerComponent(original.CGImage), 0,
-                                             CGImageGetColorSpace(original.CGImage),
-                                             CGImageGetBitmapInfo(original.CGImage));
-    CGContextConcatCTM(ctx, transform);
-    switch (original.imageOrientation) {
-        case UIImageOrientationLeft:
-        case UIImageOrientationLeftMirrored:
-        case UIImageOrientationRight:
-        case UIImageOrientationRightMirrored:
-            // Grr...
-            CGContextDrawImage(ctx, CGRectMake(0,0,original.size.height,original.size.width), original.CGImage);
-            break;
-            
-        default:
-            CGContextDrawImage(ctx, CGRectMake(0,0,original.size.width,original.size.height), original.CGImage);
-            break;
-    }
-    
-    // And now we just create a new UIImage from the drawing context
-    CGImageRef cgimg = CGBitmapContextCreateImage(ctx);
-    UIImage *img = [UIImage imageWithCGImage:cgimg];
-    CGContextRelease(ctx);
-    CGImageRelease(cgimg);
-    return img;
-}
 
 +(void)sendMessage:(NSDictionary*)data WithCommand:(NSString*)command {
     

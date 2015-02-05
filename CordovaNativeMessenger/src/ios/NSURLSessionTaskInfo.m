@@ -32,6 +32,7 @@
 -(instancetype)init {
     if (self = [super init]) {
         self.data = [NSMutableData new];
+        self.progress = 0;
     }
     return self;
 }
@@ -45,6 +46,10 @@
         return NO;
     }
     return [self.identifier isEqualToString:[object identifier]];
+}
+
+-(BOOL)hasFinished {
+    return self.progress == 1;
 }
 
 @end

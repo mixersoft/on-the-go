@@ -15,6 +15,7 @@
 @property (nonatomic, strong) NSError *error;
 @property (nonatomic, strong) NSMutableData *data;
 
+@property (nonatomic, readonly) BOOL hasFinished;
 
 
 @end

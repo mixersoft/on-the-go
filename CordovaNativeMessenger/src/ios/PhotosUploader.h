@@ -46,6 +46,6 @@
 
 -(BOOL)removeSessionTaskInfoWithIdentifier:(NSString*)identifier;
 
--(NSURLSessionTask *)sessionTaskInfoForIdentifier:(NSString *)identifier;
+-(NSURLSessionTaskInfo *)sessionTaskInfoForIdentifier:(NSString *)identifier;
 
 @end

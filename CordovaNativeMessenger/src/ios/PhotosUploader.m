@@ -96,7 +96,7 @@ static NSOperationQueue *serialQueue;
     return [dict allValues];
 }
 
--(NSURLSessionTask *)sessionTaskInfoForIdentifier:(NSString *)identifier {
+-(NSURLSessionTaskInfo *)sessionTaskInfoForIdentifier:(NSString *)identifier {
     return [self sessionInfosDictionary][identifier];
 }
 
@@ -407,13 +407,6 @@ static NSOperationQueue *serialQueue;
         
         [scheduledTasks removeObject:task];
         operation();
-        [[NSOperationQueue mainQueue] addOperationWithBlock:^{
-            for (id<PhotosUploaderDelegate>delegate in _delegates) {
-                if ([delegate respondsToSelector:@selector(photoUploader:didCancelUploadAssetIdentifier:)]) {
-                    [delegate photoUploader:self didCancelUploadAssetIdentifier:identifier];
-                }
-            }
-        }];
     }];
 }
 
@@ -442,11 +435,22 @@ didCompleteWithError:(NSError *)error {
     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
     //NSData *responseData = [self responseDataForTask:task];
     [self deleteDataForTask:task];
-    NSURLSessionTaskInfo *info = [self sessionInfosDictionary][identifier];
+    NSURLSessionTaskInfo *info = [self sessionTaskInfoForIdentifier:identifier];
     info.error = error;
+    info.progress = 1;
     [self saveSessionInfos:[self sessionInfosDictionary]];
     NSLog(@"Finished task with image identifier: %@ with error:%@", identifier, error);
-
+    
+  /*
+   [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+   for (id<PhotosUploaderDelegate>delegate in _delegates) {
+   if ([delegate respondsToSelector:@selector(photoUploader:didCancelUploadAssetIdentifier:)]) {
+   [delegate photoUploader:self didCancelUploadAssetIdentifier:identifier];
+   }
+   }
+   }];
+   */
+    
     for (id<PhotosUploaderDelegate>delegate in _delegates) {
         if ([delegate respondsToSelector:@selector(photoUploader:didFinishUploadAssetIdentifier:)]) {
             [delegate photoUploader:self didFinishUploadAssetIdentifier:identifier];
