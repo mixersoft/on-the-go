@@ -8,6 +8,9 @@
  # 
 ###
 
+# ng-cordova patch: for Chrome browser testing
+window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem
+#
 
 angular
 .module 'onTheGo.localStorage', []
