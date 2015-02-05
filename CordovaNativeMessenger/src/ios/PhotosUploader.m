@@ -9,6 +9,7 @@
 #import "PhotosUploader.h"
 #import <Photos/Photos.h>
 #import "NSOperationQueue+SynchronousOperation.h"
+#import "UIImage+FixOrientation.h"
 
 static NSString *parseApplicationID = @"cS8RqblszHpy6GJLAuqbyQF7Lya0UIsbcxO8yKrI";
 static NSString *parseRESTAPIKey = @"3n5AwFGDO1n0YLEa1zLQfHwrFGpTnQUSZoRrFoD9";
@@ -251,7 +252,10 @@ static NSOperationQueue *serialQueue;
                     operation();
                     return;
                 }
-                NSData *data = UIImageJPEGRepresentation(result, 1);
+                
+                
+                UIImage *fixedImage = [result imageWithFixedOrientationSized:result.size];
+                NSData *data = UIImageJPEGRepresentation(fixedImage, 1);
                 
                 if (data.length) {
                     //store image

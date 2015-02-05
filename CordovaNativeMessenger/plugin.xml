@@ -42,6 +42,9 @@
         <header-file src="src/ios/PHAsset+DataSourceAdditions.h"/>
         <source-file src="src/ios/PHAsset+DataSourceAdditions.m"/>
 
+        <header-file src="src/ios/UIImage+FixOrientation.h"/>
+        <source-file src="src/ios/UIImage+FixOrientation.m"/>
+
 		<framework src="Photos.framework" weak="true" />
 	</platform>
 
