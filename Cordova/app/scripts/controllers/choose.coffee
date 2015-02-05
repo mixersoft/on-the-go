@@ -246,13 +246,22 @@ angular.module('ionBlankApp')
       activate : ()->
         options = _datepicker.getDatePickerRange(_datepicker.WEEKS_TO_SHOW)
         _.extend $scope.watch.datePickerOptions, options
-        input = angular.element(document.getElementById('datepicker-input'))
-        console.log "datepicker activate ***"
-        if input.length # make sure view is rendered
-          # input.triggerHandler('focus') 
+        input = document.getElementById('datepicker-input')
+
+        _waitForRender = ()->
+          input = document.getElementById('datepicker-input')
+          return $timeout _waitForRender, 100 if !input
+
+          console.log "datepicker activate ***"
           selected = _datepicker.dateRange()
           otgWorkorder.on.selectByCalendar(selected.from, selected.to) if selected.from
           window.P = _datepicker.instance.start().open(true)
+
+        if !input
+          $timeout _waitForRender, 100 
+        else   
+          _waitForRender()
+          
         return
 
       deactivate : ()->
@@ -367,6 +376,7 @@ angular.module('ionBlankApp')
         $timeout ()->
           # wait until input is rendered
           _datepicker.activate()
+
         return
       calendarDeselected : (value)->
         _datepicker.deactivate()
