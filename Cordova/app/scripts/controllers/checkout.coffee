@@ -146,16 +146,21 @@ angular.module('ionBlankApp')
               angular.element(el).addClass('item-assertive').removeClass('item-calm')
               return false 
 
-            scroll = $ionicScrollDelegate.$getByHandle('checkout')
-            if scroll.getScrollPosition()?.top < 50
-              scroll.scrollBottom(true) 
-              return false 
-
             # if $scope.watch.servicePlan.total != 0
             #   # offer additional coupon?
             #   el = document.getElementById('promo-code-button')
             #   angular.element(el).addClass('button-assertive').removeClass('button-balanced')
             #   return false
+
+            # scrollBottom before moving on
+            scroll = $ionicScrollDelegate.$getByHandle('checkout')
+            h = scroll.getScrollView().options.el.children[0].clientHeight
+            bot = scroll.getScrollView().options.el.clientHeight
+            offset = scroll.getScrollPosition().top || 0
+            isBottomVisible = (bot + offset - h > - 10)
+            if isBottomVisible == false
+              scroll.scrollBottom(true) 
+              return false 
 
           when 'app.checkout.submit'
             # return false on error by promise
