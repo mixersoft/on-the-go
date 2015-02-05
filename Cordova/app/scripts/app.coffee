@@ -322,14 +322,6 @@ angular
         }
       }
     })
-    .state('app.help.welcome', {
-      url: "/welcome",
-      views: {
-        'helpContent' : {
-          templateUrl: "help/welcome"
-        }
-      }
-    })
     .state('app.help.pricing', {
       url: "/pricing",
       views: {
@@ -345,7 +337,7 @@ angular
           templateUrl: "help/about"
         }
       }
-    })
+    })   
     #
     # Workorder Management System
     #

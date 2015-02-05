@@ -22,9 +22,9 @@ angular.module('ionBlankApp')
         return 'hide' if !_username.dirty || !$rootScope.user.username
         if _username.isValid($rootScope.user.username.toLowerCase())
           # TODO: also check with parse?
-          return 'ion-ios7-checkmark balanced' 
+          return 'ion-ios-checkmark balanced' 
         else 
-          return 'ion-ios7-close assertive'
+          return 'ion-ios-close assertive'
     }
 
     _password = {
@@ -49,15 +49,15 @@ angular.module('ionBlankApp')
       ngClassValidIcon: ()->
         return 'hide' if !_password.dirty
         if _password.isValid($rootScope.user.password)
-          return 'ion-ios7-checkmark balanced' 
+          return 'ion-ios-checkmark balanced' 
         else 
-          return 'ion-ios7-close assertive'
+          return 'ion-ios-close assertive'
       ngClassConfirmedIcon: ()->
         return 'hide' if !_password.dirty || !_password.passwordAgainModel
         if _password.isConfirmed() 
-          return 'ion-ios7-checkmark balanced' 
+          return 'ion-ios-checkmark balanced' 
         else 
-          return 'ion-ios7-close assertive'
+          return 'ion-ios-close assertive'
     }
 
     _email = {
@@ -74,12 +74,12 @@ angular.module('ionBlankApp')
       ngClassEmailIcon: ()->
         if _email.dirty 
           if _email.isValid()
-            return 'ion-ios7-checkmark balanced' 
+            return 'ion-ios-checkmark balanced' 
           else 
-            return 'ion-ios7-close assertive'
+            return 'ion-ios-close assertive'
         else 
           if _email.isVerified()
-            return 'ion-ios7-checkmark balanced'
+            return 'ion-ios-checkmark balanced'
           else if $rootScope.user.email?
             return 'ion-flag assertive'
           else 

@@ -4,7 +4,7 @@
   </ion-nav-buttons>
   <ion-nav-buttons side="right">
       <div class="buttons">
-        <button class="button button-icon icon ion-ios7-information-outline" 
+        <button class="button button-icon icon ion-ios-information-outline" 
           ng-click="on.showInfo('toggle')">
         </button>
       </div>
@@ -23,7 +23,7 @@
     <div class="button-bar bar-royal">
       <a class="button icon ion-checkmark-circled" ui-sref="app.top-picks.top-picks" ui-sref-active="active"></a>
       <a class="button icon ion-heart" ui-sref=".favorites"  ui-sref-active="active"></a>
-      <a class="button icon ion-ios7-upload-outline" ui-sref=".shared"  ui-sref-active="active"></a>
+      <a class="button icon ion-ios-upload-outline" ui-sref=".shared"  ui-sref-active="active"></a>
     </div>
     <!-- header card  -->
     <swipe-cards><swipe-card class="card header-card" 
@@ -115,21 +115,21 @@
             ng-if="on.showInfo()">
               <a class="tab-item" href="#"
               ng-click="on.addCaption($event, item)">
-                <i class="icon ion-ios7-compose-outline"></i>
+                <i class="icon ion-ios-compose-outline"></i>
               </a>
               <a class="tab-item" href="#"
               ng-class="{'activated tab-item-royal':item.shared}"
               ng-click="on.addShare($event, item)">
                 <i class="icon"
-                ng-class="{'ion-ios7-upload-outline':!item.shared, 
-                'ion-ios7-upload':item.shared}"></i>
+                ng-class="{'ion-ios-upload-outline':!item.shared, 
+                'ion-ios-upload':item.shared}"></i>
               </a>
               <a class="tab-item" href="#"
               ng-class="{'activated tab-item-royal':item.favorite}"
               ng-click="on.addFavorite($event, item)">
                 <i class="icon"
-                ng-class="{'ion-ios7-heart-outline':!item.favorite,
-                'ion-ios7-heart':item.favorite}"></i>
+                ng-class="{'ion-ios-heart-outline':!item.favorite,
+                'ion-ios-heart':item.favorite}"></i>
               </a>
             </div>
           </swipe-card> <!--  end .photo-card  -->

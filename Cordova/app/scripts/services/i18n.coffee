@@ -60,7 +60,7 @@ angular.module('onTheGo.i18n', [])
         'header-card':
           header: 'Payment'
           body: ""
-          footer: ""    
+          footer: ""               
         'promo-card':
           header: 'Special Promo Codes'
         'legal-card':

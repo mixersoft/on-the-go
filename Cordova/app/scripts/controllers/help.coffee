@@ -10,11 +10,32 @@
 angular.module('ionBlankApp')
 .controller 'HelpCtrl', ($scope) ->
   $scope.label = {
-    title: "Help"
+    title: "Resources"
   }
 
+  $scope.watch = {
+  	links:
+  		'on-the-go': 'http://app.snaphappi.com/on-the-go/'
+  		facebook: 'http://www.facebook.com/Snaphappi'
+  		twitter: 'https://twitter.com/snaphappi'
+  		tumblr: 'http://tumblr.snaphappi.com/post/87220736621/on-the-go-curated-family-photos-re-mixed-for-mobile'
+  		giving: "http://icangowithout.com/"
+  }
+
+
+
     # open link externally
-  $scope.GotoLink = (link)->
-    # window.open(link,'_system');  # doesn't work
-    return
+  $scope.on = {
+  	openHref : ($ev, dest)->
+	  	target = $ev.currentTarget
+	  	dest = dest || target.href
+	  	if $scope.deviceReady.isWebView()
+	  		window.open(dest,'_system', 'location=yes');  # doesn't work
+	  		return false
+	  	else if target.tagName != 'A'
+	  		window.open(dest,'_blank', 'location=yes');
+	  	else 
+	    	return true
+
+	}
   

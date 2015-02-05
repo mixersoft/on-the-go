@@ -26,10 +26,13 @@ $royal:                           #8a6de9 !default;
 $dark:                            #444 !default;
 
 // The path for our ionicons font files, relative to the built CSS in www/css
-$ionicons-font-path: "../lib/ionic/fonts" !default;
+/*$ionicons-font-path: "../components/ionicons/fonts" !default;*/
 
 // Include all of Ionic
 @import "www/lib/ionic/scss/ionic";
+
+/* patch ionic beta14 */
+.ion-ios7-arrow-back:before { content: "\f3cf"; }
 
 /**
  * Responsive mixin. The media breakpoints are as defined
@@ -115,6 +118,12 @@ $ionicons-font-path: "../lib/ionic/fonts" !default;
   }
 }
 
+a.no-decoration {
+  text-decoration: none !important;
+  &:hover, &:visited {
+    text-decoration: none !important;
+  }
+}
 
 p.fine {
   font-size: 0.7em;
@@ -126,6 +135,15 @@ p.fine {
     font-size: 1.4em;
     font-weight: bold;
   }
+}
+
+i.icon.icon-snappi {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  height: 32px;
+  width: 32px;
+  background: black url(../img/icon-40@3x.png) no-repeat scroll center;
+  background-size: 200%;
 }
 
 ion-nav-view ion-header-bar.bar-subheader {
@@ -191,8 +209,11 @@ ion-side-menu-content .item > * {
   }
 }
 
-.header-card {
+.item.item-text-wrap > p {
+  margin-bottom: 0.8em;
+}
 
+.header-card {
   .pull-right .icon.ion-person {
     font-weight: normal;
   }
@@ -478,23 +499,25 @@ otg-moment-date-range {
   }
 }
 
-.item .badge.username {
+.item .username.badge {
   padding-right: 16px;
   padding-left: 48px;
   top: 8px;
   margin-right: 20px;
 }
 
-#settings {
-  .username.badge {
-    background-color: transparent;
-    &.badge-positive {
-      color: $positive;
-    }
-    &.badge-assertive {
-      color: $assertive;
-    }
+.username.badge {
+  background-color: transparent;
+  &.badge-positive {
+    color: $positive;
   }
+  &.badge-assertive {
+    color: $assertive;
+  }
+}
+
+#settings {
+
   .item {
     cursor: default ;
   }
@@ -515,7 +538,6 @@ otg-moment-date-range {
   }
 
 }
-
 
 
 .inverse {
@@ -889,6 +911,10 @@ otg-gallery {
 #help {
   ion-content, ifrome {
     background-color: rgba(113, 17, 36, 0.8);
+  }
+
+  i.icon {
+    color: rgb(113, 17, 36);
   }
 
   #about {

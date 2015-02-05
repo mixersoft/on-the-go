@@ -42,7 +42,7 @@
 
       <li class="item item-divider">Service > Uploads</li>
       <li class="item item-toggle">
-        <i class="icon ion-ios7-cloud-upload"></i>
+        <i class="icon ion-ios-cloud-upload"></i>
         Automatic Uploads
         <label class="toggle toggle-balanced">
           <input type="checkbox" ng-model="config.upload['auto-upload']">
@@ -83,11 +83,11 @@
         </p>
       </li>
       <li class="item hide">
-      <i class="icon ion-ios7-speedometer"></i>
+      <i class="icon ion-ios-speedometer"></i>
         Upload Rate Control
         <p class="fine">Adjust the speed of background uploads.</p>
         <div class="range range-positive">
-          <i class="icon ion-ios7-paperplane"></i>
+          <i class="icon ion-ios-paperplane"></i>
           <input type="range" name="rate_control" min="0" max="100" value="{{config.upload['rate-control']}}">
           <i class="icon ion-jet"></i>
         </div>
@@ -121,7 +121,7 @@
       <li class="item">
       Saved Photos: <span>{{menu.archived.count}}</span> Photos, <span>{{menu.archived.count}}</span> MB
       <button class="button button-assertive button-full" ng-class="{disabled:!menu.archived.count}">
-        <i class="icon ion-ios7-trash"></i> 
+        <i class="icon ion-ios-trash"></i> 
         Remove Saved Photos
       </button>
       </li>
@@ -129,7 +129,7 @@
       App Cache: <span>{{watch.imgCache.count}}</span> Files, <span>{{watch.imgCache.size}}</span>
       <button class="button button-assertive button-full" ng-class="{disabled: !watch.imgCache.count}"
       ng-click="on.clearCache()">
-        <i class="icon ion-ios7-trash"></i> 
+        <i class="icon ion-ios-trash"></i> 
         Clear App Cache
       </button>
       </li>

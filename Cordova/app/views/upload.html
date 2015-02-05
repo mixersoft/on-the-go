@@ -13,10 +13,10 @@
     >
       <div class="button-icon-wrap text-center">
         <i class="icon "
-        ng-class="{'enabled ion-ios7-cloud-upload': otgUploader.enable(), 
+        ng-class="{'enabled ion-ios-cloud-upload': otgUploader.enable(), 
         'ion-spin':otgUploader.isActive(),
         'ion-pause': ($root.counts.uploaderRemaining && !otgUploader.enable()),
-        'ion-ios7-cloud-upload': (!$root.counts.uploaderRemaining && !otgUploader.enable()),
+        'ion-ios-cloud-upload': (!$root.counts.uploaderRemaining && !otgUploader.enable()),
         'warning': !!warnings
          }"
          ></i>
