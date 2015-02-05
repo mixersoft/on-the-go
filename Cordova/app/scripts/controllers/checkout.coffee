@@ -146,11 +146,11 @@ angular.module('ionBlankApp')
               angular.element(el).addClass('item-assertive').removeClass('item-calm')
               return false 
 
-            # if $scope.watch.servicePlan.total != 0
-            #   # offer additional coupon?
-            #   el = document.getElementById('promo-code-button')
-            #   angular.element(el).addClass('button-assertive').removeClass('button-balanced')
-            #   return false
+            if $scope.watch.servicePlan.total != 0
+              # offer additional coupon?
+              el = document.getElementById('promo-code-button')
+              angular.element(el).addClass('button-assertive').removeClass('button-balanced')
+              return false
 
             # scrollBottom before moving on
             scroll = $ionicScrollDelegate.$getByHandle('checkout')
