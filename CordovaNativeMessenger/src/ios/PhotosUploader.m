@@ -9,11 +9,13 @@
 #import "PhotosUploader.h"
 #import <Photos/Photos.h>
 #import "NSOperationQueue+SynchronousOperation.h"
+#import "UIImage+FixOrientation.h"
 
 static NSString *parseApplicationID = @"cS8RqblszHpy6GJLAuqbyQF7Lya0UIsbcxO8yKrI";
 static NSString *parseRESTAPIKey = @"3n5AwFGDO1n0YLEa1zLQfHwrFGpTnQUSZoRrFoD9";
 
 static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIdentifier";
+static NSString *sessionInfosKey = @"com.on-the-go.PhotosUploaderSessionInfos";
 
 static NSMutableSet *scheduledTasks;
 static NSOperationQueue *serialQueue;
@@ -25,7 +27,6 @@ static NSOperationQueue *serialQueue;
 @implementation PhotosUploader {
     NSURLSession *_backgroundUploadSession;
     NSHashTable *_delegates;
-    NSMutableDictionary *_responseDataWrappers;
     PHImageManager *_cachingImageManager;
 }
 
@@ -39,7 +40,6 @@ static NSOperationQueue *serialQueue;
     _backgroundUploadSession = [NSURLSession sessionWithConfiguration:config delegate:(id<NSURLSessionDelegate>)self delegateQueue:[NSOperationQueue mainQueue]];
     
     _delegates = [NSHashTable hashTableWithOptions:NSHashTableWeakMemory];
-    _responseDataWrappers = [NSMutableDictionary new];
     [serialQueue addBlock:^(void(^operation)(void)) {
         [_backgroundUploadSession getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
             
@@ -55,6 +55,50 @@ static NSOperationQueue *serialQueue;
     [super load];
     serialQueue = [NSOperationQueue createSerialQueue];
     scheduledTasks = [NSMutableSet new];
+}
+
+-(NSMutableDictionary *)sessionInfosDictionary {
+    NSData *infosData = [[NSUserDefaults.standardUserDefaults objectForKey:sessionInfosKey] mutableCopy];
+    return [[NSKeyedUnarchiver unarchiveObjectWithData:infosData] mutableCopy] ?: [NSMutableDictionary new];
+}
+
+-(void)saveSessionInfos:(NSDictionary *)infos {
+    if (!infos) {
+        [NSUserDefaults.standardUserDefaults removeObjectForKey:sessionInfosKey];
+    }
+    else {
+        NSData *infosEncodedObject = [NSKeyedArchiver archivedDataWithRootObject:infos];
+        [NSUserDefaults.standardUserDefaults setObject:infosEncodedObject forKey:sessionInfosKey];
+    }
+    
+    [NSUserDefaults.standardUserDefaults synchronize];
+}
+
+-(void)addSessionTaskInfo:(NSURLSessionTaskInfo *)info {
+    NSMutableDictionary *dict = [self sessionInfosDictionary];
+    [dict setObject:info forKey:info.identifier];
+    [self saveSessionInfos:dict];
+}
+
+-(BOOL)removeSessionTaskInfoWithIdentifier:(NSString*)identifier {
+    NSMutableDictionary *dict = [self sessionInfosDictionary];
+    id obj = [dict objectForKey:identifier];
+    if (!obj) {
+        return NO;
+    }
+    
+    [dict removeObjectForKey:identifier];
+    [self saveSessionInfos:dict];
+    return YES;
+}
+
+-(NSArray *)allSessionTaskInfos {
+    NSMutableDictionary *dict = [self sessionInfosDictionary];
+    return [dict allValues];
+}
+
+-(NSURLSessionTaskInfo *)sessionTaskInfoForIdentifier:(NSString *)identifier {
+    return [self sessionInfosDictionary][identifier];
 }
 
 -(instancetype)initInternalWithIdentifier:(NSString *)identifier {
@@ -115,8 +159,6 @@ static NSOperationQueue *serialQueue;
     static NSString *path = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        
-        
         path = [[self applicationDocumentsDirectory] stringByAppendingPathComponent:@"PhotosUploadStore"];
         if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
             [NSFileManager.defaultManager createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:nil];
@@ -251,7 +293,10 @@ static NSOperationQueue *serialQueue;
                     operation();
                     return;
                 }
-                NSData *data = UIImageJPEGRepresentation(result, 1);
+                
+                
+                UIImage *fixedImage = [result imageWithFixedOrientationSized:result.size];
+                NSData *data = UIImageJPEGRepresentation(fixedImage, 1);
                 
                 if (data.length) {
                     //store image
@@ -273,6 +318,10 @@ static NSOperationQueue *serialQueue;
                     NSURLSessionUploadTask *task = [_backgroundUploadSession uploadTaskWithRequest:request fromFile:[NSURL fileURLWithPath:fullPath]];
                     [task resume];
                     [scheduledTasks addObject:task];
+                    
+                    NSURLSessionTaskInfo *info = [NSURLSessionTaskInfo new];
+                    info.identifier = obj.localIdentifier;
+                    [self addSessionTaskInfo:info];
                     
                     for (id<PhotosUploaderDelegate>delegate in _delegates) {
                         if ([delegate respondsToSelector:@selector(photoUploader:didScheduleUploadForAssetWithIdentifier:)]) {
@@ -309,39 +358,41 @@ static NSOperationQueue *serialQueue;
     }];
 }
 
--(NSData *)responseDataForTask:(NSURLSessionTask *)task {
-     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-    NSMutableData *data = [_responseDataWrappers objectForKey:identifier];
-    if (!data.length) {
-        data = [NSMutableData dataWithContentsOfURL:[self fileURLOfDataForTask:task]];
-    }
-    return  data;
-}
+//-(NSData *)responseDataForTask:(NSURLSessionTask *)task {
+//     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+//    NSMutableData *data = [_responseDataWrappers objectForKey:identifier];
+//    if (!data.length) {
+//        data = [NSMutableData dataWithContentsOfURL:[self fileURLOfDataForTask:task]];
+//    }
+//    return  data;
+//}
 
--(NSURL *)fileURLOfDataForTask:(NSURLSessionTask *)task {
-    NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-    if (!identifier.length) return nil;
-    
-     NSString *dir = [[self uploaderStoreDirectory] stringByAppendingPathComponent:[identifier stringByReplacingOccurrencesOfString:@"/" withString:@"-" options:NSCaseInsensitiveSearch range:NSMakeRange(0, identifier.length)]];
-    return [NSURL fileURLWithPath:dir];
-}
+//-(NSURL *)fileURLOfDataForTask:(NSURLSessionTask *)task {
+//    NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+//    if (!identifier.length) return nil;
+//    
+//     NSString *dir = [[self uploaderStoreDirectory] stringByAppendingPathComponent:[identifier stringByReplacingOccurrencesOfString:@"/" withString:@"-" options:NSCaseInsensitiveSearch range:NSMakeRange(0, identifier.length)]];
+//    return [NSURL fileURLWithPath:dir];
+//}
 
 -(BOOL)appendData:(NSData *)data toTask:(NSURLSessionTask *)task {
     //NSFileWrapperReadingImmediate
     bool success = YES;
      NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-    NSMutableData *_data = [_responseDataWrappers objectForKey:identifier];
-    if (!_data) {
-        //create wrapper
-        
-        _data = [NSMutableData data];
-        [_responseDataWrappers setObject:_data forKey:identifier];
-    }
-    [_data appendData:data];
-    NSError *error;
-    [_data writeToURL:[self fileURLOfDataForTask:task] options:NSDataWritingAtomic error:&error];
-    success = error == nil;
-    
+    NSDictionary *d = [self sessionInfosDictionary];
+    NSURLSessionTaskInfo *info = d[identifier];
+    //NSMutableData *_data = [_responseDataWrappers objectForKey:identifier];
+//    if (!_data) {
+//        //create wrapper
+//        
+//        _data = [NSMutableData data];
+//        [_responseDataWrappers setObject:_data forKey:identifier];
+//    }
+    [info.data appendData:data];
+//    NSError *error;
+//    [_data writeToURL:[self fileURLOfDataForTask:task] options:NSDataWritingAtomic error:&error];
+//    success = error == nil;
+    [self saveSessionInfos:d];
     return success;
 }
 
@@ -350,21 +401,13 @@ static NSOperationQueue *serialQueue;
     [serialQueue addBlock:^(void(^operation)(void)) {
         NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
         //delete data
-        [_responseDataWrappers removeObjectForKey:identifier];
-        [NSFileManager.defaultManager removeItemAtURL:[self fileURLOfDataForTask:task] error:nil];
+        //[_responseDataWrappers removeObjectForKey:identifier];
+        //[NSFileManager.defaultManager removeItemAtURL:[self fileURLOfDataForTask:task] error:nil];
         NSString *path = [self imagePathForAssetIdentifier:identifier];
         [NSFileManager.defaultManager removeItemAtPath:path error:nil];
         
         [scheduledTasks removeObject:task];
         operation();
-        [[NSOperationQueue mainQueue] addOperationWithBlock:^{
-            
-            for (id<PhotosUploaderDelegate>delegate in _delegates) {
-                if ([delegate respondsToSelector:@selector(photoUploader:didCancelUploadAssetIdentifier:)]) {
-                    [delegate photoUploader:self didCancelUploadAssetIdentifier:identifier];
-                }
-            }
-        }];
     }];
 }
 
@@ -372,8 +415,14 @@ static NSOperationQueue *serialQueue;
    didSendBodyData:(int64_t)bytesSent
     totalBytesSent:(int64_t)totalBytesSent
 totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
-    
     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+    
+    NSDictionary *d = [self sessionInfosDictionary];
+    NSURLSessionTaskInfo *info = d[identifier];
+    double p = (double)totalBytesSent/(double)totalBytesExpectedToSend;
+    info.progress = p;
+    [self saveSessionInfos:d];
+    
     for (id<PhotosUploaderDelegate>delegate in _delegates) {
         if ([delegate respondsToSelector:@selector(photoUploader:didUploadDataForAssetWithIdentifier:totalBytesSent:totalBytesExpectedToSend:)]) {
             [delegate photoUploader:self didUploadDataForAssetWithIdentifier:identifier totalBytesSent:totalBytesSent totalBytesExpectedToSend:totalBytesExpectedToSend];
@@ -387,19 +436,29 @@ totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
 didCompleteWithError:(NSError *)error {
     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-    NSData *responseData = [self responseDataForTask:task];
+    //NSData *responseData = [self responseDataForTask:task];
     [self deleteDataForTask:task];
-    NSLog(@"Finished task with image identifier: %@ responseDataLength: %lu with error:%@", identifier, (unsigned long)responseData.length, error);
-
+    NSURLSessionTaskInfo *info = [self sessionTaskInfoForIdentifier:identifier];
+    info.error = error;
+    info.progress = 1;
+    [self saveSessionInfos:[self sessionInfosDictionary]];
+    NSLog(@"Finished task with image identifier: %@ with error:%@", identifier, error);
+    
+  /*
+   [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+   for (id<PhotosUploaderDelegate>delegate in _delegates) {
+   if ([delegate respondsToSelector:@selector(photoUploader:didCancelUploadAssetIdentifier:)]) {
+   [delegate photoUploader:self didCancelUploadAssetIdentifier:identifier];
+   }
+   }
+   }];
+   */
+    
     for (id<PhotosUploaderDelegate>delegate in _delegates) {
-        if ([delegate respondsToSelector:@selector(photoUploader:didFinishUploadAssetIdentifier:responseData:withError:)]) {
-            [delegate photoUploader:self didFinishUploadAssetIdentifier:identifier responseData:responseData withError:error];
+        if ([delegate respondsToSelector:@selector(photoUploader:didFinishUploadAssetIdentifier:)]) {
+            [delegate photoUploader:self didFinishUploadAssetIdentifier:identifier];
         }
     }
-    UILocalNotification* n1 = [[UILocalNotification alloc] init];
-    n1.fireDate = [[NSDate date] dateByAddingTimeInterval:1];
-    n1.alertBody = error ? @"Image Uploaded With Error" : @"Image Uploaded";
-    [[UIApplication sharedApplication] scheduleLocalNotification: n1];
 }
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
@@ -474,7 +533,8 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
 }
 
 -(void)URLSessionDidFinishEventsForBackgroundURLSession:(NSURLSession *)session {
-    for (id<PhotosUploaderDelegate>delegate in _delegates) {
+    NSArray *s = [_delegates allObjects];
+    for (id<PhotosUploaderDelegate>delegate in s) {
         if ([delegate respondsToSelector:@selector(photoUploaderFinishedProcessingBackgroundEvents:)]) {
             [delegate photoUploaderFinishedProcessingBackgroundEvents:self];
         }
