@@ -534,21 +534,21 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     [self.class sendMessage:@{@"assets":@[assetIdentifier]} WithCommand:kUnscheduleAssetsForUploadCommandValue];
 }
 
--(void)photoUploader:(PhotosUploader *)uploader didFinishUploadAssetIdentifier:(NSString *)assetIdentifier responseData:(NSData *)data withError:(NSError *)error {
+-(void)photoUploader:(PhotosUploader *)uploader didFinishUploadAssetIdentifier:(NSString *)assetIdentifier {
     
-    NSMutableDictionary *dict = [@{@"asset":assetIdentifier, @"success":@(error == nil)} mutableCopy];
-    if (error) {
-        [dict setObject:@(NO) forKey:@"success"];
-        [dict setObject:@(error.code) forKey:@"errorCode"];
-    }
+//    NSMutableDictionary *dict = [@{@"asset":assetIdentifier, @"success":@(error == nil)} mutableCopy];
+//    if (error) {
+//        [dict setObject:@(NO) forKey:@"success"];
+//        [dict setObject:@(error.code) forKey:@"errorCode"];
+//    }
+//    
+//    if (data.length) {
+//        NSError *parseError = nil;
+//        NSDictionary *d = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:&parseError];
+//        [dict addEntriesFromDictionary:d];
+//    }
     
-    if (data.length) {
-        NSError *parseError = nil;
-        NSDictionary *d = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:&parseError];
-        [dict addEntriesFromDictionary:d];
-    }
-    
-    [self.class sendMessage:dict WithCommand:kDidFinishAssetUploadCommandValue];
+    [self.class sendMessage:@{@"asset":assetIdentifier} WithCommand:kDidFinishAssetUploadCommandValue];
     
 }
 
