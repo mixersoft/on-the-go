@@ -84,7 +84,9 @@ gulp; ionic build ios;
 ### run, or open ./platforms/ios/ion-OnTheGo.xcodeproj
 #ionic emulate
 
-
+# update to ionicons 2.0
+cp ./www/components/ionicons/scss/* ./www/lib/ionic/scss/ionicons/ 
+# cp ./www/components/ionicons/fonts/* ./www/lib/ionic/fonts/ 
 
 
 # rebuild project with plugin updates

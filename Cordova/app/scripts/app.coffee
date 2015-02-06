@@ -20,9 +20,8 @@ angular
   'angular-datepicker'
 ])
 .config ($ionicConfigProvider)->
-  return if !$ionicConfigProvider.views
-  # for beta.14 view caching
-  # $ionicConfigProvider.views.maxCache(0);
+  $ionicConfigProvider.backButton.text('Back').icon('ion-ios-arrow-back');
+
 .run [
   '$rootScope', '$state', '$stateParams', '$ionicPlatform', 'PARSE_CREDENTIALS'
   ($rootScope, $state, $stateParams, $ionicPlatform, PARSE_CREDENTIALS)->
@@ -449,7 +448,7 @@ angular
     $scope.showLoading = (value = true, timeout=5000)-> 
       return $ionicLoading.hide() if !value
       $ionicLoading.show({
-        template: '<i class="icon ion-load-b ion-spin"></i>'
+        template: '<i class="icon ion-loading-b"></i>'
         duration: timeout
       })
     $scope.hideLoading = (delay=0)->
@@ -482,7 +481,7 @@ angular
     # config values read from localstorage, set in settings
     $rootScope.config = $scope.config = {
       'app-bootstrap' : true
-      'no-view-headers' : true
+      'no-view-headers' : false
       'system':
         'order-standby': false
       help: false
@@ -789,7 +788,7 @@ angular
         $scope.config['no-view-headers'] = deviceReady.isWebView() && false
         $rootScope.deviceId = deviceReady.deviceId()
 
-        console.log "\n\n\n %%% deviceReady >DEBOUNCED_SYNC_cameraRoll_Orders "
+        console.log "\n\n>>> deviceId="+$rootScope.deviceId
         # _LOAD_MOMENTS_FROM_CAMERA_ROLL_P()
         return cameraRoll.loadCameraRollP()
       .finally ()->
