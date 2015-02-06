@@ -46,6 +46,18 @@ cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
   Messenger.prototype.unscheduleAllAssets = function(onSuccess) {
       exec(onSuccess, null, "CordovaNativeMessenger", "unscheduleAllAssets", []);
   }
+  
+  Messenger.prototype.allSessionTaskInfos = function(onSuccess) {
+		exec(onSuccess, null, "CordovaNativeMessenger", "allSessionTaskInfos", []);
+	};
+	
+	Messenger.prototype.removeSessionTaskInfoWithIdentifier = function(identifier, onSuccess, onError) {
+		exec(onSuccess, onError, "CordovaNativeMessenger", "removeSessionTaskInfoWithIdentifier", [identifier]);
+	};
+	
+	Messenger.prototype.sessionTaskInfoForIdentifier = function(identifier, onSuccess, onError) {
+		exec(onSuccess, onError, "CordovaNativeMessenger", "sessionTaskInfoForIdentifier", [identifier]);
+	};
 	
 	var plugin = new Messenger();
 
