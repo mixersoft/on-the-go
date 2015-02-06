@@ -26,13 +26,25 @@ $royal:                           #8a6de9 !default;
 $dark:                            #444 !default;
 
 // The path for our ionicons font files, relative to the built CSS in www/css
-/*$ionicons-font-path: "../components/ionicons/fonts" !default;*/
+/** 
+ * Patch ionic beta14 to use ionicons 2.0
+ *
+ * 
+// in angular.module().config 
+$ionicConfigProvider.backButton.text('Back').icon('ion-ios-arrow-back');
 
+cp ./www/components/ionicons/scss ./www/lib/ionic/scss/ionicons/ 
+//  cp ./www/components/ionicons/fonts/* ./www/lib/ionic/fonts/ 
+
+$ionicons-font-path: "../components/ionicons/fonts" !default;
+@import "www/lib/ionic/scss/ionicons/ionicons-animation";
+
+ * 
+*/
+$ionicons-font-path: "../components/ionicons/fonts" !default;
 // Include all of Ionic
 @import "www/lib/ionic/scss/ionic";
-
-/* patch ionic beta14 */
-.ion-ios7-arrow-back:before { content: "\f3cf"; }
+@import "www/lib/ionic/scss/ionicons/ionicons-animation";
 
 /**
  * Responsive mixin. The media breakpoints are as defined

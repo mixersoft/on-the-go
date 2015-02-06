@@ -118,55 +118,58 @@ angular
         cached = self._workorderPhotosColl[ workorderObj.id ] 
         return $q.when( cached ) if cached && !force
 
-        return otgParse.checkSessionUserP().then ()->
+        return otgParse.checkSessionUserP()
+        .then ()->
           options = {
             workorder: workorderObj
             owner: true
           }
           return otgParse.fetchWorkorderPhotosByWoIdP(options)
         .then (photosColl)->
-          self._workorderPhotosColl[ workorderObj.id ] 
+            self._workorderPhotosColl[ workorderObj.id ] 
 
-          wo = workorderObj.toJSON()
-          # patch workorder.selectedMoment AFTER workorder photos fetched
-          # path MANUALLY because we don't have cameraRoll.moments
-          # moments normally set in snappiMessengerPluginService.mapAssetsLibraryP()
+            wo = workorderObj.toJSON()
+            # patch workorder.selectedMoment AFTER workorder photos fetched
+            # path MANUALLY because we don't have cameraRoll.moments
+            # moments normally set in snappiMessengerPluginService.mapAssetsLibraryP()
 
-          ### expecting:
-          workorderMoment = {
-            type:'moment'
-            key:[date]
-            value: [
-              {
-                type: 'date'
-                key:[date]
-                value: [
-                  UUID, UUID
-                ]
-              }
-            ]
-          }
-          ###
-          
-          workorderMoment = {
-            type:'moment'
-            key: wo.fromDate
-            value: [
-              {
-                type: 'date'
-                key: wo.fromDate
-                value: _.pluck photosColl.toJSON(), 'UUID'
-              }
-            ]
-          }
+            ### expecting:
+            workorderMoment = {
+              type:'moment'
+              key:[date]
+              value: [
+                {
+                  type: 'date'
+                  key:[date]
+                  value: [
+                    UUID, UUID
+                  ]
+                }
+              ]
+            }
+            ###
+            
+            workorderMoment = {
+              type:'moment'
+              key: wo.fromDate
+              value: [
+                {
+                  type: 'date'
+                  key: wo.fromDate
+                  value: _.pluck photosColl.toJSON(), 'UUID'
+                }
+              ]
+            }
 
-          workorderObj.set('workorderMoment', [ workorderMoment ] )
+            workorderObj.set('workorderMoment', [ workorderMoment ] )
 
-          # console.log " \n\n 1b: &&&&& fetchWorkorderPhotosP from backend.coffee "
-          # console.log "\n\n*** inspect workorderMoment for Workorder: " 
-          # console.log workorderObj.toJSON()
+            # console.log " \n\n 1b: &&&&& fetchWorkorderPhotosP from backend.coffee "
+            # console.log "\n\n*** inspect workorderMoment for Workorder: " 
+            # console.log workorderObj.toJSON()
 
-          return photosColl
+            return photosColl
+          , (err)->
+            return $q.reject(err)
 
 
       # replaces queueMissingPhotos
@@ -347,7 +350,7 @@ angular
 
           phObj.save( updateFromCameraRoll ).then ()->
               updateFromCameraRoll.UUID = crPhoto.UUID
-              _alreadyPatched[UUID] = 1
+              _alreadyPatched[crPhoto.UUID] = 1
               console.log "\n\n *** _PATCH_WorkorderAssets, patched:" + JSON.stringify updateFromCameraRoll
             , (error)->
               console.log "\n\n *** _PATCH_WorkorderAssets, error:"
@@ -366,12 +369,13 @@ angular
           owner: true
         }
 
-        PATCH_ParsePhotoObjKeys =  [
-          'originalWidth', 'originalHeight', 
-          'rating', 'favorite', 'caption', "hidden"
-          'exif', 'orientation'
-          "mediaType",  "mediaSubTypes", "burstIdentifier", "burstSelectionTypes", "representsBurst",
-        ] # false # ['originalWidth', 'originalHeight', 'date']
+        # PATCH_ParsePhotoObjKeys =  [
+        #   'originalWidth', 'originalHeight', 
+        #   'rating', 'favorite', 'caption', "hidden"
+        #   'exif', 'orientation'
+        #   "mediaType",  "mediaSubTypes", "burstIdentifier", "burstSelectionTypes", "representsBurst",
+        # ] 
+        PATCH_ParsePhotoObjKeys = false # ['originalWidth', 'originalHeight', 'date']
 
         if PATCH_ParsePhotoObjKeys
           imageCacheSvc.clearStashedP('preview') # force cameraRoll fetch
@@ -385,6 +389,7 @@ angular
                 $rootScope.counts['orders'] = openOrders = 0
                 workorderColl.each (workorderObj)->
                   return if workorderObj.get('status') == 'complete'
+                  return if workorderObj.get('devices').indexOf($rootScope.deviceId) == -1
 
                   openOrders++
                   p = self.fetchWorkorderPhotosP(workorderObj, options, force )
@@ -400,7 +405,13 @@ angular
                   .then (sync)->
                       console.log "\n\n *** SYNC_ORDERS: woid=" + workorderObj.id
                       # console.log "sync=" + JSON.stringify sync
-                      self.updateWorkorderCounts(workorderObj, sync) 
+                      self.updateWorkorderCounts(workorderObj, sync)
+                      return sync
+                  .then (resp)->
+                      return console.log "done"
+                    , (err)->
+                      console.warn(err) 
+                      return $q.when(err)
 
 
                   promises.push p
@@ -786,7 +797,10 @@ angular
           photo.topPick = null if `photo.topPick==null` 
           # if photo.topPick
           #   console.log "%%% _patchParsePhotos topPick found!!! photo=" + JSON.stringify photo
-          updated = cameraRoll.addOrUpdatePhoto_FromWorkorder photo
+          try 
+            updated = cameraRoll.addOrUpdatePhoto_FromWorkorder photo
+          catch 
+            'not patched'
           changed = changed || updated
           return
         $rootScope.$broadcast 'cameraRoll.updated'
@@ -835,8 +849,13 @@ angular
         # collection.comparator = (o)->
         #   return o.get('toDate')
         return collection.fetch().then (photosColl)->
-          self._patchParsePhotos(photosColl)
-          return photosColl
+            try
+              self._patchParsePhotos(photosColl)
+            catch e
+
+            return photosColl
+          , (err)->
+            return $q.reject(err)
           
 
       savePhotoP : (item, collection, pick)->

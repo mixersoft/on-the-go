@@ -60,7 +60,7 @@ ionic lib update
 ###ß
 
 ### install Cordova platform for ios and plugins
-ionic platform ios
+ionic platform remove ios; ionic platform add ios;
 cp -R ./resources/* ./platforms/ios/On-the-Go/Resources/
 ionic plugin add org.apache.cordova.console 
 ionic plugin add org.apache.cordova.device
@@ -84,7 +84,9 @@ gulp; ionic build ios;
 ### run, or open ./platforms/ios/ion-OnTheGo.xcodeproj
 #ionic emulate
 
-
+# update to ionicons 2.0
+cp ./www/components/ionicons/scss/* ./www/lib/ionic/scss/ionicons/ 
+# cp ./www/components/ionicons/fonts/* ./www/lib/ionic/fonts/ 
 
 
 # rebuild project with plugin updates
