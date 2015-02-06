@@ -17,7 +17,7 @@
         'ion-spin':otgUploader.isActive(),
         'ion-pause': ($root.counts.uploaderRemaining && !otgUploader.enable()),
         'ion-ios-cloud-upload': (!$root.counts.uploaderRemaining && !otgUploader.enable()),
-        'warning': !!warnings
+        'warning': !!watch.warnings
          }"
          ></i>
         <div class="fine">{{$root.counts.uploaderRemaining}} Photos</div>
@@ -27,7 +27,7 @@
 
 
     <div class="row"><div class="col col-offset-10 col-80 text-center">
-      <div class="fine warning" ng-bind="warnings"></div>
+      <div class="fine warning" ng-bind="watch.warnings"></div>
       <h3 class="inverse ">The Big Red Button <span class="nowrap">is {{otgUploader.enable() ? 'ON' : 'OFF'}}</span></h3>
       <div>This button controls the upload of photos to our servers. 
         <span ng-show="!otgUploader.enable()">Go ahead, press it when you are ready to upload.</span>

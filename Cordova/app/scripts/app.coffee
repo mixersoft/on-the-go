@@ -476,7 +476,16 @@ angular
         count: 0
     }
 
-    $scope.deviceReady = deviceReady
+    # copy these to app scope
+    ADD_TO_APP_SCOPE = {
+      'deviceReady' : deviceReady 
+      'cameraRoll' : cameraRoll 
+      'i18n' : i18n
+      '$ionicPlatform' : $ionicPlatform 
+      '$ionicModal' : $ionicModal 
+      '$ionicSideMenuDelegate' : $ionicSideMenuDelegate
+    }
+    _.extend $scope, ADD_TO_APP_SCOPE
 
     # config values read from localstorage, set in settings
     $rootScope.config = $scope.config = {

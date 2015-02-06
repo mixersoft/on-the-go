@@ -9,8 +9,8 @@
 ###
 angular.module('ionBlankApp')
 .factory 'otgUploader', [
-  '$timeout', '$q', '$rootScope', 'otgData', 'otgParse', 'cameraRoll', '$cordovaNetwork', 'deviceReady', 'snappiMessengerPluginService'
-  ($timeout, $q, $rootScope, otgData, otgParse, cameraRoll, $cordovaNetwork, 
+  '$timeout', '$q', '$rootScope', '$ionicPlatform', 'otgData', 'otgParse', 'cameraRoll', '$cordovaNetwork', 'deviceReady', 'snappiMessengerPluginService'
+  ($timeout, $q, $rootScope, $ionicPlatform, otgData, otgParse, cameraRoll, $cordovaNetwork, 
     deviceReady, snappiMessengerPluginService)->
 
     # ### private
@@ -63,15 +63,31 @@ angular.module('ionBlankApp')
         return
       , true
 
-    $rootScope.$on 'APP_RESUME', ()->
-      return PLUGIN.allSessionTaskInfosP()
-      .then (resp)->
-        finished = _.filter resp, (status)-> return !!status.hasFinished
-        promises = []
-        _.each finished, (status)->
-          p = _bkgFileUploader.handleUploaderTaskFinished(status.asset)
-          promises.push p
-        return $q.all(p)
+    $ionicPlatform.on 'pause' ,  ()->
+      switch self.uploader.type
+        when 'parse' 
+          return 
+        when 'background'
+          return
+
+
+
+    $ionicPlatform.on 'resume' ,  ()->
+      switch self.uploader.type
+        when 'parse'  
+          if self.enable() && self.connectionOK()
+            _parseFileUploader._uploadNextP()
+          return
+        when 'background'
+          return PLUGIN.allSessionTaskInfosP()
+          .then (resp)->
+            finished = _.filter resp, (status)-> return !!status.hasFinished
+            promises = []
+            _.each finished, (status)->
+              p = _bkgFileUploader.handleUploaderTaskFinishedP(status.asset)
+              promises.push p
+              return
+            return $q.all(promises)
 
 
     ### 
@@ -137,7 +153,7 @@ angular.module('ionBlankApp')
         cleared = _.clone _parseFileUploader._photoFileQueue
         _parseFileUploader._photoFileQueue = []
         return $q.when(cleared)
-      oneComplete: (resp)->
+      oneCompleteP: (resp)->
         self.callbacks.onEach(resp) if self.callbacks.onEach
         return resp
       oneError: (error)->
@@ -166,7 +182,7 @@ angular.module('ionBlankApp')
             .then (resp)->
               console.log "_parseFileUploader update photo.src complete"
               self.remaining( _parseFileUploader._photoFileQueue.length)
-              _parseFileUploader.oneComplete(resp)
+              _parseFileUploader.oneCompleteP(resp)
               return resp
               _parseFileUploader._uploadNextP() if _parseFileUploader.isEnabled && self.connectionOK()
             .catch (error)->
@@ -321,7 +337,7 @@ angular.module('ionBlankApp')
         # resp.errorCode
         resp['success'] = false
         resp['message'] = 'error: failed to schedule'
-        _bkgFileUploader.oneComplete(resp)
+        _bkgFileUploader.oneCompleteP(resp)
         return resp
 
         
@@ -336,24 +352,25 @@ angular.module('ionBlankApp')
         catch e
           # ...
         
-      handleUploaderTaskFinished: (UUID)->
+      handleUploaderTaskFinishedP: (UUID)->
         return PLUGIN.sessionTaskInfoForIdentifierP(UUID)
           .then (status)->
               # status = { asset, progress, hasFinished, success, errorCode, url, name }
-              return _bkgFileUploader.oneComplete(status)
+              return _bkgFileUploader.oneCompleteP(status)
             , (err)->
               console.log "\n\n %%% ERROR sessionTaskInfoForIdentifierP(): " + JSON.stringify err  
+              $q.reject(err)
           .finally ()-> # or always()
               PLUGIN.removeSessionTaskInfoWithIdentifierP(UUID)
 
-      oneComplete: (resp)->
+      oneCompleteP: (resp)->
         try
           # refactor: otgWorkorderSync.queueDateRangeFilesP() callbacks
           photo = {
             UUID: resp.asset
             src: if resp.success then resp.url else resp.message || 'error: native-uploader'
           }
-          console.log "\n\n >>> oneComplete" + JSON.stringify resp
+          console.log "\n\n >>> oneCompleteP" + JSON.stringify resp
 
           return otgParse.updatePhotoP( photo, 'src')
           .then null, (err)->
@@ -386,13 +403,13 @@ angular.module('ionBlankApp')
             console.log "onComplete: remaining files=" + remaining
             return photos
           .then null, (err)->
-              console.warn "\n\noneComplete otgParse.updatePhotoP error"
-              console warn err
+              console.warn "\n\noneCompleteP otgParse.updatePhotoP error"
+              console.warn err
               _bkgFileUploader._complete[photo.UUID] = err.message || err
               _bkgFileUploader.oneError(err)
               return $q.reject(err)
         catch e
-          # ...
+          return $q.reject(e)
 
       oneError: (error)->
         self.callbacks.onError(error) if self.callbacks.onError
@@ -421,7 +438,7 @@ angular.module('ionBlankApp')
         console.log "PLUGIN event handlers registered!!!"
         PLUGIN.on.didFinishAssetUpload (resp)->
           # expecting resp.asset
-          return _bkgFileUploader.handleUploaderTaskFinished(resp.asset)
+          return _bkgFileUploader.handleUploaderTaskFinishedP(resp.asset)
 
         PLUGIN.on.didUploadAssetProgress (resp)->
           return _bkgFileUploader.oneProgress(resp)      
@@ -505,17 +522,17 @@ angular.module('ionBlankApp')
     return self
 ]
 .controller 'UploadCtrl', [
-  '$scope', '$rootScope', '$timeout',  'otgUploader', 'otgParse', 'deviceReady', 'otgWorkorderSync'
-  ($scope, $rootScope, $timeout, otgUploader, otgParse, deviceReady, otgWorkorderSync) ->
+  '$scope', '$rootScope', '$timeout', '$q', 'otgUploader', 'otgParse', 'deviceReady', 'otgWorkorderSync'
+  ($scope, $rootScope, $timeout, $q, otgUploader, otgParse, deviceReady, otgWorkorderSync) ->
     $scope.label = {
       title: "Upload"
     }
 
     otgUploader.callbacks.onEach = (o)->
-      _fetchWarnings()
+      $scope.on.fetchWarningsP()
       return o
     otgUploader.callbacks.onError = (o)->
-      _fetchWarnings()
+      $scope.on.fetchWarningsP()
       return o
     otgUploader.callbacks.onDone = (o)->
       $scope.on.refresh()  
@@ -533,12 +550,14 @@ angular.module('ionBlankApp')
         target = angular.element(ev.currentTarget)
         target.addClass('down') # .activated is same as .enabled
         # console.log "press button"
-        if otgUploader.enable('toggle')
-          target.addClass('enabled') 
-        else 
-          target.removeClass('enabled') 
-        _fetchWarnings()
-        return
+        $scope.on.fetchWarningsP()
+        .then (networkOK)->
+          if otgUploader.enable('toggle')
+            target.addClass('enabled') 
+          else 
+            target.removeClass('enabled') 
+          
+          return
       release: (ev)-> 
         target = angular.element(ev.currentTarget)
         target.removeClass('down')
@@ -546,43 +565,55 @@ angular.module('ionBlankApp')
 
     }
 
-    # can't change value within controller
-    # $scope.$watch 'config.upload.use-cellular-data', (newVal, oldVal)->
-    #   return if newVal == oldVal
-    #   otgUploader.allowCellularNetwork(newVal)
-    #   return
-    $scope.warnings = null
-    _fetchWarnings = ()->
-      return deviceReady.waitP()
-      .then ()->
-        if otgUploader.isOffline()
-          return $scope.warnings = i18n.tr('warning').offline
-        if otgUploader.isCellularNetwork() && !otgUploader.allowCellularNetwork()
-          # TODO: remove this line when the native-uploader session checks for allowsCellularData
-          otgUploader.pauseQueueP()  
-          return $scope.warnings = i18n.tr('warning').cellular
-        return $scope.warnings = null
-
 
     $scope.watch = {
       remaining: 0
+      warnings: null
     }
+
     $scope.on = {
       refresh: ()->
-        return $scope.SYNC_cameraRoll_Orders()       
+        return $scope.SYNC_cameraRoll_Orders()  
+      fetchWarningsP : ()->
+        return deviceReady.waitP()
+        .then ()->
+          if otgUploader.isOffline()
+            $scope.watch.warnings = i18n.tr('warning').offline
+            networkOK = false
+          else if otgUploader.isCellularNetwork() && !otgUploader.allowCellularNetwork()
+            # TODO: remove this line when the native-uploader session checks for allowsCellularData
+            otgUploader.uploader.pauseQueueP()  
+            $scope.watch.warnings = i18n.tr('warning').cellular
+            networkOK = false
+          else   
+            $scope.watch.warnings = null 
+            networkOK = true  
+          return $q.when(networkOK)  
     }
+
+
+
+
+    $scope.$ionicPlatform.on 'offline', ()->
+      $scope.on.fetchWarningsP()
+    
+    $scope.$ionicPlatform.on 'online', ()->  
+      $scope.on.fetchWarningsP()
+
+    $scope.$ionicPlatform.on 'resume' ,  ()-> 
+      $scope.on.fetchWarningsP() 
 
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
-      otgUploader.onLastProgressTimeout( _fetchWarnings )
+      otgUploader.onLastProgressTimeout( $scope.on.fetchWarningsP )
       return if !$scope.deviceReady.isOnline()
       $scope.showLoading(true)      
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
       # cached view becomes active 
-      _fetchWarnings()
+      $scope.on.fetchWarningsP()
       return if !$scope.deviceReady.isOnline()
       return $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
 
