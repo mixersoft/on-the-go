@@ -242,16 +242,26 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     }];
 }
 
+-(NSDictionary *)dictionaryRepresentationOfTaskInfo:(NSURLSessionTaskInfo *)obj {
+    NSMutableDictionary *dict = [@{
+                                   @"asset" : obj.asset,
+                                   @"progress" : @(obj.progress),
+                                   @"hasFinished" : @(obj.hasFinished),
+                                   @"errorCode" : @(obj.error.code),
+                                   @"success" : @(obj.error == nil)
+                                   } mutableCopy];
+    if (obj.data.length) {
+        NSError *parseError = nil;
+        NSDictionary *d = [NSJSONSerialization JSONObjectWithData:obj.data options:NSJSONReadingMutableContainers error:&parseError];
+        [dict addEntriesFromDictionary:d];
+    }
+    return dict;
+}
+
 -(void)allSessionTaskInfos:(CDVInvokedUrlCommand*) command {
     NSMutableArray *arr = [NSMutableArray new];
     [[PhotosUploader.sharedInstance allSessionTaskInfos] enumerateObjectsUsingBlock:^(NSURLSessionTaskInfo *obj, NSUInteger idx, BOOL *stop) {
-        [arr  addObject:@{
-                          @"identifier" : obj.identifier,
-                          @"progress" : @(obj.progress),
-                          @"hasFinished" : @(obj.hasFinished),
-                          @"errorCode" : @(obj.error.code),
-                          @"success" : @(obj.error == nil)
-                          }];
+        [arr  addObject:[self dictionaryRepresentationOfTaskInfo:obj]];
     }];
     CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:arr];
     [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
@@ -273,13 +283,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     }
     else {
         
-        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:@{
-                                                                                                                     @"identifier" : obj.identifier,
-                                                                                                                     @"progress" : @(obj.progress),
-                                                                                                                     @"hasFinished" : @(obj.hasFinished),
-                                                                                                                     @"errorCode" : @(obj.error.code),
-                                                                                                                     @"success" : @(obj.error == nil)
-                                                                                                                     }];
+        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:[self dictionaryRepresentationOfTaskInfo:obj]];
         [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
     }
 }

@@ -10,7 +10,7 @@
 
 @interface NSURLSessionTaskInfo : NSObject <NSCoding>
 
-@property (nonatomic, strong) NSString *identifier;
+@property (nonatomic, strong) NSString *asset;
 @property (nonatomic, assign) CGFloat progress;
 @property (nonatomic, strong) NSError *error;
 @property (nonatomic, strong) NSMutableData *data;

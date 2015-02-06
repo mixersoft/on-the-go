@@ -12,7 +12,7 @@
 
 
 - (void)encodeWithCoder:(NSCoder *)aCoder {
-    [aCoder encodeObject:self.identifier forKey:@"identifier"];
+    [aCoder encodeObject:self.asset forKey:@"asset"];
     [aCoder encodeFloat:self.progress forKey:@"progress"];
     [aCoder encodeObject:self.error forKey:@"error"];
     [aCoder encodeObject:self.data forKey:@"data"];
@@ -21,7 +21,7 @@
 
 - (id)initWithCoder:(NSCoder *)aDecoder {
     if (self = [self init]) {
-        self.identifier = [aDecoder decodeObjectForKey:@"identifier"];
+        self.asset = [aDecoder decodeObjectForKey:@"asset"];
         self.progress = [aDecoder decodeFloatForKey:@"progress"];
         self.error = [aDecoder decodeObjectForKey:@"error"];
         [self.data appendData:[aDecoder decodeObjectForKey:@"data"]];
@@ -38,14 +38,14 @@
 }
 
 -(NSUInteger)hash {
-    return self.identifier.hash;
+    return self.asset.hash;
 }
 
 -(BOOL)isEqual:(id)object {
     if (![object isKindOfClass:self.class]) {
         return NO;
     }
-    return [self.identifier isEqualToString:[object identifier]];
+    return [self.asset isEqualToString:[object identifier]];
 }
 
 -(BOOL)hasFinished {

@@ -76,7 +76,7 @@ static NSOperationQueue *serialQueue;
 
 -(void)addSessionTaskInfo:(NSURLSessionTaskInfo *)info {
     NSMutableDictionary *dict = [self sessionInfosDictionary];
-    [dict setObject:info forKey:info.identifier];
+    [dict setObject:info forKey:info.asset];
     [self saveSessionInfos:dict];
 }
 
@@ -320,7 +320,7 @@ static NSOperationQueue *serialQueue;
                     [scheduledTasks addObject:task];
                     
                     NSURLSessionTaskInfo *info = [NSURLSessionTaskInfo new];
-                    info.identifier = obj.localIdentifier;
+                    info.asset = obj.localIdentifier;
                     [self addSessionTaskInfo:info];
                     
                     for (id<PhotosUploaderDelegate>delegate in _delegates) {
