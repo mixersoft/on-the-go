@@ -592,9 +592,12 @@ angular
             $timeout.cancel(cancel)
             return dfd.reject(err)
         switch method
-          when 'getScheduledAssets', 'unscheduleAllAssets', 'suspendAllAssetUploads', 'resumeAllAssetUploads'
+          when 'getScheduledAssets', 'unscheduleAllAssets'
+          ,'suspendAllAssetUploads', 'resumeAllAssetUploads'
+          ,'allSessionTaskInfos'
             args = [onSuccess]
           when 'scheduleAssetsForUpload', 'unscheduleAssetsForUpload'
+          ,'sessionTaskInfoForIdentifier', 'removeSessionTaskInfoWithIdentifier'
             args = [data, onSuccess, onError]
           else
             throw "ERROR: invalid method. name=" + method
@@ -620,8 +623,11 @@ angular
 
         didFinishAssetUpload : (handler)-> 
           # asset:{string phasset id}, 
-          # name:{string (Parse name)}    # Parse URL
-          # success: bool
+          # refactor: moved to sessionTaskInfoForIdentifier(resp.asset)
+              # name:{string (Parse name)}    
+              # url: Parse URL
+              # success: bool
+              # errorCode: int
           return window.Messenger.on( 'didFinishAssetUpload', handler )
 
 
@@ -691,10 +697,30 @@ angular
       suspendAllAssetUploadsP : ()->
         return _MessengerPLUGIN._callP( 'suspendAllAssetUploads') 
 
-
       resumeAllAssetUploadsP : ()->
         # WARNING: plugin method is misspelled
         return _MessengerPLUGIN._callP( 'resumeAllAssetUploads') 
+
+      allSessionTaskInfosP : ()->
+        # resp = [{ asset, progress, hasFinished, success, errorCode, name }]
+        return _MessengerPLUGIN._callP( 'allSessionTaskInfos') 
+
+      sessionTaskInfoForIdentifierP : (UUID)->
+        # resp = { asset, progress, hasFinished, success, errorCode, url, name }
+          # asset: "AC072879-DA36-4A56-8A04-4D467C878877/L0/001"
+          # errorCode: 0
+          # hasFinished: true
+          # name: "tfss....jpg"
+          # progress: 1
+          # success: 1
+          # url: "http://files.parsetfss.com/tfss....jpg"
+        
+        # onError: no info for UUID
+        return _MessengerPLUGIN._callP( 'sessionTaskInfoForIdentifier', UUID) 
+
+      removeSessionTaskInfoWithIdentifierP : (UUID )->
+        # onError: UUID not found
+        return _MessengerPLUGIN._callP( 'removeSessionTaskInfoWithIdentifier', UUID) 
 
 
       mapAssetsLibraryP: (options={})->

@@ -16,6 +16,7 @@
     "shelljs": "^0.3.0"
   },
   "cordovaPlugins": [
-    "https://github.com/apache/cordova-plugin-inappbrowser.git"
+    "https://github.com/apache/cordova-plugin-inappbrowser.git",
+    "../CordovaNativeMessenger"
   ]
 }

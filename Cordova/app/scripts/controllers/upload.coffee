@@ -63,6 +63,16 @@ angular.module('ionBlankApp')
         return
       , true
 
+    $rootScope.$on 'APP_RESUME', ()->
+      return PLUGIN.allSessionTaskInfosP()
+      .then (resp)->
+        finished = _.filter resp, (status)-> return !!status.hasFinished
+        promises = []
+        _.each finished, (status)->
+          p = _bkgFileUploader.handleUploaderTaskFinished(status.asset)
+          promises.push p
+        return $q.all(p)
+
 
     ### 
     syncDateRangePhotosP(dateRange).then
@@ -326,6 +336,15 @@ angular.module('ionBlankApp')
         catch e
           # ...
         
+      handleUploaderTaskFinished: (UUID)->
+        return PLUGIN.sessionTaskInfoForIdentifierP(UUID)
+          .then (status)->
+              # status = { asset, progress, hasFinished, success, errorCode, url, name }
+              return _bkgFileUploader.oneComplete(status)
+            , (err)->
+              console.log "\n\n %%% ERROR sessionTaskInfoForIdentifierP(): " + JSON.stringify err  
+          .finally ()-> # or always()
+              PLUGIN.removeSessionTaskInfoWithIdentifierP(UUID)
 
       oneComplete: (resp)->
         try
@@ -401,7 +420,8 @@ angular.module('ionBlankApp')
         # TODO: confirm callbacks are set
         console.log "PLUGIN event handlers registered!!!"
         PLUGIN.on.didFinishAssetUpload (resp)->
-          return _bkgFileUploader.oneComplete(resp)
+          # expecting resp.asset
+          return _bkgFileUploader.handleUploaderTaskFinished(resp.asset)
 
         PLUGIN.on.didUploadAssetProgress (resp)->
           return _bkgFileUploader.oneProgress(resp)      
