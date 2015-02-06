@@ -69,6 +69,7 @@ ionic plugin add com.ionic.keyboard
 ionic plugin add me.apla.cordova.app-preferences 
 ionic plugin add https://github.com/EddyVerbruggen/SocialSharing-PhoneGap-Plugin.git
 ionic plugin add org.apache.cordova.network-information
+ionic plugin add https://github.com/apache/cordova-plugin-inappbrowser.git
 #ionic plugin rm com.snaphappi.native-messenger.Messenger
 ionic plugin add ../CordovaNativeMessenger
 # ionic plugin add org.apache.cordova.file-transfer

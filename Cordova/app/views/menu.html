@@ -44,7 +44,7 @@ ng-class="{'no-view-headers':config['no-view-headers']}">
           >{{$root.counts.orders}}</span>
         </ion-item>
         <ion-item class="item-icon-left  item-icon-right" nav-clear menu-close ui-sref="app.uploader">
-          <i class="icon ion-ios7-cloud-upload positive"></i>
+          <i class="icon ion-ios-cloud-upload positive"></i>
           Uploader
           <span class="badge badge-assertive" ng-show="$root.counts.uploaderRemaining"
           >{{$root.counts.uploaderRemaining}}</span>
@@ -53,9 +53,9 @@ ng-class="{'no-view-headers':config['no-view-headers']}">
           <i class="icon ion-gear-b positive"></i>
           Settings
         </ion-item>
-        <ion-item class="hide item-icon-left" nav-clear menu-close href="#/app/help">
-          <i class="icon ion-help-circled positive"></i>
-          Help
+        <ion-item class="item-icon-left" nav-clear menu-close href="#/app/help">
+          <i class="icon ion-ios-information positive"></i>
+          Resources
         </ion-item>
 
       <div ng-show="user.role=='editor'">  

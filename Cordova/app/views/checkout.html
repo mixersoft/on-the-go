@@ -48,7 +48,7 @@
         </div>
       <hr>
       <div class="row">
-        <div class="col col-67 text-right">Total:</div>
+        <div class="col col-67 text-right">Suggested Donation:</div>
         <div class="col">{{watch.servicePlan.total | currency:'$'}}</div>
       </div>
       <div class="row">
@@ -73,12 +73,8 @@
   </div>
 </script>
 
-
-
-<script type="text/ng-template" id="partials/checkout/payment">
-  <ion-view title="Payment"  hide-back-button="true"><ion-content class="has-footer">
-
-    <swipe-cards 
+<script type="text/ng-template" id="partials/checkout/promo-card">
+  <swipe-cards 
     ng-if="watch.servicePlan.total" 
     ><swipe-card class="card header-card"
     fly='left' 
@@ -100,6 +96,60 @@
       </div>
       </div>
     </swipe-card></swipe-cards>
+</script>
+
+<script type="text/ng-template" id="partials/checkout/give-instead">
+    <swipe-cards><swipe-card class="card"
+    on-destroy="on.swipeOut(this, false)"
+    fly="out">
+      <ion-item class="item-divider item-balanced">
+        This is your lucky day!
+      </ion-item>
+      <ion-item class="item-text-wrap">
+        <p>We are currenly not accepting payments for our service. Yeah, that&#39;s right, <b>it&#39;s free.</b>
+        </p>
+        <p>
+        However, as a social enterprise, we&#39;d still like to do some good.
+        If you are happy with this service, please make a donation in the suggested amount to your favorite charity. We can also suggest an App to makes it super easy! (after you finish, of course...)
+        </p>
+      </ion-item>
+    </div>
+</script>
+
+
+<script type="text/ng-template" id="partials/checkout/giving-app">
+    <swipe-cards><swipe-card class="card"
+    on-destroy="on.swipeOut(this, false)"
+    fly="out">
+      <ion-item class="item-divider item-balanced">
+        Mobile Giving Made Easy
+      </ion-item>
+      <ion-item class="item-text-wrap">
+        <p>As promised, here is a link to our favorite mobile giving App!</p>
+        <div class="padding">
+          <div ng-if="deviceReady.isWebView()==false">
+            <a href="{{on.givingApp()}}" target="_blank"
+              <button class="button button-full button-balanced" 
+              >App for Mobile Giving
+              </button>
+            </a>
+          </div>
+          <div ng-if="deviceReady.isWebView()">
+              <button class="button button-full button-balanced" 
+              ng-click="on.givingApp()"
+              >App for Mobile Giving
+              </button>
+          </div>
+        </div>
+      </ion-item>
+    </swipe-card></swipe-cards>
+</script>
+
+
+<script type="text/ng-template" id="partials/checkout/payment">
+  <ion-view title="Payment"  hide-back-button="true"><ion-content delegate-handle="checkout" class="has-footer">
+
+    <div ng-include="'partials/checkout/give-instead'"></div>
 
     <div class="card">
       <ion-item class="item-divider item-calm">
@@ -162,7 +212,7 @@
       </div>
       <div class="padding-top">
         Here are some places to go next:
-        <button class="button button-block button-dark icon-left ion-ios7-cloud-upload"
+        <button class="button button-block button-dark icon-left ion-ios-cloud-upload"
         ui-sref="app.uploader">
           Uploader
         </button>
@@ -176,5 +226,8 @@
     <div class="item item-divider item-royal">
        {{headerCard.footer}}
     </div>   
+
+    <div ng-include="'partials/checkout/giving-app'"></div>
+
   </ion-content></ion-view>
 </script>

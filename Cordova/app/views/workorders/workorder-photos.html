@@ -4,7 +4,7 @@
   </ion-nav-buttons>
   <ion-nav-buttons side="right">
       <div class="buttons">
-        <button class="button button-icon icon ion-ios7-information-outline" 
+        <button class="button button-icon icon ion-ios-information-outline" 
           ng-click="on.showInfo('toggle')">
         </button>
       </div>
@@ -18,14 +18,14 @@
   <ion-content delegate-handle="collection-repeat-wrap">
     <div class="button-bar bar-balanced">
       <button class="button" ui-sref="app.workorders.photos({oid:wo.objectId})" ui-sref-active="active">
-        <i class="icon ion-ios7-cloud-upload"></i> All Photos 
+        <i class="icon ion-ios-cloud-upload"></i> All Photos 
         <span class="badge badge-dark">{{workorderAttr.count_expected}}</span> 
         </button>
-      <button class="button" ui-sref="app.workorders.photos.todo({oid:wo.objectId})"  ui-sref-active="active">  <i class="icon ion-ios7-gear ion-spin"></i> To-Do 
+      <button class="button" ui-sref="app.workorders.photos.todo({oid:wo.objectId})"  ui-sref-active="active">  <i class="icon ion-ios-gear ion-spin"></i> To-Do 
       <span class="badge badge-dark">{{workorderAttr.progress.todo || '&mdash;'}}</span> 
       </button>
       <button class="button" ui-sref="app.workorders.photos.picks({oid:wo.objectId})"  ui-sref-active="active">
-        <i class="icon ion-ios7-checkmark"></i> Picks
+        <i class="icon ion-ios-checkmark"></i> Picks
         <span class="badge badge-dark">{{workorderAttr.progress.picks}}</span> 
         </button>
     </div>
@@ -98,23 +98,23 @@
               <a class="tab-item" href="#"
               ng-click="on.notTopPick($event, item)">
                 <i class="icon" 
-                ng-class="{ 'ion-ios7-close assertive':item.topPick===false,
-                'ion-ios7-close-outline':item.topPick!==false }"></i>
+                ng-class="{ 'ion-ios-close assertive':item.topPick===false,
+                'ion-ios-close-outline':item.topPick!==false }"></i>
               </a>
               
               <a class="tab-item" href="#"
               ng-class="{'activated tab-item-royal':item.favorite}">
                 <i class="icon"
-                ng-class="{'ion-ios7-heart-outline':!item.favorite,
-                'ion-ios7-heart':item.favorite}"></i>
+                ng-class="{'ion-ios-heart-outline':!item.favorite,
+                'ion-ios-heart':item.favorite}"></i>
               </a>
 
               <a class="tab-item" href="#"
               ng-class="{'activated tab-item-balanced':item.topPick}"
               ng-click="on.addTopPick($event, item)">
                 <i class="icon"
-                ng-class="{'ion-ios7-checkmark-outline':item.topPick!==true, 
-                'ion-ios7-checkmark balanced':item.topPick===true}"></i>
+                ng-class="{'ion-ios-checkmark-outline':item.topPick!==true, 
+                'ion-ios-checkmark balanced':item.topPick===true}"></i>
               </a>
             </div>
           </swipe-card> <!--  end .photo-card  -->

@@ -11,7 +11,8 @@
     "imgcache.js": "~0.7.5",
     "parse-js-sdk": "~1.3.0",
     "ngCordova": "~0.1.5-alpha",
-    "angular-native-picker": "~1.0.4"
+    "angular-native-picker": "~1.0.4",
+    "ionicons": "~2.0.1"
   },
   "resolutions": {
     "angular": "1.3.6"

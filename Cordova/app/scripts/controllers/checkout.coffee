@@ -111,7 +111,7 @@ angular.module('ionBlankApp')
           header = $scope.label.header_card[step]
         return header
       currentState : ()->
-        console.log $state.current.name
+        # console.log $state.current.name
         return $state.current.name
       beforeNextStep: ()->
         # before you leave!!!
@@ -146,11 +146,16 @@ angular.module('ionBlankApp')
               angular.element(el).addClass('item-assertive').removeClass('item-calm')
               return false 
 
-            if $scope.watch.servicePlan.total != 0
-              # offer additional coupon?
-              el = document.getElementById('promo-code-button')
-              angular.element(el).addClass('button-assertive').removeClass('button-balanced')
-              return false
+            scroll = $ionicScrollDelegate.$getByHandle('checkout')
+            if scroll.getScrollPosition()?.top < 50
+              scroll.scrollBottom(true) 
+              return false 
+
+            # if $scope.watch.servicePlan.total != 0
+            #   # offer additional coupon?
+            #   el = document.getElementById('promo-code-button')
+            #   angular.element(el).addClass('button-assertive').removeClass('button-balanced')
+            #   return false
 
           when 'app.checkout.submit'
             # return false on error by promise
@@ -216,6 +221,23 @@ angular.module('ionBlankApp')
       hide : (swipeCard)->
         # swipeCard.el.parentNode.className += ' hide '
         return
+
+      swipeOut: (scope, keep)->
+        target = angular.element(scope.swipeCard.el)
+        target.remove() if !keep
+        return
+
+
+      givingApp: ()->
+        appId = 'id669261809'
+        target = "http://icangowithout.com/"
+        if deviceReady.isWebView() 
+          # target = 'itms-apps://itunes.apple.com/app/' + appId 
+          ref = window.open(target, '_system', 'location=yes')
+          return false
+        else 
+          # target = 'https://itunes.apple.com/app/' + appId
+        return target
     }
 
     $scope.otgProfile = otgProfile
@@ -353,7 +375,7 @@ angular.module('ionBlankApp')
       otgParse.checkBacklogP().then (backlog)->
         $scope.config.system['order-standby'] = backlog.get('status') == 'standby'
 
-      console.log "init: state="+$state.current.name
+      # console.log "init: state="+$state.current.name
       $scope.checkout = otgWorkorder.checkout.getSelectedAsMoments()
       $scope.watch.servicePlan = _getTotal($scope.checkout)
       if $scope.watch.servicePlan.total==0 && deviceReady.isWebView()==false
