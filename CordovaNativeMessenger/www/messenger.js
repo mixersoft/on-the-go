@@ -58,6 +58,15 @@ cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
 	Messenger.prototype.sessionTaskInfoForIdentifier = function(identifier, onSuccess, onError) {
 		exec(onSuccess, onError, "CordovaNativeMessenger", "sessionTaskInfoForIdentifier", [identifier]);
 	};
+               
+    Messenger.prototype.setFavorite = function(identifier, isFavorite, onSuccess, onError) {
+        exec(onSuccess, onError, "CordovaNativeMessenger", "setFavorite", [identifier, isFavorite]);
+    };
+    
+    Messenger.prototype.setAllowsCellularAccess = function(allowsCellularAccess, onSuccess, onError) {
+        exec(onSuccess, onError, "CordovaNativeMessenger", "setAllowsCellularAccess", [allowsCellularAccess]);
+    };
+    
 	
 	var plugin = new Messenger();
 

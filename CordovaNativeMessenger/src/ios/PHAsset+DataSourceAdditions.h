@@ -12,4 +12,6 @@
 
 +(void)fetchAssetsWithLocalIdentifiers:(NSArray *)assetIdentifiers includeBurstPhotos:(BOOL)includeBurstPhotos completion:(void(^)(PHFetchResult *result))result;
 
++(void)setFavorite:(BOOL)isFavorite forAsserIdentifier:(NSString *)identifier completion:(void(^)(BOOL success, NSError *error))completion;
+
 @end

@@ -70,5 +70,35 @@ static PHFetchResult *allImageAssets;
     }
 }
 
++(void)setFavorite:(BOOL)isFavorite forAsserIdentifier:(NSString *)identifier completion:(void(^)(BOOL success, NSError *error))completion {
+    if (identifier.length == 0) {
+        if (completion) {
+            completion(NO, nil);
+        }
+        return;
+    }
+    [PHAsset fetchAssetsWithLocalIdentifiers:@[identifier] includeBurstPhotos:YES completion:^(PHFetchResult *result) {
+        if (result.count == 0) {
+            if (completion) {
+                completion(NO, nil);
+            }
+            return;
+        }
+        [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+            [result enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+                PHAssetChangeRequest *request = [PHAssetChangeRequest changeRequestForAsset:obj];
+                request.favorite = isFavorite;
+            }];
+        } completionHandler:^(BOOL success, NSError *error) {
+            if (completion) {
+                [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+                    completion(success, error);
+                }];
+            }
+        }];
+        
+    }];
+}
+
 
 @end

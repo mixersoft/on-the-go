@@ -9,6 +9,7 @@
 #import "CordovaNativeMessenger.h"
 #import "PhotosUploader.h"
 #import <Photos/Photos.h>
+#import "PHAsset+DataSourceAdditions.h"
 #import <CoreLocation/CoreLocation.h>
 #import "UIImage+FixOrientation.h"
 
@@ -311,6 +312,26 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     return path;
 }
 
+-(void)setFavorite:(CDVInvokedUrlCommand *)command {
+    NSString *assetIdentifier = command.arguments[0];
+    NSNumber *isFavorite = command.arguments[1];
+    
+    [PHAsset setFavorite:[isFavorite boolValue] forAsserIdentifier:assetIdentifier completion:^(BOOL success, NSError *error) {
+        NSMutableDictionary *data = [NSMutableDictionary new];
+        data[@"asser"] = assetIdentifier;
+        CDVCommandStatus status = CDVCommandStatus_OK;
+        if (error) {
+            data[@"errorCode"] = @(error.code);
+            data[@"error"] = error.localizedDescription;
+            status = CDVCommandStatus_ERROR;
+        }
+        
+        CDVPluginResult *r = [CDVPluginResult resultWithStatus:status messageAsDictionary:data];
+        [self.commandDelegate sendPluginResult:r callbackId:command.callbackId];
+
+    }];
+}
+
 -(void)getPhotoById:(CDVInvokedUrlCommand*) command {
     
     __weak __typeof(self) weakself = self;
@@ -436,7 +457,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                         data = withMIME;
                     }
                     else {
-                        NSString *path = [[self filesStoreDirectory] stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.jpeg", [[NSUUID UUID] UUIDString]]];
+                        NSString *path = [[self filesStoreDirectory] stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.jpg", [[NSUUID UUID] UUIDString]]];
                         
                         [bytes writeToFile:path atomically:YES];
                         data = path;
@@ -446,6 +467,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                     jsonResult[@"UUID"] = identifier;
                     if (data.length) {
                         jsonResult[@"data"] = data;
+                        jsonResult[@"dataSize"] = @(bytes.length);
                     }
                     
                     jsonResult[@"dateTaken"] = [dateFormatter stringFromDate:[asset creationDate]];
