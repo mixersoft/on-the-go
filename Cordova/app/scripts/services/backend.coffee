@@ -807,7 +807,7 @@ angular
             'not patched'
           changed = changed || updated
           return
-        $rootScope.$broadcast 'cameraRoll.updated'
+        $rootScope.$broadcast 'sync.cameraRollChanged'
         return 
 
 

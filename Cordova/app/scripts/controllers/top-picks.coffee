@@ -371,7 +371,8 @@ angular.module('ionBlankApp')
     $rootScope.$on 'sync.cameraRollChanged', ()->
       if $state.includes('app.top-picks')
         # redundant?? sync.ordersComplete instead?
-        $scope.on.reloadDataSet() 
+        # $scope.on.reloadDataSet() 
+        return
 
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
