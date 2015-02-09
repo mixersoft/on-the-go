@@ -421,6 +421,7 @@ angular
                 $q.all( promises ).then (o)->
                   $rootScope.orders = scope.workorders = workorderColl.toJSON()
                   console.log "\n\n*** ORDER SYNC complete for role=" + options.role + "\n"
+                  $rootScope.$broadcast('sync.ordersComplete')
                   return whenDoneP(workorderColl) if whenDoneP
 
 
@@ -467,6 +468,7 @@ angular
                 $q.all( promises ).then (o)->
                   $rootScope.orders = scope.workorders = workorderColl.toJSON() 
                   console.log "\n\n*** Workorder SYNC complete for role=" + options.role + "\n"
+                  $rootScope.$broadcast('sync.workordersComplete')
                   return whenDoneP(workorderColl) if whenDoneP
           , DELAY
 

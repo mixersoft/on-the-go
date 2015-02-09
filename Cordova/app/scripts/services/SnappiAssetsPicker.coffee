@@ -118,15 +118,20 @@ angular
 
       mapP: (options, force=null)->
         if !force && self._mapAssetsLibrary?
+          $rootScope.$broadcast('sync.cameraRollComplete', {changed:false})
           return $q.when self._mapAssetsLibrary 
 
         return snappiMessengerPluginService.mapAssetsLibraryP(options) 
         .then ( mapped )->
           if _.isEmpty self._mapAssetsLibrary
             self._mapAssetsLibrary = mapped 
+            $rootScope.$broadcast('sync.cameraRollComplete', {changed:true})
           else if force
             # NOTE: this will reflect deletions if we don't merge
             self._mapAssetsLibrary = mapped 
+            $rootScope.$broadcast('sync.cameraRollComplete', {changed:true})
+          else
+            'not updated'
           return mapped
 
       getPhoto: (UUID)->
@@ -183,6 +188,10 @@ angular
           # console.warn "ERROR: loadCameraRollP, error="+JSON.stringify( error )[0..100]
           # appConsole.show( error)
           return $q.reject(error)
+
+        .finally ()->
+          
+          return
 
       loadFavoritesP: (delay=10)->
         # load 'preview' of favorites from cameraRoll, from mapAssetsLibrary()
@@ -291,7 +300,8 @@ angular
         else if !isLocal && foundInMap # update Workorder Photo from Parse
           _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot'] # copy Edit fields
           # self.dataURLs['preview'][photo.UUID] = photo.src
-          console.log "%%% NOT isLocal, photo=" + JSON.stringify _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot']
+          if $state.includes('app.workorders') == false
+            console.log "%%% NOT isLocal, photo=" + JSON.stringify _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot']
           return false
 
 

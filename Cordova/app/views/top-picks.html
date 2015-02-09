@@ -20,10 +20,16 @@
       pulling-text=""
       on-refresh="on.refresh()">
     </ion-refresher>
-    <div class="button-bar bar-royal">
-      <a class="button icon ion-checkmark-circled" ui-sref="app.top-picks.top-picks" ui-sref-active="active"></a>
-      <a class="button icon ion-heart" ui-sref=".favorites"  ui-sref-active="active"></a>
-      <a class="button icon ion-ios-upload-outline" ui-sref=".shared"  ui-sref-active="active"></a>
+    <div class="ng-repeat-filter button-bar bar-royal">
+      <a class="button icon ion-checkmark-circled" ui-sref="app.top-picks.top-picks" ui-sref-active="active">
+        <span class="badge badge-dark">{{watch.counts['top-picks']}}</span> 
+      </a>
+      <a class="button icon ion-heart" ui-sref=".favorites"  ui-sref-active="active">
+        <span class="badge badge-dark">{{watch.counts['favorites']}}</span> 
+      </a>
+      <a class="button icon ion-ios-upload-outline" ui-sref=".shared"  ui-sref-active="active">
+        <span class="badge badge-dark">{{watch.counts['shared']}}</span> 
+      </a>
     </div>
     <!-- header card  -->
     <swipe-cards><swipe-card class="card header-card" 
@@ -33,7 +39,7 @@
     >
       <div class="item item-divider item-header">
         {{i18n.tr('header-card').header}}
-        <span class="badge badge-positive">{{filteredPhotos.length}} Photos</span>
+        <span class="badge badge-positive">{{watch.filteredOrderedPhotos.length}} Photos</span>
       </div>
       <div class="item item-text-wrap">
         {{i18n.tr('header-card').body}}
@@ -42,7 +48,7 @@
         ng-if='0'
         ng-click="on.test()"> Test</button>
       </div>
-      <div class="empty-list" ng-if="filteredPhotos.length==0 && $state.$current.name=='app.top-picks.top-picks'"> 
+      <div class="empty-list" ng-if="watch.filteredOrderedPhotos.length==0 && $state.$current.name=='app.top-picks.top-picks'"> 
           <div class="item item-text-wrap">
             <div class="text-center">
               <h2>{{i18n.tr('empty-list').header}}</h2>
@@ -81,7 +87,7 @@
     <!-- collection-repeat  -->
     <ion-list class="otg-cr-preview">
       <div swipe-cards
-        collection-repeat="item in filteredPhotos | orderBy:-dateTaken"
+        collection-repeat="item in watch.filteredOrderedPhotos track by UUID"
         collection-item-width="'100%'"
         collection-item-height="on.getItemHeight(item, $index)"
         ng-style="{height: on.getItemHeight(item, $index)+'px'}"

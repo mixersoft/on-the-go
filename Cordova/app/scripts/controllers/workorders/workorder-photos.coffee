@@ -184,9 +184,15 @@ angular.module('ionBlankApp')
     }
 
 
+
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
       $scope.on.reloadDataSet() if $state.includes('app.workorders.photos')
       return
+
+    $scope.$on 'sync.workordersComplete', ()->
+      console.log '@@@ sync.workordersComplete'
+
+
 
     _force = false   
     $scope.$on '$ionicView.loaded', ()->
