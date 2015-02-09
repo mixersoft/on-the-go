@@ -14,8 +14,9 @@
 #import "UIImage+FixOrientation.h"
 
 typedef NS_ENUM(uint8_t, DestinationType) {
-    DestinationTypeFilePath,
     DestinationTypeBase64,
+    DestinationTypeFilePath,
+    DestinationTypeDefault = DestinationTypeFilePath
 };
 
 NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeMessageNotification";
@@ -379,7 +380,11 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
         NSNumber *height = options[@"targetHeight"];
         NSString *resizeModeString = options[@"resizeMode"];
         BOOL autoRotate = [options[@"autoRotate"] boolValue];
-        DestinationType destinationType = (DestinationType)[options[@"DestinationType"] integerValue];
+        DestinationType destinationType = DestinationTypeDefault;
+        NSNumber *dType = options[@"DestinationType"];
+        if (dType) {
+            destinationType = [dType integerValue];
+        }
         
         PHImageRequestOptions *requestOptions = [PHImageRequestOptions new];
         requestOptions.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
