@@ -312,8 +312,14 @@ angular.module('ionBlankApp')
       # swipeCard methods
       cardKeep: (item)->
         item.favorite = true
+        otgParse.updatePhotoP(item, 'favorite').then ()->
+                  console.log "\n\n*** Success updated favorite"
       cardReject: (item)->
         item.favorite = false
+        otgParse.updatePhotoP(item, 'favorite').then ()->
+                  console.log "\n\n*** Success updated favorite"
+          , (err)->
+            console.log "WARNING: favorite not in Workorder, change locally!!!!"
       cardSwiped: (item)->
         # console.log "Swipe, item.UUID=" + item.UUID
         return
