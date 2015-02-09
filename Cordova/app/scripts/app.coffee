@@ -370,12 +370,16 @@ angular
     })
     .state('app.workorders.photos', {
       url: "/:woid/photos",
+      abstract: true
       views: {
         'workorderContent' : {
           templateUrl: "views/workorders/workorder-photos.html"
           controller: 'WorkorderPhotosCtrl'
         }
       }
+    })
+    .state('app.workorders.photos.all', {
+      url: "/all",
     })
     .state('app.workorders.photos.todo', {
       url: "/todo",

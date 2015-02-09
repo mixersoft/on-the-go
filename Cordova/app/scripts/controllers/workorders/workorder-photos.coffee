@@ -8,22 +8,6 @@
  # Controller of the ionBlankApp
 ###
 angular.module('ionBlankApp')
-.filter 'workorderPhotoFilter', ()->
-  return (input, type='none')->
-    switch type
-      when 'none' 
-        return input
-      when 'todo' 
-        # match = '2468ACE'   # match last CHAR of UUID
-        return _.reduce input, (result, e, i)->
-            result.push(e) if e.topPick != false &&  !e.topPick
-            return result
-          , [] 
-      when 'picks'
-        return _.reduce input, (result, e, i)->
-            result.push(e) if e.topPick == true 
-            return result
-          , [] 
 
 
 .controller 'WorkorderPhotosCtrl', [
@@ -35,15 +19,15 @@ angular.module('ionBlankApp')
     $scope.label = {
       title: "Workorder Photos"
       header_card: 
-        'app.workorders.photos': 
+        'app.workorders.photos.all': 
           header: "Workorder Photos"
           body: "All photos from a customer workorder. Editors must select Top-picks from these photos. All photos must be scanned. "
           footer: ""
-        'app.workorders.photos.new':
+        'app.workorders.photos.todo':
           header: "Favorites"
           body: "Only photos that are new and have not yet been reviewed."
           footer: ""  
-        'app.workorders.photos.top-picks':
+        'app.workorders.photos.picks':
           header: "Shared"
           body: "A selection of Top Picks and Favorite Shots as selected by Editors. This is what the client will see."
           footer: ""  
@@ -61,22 +45,33 @@ angular.module('ionBlankApp')
       return $state.transitionTo("app.workorders.all") 
 
 
-    # filter photos based on $state.current
-    setFilter = (toState)->
-      switch toState.name
-        when 'app.workorders.photos'
-          $scope.filteredPhotos = $filter('workorderPhotoFilter')($scope.photos,'none')
-        when 'app.workorders.photos.todo'
-          $scope.filteredPhotos = $filter('workorderPhotoFilter')($scope.photos,'todo')
-        when 'app.workorders.photos.picks'
-          $scope.filteredPhotos = $filter('workorderPhotoFilter')($scope.photos,'picks')
-
-      $scope.filteredPhotos = $filter('orderBy')($scope.filteredPhotos, 'dateTaken')   # hack: collection-repeat does not work with orderBy    
-      return    
+    $scope.watch = _watch = {
+      filteredOrderedPhotos : []
+      filter: null
+      orderBy: 
+        key: 'dateTaken'
+        reverse: false
+    }      
 
     # use dot notation for prototypal inheritance in child scopes
     $scope.on  = {
       _info: true
+
+      # apply filter | orderBy
+      reloadDataSet: (toState)->
+        toState = $state.current if `toState==null`
+        switch toState.name
+          when 'app.workorders.photos.all'
+            _watch.filter = null
+          when 'app.workorders.photos.todo'
+            _watch.filter = {topPick:null}
+          when 'app.workorders.photos.picks'
+            _watch.filter = {topPick:true}
+        data = $scope.photos
+        data = $filter('filter')(data, _watch.filter)
+        $scope.watch.filteredOrderedPhotos = $filter('orderBy')(data, _watch.orderBy.key, _watch.orderBy.reverse)
+
+
       getItemHeight : (item, index)->
         IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, 640)
         scaledDim = cameraRoll.getCollectionRepeatHeight(item, IMAGE_WIDTH)
@@ -113,7 +108,7 @@ angular.module('ionBlankApp')
           , (err)->
             item.topPick = revert
             console.warn "item NOT saved, err=" + JSON.stringify err
-        # if $state.current.name != 'app.workorders.photos'
+        # if $state.current.name != 'app.workorders.photos.all'
           # refresh on reload
           # setFilter( $state.current )
 
@@ -174,8 +169,14 @@ angular.module('ionBlankApp')
             scope.swipeCard.swipeOver('left')
           when 'right'
             scope.swipeCard.swipeOver('right')
+      refresh: ()->
+        $scope.on.reloadDataSet() 
+        $scope.$broadcast('scroll.refreshComplete')
+
     }
 
+
+    # for preview/grid view
     $scope.data = {
       cardStyle : {
         width: '100%'
@@ -184,12 +185,12 @@ angular.module('ionBlankApp')
 
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
-      setFilter(toState)  
+      $scope.on.reloadDataSet() 
+      return
 
     _force = false   
-
     $scope.$on '$ionicView.loaded', ()->
-      # once per controller load, setup code for view
+      # for testing: loading 'app/workorders/[woid]/photos' directly
       _force = !otgWorkorderSync._workorderColl['editor'].length
       return
 
@@ -228,7 +229,7 @@ angular.module('ionBlankApp')
               }
 
             workorderObj.save({progress: woProgress})
-            setFilter( $state.current )
+            $scope.on.reloadDataSet() 
             _force = false
             return
           return
