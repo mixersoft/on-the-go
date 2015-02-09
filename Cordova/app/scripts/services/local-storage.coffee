@@ -86,6 +86,7 @@ angular
         return 
 
       getFilename: (UUID, size, dataURL)->
+        # TODO: need to lookup from localStorage
         ext = self.getExt(dataURL)
         return false if !ext || !UUID
         return filePath = UUID[0...36] + '-' + size + '.' + ext
@@ -165,6 +166,7 @@ angular
           , 100
 
       getCacheKeyFromFilename: (filename)->
+        # TODO: this will NOT work with PLUGIN FileURIs, need to persist stashFile to local storage
         parts = filename.split('-')
         tail = parts.pop()
         size = 'preview' if tail.indexOf('preview') == 0
@@ -336,6 +338,7 @@ angular
           console.log error   # $$$
           return $q.reject(error)
 
+      # use dataURL for now, but stash to FileURL and replace when ready
       cordovaFile_USE_CACHED_P: ($target, UUID, dataURL)->
         IMAGE_SIZE = $target.attr('format') if $target
         UUID = $target.attr('UUID') if !UUID

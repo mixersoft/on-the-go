@@ -78,7 +78,7 @@ angular.module('ionBlankApp')
                 if IMAGE_SIZE == 'preview' && dataType == 'DATA_URL'
                   imageCacheSvc.cordovaFile_USE_CACHED_P(element, photo.UUID, photo.data) 
                 else if dataType == 'FILE_URI'
-                  imageCacheSvc.stashFile(UUID, IMAGE_SIZE, photo.data, 0) # FILE_URI
+                  imageCacheSvc.stashFile(UUID, IMAGE_SIZE, photo.data, photo.dataSize) # FILE_URI
                 else 
                   'not caching DATA_URL thumbnails'
               else

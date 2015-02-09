@@ -151,7 +151,9 @@ angular.module('ionBlankApp')
   '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', '$cordovaSocialSharing'
   'deviceReady', 'cameraRoll', 'otgWorkorderSync'
   'TEST_DATA', 'imageCacheSvc', '$cordovaFile'
-  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, $ionicPopup, $ionicModal, $ionicScrollDelegate, $cordovaSocialSharing, deviceReady, cameraRoll, otgWorkorderSync, TEST_DATA, imageCacheSvc, $cordovaFile) ->
+  ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, 
+    $ionicPopup, $ionicModal, $ionicScrollDelegate, $cordovaSocialSharing, 
+    deviceReady, cameraRoll, otgWorkorderSync, TEST_DATA, imageCacheSvc, $cordovaFile) ->
 
     $scope.SideMenuSwitcher.leftSide.src = 'partials/left-side-menu'
 
@@ -195,16 +197,6 @@ angular.module('ionBlankApp')
         key = toState.name.split('.').pop()
         _watch.counts[key] = $scope.watch.filteredOrderedPhotos.length
         $rootScope.counts['top-picks'] = _watch.counts[key] if key == 'top-picks'
-
-
-
-      # deprecate, use directive:lazy-src
-      # getSrc: (item)->
-      #   return '' if !item
-      #   return item.src if item.src
-      #   found = cameraRoll.getDataURL(item.UUID, 'preview')
-      #   found = cameraRoll.getDataURL(item.UUID, 'thumbnail') if !found 
-      #   return found
 
       getItemHeight : (item, index)->
         IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, 320)
@@ -332,7 +324,7 @@ angular.module('ionBlankApp')
         # pickup iOS .favorite
         # TODO: push NEW favorites if we want to share with other devices in WO
         console.log args
-        console.log '@@@ sync.cameraRollComplete, args=' +JSON.stringify args
+        console.log '@@@ sync.cameraRollComplete, args=' +JSON.stringify _.keys args
         $scope.on.reloadDataSet() if $state.includes('app.top-picks.favorites')
       return
 

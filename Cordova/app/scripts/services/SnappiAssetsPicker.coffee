@@ -89,7 +89,8 @@ angular
 .factory 'cameraRoll', [
   '$q', '$timeout', '$rootScope', 'deviceReady', 'PLUGIN_CAMERA_CONSTANTS', 'snappiMessengerPluginService', 'imageCacheSvc'
   'TEST_DATA', 'otgData', 'appConsole'
-  ($q, $timeout, $rootScope, deviceReady, CAMERA, snappiMessengerPluginService, imageCacheSvc, TEST_DATA, otgData, appConsole)->
+  ($q, $timeout, $rootScope, deviceReady, CAMERA, snappiMessengerPluginService, imageCacheSvc, 
+    TEST_DATA, otgData, appConsole)->
     _getAsLocalTime = (d, asJSON=true)->
         d = new Date() if !d    # now
         d = new Date(d) if !_.isDate(d)
@@ -134,7 +135,7 @@ angular
             'not updated'
           return mapped
 
-      getPhoto: (UUID)->
+      XXXgetPhoto: (UUID)->
         # find the photo, if we have it
         found = _.find self.map(), { UUID: UUID } 
         if !found
@@ -301,13 +302,13 @@ angular
         else if isLocal # update in map()
           _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId'] # copy Edit fields
           foundInMap.from = 'CameraRoll<PARSE' 
-          console.log "%%% isLocal, photo=" + JSON.stringify _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId']
+          console.log "%%% isLocal, photo=" + JSON.stringify _.pick  foundInMap, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId']
           return true # triggers $broadcast cameraRoll.updated for topPicks refresh
         else if !isLocal && foundInMap # update Workorder Photo from Parse
           _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot'] # copy Edit fields
           # self.dataURLs['preview'][photo.UUID] = photo.src
           if $state.includes('app.workorders') == false
-            console.log "%%% NOT isLocal, photo=" + JSON.stringify _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot']
+            console.log "%%% NOT isLocal, photo=" + JSON.stringify _.pick foundInMap, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot']
           return false
 
 
@@ -373,7 +374,11 @@ angular
         date = _getAsLocalTime( datetime, true)
         return date.substring(0,10)  # like "2014-07-14"
 
-      # promise version, used by lazySrc
+      ### called by: 
+          directive:lazySrc AFTER imgCacheSvc.isStashed_P().catch
+          otgParse.uploadPhotoFileP
+          otgUploader.uploader.type = 'parse'
+      ###
       ###
       TODO: refactor, now using by default
       options.DestinationType = CAMERA.DestinationType.FILE_URI 
@@ -443,10 +448,18 @@ angular
           dfd.reject(imgOrSrc)
         return dfd.promise
 
+      ### queue photo for retrieval, put into imgCacheSvc for later access
+        called by: 
+          directive:lazySrc
+          otgUploader.uploader.type = 'parse'
+          cameraRoll.getPhoto()  ?? DEPRECATE?
+      ###
       ## @return string
       ##    dataURL from cameraRoll.addDataURL(),
       ##    fileURL from imageCacheSvc.cordovaFile_USE_CACHED_P, or 
+      ##      snappiMessengerPluginService.getDataURLForAssets_P([UUID], options.DestinationType=1)
       ##    PARSE URL from workorders, photo.src
+      ##
       getDataURL: (UUID, size='preview')->
         if !/preview|thumbnail/.test size
           throw "ERROR: invalid dataURL size, size=" + size
@@ -496,6 +509,7 @@ angular
           h = photo.scaledH
         return h
 
+      # called by getDataURL, but NOT getDataURL_P
       queueDataURL : (UUID, size='preview')->
         console.warn "@@@@@@  DEPRECATE??? cameraRoll.queueDataURL"
         return if !deviceReady.isWebView()
@@ -509,7 +523,7 @@ angular
 
         # $rootScope.$broadcast 'cameraRoll.queuedDataURL'
 
-
+      # getter, or reset queue
       queue: (clear, PREVIEW_LIMIT = 50 )->
         console.warn "@@@@@@  DEPRECATE??? cameraRoll.queue"
         self._queue = {} if clear=='clear'
@@ -527,7 +541,7 @@ angular
         # order by thumbnails then previews
         return batch
 
-      # DEPRECATE???
+      # called by cameraRoll.queueDataURL()
       fetchDataURLsFromQueue : ()->
         console.warn "@@@@@@  DEPRECATE??? cameraRoll.fetchDataURLsFromQueue"
         queuedAssets = self.queue()
@@ -536,7 +550,8 @@ angular
         _.each ['preview', 'thumbnail'], (size)->
           assets = _.filter queuedAssets, (o)->return o?.size == size
           chunks[size] = assets if assets.length
-        console.log chunks
+        # console.log chunks
+
 
         promises = []
         _.each chunks, (assets, size)->
@@ -544,7 +559,10 @@ angular
           promises.push snappiMessengerPluginService.getDataURLForAssetsByChunks_P(
               assets, 
               {size: size},
-              null, #  onEach
+              (photo)->
+                dataType = if photo.data[0...10]=='data:image' then 'DATA_URL' else 'FILE_URI'
+                if dataType == 'FILE_URI'
+                  imageCacheSvc.stashFile(photo.UUID, size, photo.data, photo.dataSize) # FILE_URI
             ).then (photos)->
               return photos 
 
@@ -861,7 +879,8 @@ angular
           # all chunks fetched, exit recursion
           return $q.reject("done") if !assets
           # chunks remain, fetch chunk
-          return _MessengerPLUGIN.getDataURLForAssets_P( assets, options, eachPhoto).then (chunkOfPhotos)->
+          return _MessengerPLUGIN.getDataURLForAssets_P( assets, options, eachPhoto)
+          .then (chunkOfPhotos)->
             return allPhotos if chunkOfPhotos=="done"
             allPhotos = allPhotos.concat( chunkOfPhotos ) # collate resolves into 1 array
             return chunkOfPhotos

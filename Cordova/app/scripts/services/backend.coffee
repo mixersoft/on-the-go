@@ -205,7 +205,6 @@ angular
             _.each sync['add'], (UUID)->
               # find the photo, if we have it
               # WARNING: originalWidth/Height from map() may not be auto-rotated!!!!!
-              # found = cameraRoll.getPhoto(UUID) 
               found = _.find mappedPhotos, {UUID: UUID}
               promises['add'].push otgParse.uploadPhotoMetaP(workorderObj, found).then (o)->
                         sync['queued'].push found.UUID
