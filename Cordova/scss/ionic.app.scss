@@ -182,6 +182,14 @@ ion-nav-view {
 .error-message {
   color: $assertive;
 }
+
+.button-bar.ng-repeat-filter {
+  .button > .badge {
+    margin-top: 14px;
+  }
+}
+
+
 /*
  * hide ion-nav-bar header spacing 
  */

@@ -285,6 +285,7 @@ angular
         checkDeviceId = deviceReady.isWebView() && $rootScope.$state.includes('app.workorders') == false
         if checkDeviceId == false
           promise = $q.when()
+          # add, remove = [] for workorder syncs...
         else 
           parsePhotos = _.filter parsePhotos, (photo)->
               return photo.deviceId == $rootScope.deviceId
@@ -389,39 +390,38 @@ angular
                 $rootScope.counts['orders'] = openOrders = 0
                 workorderColl.each (workorderObj)->
                   return if workorderObj.get('status') == 'complete'
-                  return if workorderObj.get('devices').indexOf($rootScope.deviceId) == -1
-
                   openOrders++
-                  p = self.fetchWorkorderPhotosP(workorderObj, options, force )
-                  .then (photosColl)->
 
-                    # see also: otgParse._patchParsePhotos()
-                    if PATCH_ParsePhotoObjKeys
-                      # save CameraRoll attrs to PARSE
-                      self._PATCH_WorkorderAssets( photosColl , PATCH_ParsePhotoObjKeys)
+                  if workorderObj.get('devices').indexOf($rootScope.deviceId) > -1
+                    p = self.fetchWorkorderPhotosP(workorderObj, options, force )
+                    .then (photosColl)->
 
-                    # missing = self.queueMissingPhotos( workorderObj, photosColl )
-                    return self.syncWorkorderPhotosP( workorderObj, photosColl, 'owner' )
-                  .then (sync)->
-                      console.log "\n\n *** SYNC_ORDERS: woid=" + workorderObj.id
-                      # console.log "sync=" + JSON.stringify sync
-                      self.updateWorkorderCounts(workorderObj, sync)
-                      return sync
-                  .then (resp)->
-                      return console.log "done"
-                    , (err)->
-                      console.warn(err) 
-                      return $q.when(err)
+                      # see also: otgParse._patchParsePhotos()
+                      if PATCH_ParsePhotoObjKeys
+                        # save CameraRoll attrs to PARSE
+                        self._PATCH_WorkorderAssets( photosColl , PATCH_ParsePhotoObjKeys)
+
+                      return self.syncWorkorderPhotosP( workorderObj, photosColl, 'owner' )
+                    .then (sync)->
+                        console.log "\n\n *** SYNC_ORDERS: woid=" + workorderObj.id
+                        # console.log "sync=" + JSON.stringify sync
+                        self.updateWorkorderCounts(workorderObj, sync)
+                        return sync
+                    .then (resp)->
+                        return console.log "done"
+                      , (err)->
+                        console.warn(err) 
+                        return $q.when(err)
+                    promises.push p
 
 
-                  promises.push p
-                  scope.workorders = workorderColl.toJSON()
-                  $rootScope.orders = scope.workorders
                   $rootScope.counts['orders'] = openOrders || 0
-                  return
+                  return # end workorderColl.each
 
                 $q.all( promises ).then (o)->
+                  $rootScope.orders = scope.workorders = workorderColl.toJSON()
                   console.log "\n\n*** ORDER SYNC complete for role=" + options.role + "\n"
+                  $rootScope.$broadcast('sync.ordersComplete')
                   return whenDoneP(workorderColl) if whenDoneP
 
 
@@ -436,6 +436,7 @@ angular
         options = {
           role: 'editor'
           editor: true
+          workorder: true
         }
 
         $timeout ()->
@@ -452,10 +453,12 @@ angular
                   p = self.fetchWorkorderPhotosP(workorderObj, options, force )
                   .then (resp)->
                     photosColl = resp
+                    # ???: is there a 'sync' for workorders, should be on browser...
+                    # just need counts
                     return self.syncWorkorderPhotosP( workorderObj, photosColl, 'editor' )
                   .then (sync)->
                     self.updateWorkorderCounts(workorderObj, sync)  # expect workorderObj.workorderMoment to be set
-                    scope.workorders = workorderColl.toJSON()  
+                     
                     return photosColl
 
                   $rootScope.counts['orders'] = openOrders 
@@ -463,8 +466,9 @@ angular
                   return
 
                 $q.all( promises ).then (o)->
-                  scope.workorders = workorderColl.toJSON()  
+                  $rootScope.orders = scope.workorders = workorderColl.toJSON() 
                   console.log "\n\n*** Workorder SYNC complete for role=" + options.role + "\n"
+                  $rootScope.$broadcast('sync.workordersComplete')
                   return whenDoneP(workorderColl) if whenDoneP
           , DELAY
 
@@ -803,7 +807,7 @@ angular
             'not patched'
           changed = changed || updated
           return
-        $rootScope.$broadcast 'cameraRoll.updated'
+        $rootScope.$broadcast 'sync.cameraRollChanged'
         return 
 
 

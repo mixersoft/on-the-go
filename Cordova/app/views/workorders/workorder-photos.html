@@ -16,9 +16,13 @@
 
 
   <ion-content delegate-handle="collection-repeat-wrap">
-    <div class="button-bar bar-balanced">
-      <button class="button" ui-sref="app.workorders.photos({oid:wo.objectId})" ui-sref-active="active">
-        <i class="icon ion-ios-cloud-upload"></i> All Photos 
+    <ion-refresher
+      pulling-text=""
+      on-refresh="on.refresh()">
+    </ion-refresher>
+    <div class="ng-repeat-filter button-bar bar-balanced">
+      <button class="button" ui-sref="app.workorders.photos.all({oid:wo.objectId})" ui-sref-active="active">
+        <i class="icon ion-ios-cloud-upload"></i> All 
         <span class="badge badge-dark">{{workorderAttr.count_expected}}</span> 
         </button>
       <button class="button" ui-sref="app.workorders.photos.todo({oid:wo.objectId})"  ui-sref-active="active">  <i class="icon ion-ios-gear ion-spin"></i> To-Do 
@@ -62,7 +66,7 @@
     <!-- collection-repeat  -->
     <ion-list class="otg-cr-preview workorder">
       <div swipe-cards
-        collection-repeat="item in filteredPhotos"
+        collection-repeat="item in watch.filteredOrderedPhotos track by UUID"
         collection-item-width="'100%'"
         collection-item-height="on.getItemHeight(item, $index)"
         ng-style="{height: on.getItemHeight(item, $index)+'px'}"

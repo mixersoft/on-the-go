@@ -144,25 +144,6 @@ angular.module('ionBlankApp')
       }
 ]
 
-.filter 'ownerPhotosByType', ()->
-  return (input, type='topPick')->
-    switch type
-      when 'topPicks' 
-        return _.reduce input, (result, e, i)->
-            result.push(e) if e.topPick == true
-            return result
-          , [] 
-      when 'favorites' 
-        # match = '2468ACE'   # match last CHAR of UUID
-        return _.reduce input, (result, e, i)->
-            result.push(e) if e.favorite == true
-            return result
-          , [] 
-      when 'shared'
-        return _.reduce input, (result, e, i)->
-            result.push(e) if e.shared == true 
-            return result
-          , [] 
       
 .controller 'TopPicksCtrl', [
   '$scope', '$rootScope', '$state', 'otgData', 'otgParse', 
@@ -174,30 +155,48 @@ angular.module('ionBlankApp')
 
     $scope.SideMenuSwitcher.leftSide.src = 'partials/left-side-menu'
 
-    $scope.state = {
+    $scope.state = { # DEPRECATE???
       showDelete: false
       showReorder: false
       canSwipe: true
     };
 
 
-    # filter photos based on $state.current
-    # TODO: use ion-tabs instead?
-    setFilter = (toState)->
-      switch toState.name
-        when 'app.top-picks.top-picks'
-          $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.map(),'topPicks')
-        when 'app.top-picks.favorites'
-          $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.map(),'favorites')
-        when 'app.top-picks.shared'
-          $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.map(),'shared')
-
-      $scope.filteredPhotos = $filter('orderBy')($scope.filteredPhotos, '-dateTaken')   # hack: collection-repeat does not work with orderBy    
-      return    
+    $scope.watch = _watch = {
+      filteredOrderedPhotos : []
+      filter: null
+      orderBy: 
+        key: 'dateTaken'
+        reverse: true
+      counts:
+        'top-picks': null
+        favorites: null
+        shared: null
+    }
 
     # use dot notation for prototypal inheritance in child scopes
     $scope.on  = {
       _info: true
+
+      # apply filter | orderBy
+      reloadDataSet: (toState)->
+        toState = $state.current if `toState==null`
+        switch toState.name
+          when 'app.top-picks.top-picks'
+            _watch.filter = {topPick:true}
+          when 'app.top-picks.favorites'
+            _watch.filter = {favorite:true}
+          when 'app.top-picks.shared'
+            _watch.filter = {shared:true}
+        data = cameraRoll.map()
+        data = $filter('filter')(data, _watch.filter)
+        data = $filter('orderBy')(data, _watch.orderBy.key, _watch.orderBy.reverse)
+        $scope.watch.filteredOrderedPhotos = data
+        key = toState.name.split('.').pop()
+        _watch.counts[key] = $scope.watch.filteredOrderedPhotos.length
+        $rootScope.counts['top-picks'] = _watch.counts[key] if key == 'top-picks'
+
+
 
       # deprecate, use directive:lazy-src
       # getSrc: (item)->
@@ -229,9 +228,6 @@ angular.module('ionBlankApp')
         item.favorite = !item.favorite
         otgParse.updatePhotoP(item, 'favorite').then ()->
                   console.log "\n\n*** Success updated favorite"
-        if item.favorite == false && $state.current.name == 'app.top-picks.favorites'
-          # ???: how do we remove from/refresh collection repeat??
-          setFilter( $state.current )
         return item
       addShare: (event, item)->
         event.preventDefault();
@@ -297,8 +293,14 @@ angular.module('ionBlankApp')
       # swipeCard methods
       cardKeep: (item)->
         item.favorite = true
+        otgParse.updatePhotoP(item, 'favorite').then ()->
+                  console.log "\n\n*** Success updated favorite"
       cardReject: (item)->
         item.favorite = false
+        otgParse.updatePhotoP(item, 'favorite').then ()->
+                  console.log "\n\n*** Success updated favorite"
+          , (err)->
+            console.log "WARNING: favorite not in Workorder, change locally!!!!"
       cardSwiped: (item)->
         # console.log "Swipe, item.UUID=" + item.UUID
         return
@@ -313,18 +315,9 @@ angular.module('ionBlankApp')
           when 'right'
             scope.swipeCard.swipeOver('right')
 
-      cameraRollUpdated: ()->
-        console.log "\n\n %%% watched cameraRoll.map() change, update filter %%% \n\n"
-        setFilter( $state.current )
-        # update menu banner
-        if $state.current.name == 'app.top-picks' 
-          $rootScope.counts['top-picks'] = $scope.filteredPhotos.length 
-        else 
-          $rootScope.counts['top-picks'] = $filter('ownerPhotosByType')(cameraRoll.map(),'topPicks').length
-        return
-
       refresh: ()->
-        return $scope.SYNC_cameraRoll_Orders()
+        $scope.SYNC_cameraRoll_Orders()
+        return 
 
       test: ()->
         $scope._TEST_nativeUploader()
@@ -335,14 +328,39 @@ angular.module('ionBlankApp')
 
     }
 
-    $rootScope.$on 'cameraRoll.updated', ()->
-      $scope.on.cameraRollUpdated()
+    # args = {changed:bool }
+    $scope.$on 'sync.cameraRollComplete', (args)->
+      if $state.includes('app.top-picks')
+        # pickup iOS .favorite
+        # TODO: push NEW favorites if we want to share with other devices in WO
+        console.log args
+        console.log '@@@ sync.cameraRollComplete, args=' +JSON.stringify args
+        $scope.on.reloadDataSet() if $state.includes('app.top-picks.favorites')
+      return
+
+      
+    $scope.$on 'sync.ordersComplete', ()->
+      if $state.includes('app.top-picks')
+        console.log '@@@ sync.ordersComplete'
+        if $state.includes('app.top-picks.top-picks')
+          $scope.on.reloadDataSet() 
+        if $state.includes('app.top-picks.shared')
+          $scope.on.reloadDataSet() 
+      return
+
+
+    $rootScope.$on 'sync.cameraRollChanged', ()->
+      if $state.includes('app.top-picks')
+        # redundant?? sync.ordersComplete instead?
+        # $scope.on.reloadDataSet() 
+        return
+
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
-      if $state.includes('app.top-picks')
-        setFilter(toState)   
+      $scope.on.reloadDataSet() if $state.includes('app.top-picks')
+      return 
 
-    $scope.cameraRoll = cameraRoll
+    $scope.cameraRoll = cameraRoll  # DEPRECATE???
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
@@ -352,11 +370,9 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.beforeEnter', ()->
       # cached view becomes active 
-      $scope.on.cameraRollUpdated()
       return if !$scope.deviceReady.isOnline()
       console.log "\n\n\n %%% ionicView.beforeEnter > DEBOUNCED_SYNC_cameraRoll_Orders "
       $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
-      
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 

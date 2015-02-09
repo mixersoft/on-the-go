@@ -42,6 +42,9 @@ angular.module('ionBlankApp')
         else # when "parse"
           self.uploader = _parseFileUploader
           self.type = self.uploader.type
+
+      # CHECK if we are re-launching after bkg tasks scheduled
+      _PROCESS_BKG_UPLOADS()
       return
 
     $rootScope.$watch 'config.upload', (newVal, oldVal)->
@@ -63,6 +66,28 @@ angular.module('ionBlankApp')
         return
       , true
 
+    _PROCESS_BKG_UPLOADS = ()->  
+      return if !$rootScope.sessionUser
+      switch self.uploader.type
+        when 'parse'  
+          return if !self.enable() || !self.connectionOK()
+          if _parseFileUploader._photoFileQueue.length
+            _parseFileUploader._uploadNextP()
+          return
+        when 'background'
+          return PLUGIN.allSessionTaskInfosP()
+          .then (resp)->
+            if _.isEmpty resp
+              console.log "\n >>> background upload tasks empty"
+              return 
+            finished = _.filter resp, (status)-> return !!status.hasFinished
+            promises = []
+            _.each finished, (status)->
+              p = _bkgFileUploader.handleUploaderTaskFinishedP(status.asset)
+              promises.push p
+              return
+            return $q.all(promises)
+
     $ionicPlatform.on 'pause' ,  ()->
       switch self.uploader.type
         when 'parse' 
@@ -73,21 +98,8 @@ angular.module('ionBlankApp')
 
 
     $ionicPlatform.on 'resume' ,  ()->
-      switch self.uploader.type
-        when 'parse'  
-          if self.enable() && self.connectionOK()
-            _parseFileUploader._uploadNextP()
-          return
-        when 'background'
-          return PLUGIN.allSessionTaskInfosP()
-          .then (resp)->
-            finished = _.filter resp, (status)-> return !!status.hasFinished
-            promises = []
-            _.each finished, (status)->
-              p = _bkgFileUploader.handleUploaderTaskFinishedP(status.asset)
-              promises.push p
-              return
-            return $q.all(promises)
+      _PROCESS_BKG_UPLOADS()
+      
 
 
     ### 

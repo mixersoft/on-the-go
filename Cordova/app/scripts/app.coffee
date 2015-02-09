@@ -370,12 +370,16 @@ angular
     })
     .state('app.workorders.photos', {
       url: "/:woid/photos",
+      abstract: true
       views: {
         'workorderContent' : {
           templateUrl: "views/workorders/workorder-photos.html"
           controller: 'WorkorderPhotosCtrl'
         }
       }
+    })
+    .state('app.workorders.photos.all', {
+      url: "/all",
     })
     .state('app.workorders.photos.todo', {
       url: "/todo",
@@ -616,18 +620,23 @@ angular
         return promise.promise
     }
 
-    $scope.SYNC_cameraRoll_Orders = ()->
-      console.log ">>> $scope.SYNC_cameraRoll_Orders"
-      onComplete = ()->
+    $scope.$on 'sync.debounceComplete', ()->
         $scope.hideLoading()
         $scope.$broadcast('scroll.refreshComplete')
-        return
+        return      
+
+
+    $scope.SYNC_cameraRoll_Orders = ()->
+      console.log ">>> $scope.SYNC_cameraRoll_Orders"
       cameraRoll.loadCameraRollP(null, 'force').finally ()->
-        return onComplete() if !$scope.deviceReady.isOnline()
+        if !$scope.deviceReady.isOnline()
+          return $scope.$broadcast('sync.debounceComplete')
+          
         otgWorkorderSync.SYNC_ORDERS(
           $scope, 'owner', 'force'
           , ()->
-            return onComplete()
+            $scope.$broadcast('sync.debounceComplete')
+            return
         )
       return
     $scope.DEBOUNCED_SYNC_cameraRoll_Orders = _.debounce ()->
