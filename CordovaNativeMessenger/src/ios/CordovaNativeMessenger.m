@@ -467,7 +467,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                     jsonResult[@"UUID"] = identifier;
                     if (data.length) {
                         jsonResult[@"data"] = data;
-                        jsonResult[@"dataLength"] = @(bytes.length);
+                        jsonResult[@"dataSize"] = @(bytes.length);
                     }
                     
                     jsonResult[@"dateTaken"] = [dateFormatter stringFromDate:[asset creationDate]];
