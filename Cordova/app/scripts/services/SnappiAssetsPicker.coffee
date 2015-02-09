@@ -146,7 +146,7 @@ angular
         return found
 
       setFavoriteP: (photo)->
-        return snappiMessengerPluginService.setFavoriteP(photo.UUID, photo.favorite)
+        return snappiMessengerPluginService.setFavoriteP(photo)
 
 
       loadCameraRollP: (options, force=true)->
@@ -302,7 +302,9 @@ angular
         else if isLocal # update in map()
           _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId'] # copy Edit fields
           foundInMap.from = 'CameraRoll<PARSE' 
-          console.log "%%% isLocal, photo=" + JSON.stringify _.pick  foundInMap, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId']
+          # cameraRoll photo.favorite has priority
+          # BUT, we need to listen for onChange favorite OUTSIDE app and post(?)
+          console.log "%%% isLocal, photo=" + JSON.stringify _.pick  foundInMap, ['from', 'caption', 'rating', 'xxxfavorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId']
           return true # triggers $broadcast cameraRoll.updated for topPicks refresh
         else if !isLocal && foundInMap # update Workorder Photo from Parse
           _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot'] # copy Edit fields
@@ -655,7 +657,7 @@ angular
           , 'setAllowsCellularAccess'
             args = [data, onSuccess, onError]
           when 'setFavorite'
-            args = [UUID, value, onSuccess, onError]
+            args = [data.UUID, data.favorite, onSuccess, onError]
           else
             throw "ERROR: invalid method. name=" + method
         console.log ">>> callP calling method=" + method + ", args.length=" + args.length     
@@ -728,8 +730,9 @@ angular
       setAllowsCellularAccessP : (value)->
         return _MessengerPLUGIN._callP( 'setAllowsCellularAccess', value ) 
 
-      setFavoriteP : (UUID, value)->
-        return _MessengerPLUGIN._callP( 'setFavorite', value ) 
+      setFavoriteP : (photo)->
+        data = _.pick photo, ['UUID', 'favorite']
+        return _MessengerPLUGIN._callP( 'setFavorite', data ) 
 
       scheduleAssetsForUploadP : (assetIds, options)-> 
         # o = {  

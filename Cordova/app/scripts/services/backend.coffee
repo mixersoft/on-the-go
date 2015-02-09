@@ -867,10 +867,15 @@ angular
           console.warn 'ERROR: saving Favorite to CameraRoll'
           return $q.reject(err)
         .then ()->
-          return otgParse.updatePhotoP(item, 'favorite')
+          return self.updatePhotoP(photo, 'favorite')
         .catch (err)->
-          console.warn 'ERROR: saving Favorite to Parse'
-          return $q.reject(err)
+          switch err
+            when 'not found'
+              # cameraRoll photo, not in Parse
+              return photo
+            else 
+              console.warn 'ERROR: saving Favorite to Parse'
+              return $q.reject(err)
 
 
 
