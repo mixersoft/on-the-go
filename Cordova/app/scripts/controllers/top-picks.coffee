@@ -144,25 +144,6 @@ angular.module('ionBlankApp')
       }
 ]
 
-.filter 'ownerPhotosByType', ()->
-  return (input, type='topPick')->
-    switch type
-      when 'topPicks' 
-        return _.reduce input, (result, e, i)->
-            result.push(e) if e.topPick == true
-            return result
-          , [] 
-      when 'favorites' 
-        # match = '2468ACE'   # match last CHAR of UUID
-        return _.reduce input, (result, e, i)->
-            result.push(e) if e.favorite == true
-            return result
-          , [] 
-      when 'shared'
-        return _.reduce input, (result, e, i)->
-            result.push(e) if e.shared == true 
-            return result
-          , [] 
       
 .controller 'TopPicksCtrl', [
   '$scope', '$rootScope', '$state', 'otgData', 'otgParse', 
