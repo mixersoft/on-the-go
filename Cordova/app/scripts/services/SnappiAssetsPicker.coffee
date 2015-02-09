@@ -87,9 +87,9 @@ angular
     return _deviceready
 ]
 .factory 'cameraRoll', [
-  '$q', '$timeout', '$rootScope', 'deviceReady', 'snappiMessengerPluginService', 'imageCacheSvc'
+  '$q', '$timeout', '$rootScope', 'deviceReady', 'PLUGIN_CAMERA_CONSTANTS', 'snappiMessengerPluginService', 'imageCacheSvc'
   'TEST_DATA', 'otgData', 'appConsole'
-  ($q, $timeout, $rootScope, deviceReady, snappiMessengerPluginService, imageCacheSvc, TEST_DATA, otgData, appConsole)->
+  ($q, $timeout, $rootScope, deviceReady, CAMERA, snappiMessengerPluginService, imageCacheSvc, TEST_DATA, otgData, appConsole)->
     _getAsLocalTime = (d, asJSON=true)->
         d = new Date() if !d    # now
         d = new Date(d) if !_.isDate(d)
@@ -196,40 +196,42 @@ angular
       loadFavoritesP: (delay=10)->
         # load 'preview' of favorites from cameraRoll, from mapAssetsLibrary()
         favorites = _.filter self.map(), {favorite: true}
+        options = {size: 'preview'}
         # check against imageCacheSvc
         notCached = _.filter favorites, (photo)->
-            return false if imageCacheSvc.isStashed( photo.UUID, 'thumbnail') 
-            return false if self.dataURLs['thumbnail'][photo.UUID]?
+            return false if imageCacheSvc.isStashed( photo.UUID, options.size ) 
+            return false if self.dataURLs[options.size][photo.UUID]?
             return true
         console.log "\n\n\n*** preloading favorite previews for UUIDs, count=" + notCached.length 
         # console.log notCached
-        return self.loadPhotosP(notCached, delay)
+        return self.loadPhotosP(notCached, options, delay)
 
       loadMomentThumbnailsP: (delay=10)->
         # preload thumbnail DataURLs for self moment previews
         momentPreviewAssets = self.getMomentPreviewAssets() 
+        options = {size: 'thumbnail'}
         # check against imageCacheSvc, self.dataURLs['thumbnail']
         notCached = _.filter( 
           momentPreviewAssets
           , (photo)->
-            return false if imageCacheSvc.isStashed( photo.UUID, 'thumbnail') 
-            return false if self.dataURLs['thumbnail'][photo.UUID]?
+            return false if imageCacheSvc.isStashed( photo.UUID, options.size) 
+            return false if self.dataURLs[options.size][photo.UUID]?
             return true
         )
         console.log "\n\n\n*** preloading moment thumbnails for UUIDs, count=" + notCached.length 
         # console.log notCached
-        return self.loadPhotosP(notCached, delay)
+        return self.loadPhotosP(notCached, options, delay)
 
 
-      loadPhotosP: (photos, delay=10)->
+      loadPhotosP: (photos, options, delay=10)->
         return $q.when('success') if _.isEmpty photos
         dfd = $q.defer()
         _fn = ()->
             start = new Date().getTime()
             return snappiMessengerPluginService.getDataURLForAssetsByChunks_P( 
               photos
-              , 'thumbnail'                          
-              , self.patchPhoto
+              , options                         
+              , null  # onEach, called for cameraRoll thumbnails and favorites
               , snappiMessengerPluginService.SERIES_DELAY_MS 
             )
             .then ()->
@@ -368,23 +370,34 @@ angular
         return date.substring(0,10)  # like "2014-07-14"
 
       # promise version, used by lazySrc
-      getDataURL_P :  (UUID, size='preview', noCache)->
-        found = self.getDataURL(UUID, size) if !noCache
+      ###
+      TODO: refactor, now using by default
+      options.DestinationType = CAMERA.DestinationType.FILE_URI 
+      ###
+      getDataURL_P :  (UUID, options)->
+        options = _.defaults options, {
+          size: 'preview'
+          noCache : false
+          DestinationType : CAMERA.DestinationType.FILE_URI 
+        }
+
+        found = self.getDataURL(UUID, options.size) if !options.noCache
         return $q.when(found) if found
         # load from cameraRoll
         role = if deviceReady.isWebView() then 'owner' else 'editor'
         switch role
-          when 'owner'
+          when 'owner'   # !! DEVICE, check deviceId as well
             return snappiMessengerPluginService.getDataURLForAssets_P( 
               [UUID], 
-              size, 
-              self.patchPhoto 
+              options, 
+              null  # onEach # ???: this is null
             ).then (photos)->
                 return photos[0]   # resolve( photo )
-          when 'editor'
+          when 'editor' # browser
             # using Parse URLs instead of cameraRoll dataURLs
             previewURL = self.getDataURL(UUID, 'preview')
             if previewURL && /^http/.test( previewURL )
+              # should be FileURL from parse
               return self.resampleP(previewURL, 64, 64).then (dataURL)->
                   photo = {
                       UUID: UUID
@@ -453,6 +466,11 @@ angular
         if !found # still not found, add to queue for fetch
           console.log "STILL NOT FOUND queueDataURL(UUID)=" + UUID
           self.queueDataURL(UUID, size)
+          # calls:
+           # > debounced_fetchDataURLsFromQueue 
+           #   > fetchDataURLsFromQueue 
+           #     > queue()
+           #     > getDataURLForAssetsByChunks_P()
         return found
 
 
@@ -475,6 +493,7 @@ angular
         return h
 
       queueDataURL : (UUID, size='preview')->
+        console.warn "@@@@@@  DEPRECATE??? cameraRoll.queueDataURL"
         return if !deviceReady.isWebView()
         self._queue[UUID] = { 
           UUID: UUID
@@ -488,6 +507,7 @@ angular
 
 
       queue: (clear, PREVIEW_LIMIT = 50 )->
+        console.warn "@@@@@@  DEPRECATE??? cameraRoll.queue"
         self._queue = {} if clear=='clear'
 
         thumbnails = _.filter self._queue, {size: 'thumbnail'}
@@ -503,7 +523,9 @@ angular
         # order by thumbnails then previews
         return batch
 
+      # DEPRECATE???
       fetchDataURLsFromQueue : ()->
+        console.warn "@@@@@@  DEPRECATE??? cameraRoll.fetchDataURLsFromQueue"
         queuedAssets = self.queue()
 
         chunks = {}
@@ -517,8 +539,8 @@ angular
           console.log "\n\n *** fetchDataURLsFromQueueP START! size=" + size + ", count=" + assets.length + "\n"
           promises.push snappiMessengerPluginService.getDataURLForAssetsByChunks_P(
               assets, 
-              size,
-              self.patchPhoto 
+              {size: size},
+              null, #  onEach
             ).then (photos)->
               return photos 
 
@@ -526,7 +548,7 @@ angular
             console.log "*** fetchDataURLsFromQueueP $q All Done! \n" 
 
       debounced_fetchDataURLsFromQueue : ()->
-        return console.log "\n\n\n ***** ERROR: add debounce on init *********"
+        return console.log "\n\n\n ***** Placeholder: add debounce on init *********"
 
 
       getMomentPreviewAssets:(moments)->
@@ -579,8 +601,8 @@ angular
 ]
 .factory 'snappiMessengerPluginService', [
   '$rootScope', '$q', '$timeout',
-  'deviceReady', 'appConsole', 'otgData'
-  ($rootScope, $q, $timeout, deviceReady, appConsole, otgData)->
+  'deviceReady', 'PLUGIN_CAMERA_CONSTANTS', 'appConsole', 'otgData'
+  ($rootScope, $q, $timeout, deviceReady, CAMERA, appConsole, otgData)->
 
     # wrap $ionicPlatform ready in a promise, borrowed from otgParse   
     _MessengerPLUGIN = {
@@ -608,6 +630,7 @@ angular
             args = [onSuccess]
           when 'scheduleAssetsForUpload', 'unscheduleAssetsForUpload'
           ,'sessionTaskInfoForIdentifier', 'removeSessionTaskInfoWithIdentifier'
+          , 'setAllowsCellularAccess'
             args = [data, onSuccess, onError]
           else
             throw "ERROR: invalid method. name=" + method
@@ -761,11 +784,16 @@ angular
 
       ##
       ## @param assets array [UUID,] or [{UUID:},{}]
+      ## @param options = { DestinationType:, size: }
       ## @param eachPhoto is a callback, usually supplied by cameraRoll
       ##
-      getDataURLForAssets_P: (assets, size , eachPhoto)->
+      getDataURLForAssets_P: (assets, options, eachPhoto)->
         # call getPhotosByIdP() with array
-        return _MessengerPLUGIN.getPhotosByIdP( assets , size).then (photos)->
+        options = _.defaults options, {
+          size: 'preview'
+          DestinationType : CAMERA.DestinationType.FILE_URI 
+        }
+        return _MessengerPLUGIN.getPhotosByIdP( assets , options).then (photos)->
             _.each photos, (photo)->
 
               eachPhoto(photo) if _.isFunction eachPhoto
@@ -791,9 +819,9 @@ angular
       ## primary entrypoint for getting assets from an array of UUIDs
       ## @param assets array [UUID,] or [{UUID:},{}]
       ##
-      getDataURLForAssetsByChunks_P : (tooManyAssets, size, eachPhoto, delayMS=0)->
+      getDataURLForAssetsByChunks_P : (tooManyAssets, options, eachPhoto, delayMS=0)->
         if tooManyAssets.length < _MessengerPLUGIN.CHUNK_SIZE
-          return _MessengerPLUGIN.getDataURLForAssets_P(tooManyAssets, size, eachPhoto) 
+          return _MessengerPLUGIN.getDataURLForAssets_P(tooManyAssets, options, eachPhoto) 
         # load dataURLs for assets in chunks
         chunks = []
         chunkable = _.clone tooManyAssets
@@ -806,7 +834,7 @@ angular
           promises = []
           _.each chunks, (assets, i, l)->
             # console.log "\n\n>>> chunk="+i+ " of length=" + assets.length
-            promise = _MessengerPLUGIN.getDataURLForAssets_P( assets, size, eachPhoto )
+            promise = _MessengerPLUGIN.getDataURLForAssets_P( assets, options, eachPhoto )
             promises.push(promise)
           return $q.all(promises).then (photos)->
               allPhotos = []
@@ -824,7 +852,7 @@ angular
           # all chunks fetched, exit recursion
           return $q.reject("done") if !assets
           # chunks remain, fetch chunk
-          return _MessengerPLUGIN.getDataURLForAssets_P( assets, size, eachPhoto).then (chunkOfPhotos)->
+          return _MessengerPLUGIN.getDataURLForAssets_P( assets, options, eachPhoto).then (chunkOfPhotos)->
             return allPhotos if chunkOfPhotos=="done"
             allPhotos = allPhotos.concat( chunkOfPhotos ) # collate resolves into 1 array
             return chunkOfPhotos
@@ -849,10 +877,10 @@ angular
       ##
       ## @param assets array [UUID,] or [{UUID:},{}]
       ##
-      getPhotosByIdP: (assets, size='preview')->
+      getPhotosByIdP: (assets, options={} )->
         return $q.when([]) if _.isEmpty assets
         # takes asset OR array of assets
-        options = {type: size} 
+        options.size = options.size || 'thumbnail'
 
         defaults = {
           preview: 
@@ -860,21 +888,24 @@ angular
             targetHeight: 720
             resizeMode: 'aspectFit'
             autoRotate: true
+            DestinationType: CAMERA.DestinationType.FILE_URI  # 1
           previewHD: 
             targetWidth: 1080
             targetHeight: 1080
             resizeMode: 'aspectFit'
             autoRotate: true
+            DestinationType: CAMERA.DestinationType.FILE_URI  # 1
           thumbnail:
             targetWidth: 64
             targetHeight: 64
             resizeMode: 'aspectFill'
             autoRotate: true
+            DestinationType: CAMERA.DestinationType.FILE_URI  # 1
         }
-        options = _.extend options, defaults.preview if options.type=="preview"
-        options = _.extend options, defaults.thumbnail if options.type=="thumbnail"
-        options = _.extend options, defaults.previewHD if options.type=="previewHD"
-        
+        options = _.extend options, defaults.preview if options.size=="preview"
+        options = _.extend options, defaults.thumbnail if options.size=="thumbnail"
+        options = _.extend options, defaults.previewHD if options.size=="previewHD"
+
         assets = [assets] if !_.isArray(assets)
         assetIds = assets
         assetIds = _.pluck assetIds, 'UUID' if assetIds[0].UUID

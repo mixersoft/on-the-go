@@ -58,6 +58,7 @@ angular.module('ionBlankApp')
           console.log "otgUploader: use-cellular-data=" + newVal['use-cellular-data']
           self._allowCellularNetwork = newVal['use-cellular-data']
           self.uploader.onNetworkAccessChanged(newVal['use-cellular-data'])
+
         if newVal['auto-upload'] != oldVal['auto-upload'] 
           $rootScope.config['upload']['enabled'] = $rootScope.config['upload']['auto-upload'] 
         
@@ -434,13 +435,20 @@ angular.module('ionBlankApp')
 
 
       onNetworkAccessChanged: (allowsCellularAccess)->
-        PLUGIN?.setAllowsCellularAccessP(allowsCellularAccess).then ()->
-          console.log "_bkgFileUploader: scheduled tasks reset to allowsCellularAccess="+allowsCellularAccess
+        PLUGIN.setAllowsCellularAccessP(allowsCellularAccess)
+        .then (resp)->
+            console.log "\n\n setAllowsCellularAccess() OK, set value=" + allowsCellularAccess
+            console.log "_bkgFileUploader: scheduled tasks reset to allowsCellularAccess="+allowsCellularAccess
+          , (err)->
+            console.log "\n\n setAllowsCellularAccess() ERROR, set value=" + allowsCellularAccess
+            console.log err 
+        return
+
         # HACK: clear queue, then reschedule with updated value for allowsCellularAccess  
-        return _bkgFileUploader.clearQueueP()
-        .then (assetIds)->
-          _bkgFileUploader._readyToSchedule = _.unique _bkgFileUploader._readyToSchedule.concat(assetIds)
-          _bkgFileUploader.enable( _bkgFileUploader.isEnabled )
+        # return _bkgFileUploader.clearQueueP()
+        # .then (assetIds)->
+        #   _bkgFileUploader._readyToSchedule = _.unique _bkgFileUploader._readyToSchedule.concat(assetIds)
+        #   _bkgFileUploader.enable( _bkgFileUploader.isEnabled )
 
       _readyToSchedule: []    # array of assets on queue to be scheduled
       _scheduled:{} # hash of scheduled assets by UUID

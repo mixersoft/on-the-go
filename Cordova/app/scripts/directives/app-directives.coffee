@@ -13,8 +13,8 @@ angular.module('ionBlankApp')
 #   lorempixel (for brower debug)
 # uses $q.promise to load src 
 .directive 'lazySrc', [
-  'deviceReady', 'cameraRoll', 'imageCacheSvc', '$rootScope', 'TEST_DATA'
-  (deviceReady, cameraRoll, imageCacheSvc, $rootScope, TEST_DATA)->
+  'deviceReady', 'PLUGIN_CAMERA_CONSTANTS', 'cameraRoll', 'imageCacheSvc', '$rootScope', 'TEST_DATA'
+  (deviceReady, CAMERA, cameraRoll, imageCacheSvc, $rootScope, TEST_DATA)->
 
     _setLazySrc = (element, UUID, format)->
       throw "ERROR: asset is missing UUID" if !UUID
@@ -64,14 +64,23 @@ angular.module('ionBlankApp')
         console.log "\nlazySrc reports notCached in cameraRoll.dataURLs for format=" + format + ", UUID="+UUID
         if !isBrowser || isWorkorder
           # get with promise
-          return cameraRoll.getDataURL_P( UUID, IMAGE_SIZE ).then (photo)->
+          options = {
+            size: IMAGE_SIZE
+            DestinationType : CAMERA.DestinationType.FILE_URI 
+          }
+          return cameraRoll.getDataURL_P( UUID, options ).then (photo)->
               if element.attr('lazy-src') == photo.UUID
+                # TODO: this should now be FILE_URL
                 # confirm that collection-repeat has not reused the element
                 # 3. fetch dataURL from cameraRoll, cache and stash
                 element.attr('src', photo.data)
-                if IMAGE_SIZE == 'preview'
+                dataType = if photo.data[0...10]=='data:image' then 'DATA_URL' else 'FILE_URI'
+                if IMAGE_SIZE == 'preview' && dataType == 'DATA_URL'
                   imageCacheSvc.cordovaFile_USE_CACHED_P(element, photo.UUID, photo.data) 
-                # ???: are thumbnails cached in preload?
+                else if dataType == 'FILE_URI'
+                  imageCacheSvc.stashFile(UUID, IMAGE_SIZE, photo.data, 0) # FILE_URI
+                else 
+                  'not caching DATA_URL thumbnails'
               else
                 console.warn "\n\n*** WARNING: did collection repeat change the element before getDataURL_P returned?"  
               return

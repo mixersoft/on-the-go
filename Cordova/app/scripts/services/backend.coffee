@@ -217,7 +217,7 @@ angular
               # # use this is originalWidth/Height is not autoRotated
               # p = $q.when(found).then (found)->
               #     if !found
-              #       return cameraRoll.getDataURL_P( UUID, self.UPLOAD_IMAGE_SIZE) 
+              #       return cameraRoll.getDataURL_P( UUID, {size: self.UPLOAD_IMAGE_SIZE}) 
               #     return found
               #   .then (found)->
               #     if !found 
@@ -493,8 +493,8 @@ angular
 ]
 
 .factory 'otgParse', [
-  '$q', '$ionicPlatform', '$timeout', '$rootScope', 'deviceReady', 'cameraRoll', 
-  ($q, $ionicPlatform, $timeout, $rootScope, deviceReady, cameraRoll)->
+  '$q', '$ionicPlatform', '$timeout', '$rootScope', 'deviceReady', 'cameraRoll', 'PLUGIN_CAMERA_CONSTANTS'
+  ($q, $ionicPlatform, $timeout, $rootScope, deviceReady, cameraRoll, CAMERA)->
 
     parseClass = {
       PhotoObj : Parse.Object.extend('PhotoObj',  {
@@ -982,7 +982,13 @@ angular
               }) 
           .then ()->
             # fetch with promise
-            return cameraRoll.getDataURL_P( UUID, UPLOAD_IMAGE_SIZE, 'noCache' )
+            # TODO: need to set options.DestinationType = CAMERA.DestinationType.DATA_URL
+            options = {
+              size: UPLOAD_IMAGE_SIZE
+              noCache: true
+              DestinationType: CAMERA.DestinationType.DATA_URL
+            }
+            return cameraRoll.getDataURL_P( UUID, options)
             .catch (error)->
               error = error.shift() if _.isArray(error)
               if error.message == "Base64 encoding failed"
