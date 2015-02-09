@@ -457,7 +457,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                         data = withMIME;
                     }
                     else {
-                        NSString *path = [[self filesStoreDirectory] stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.jpeg", [[NSUUID UUID] UUIDString]]];
+                        NSString *path = [[self filesStoreDirectory] stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.jpg", [[NSUUID UUID] UUIDString]]];
                         
                         [bytes writeToFile:path atomically:YES];
                         data = path;
@@ -467,6 +467,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                     jsonResult[@"UUID"] = identifier;
                     if (data.length) {
                         jsonResult[@"data"] = data;
+                        jsonResult[@"dataLength"] = @(bytes.length);
                     }
                     
                     jsonResult[@"dateTaken"] = [dateFormatter stringFromDate:[asset creationDate]];
