@@ -30,18 +30,18 @@ static NSOperationQueue *serialQueue;
     PHImageManager *_cachingImageManager;
 }
 
-- (void)creteNewSession:(NSString *)identifier {
+- (NSURLSession *)creteNewSession:(NSString *)identifier {
 
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:identifier];
     [config setDiscretionary:YES];
-    [config setAllowsCellularAccess:YES];
+    [config setAllowsCellularAccess:self.allowsCellularAccess];
     [config setSessionSendsLaunchEvents:YES];
     
-    _backgroundUploadSession = [NSURLSession sessionWithConfiguration:config delegate:(id<NSURLSessionDelegate>)self delegateQueue:[NSOperationQueue mainQueue]];
+    NSURLSession *backgroundUploadSession = [NSURLSession sessionWithConfiguration:config delegate:(id<NSURLSessionDelegate>)self delegateQueue:[NSOperationQueue mainQueue]];
     
     _delegates = [NSHashTable hashTableWithOptions:NSHashTableWeakMemory];
     [serialQueue addBlock:^(void(^operation)(void)) {
-        [_backgroundUploadSession getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
+        [backgroundUploadSession getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
             
             [uploadTasks enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
                 [scheduledTasks addObject:obj];
@@ -49,6 +49,7 @@ static NSOperationQueue *serialQueue;
             operation();
         }];
     }];
+    return backgroundUploadSession;
 }
 
 +(void)load {
@@ -105,14 +106,15 @@ static NSOperationQueue *serialQueue;
     if (self = [super init]) {
         _cachingImageManager = [PHImageManager new];
         NSData *prefsData = [NSUserDefaults.standardUserDefaults objectForKey:@"prefs"];
-        [self setAllowsCellularAccess:NO];
+        
+        _allowsCellularAccess = YES;
         if (prefsData) {
             id prefs = [NSJSONSerialization JSONObjectWithData:prefsData options:0 error:nil];
             BOOL allowsCell = [[prefs objectForKey:@"upload"][@"use-cellular-data"] boolValue];
-             [self setAllowsCellularAccess:allowsCell];
+             _allowsCellularAccess = allowsCell;
         }
        
-        [self creteNewSession:identifier];
+        _backgroundUploadSession = [self creteNewSession:identifier];
     }
     return self;
 }
@@ -145,8 +147,19 @@ static NSOperationQueue *serialQueue;
     if (_allowsCellularAccess == allowsCellularAccess) {
         return;
     }
-#warning create session
-    
+    [serialQueue addBlock:^(void(^operation)(void)) {
+        NSURLSession *oldBG = _backgroundUploadSession;
+        _backgroundUploadSession = [self creteNewSession:oldBG.configuration.identifier];
+        [oldBG invalidateAndCancel];
+        
+       [[self allSessionTaskInfos] enumerateObjectsUsingBlock:^(NSURLSessionTaskInfo *obj, NSUInteger idx, BOOL *stop) {
+           NSString *identifier = obj.asset;
+           NSString *imagePath = [self imagePathForAssetIdentifier:identifier];
+           NSURLSessionUploadTask *task = [self parseUplaodTaskForFilePath:imagePath additinalHeaderKeys:@{@"X-Image-Identifier":identifier}];
+           [task resume];
+           [scheduledTasks addObject:task];
+       }];
+    }];
 }
 
 - (NSString *)applicationDocumentsDirectory {
@@ -305,23 +318,13 @@ static NSOperationQueue *serialQueue;
                         return;
                     }
                     
-                    //NSLog(@"image:%@ with size:%@", fullPath.lastPathComponent, NSStringFromCGSize(result.size));
-                    NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", fullPath.lastPathComponent];
-                    //NSString *path = [NSString stringWithFormat:@"http://151.237.16.170:1337/files/%@", fullPath.lastPathComponent];
-                    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60];
-                    [request setHTTPMethod:@"POST"];
-                    [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-Application-Id"];
-                    [request addValue:parseRESTAPIKey forHTTPHeaderField:@"X-Parse-REST-API-Key"];
-                    [request addValue:@"image/jpeg" forHTTPHeaderField:@"Content-Type"];
-                    [request addValue:obj.localIdentifier forHTTPHeaderField:@"X-Image-Identifier"];
-                    
-                    NSURLSessionUploadTask *task = [_backgroundUploadSession uploadTaskWithRequest:request fromFile:[NSURL fileURLWithPath:fullPath]];
-                    [task resume];
-                    [scheduledTasks addObject:task];
-                    
                     NSURLSessionTaskInfo *info = [NSURLSessionTaskInfo new];
                     info.asset = obj.localIdentifier;
                     [self addSessionTaskInfo:info];
+                    
+                    NSURLSessionUploadTask *task = [self parseUplaodTaskForFilePath:fullPath additinalHeaderKeys:@{@"X-Image-Identifier":obj.localIdentifier}];
+                    [task resume];
+                    [scheduledTasks addObject:task];
                     
                     for (id<PhotosUploaderDelegate>delegate in _delegates) {
                         if ([delegate respondsToSelector:@selector(photoUploader:didScheduleUploadForAssetWithIdentifier:)]) {
@@ -334,6 +337,20 @@ static NSOperationQueue *serialQueue;
         }];
         
     }
+}
+
+-(NSURLSessionUploadTask *)parseUplaodTaskForFilePath:(NSString *)filePath additinalHeaderKeys:(NSDictionary *)additionalKeys {
+    NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", filePath.lastPathComponent];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60];
+    [request setHTTPMethod:@"POST"];
+    [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-Application-Id"];
+    [request addValue:parseRESTAPIKey forHTTPHeaderField:@"X-Parse-REST-API-Key"];
+    [request addValue:@"image/jpeg" forHTTPHeaderField:@"Content-Type"];
+    [additionalKeys enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+        [request addValue:obj forHTTPHeaderField:key];
+    }];
+    
+    return [_backgroundUploadSession uploadTaskWithRequest:request fromFile:[NSURL fileURLWithPath:filePath]];
 }
 
 -(void)stopUploadingAssetWithID:(NSString *)assetID completion:(void(^)(bool fond))completion {
@@ -358,22 +375,6 @@ static NSOperationQueue *serialQueue;
     }];
 }
 
-//-(NSData *)responseDataForTask:(NSURLSessionTask *)task {
-//     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-//    NSMutableData *data = [_responseDataWrappers objectForKey:identifier];
-//    if (!data.length) {
-//        data = [NSMutableData dataWithContentsOfURL:[self fileURLOfDataForTask:task]];
-//    }
-//    return  data;
-//}
-
-//-(NSURL *)fileURLOfDataForTask:(NSURLSessionTask *)task {
-//    NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-//    if (!identifier.length) return nil;
-//    
-//     NSString *dir = [[self uploaderStoreDirectory] stringByAppendingPathComponent:[identifier stringByReplacingOccurrencesOfString:@"/" withString:@"-" options:NSCaseInsensitiveSearch range:NSMakeRange(0, identifier.length)]];
-//    return [NSURL fileURLWithPath:dir];
-//}
 
 -(BOOL)appendData:(NSData *)data toTask:(NSURLSessionTask *)task {
     //NSFileWrapperReadingImmediate
@@ -405,7 +406,6 @@ static NSOperationQueue *serialQueue;
         //[NSFileManager.defaultManager removeItemAtURL:[self fileURLOfDataForTask:task] error:nil];
         NSString *path = [self imagePathForAssetIdentifier:identifier];
         [NSFileManager.defaultManager removeItemAtPath:path error:nil];
-        
         [scheduledTasks removeObject:task];
         operation();
     }];
@@ -436,23 +436,17 @@ totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
 didCompleteWithError:(NSError *)error {
     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-    //NSData *responseData = [self responseDataForTask:task];
     [self deleteDataForTask:task];
+    if (error.code == NSURLErrorCancelled && _backgroundUploadSession != session) {
+        //take care of session canceled;
+        return;
+    }
+    
     NSURLSessionTaskInfo *info = [self sessionTaskInfoForIdentifier:identifier];
     info.error = error;
     info.progress = 1;
     [self saveSessionInfos:[self sessionInfosDictionary]];
     NSLog(@"Finished task with image identifier: %@ with error:%@", identifier, error);
-    
-  /*
-   [[NSOperationQueue mainQueue] addOperationWithBlock:^{
-   for (id<PhotosUploaderDelegate>delegate in _delegates) {
-   if ([delegate respondsToSelector:@selector(photoUploader:didCancelUploadAssetIdentifier:)]) {
-   [delegate photoUploader:self didCancelUploadAssetIdentifier:identifier];
-   }
-   }
-   }];
-   */
     
     for (id<PhotosUploaderDelegate>delegate in _delegates) {
         if ([delegate respondsToSelector:@selector(photoUploader:didFinishUploadAssetIdentifier:)]) {
