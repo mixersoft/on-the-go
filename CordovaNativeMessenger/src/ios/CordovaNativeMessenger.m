@@ -12,6 +12,11 @@
 #import <CoreLocation/CoreLocation.h>
 #import "UIImage+FixOrientation.h"
 
+typedef NS_ENUM(uint8_t, DestinationType) {
+    DestinationTypeFilePath,
+    DestinationTypeBase64,
+};
+
 NSString *kSendNativeMessageNotification = @"com.mixersoft.on-the-go.SendNativeMessageNotification";
 
 NSString *kCommandKey = @"command";
@@ -288,6 +293,24 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     }
 }
 
+- (NSString *)applicationDocumentsDirectory {
+    return [[[[NSFileManager defaultManager] URLsForDirectory:NSLibraryDirectory
+                                                    inDomains:NSUserDomainMask] lastObject] path];
+}
+
+- (NSString *) filesStoreDirectory
+{
+    static NSString *path = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        path = [[self applicationDocumentsDirectory] stringByAppendingPathComponent:@"files"];
+        if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
+            [NSFileManager.defaultManager createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:nil];
+        }
+    });
+    return path;
+}
+
 -(void)getPhotoById:(CDVInvokedUrlCommand*) command {
     
     __weak __typeof(self) weakself = self;
@@ -335,6 +358,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
         NSNumber *height = options[@"targetHeight"];
         NSString *resizeModeString = options[@"resizeMode"];
         BOOL autoRotate = [options[@"autoRotate"] boolValue];
+        DestinationType destinationType = (DestinationType)[options[@"DestinationType"] integerValue];
         
         PHImageRequestOptions *requestOptions = [PHImageRequestOptions new];
         requestOptions.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
@@ -389,27 +413,41 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                     }
                     
                     NSData *bytes = UIImageJPEGRepresentation(resultImage, 1);
-                   NSString *base64 = [bytes base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
                     
-                    if(base64 == nil) {
-                        CDVPluginResult *pluginResult = [CDVPluginResult
-                                                         resultWithStatus:CDVCommandStatus_ERROR
-                                                         messageAsDictionary:@{@"UUID":identifier,
-                                                                               @"message":@"Base64 encoding failed"}];
+                    NSString *data = nil;
+
+                    if (destinationType == DestinationTypeBase64) {
+                         NSString *base64 = [bytes base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
+                        if(base64 == nil) {
+                            CDVPluginResult *pluginResult = [CDVPluginResult
+                                                             resultWithStatus:CDVCommandStatus_ERROR
+                                                             messageAsDictionary:@{@"UUID":identifier,
+                                                                                   @"message":@"Base64 encoding failed"}];
+                            
+                            pluginResult.keepCallback = @(requestsLeft > 1);
+                            --requestsLeft;
+                            
+                            
+                            [weakself.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                            return;
+                        }
                         
-                        pluginResult.keepCallback = @(requestsLeft > 1);
-                        --requestsLeft;
-                        
-                        
-                        [weakself.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-                        return;
+                        NSString *withMIME = [@"data:image/jpg;base64," stringByAppendingString:base64];
+                        data = withMIME;
                     }
-                    
-                    NSString *withMIME = [@"data:image/jpg;base64," stringByAppendingString:base64];
+                    else {
+                        NSString *path = [[self filesStoreDirectory] stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.jpeg", [[NSUUID UUID] UUIDString]]];
+                        
+                        [bytes writeToFile:path atomically:YES];
+                        data = path;
+                    }
                     
                     NSMutableDictionary *jsonResult = [NSMutableDictionary new];
                     jsonResult[@"UUID"] = identifier;
-                    jsonResult[@"data"] = withMIME;
+                    if (data.length) {
+                        jsonResult[@"data"] = data;
+                    }
+                    
                     jsonResult[@"dateTaken"] = [dateFormatter stringFromDate:[asset creationDate]];
                     // return UIImageOrientation property
                     jsonResult[@"UIImageOrientation"] = @(result.imageOrientation);

@@ -150,7 +150,7 @@ static NSOperationQueue *serialQueue;
 }
 
 - (NSString *)applicationDocumentsDirectory {
-    return [[[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
+    return [[[[NSFileManager defaultManager] URLsForDirectory:NSLibraryDirectory
                                                    inDomains:NSUserDomainMask] lastObject] path];
 }
 

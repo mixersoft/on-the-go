@@ -17,6 +17,7 @@
   },
   "cordovaPlugins": [
     "https://github.com/apache/cordova-plugin-inappbrowser.git",
-    "../CordovaNativeMessenger"
+    "../CordovaNativeMessenger",
+    "../CordovaNativeMessenger/"
   ]
 }
