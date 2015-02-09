@@ -226,8 +226,8 @@ angular.module('ionBlankApp')
         event.preventDefault();
         event.stopPropagation()
         item.favorite = !item.favorite
-        otgParse.updatePhotoP(item, 'favorite').then ()->
-                  console.log "\n\n*** Success updated favorite"
+        otgParse.setFavoriteP(item).then ()->
+           console.log "\n\n*** Success updated favorite"
         return item
       addShare: (event, item)->
         event.preventDefault();
@@ -293,14 +293,12 @@ angular.module('ionBlankApp')
       # swipeCard methods
       cardKeep: (item)->
         item.favorite = true
-        otgParse.updatePhotoP(item, 'favorite').then ()->
-                  console.log "\n\n*** Success updated favorite"
+        otgParse.setFavoriteP(item).then ()->
+           console.log "\n\n*** Success updated favorite=true"
       cardReject: (item)->
         item.favorite = false
-        otgParse.updatePhotoP(item, 'favorite').then ()->
-                  console.log "\n\n*** Success updated favorite"
-          , (err)->
-            console.log "WARNING: favorite not in Workorder, change locally!!!!"
+        otgParse.setFavoriteP(item).then ()->
+           console.log "\n\n*** Success updated favorite=false"
       cardSwiped: (item)->
         # console.log "Swipe, item.UUID=" + item.UUID
         return

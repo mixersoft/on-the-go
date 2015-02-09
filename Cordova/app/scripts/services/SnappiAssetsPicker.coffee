@@ -144,6 +144,10 @@ angular
         cameraRoll.getDataURL UUID, 'thumbnail' # queue to add to cameraRoll.dataUrls
         return found
 
+      setFavoriteP: (photo)->
+        return snappiMessengerPluginService.setFavoriteP(photo.UUID, photo.favorite)
+
+
       loadCameraRollP: (options, force=true)->
         defaults = {
           size: 'thumbnail'
@@ -632,6 +636,8 @@ angular
           ,'sessionTaskInfoForIdentifier', 'removeSessionTaskInfoWithIdentifier'
           , 'setAllowsCellularAccess'
             args = [data, onSuccess, onError]
+          when 'setFavorite'
+            args = [UUID, value, onSuccess, onError]
           else
             throw "ERROR: invalid method. name=" + method
         console.log ">>> callP calling method=" + method + ", args.length=" + args.length     
@@ -703,6 +709,9 @@ angular
 
       setAllowsCellularAccessP : (value)->
         return _MessengerPLUGIN._callP( 'setAllowsCellularAccess', value ) 
+
+      setFavoriteP : (UUID, value)->
+        return _MessengerPLUGIN._callP( 'setFavorite', value ) 
 
       scheduleAssetsForUploadP : (assetIds, options)-> 
         # o = {  

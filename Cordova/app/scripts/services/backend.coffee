@@ -861,6 +861,19 @@ angular
           , (err)->
             return $q.reject(err)
           
+      setFavoriteP: (photo)->
+        return $q.reject() if `photo.favorite==null`
+        return cameraRoll.setFavoriteP(photo)
+        .catch (err)->
+          console.warn 'ERROR: saving Favorite to CameraRoll'
+          return $q.reject(err)
+        .then ()->
+          return otgParse.updatePhotoP(item, 'favorite')
+        .catch (err)->
+          console.warn 'ERROR: saving Favorite to Parse'
+          return $q.reject(err)
+
+
 
       savePhotoP : (item, collection, pick)->
         photoObj = _.findWhere(collection.models, {id: item.objectId})
