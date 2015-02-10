@@ -242,11 +242,14 @@ angular.module('ionBlankApp')
         return action
       enable: (action)->
         return _bkgFileUploader.isEnabled if `action==null`
+        wasEnabled = _bkgFileUploader.isEnabled
         _bkgFileUploader.isEnabled = 
           if action == 'toggle'
           then !_bkgFileUploader.isEnabled 
           else !!action
-        if _bkgFileUploader.isEnabled && self.connectionOK()
+        return _bkgFileUploader.isEnabled if wasEnabled == _bkgFileUploader.isEnabled
+
+        if _bkgFileUploader.isEnabled 
           console.log "\n>>> calling resumeQueueP from enable..."
           promise = _bkgFileUploader.isPausingP || $q.when()
           promise.then _bkgFileUploader.resumeQueueP
@@ -261,7 +264,7 @@ angular.module('ionBlankApp')
         # otgWorkorderSync.queueDateRangeFilesP(sync) OR _bkgFileUploader.enable(true)
         #   promise = otgUploader.queueP( sync['addFile'] )
 
-        # add to _readyToSchedule queue, then schedule a chunk
+        # add to _readyToSchedule queue, then schedule a chunk, as necessary
         if assetIds.length
           assetIds = _.filter assetIds, (UUID)->
             return false if _bkgFileUploader._complete[UUID] == 1
@@ -272,13 +275,17 @@ angular.module('ionBlankApp')
           console.log "\n>>> queueP count=" + _bkgFileUploader.count()
           self.remaining( _bkgFileUploader.count() )
 
-        if _bkgFileUploader.isEnabled == false
-          console.log "_bkgFileUploader disabled: do NOT queue"
-          self.remaining( _bkgFileUploader.count()  )
-          return $q.when(_bkgFileUploader._readyToSchedule) 
-
+        scheduled = _.filter _bkgFileUploader._scheduled, (v,k)->
+          return v != 1 
+        return $q.when(_.keys scheduled) if scheduled.length > (_CHUNKSIZE/3)
         
-        assetIds = _bkgFileUploader._readyToSchedule.splice(0,_CHUNKSIZE)  
+        # schedule more from _bkgFileUploader._readyToSchedule
+        assetIds = []
+        while assetIds.length < _CHUNKSIZE && _bkgFileUploader._readyToSchedule.length > 0
+          added = _bkgFileUploader._readyToSchedule.splice(0,_CHUNKSIZE)
+          added = _.difference added, _.keys(_bkgFileUploader._scheduled)
+          assetIds = assetIds.concat(added)
+
         return $q.when([]) if _.isEmpty assetIds  # all scheduled, but not all done
 
         _.defaults( _bkgFileUploader._scheduled, _.object(assetIds) )
@@ -392,11 +399,7 @@ angular.module('ionBlankApp')
             # update JS queue
             # remove from  _bkgFileUploader._scheduled and save on _complete
 
-            scheduled = _.filter _bkgFileUploader._scheduled, (v,k)->
-              return v != 1 
-            if scheduled.length < 3
-              # schedule another chunk
-              scheduleMoreP = _bkgFileUploader.queueP()
+            _bkgFileUploader.queueP() # schedule more, as necessary
 
             ERROR_CANCELLED = -999
             if resp.success == false && resp.errorCode == ERROR_CANCELLED
@@ -576,7 +579,6 @@ angular.module('ionBlankApp')
             target.addClass('enabled') 
           else 
             target.removeClass('enabled') 
-          
           return
       release: (ev)-> 
         target = angular.element(ev.currentTarget)
