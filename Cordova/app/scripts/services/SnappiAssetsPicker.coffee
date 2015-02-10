@@ -74,7 +74,7 @@ angular
           , _timeout
         $ionicPlatform.ready ()->
           $timeout.cancel _cancel
-          # $rootScope.deviceId = $cordovaDevice.getUUID()
+          # $rootScope.device.id = $cordovaDevice.getUUID()
           _device = ionic.Platform.device()
           _isWebView = ionic.Platform.isWebView()
           console.log "$ionicPlatform reports deviceready, device.UUID=" + _deviceready.deviceId()
@@ -114,7 +114,8 @@ angular
       readyP: ()->
         return 
 
-      map: ()->
+      map: (snapshot)->
+        self._mapAssetsLibrary = angular.copy snapshot if `snapshot!=null`
         return self._mapAssetsLibrary
 
       mapP: (options, force=null)->
@@ -134,16 +135,6 @@ angular
           else
             'not updated'
           return mapped
-
-      XXXgetPhoto: (UUID)->
-        # find the photo, if we have it
-        found = _.find self.map(), { UUID: UUID } 
-        if !found
-          console.error '\n\nERROR: cameraRoll.getPhoto(): is not found, UUID=' + UUID 
-          return null 
-
-        cameraRoll.getDataURL UUID, 'thumbnail' # queue to add to cameraRoll.dataUrls
-        return found
 
       setFavoriteP: (photo)->
         return snappiMessengerPluginService.setFavoriteP(photo)
@@ -215,7 +206,9 @@ angular
         # preload thumbnail DataURLs for self moment previews
         momentPreviewAssets = self.getMomentPreviewAssets() 
         options = {size: 'thumbnail'}
-        # check against imageCacheSvc, self.dataURLs['thumbnail']
+        
+        # return 'skip'
+
         notCached = _.filter( 
           momentPreviewAssets
           , (photo)->
@@ -273,8 +266,8 @@ angular
 
       addOrUpdatePhoto_FromWorkorder: (photo)->
         # photo could be in local cameraRoll, or if $rootScope.$state.includes('app.workorders') a workorder photo
-        isLocal = (photo.deviceId == $rootScope.deviceId)
-        # console.log "%%% isLocal=" + (photo.deviceId == $rootScope.deviceId) + ", values=" + JSON.stringify [photo.deviceId , $rootScope.deviceId]
+        isLocal = (photo.deviceId == $rootScope.device.id)
+        # console.log "%%% isLocal=" + (photo.deviceId == $rootScope.device.id) + ", values=" + JSON.stringify [photo.deviceId , $rootScope.device.id]
 
         foundInMap = _.find self.map(), {UUID: photo.UUID} # also putting workorder photos in map()
 

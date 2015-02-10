@@ -163,23 +163,18 @@ angular.module('ionBlankApp')
       canSwipe: true
     };
 
-
     $scope.watch = _watch = {
+      info: $scope.$localStorage['topPicks'].showInfo
       filteredOrderedPhotos : []
       filter: null
       orderBy: 
         key: 'dateTaken'
         reverse: true
-      counts:
-        'top-picks': null
-        favorites: null
-        shared: null
+      counts: $scope.$localStorage['topPicks'].counts
     }
 
     # use dot notation for prototypal inheritance in child scopes
     $scope.on  = {
-      _info: true
-
       # apply filter | orderBy
       reloadDataSet: (toState)->
         toState = $state.current if `toState==null`
@@ -205,21 +200,25 @@ angular.module('ionBlankApp')
         h += 90 if $scope.on.showInfo()
         # console.log "\n\n >>> height=" + h + "\n\n"
         return h
-      showInfo: (value=null)->
-        return $scope.on._info if value == null 
-        revert = $scope.on._info
-        if value=='toggle'
-          $scope.on._info = !$scope.on._info 
-        else if value != null 
-          $scope.on._info = value
-        $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() if $scope.on._info != revert
-        return $scope.on._info   
+      showInfo: (value)->
+        return $scope.watch.info if `value==null`
+        revert = $scope.watch.info
+        
+        $scope.watch.info = 
+          if value=='toggle'
+          then !$scope.watch.info 
+          else !!value
+
+        if $scope.watch.info != revert
+          $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() 
+        return $scope.watch.info   
       addFavorite: (event, item)->
         event.preventDefault();
         event.stopPropagation()
         item.favorite = !item.favorite
         otgParse.setFavoriteP(item).then ()->
-           console.log "\n\n*** Success updated favorite"
+          $rootScope.$broadcast 'sync.cameraRollChanged'
+          console.log "\n\n*** Success updated favorite"
         return item
       addShare: (event, item)->
         event.preventDefault();
@@ -250,6 +249,7 @@ angular.module('ionBlankApp')
                 item.shared = true
                 # save to Parse
                 otgParse.updatePhotoP(item, 'shared').then ()->
+                  $rootScope.$broadcast 'sync.cameraRollChanged'
                   console.log "\n\n*** Success socialSharing"
               , (error)->
                 cancelled = error == false
@@ -286,11 +286,13 @@ angular.module('ionBlankApp')
       cardKeep: (item)->
         item.favorite = true
         otgParse.setFavoriteP(item).then ()->
-           console.log "\n\n*** Success updated favorite=true"
+          $rootScope.$broadcast 'sync.cameraRollChanged'
+          console.log "\n\n*** Success updated favorite=true"
       cardReject: (item)->
         item.favorite = false
         otgParse.setFavoriteP(item).then ()->
-           console.log "\n\n*** Success updated favorite=false"
+          $rootScope.$broadcast 'sync.cameraRollChanged'
+          console.log "\n\n*** Success updated favorite=false"
       cardSwiped: (item)->
         # console.log "Swipe, item.UUID=" + item.UUID
         return
@@ -309,6 +311,16 @@ angular.module('ionBlankApp')
         $scope.SYNC_cameraRoll_Orders()
         return 
 
+      DEBOUNCED_cameraRollSnapshot : _.debounce ()->
+          console.log "\n\n >>> DEBOUNCED!!!"
+          $scope.$localStorage['cameraRoll'].map = cameraRoll.map()
+          return
+        , 5000 # 5*60*1000
+        , {
+          leading: true
+          trailing: false
+        }
+
       test: ()->
         $scope._TEST_nativeUploader()
         # _TEST_imageCacheSvc()
@@ -323,10 +335,11 @@ angular.module('ionBlankApp')
       if $state.includes('app.top-picks')
         # pickup iOS .favorite
         # TODO: push NEW favorites if we want to share with other devices in WO
-        console.log args
         console.log '@@@ sync.cameraRollComplete, args=' +JSON.stringify _.keys args
-        $scope.on.reloadDataSet() if $state.includes('app.top-picks.favorites')
+        $scope.on.reloadDataSet()
       return
+
+    cameraRollSnapshot = _.debounce ()->
 
       
     $scope.$on 'sync.ordersComplete', ()->
@@ -341,8 +354,7 @@ angular.module('ionBlankApp')
 
     $rootScope.$on 'sync.cameraRollChanged', ()->
       if $state.includes('app.top-picks')
-        # redundant?? sync.ordersComplete instead?
-        # $scope.on.reloadDataSet() 
+        $scope.on.DEBOUNCED_cameraRollSnapshot()
         return
 
 
@@ -355,7 +367,6 @@ angular.module('ionBlankApp')
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
       console.log '$ionicView.loaded'
-      $scope.on.showInfo(true) if $scope.config['top-picks']?.info
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
@@ -371,11 +382,20 @@ angular.module('ionBlankApp')
     
 
     init = ()->
+      if _.isEmpty cameraRoll.map()
+        cameraRoll.map( $scope.$localStorage['cameraRoll'].map )
+        console.log "@@@ restoring localStorage['cameraRoll'].map"
+
       $scope.config['app-bootstrap'] = false
       $scope.deviceReady.waitP().then ()->
         # first time only
-        $scope.showLoading(true)
-        $scope.DEBOUNCED_SYNC_cameraRoll_Orders()  # first time only
+        if _.isEmpty cameraRoll.map()
+          $scope.showLoading(true)
+          $scope.DEBOUNCED_SYNC_cameraRoll_Orders()  # first time only
+        else 
+          # WARNING: lazySrc bug, uses lorempixel before deviceReady.isWebView(0)
+          $scope.on.reloadDataSet() # restored from localStorage
+
         # $scope.on.cameraRollUpdated()
         $timeout ()->$scope.hideSplash()
         return

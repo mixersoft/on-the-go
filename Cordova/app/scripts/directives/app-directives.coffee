@@ -25,6 +25,7 @@ angular.module('ionBlankApp')
 
       isWorkorder = $rootScope.$state.includes('app.workorders') || $rootScope.$state.includes('app.orders')
       isWorkorderMoment = IMAGE_SIZE=='thumbnail' && isWorkorder
+      # WARNING: must be after deviceReady.waitP()
       isBrowser = !deviceReady.isWebView()
 
       # special condition, Editor Workstation with no local photos

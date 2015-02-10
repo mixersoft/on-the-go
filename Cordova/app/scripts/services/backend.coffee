@@ -287,7 +287,7 @@ angular
           # add, remove = [] for workorder syncs...
         else 
           parsePhotos = _.filter parsePhotos, (photo)->
-              return photo.deviceId == $rootScope.deviceId
+              return photo.deviceId == $rootScope.device.id
           promise = cameraRoll.mapP(null, false).then (mappedPhotos)->
             cameraRollInDateRange = _.filter mappedPhotos, (o)->
               o.date = cameraRoll.getDateFromLocalTime o.dateTaken if !o.date
@@ -391,7 +391,7 @@ angular
                   return if workorderObj.get('status') == 'complete'
                   openOrders++
 
-                  if workorderObj.get('devices').indexOf($rootScope.deviceId) > -1
+                  if workorderObj.get('devices').indexOf($rootScope.device.id) > -1
                     p = self.fetchWorkorderPhotosP(workorderObj, options, force )
                     .then (photosColl)->
 
@@ -760,12 +760,12 @@ angular
       createWorkorderP : (checkout, servicePlan, status='new')->
         parseData = {
           owner: $rootScope.sessionUser
-          deviceId: $rootScope.deviceId
+          deviceId: $rootScope.device.id
           # contributors: [$rootScope.sessionUser]
           # accessors: []
           fromDate: checkout.dateRange.from
           toDate: checkout.dateRange.to
-          devices: [$rootScope.deviceId]
+          devices: [$rootScope.device.id]
           count_expected: checkout.count.photos || 0 
           count_received: 0
           count_duplicate: 0
@@ -893,7 +893,7 @@ angular
         query.equalTo 'UUID', photo.UUID
         if isDevice || $rootScope.user.role == 'owner'
           query.equalTo('owner', $rootScope.sessionUser) 
-          query.equalTo('deviceId', $rootScope.deviceId) 
+          query.equalTo('deviceId', $rootScope.device.id) 
         return query.find().then (photos)->
           return $q.reject("not found") if _.isEmpty photos,
           promises = []
@@ -971,7 +971,7 @@ angular
                 UUID: photo.UUID
                 owner: $rootScope.sessionUser
                 workorder : workorderObj
-                deviceId: $rootScope.deviceId
+                deviceId: $rootScope.device.id
                 src: "queued"
             }
             , extendedAttrs # , classDefaults

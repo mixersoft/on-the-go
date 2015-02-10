@@ -13,14 +13,105 @@ window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileS
 #
 
 angular
-.module 'onTheGo.localStorage', []
+.module 'onTheGo.localStorage', ['ngStorage']
+
+.service 'otgLocalStorage', ['$q', '$localStorage', '$sessionStorage'
+  ($q, $localStorage, $sessionStorage)->
+    # TODO: load from REST API or Parse Config svc
+    self = this
+    this.defaults = {
+      device:
+        id: '00000000000'
+        isWebView: null
+        isBrowser: null
+      config: # default app config params
+        'app-bootstrap' : true
+        'no-view-headers' : false
+        'system':
+          'order-standby': false
+        help: false
+        privacy:
+          'only-mothers': false
+        upload:
+          'auto-upload': false
+          'use-cellular-data': false
+          'use-720p-service': true
+          'rate-control': 80
+          'CHUNKSIZE': 5
+        archive:
+          'copy-top-picks': false
+          'copy-favorites': false  
+        sharing:  
+          'use-720p-sharing': false
+        'dont-show-again':
+          'test-drive': false
+          'top-picks':
+            'top-picks': false
+            'favorite': false
+            'shared': false
+          choose:
+            'camera-roll': false
+            calendar: false
+          'workorders':
+            'photos': false
+            'todo' : false
+            'picks' : false
+      menuCounts: 
+        'top-picks': 0
+        uploaderRemaining: 0
+        orders: 0
+      topPicks:
+        showInfo: true
+        counts:
+          'top-picks': null
+          favorites: null
+          shared: null 
+      cameraRoll:
+        map: []       
+      # used by imageCacheSvc
+      fileURI_Cache: {}
+      fileURI_MostRecent : []
+        # TODO: organize cache by image size
+    }
+    this.loadDefaults = (keys, storage='local')->
+      keys = [keys] if _.isString keys
+      $storage = if storage == 'session' then $sessionStorage else $localStorage
+      _.each keys, (key)->
+        return if !self.defaults[key]?
+        return $storage[key] = self.defaults[key]
+
+    this.loadDefaultsIfEmpty = (keys, storage='local')->
+      keys = [keys] if _.isString keys
+      $storage = if storage == 'session' then $sessionStorage else $localStorage
+      _.each keys, (key)->
+        return if !self.defaults[key]?
+        return if $storage[key]?
+        return $storage[key] = self.defaults[key]
+
+    this.defer = (key, fnDefer)->
+      orig = $localStorage[key] 
+      _copy = angular.copy orig
+      console.log "\n\n @@@@ localStorage deferred updates"
+      _copy = fnDefer(_copy)
+      return $localStorage[key] = _copy
+
+    this.clear = (storage='local')->
+      keys = [keys] if _.isString keys
+      $storage = if storage == 'session' then $sessionStorage else $localStorage
+      _.each keys, (key)->
+        return if !self.defaults[key]?
+        return $storage[key] = {}
+    return
+  ]
 
 .factory 'imageCacheSvc', [
-  '$q', '$timeout',  'deviceReady', '$cordovaFile'
-  ($q, $timeout, deviceReady, $cordovaFile)->
+  '$q', '$timeout',  'deviceReady', '$cordovaFile', 
+  '$localStorage', '$sessionStorage', 'otgLocalStorage'
+  ($q, $timeout, deviceReady, $cordovaFile, $localStorage, $sessionStorage, otgLocalStorage)->
     _promise = null
     _timeout = 2000
-    _IMAGE_CACHE_defaults = {
+
+    XXX_IMAGE_CACHE_defaults = {
       chromeQuota: 50*1024*1024 # HTML5 FILE API not available for Safari, check cordova???
       debug: true
       skipURIencoding: true    # required for dataURLs
@@ -53,7 +144,7 @@ angular
       return false
 
 
-    # _.extend ImgCache.options, _IMAGE_CACHE_defaults
+    # _.extend ImgCache.options, XXX_IMAGE_CACHE_defaults
 
     # deviceReady.waitP().then ()->
     #   ImgCache.init()
@@ -65,10 +156,17 @@ angular
        i = Math.floor(Math.log(bytes) / Math.log(k));
        return (bytes / Math.pow(k, i)).toPrecision(3) + ' ' + sizes[i];
 
+    otgLocalStorage.loadDefaultsIfEmpty(['fileURI_Cache','fileURI_MostRecent']) 
 
+    ##
+    ## imageCacheSvc
+    ##
     self = {
-      cacheIndex : {} # index of cached files by UUID
-      mostRecent : [] # stack for garbage collection, mostRecently used UUID on the 'top'
+      # index of cached files by UUID
+      cacheIndex : $localStorage['fileURI_Cache'] 
+      # stack for garbage collection, mostRecently used UUID on the 'top'
+      # use copy and update $localStorage['fileURI_MostRecent'] in debounced method
+      mostRecent : angular.copy $localStorage['fileURI_MostRecent'] 
       CACHE_DIR : '/'  # ./Library/files/  it seems $cordovaFile requires this as root
       cacheRoot : null
       LIMITS:
@@ -78,7 +176,7 @@ angular
         throw "isDataURL() ERROR: expecting string" if typeof src != 'string'
         return /^data:image/.test( src )
 
-      getExt: (dataURL)->
+      getDataURLExt: (dataURL)->
         return if !self.isDataURL(dataURL)
         mimeType = dataURL[10..20]
         return 'jpg' if /jpg|jpeg/i.test(mimeType)
@@ -87,30 +185,42 @@ angular
 
       getFilename: (UUID, size, dataURL)->
         # TODO: need to lookup from localStorage
-        ext = self.getExt(dataURL)
+        ext = self.getDataURLExt(dataURL)
         return false if !ext || !UUID
         return filePath = UUID[0...36] + '-' + size + '.' + ext
 
+      debounced_MostRecent: _.debounce ()->
+          self.mostRecent = _.unique(self.mostRecent)
+          $localStorage['fileURI_MostRecent'] = self.mostRecent
+          if self.mostRecent.length >  self.LIMITS.MOST_RECENT
+            self.clearStashedP('preview', self.LIMITS.MAX_PREVIEW)          
+          return
+        , 5000 # 5*60*1000
+        , {
+          leading: true
+          trailing: false
+        }
+
       # NOTE: this 'fast' version called by camera.getDataURL
-      # if not stashed, the UUID will be queued with cameraRoll.queueDataURL()
       isStashed:  (UUID, size)-> 
         # NOTE: we don't know the extension when we check isStashed
         hashKey = [ UUID[0...36] ,size].join(':') 
         src = self.cacheIndex[hashKey]?.fileURL || false
         if src
           # console.log "\n\n >>> STASH HIT !!!  file=" + src.slice(-60) 
+
           self.mostRecent.unshift(hashKey)
-          if self.mostRecent.length >  self.LIMITS.MOST_RECENT
-            self.mostRecent = _.unique(self.mostRecent) 
-            self.clearStashedP('preview', self.LIMITS.MAX_PREVIEW)
+          self.debounced_MostRecent()
         return src
 
       isStashed_P:  (UUID, size, dataURL)->
         # NOTE: we don't know the extention when we check isStashed, so guess 'jpg'
+        # DEPRECATE
         dataURL = "data:image/jpg;base64," if !dataURL
         return self.cordovaFile_CHECK_P(UUID, size, dataURL)
 
       stashFile: (UUID, size, fileURL, fileSize)->
+        console.warn "stashFile with no SIZE, UUID="+UUID if !size
         hashKey = [ UUID[0...36] ,size].join(':') 
         # console.log "\n\n >>> STASH file=" + hashKey + ", url=" + fileURL
         self.cacheIndex[hashKey] = {
@@ -130,16 +240,26 @@ angular
           count: _.values( self.cacheIndex ).length
         }
 
-      unstashFileP: (UUID, size)->
+      unstashFileP: (UUID, size, defer = false)->
         hashKey = if size then hashKey = [ UUID[0...36] ,size].join(':') else UUID
         o = self.cacheIndex[hashKey]
         return $q.reject("stashFile not found") if !o
         filename = self.CACHE_DIR + o.fileURL.split('/').pop()
+        # console.log "remove o.fileURL="+o.fileURL.slice(-60)+", filename="+filename
         return $cordovaFile.removeFile(filename).then (retval)->
-          console.log "\n %%% $cordovaFile.removeFile complete, filename=" + filename.slice(-60)
-          console.log retval # $$$
-          delete self.cacheIndex[ hashKey ]
-          return
+            # console.log "\n %%% $cordovaFile.removeFile complete, filename=" + filename.slice(-60)
+            # console.log retval # $$$
+            return hashKey if defer
+            delete self.cacheIndex[ hashKey ]
+            return
+          , (err)->
+            if err.code == 1 # NOT FOUND
+              # console.log "\n %%% $cordovaFile.removeFile NOT FOUND, filename=" + filename.slice(-60)
+            else 
+              console.warn "\n %%% $cordovaFile.removeFile error, code="+err.code +", filename=" + filename.slice(-60)
+            return hashKey if defer
+            delete self.cacheIndex[ hashKey ]
+            return
         
 
       ## @param type string, [preview|thumbnail], keep = count 
@@ -159,8 +279,15 @@ angular
 
             _.each hashKeys, (hashKey)->
               return if type && hashKey.indexOf(type) == -1
-              promises.push self.unstashFileP(hashKey)
-            return $q.all(promises).then ()->
+              promises.push self.unstashFileP(hashKey, null, 'defer')
+            return $q.all(promises).then (hashKeys)->
+              # make changes to self.cacheIndex outside of $localStorage $watch
+              self.cacheIndex = otgLocalStorage.defer 'fileURI_Cache', (o)->
+                # update mostRecent, persist on next debounce
+                self.mostRecent = _.difference self.mostRecent, hashKeys
+                # update sacheIndex
+                return _.omit o, hashKeys 
+
               self.mostRecent = self.mostRecent.slice(0,keep) if keep
               console.log "*** clearStashedP() END, size="+self.stashSize()
           , 100
@@ -173,7 +300,7 @@ angular
         size = 'thumbnail' if tail.indexOf('thumbnail') == 0
         console.error "WARNING: cannot parse size from fileURL, name=" + filename if !size
         UUID = parts.join('-')
-        return [UUID] if !size
+        return [filename, 'unknown'] if !size
         return [UUID, size]
 
 
@@ -197,6 +324,7 @@ angular
               promises.push self.getMetaData_P(file).then (meta)->
                 fileSize = meta.size
                 self.stashFile UUID, size, fileURL, fileSize
+                console.log "\n @@@load> " + UUID + '-' + size + ' : '+ fileURL.slice(-60)
                 return fileSize
 
               filenames.push file.name
@@ -205,11 +333,13 @@ angular
             # console.log filenames # $$$  
             return $q.all(promises).then (sizes)->
               return dfd.resolve(filenames)
-          , (error)->
-            console.log error # $$$
+          , (err)->
+            console.log "ERROR: cordovaFile_LOAD_CACHED_P"
+            console.log err # $$$
             dfd.reject( "ERROR: reading directory entries")
 
         return dfd.promise
+    
 
       getMetaData_P: (file)->
         throw "ERROR: expecting fileEntry" if !file.file
@@ -365,7 +495,11 @@ angular
           console.log dirEntry # $$$
           return self.cacheRoot = dirEntry
       .then (dirEntry)->
-        self.cordovaFile_LOAD_CACHED_P()
+        if _.isEmpty self.cacheIndex
+          console.log "\n @@@load imgCacheSvc.cacheIndex from cordovaFile_LOAD_CACHED_P"
+          self.cordovaFile_LOAD_CACHED_P()
+        else
+          console.log "\n @@@load imgCacheSvc.cacheIndex from $localStorage"
       .catch (error)->
           console.log error # $$$
           console.log "$ngCordovaFile.checkDir() error, file=" + self.CACHE_DIR + "\n\n"

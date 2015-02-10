@@ -18,6 +18,7 @@ angular
   'ionic.contrib.ui.cards',
   'onTheGo.i18n'
   'angular-datepicker'
+  'ngStorage'
 ])
 .config ($ionicConfigProvider)->
   $ionicConfigProvider.backButton.text('Back').icon('ion-ios-arrow-back');
@@ -394,14 +395,14 @@ angular
 
 .controller 'AppCtrl', [
   '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', 
-  '$ionicPlatform', 
+  '$ionicPlatform', '$localStorage', 'otgLocalStorage'
   'SideMenuSwitcher', '$ionicSideMenuDelegate', '$ionicLoading'
   'otgData', 'otgParse', 'otgWorkorder', 'otgWorkorderSync', 'otgUploader'
   'snappiMessengerPluginService', 'i18n'
   'deviceReady', 'cameraRoll', 'appConsole'
   'TEST_DATA', 'imageCacheSvc'
   ($scope, $rootScope, $ionicModal, $timeout, $q, 
-    $ionicPlatform, 
+    $ionicPlatform, $localStorage, otgLocalStorage
     SideMenuSwitcher, $ionicSideMenuDelegate, $ionicLoading,
     otgData, otgParse, otgWorkorder, otgWorkorderSync, otgUploader
     snappiMessengerPluginService, i18n
@@ -488,48 +489,21 @@ angular
       '$ionicPlatform' : $ionicPlatform 
       '$ionicModal' : $ionicModal 
       '$ionicSideMenuDelegate' : $ionicSideMenuDelegate
+      '$localStorage' : $localStorage
     }
     _.extend $scope, ADD_TO_APP_SCOPE
 
-    # config values read from localstorage, set in settings
-    $rootScope.config = $scope.config = {
-      'app-bootstrap' : true
-      'no-view-headers' : false
-      'system':
-        'order-standby': false
-      help: false
-      privacy:
-        'only-mothers': false
-      upload:
-        'auto-upload': false
-        'use-cellular-data': false
-        'use-720p-service': true
-        'rate-control': 80
-        'CHUNKSIZE': 5
-      archive:
-        'copy-top-picks': false
-        'copy-favorites': true  
-      sharing:  
-        'use-720p-sharing': false
-      'dont-show-again':
-        'test-drive': false
-        'top-picks':
-          'top-picks': false
-          'favorite': false
-          'shared': false
-        choose:
-          'camera-roll': false
-          calendar: false
-        'workorders':
-          'photos': false
-          'todo' : false
-          'picks' : false
-    }
-    $rootScope.counts = {
-      'top-picks': 0
-      uploaderRemaining: 0
-      orders: 0
-    }
+    ## localStorage 
+    # config values read from localstorage, set in otgLocalStorage
+    otgLocalStorage.loadDefaultsIfEmpty([
+      'config', 'menuCounts', 'device'
+      'topPicks'
+      'cameraRoll'
+    ]) 
+    $rootScope.config =  $scope.config = $localStorage['config']
+    $rootScope.counts = $localStorage['menuCounts']
+    $rootScope.device = $localStorage['device']
+    $rootScope.device.id = '0123456789'
 
     $scope.on = {
       menu: (type='owner')->
@@ -540,25 +514,16 @@ angular
             SideMenuSwitcher.leftSide.src='partials/workorders/left-side-menu'
         $ionicSideMenuDelegate.toggleLeft()
         return
-      xxxalertOffline: ()->
-        $scope.offlinePopup = $ionicPopup.alert {
-          title: "Please establish a network connection."
-        }
-        $scope.offlinePopup.then()
-        $timeout ()->
-            offlinePopup.close()
-          , 3000
+      localStorageSnapshot: ()->
+        # cameraRoll
+        $localStorage['cameraRoll'].map = cameraRoll.map()
+        # imgCacheSvc.cacheIndex
+        return
+
     }
 
-    $rootScope.deviceId = "1234567890" # updated after deviceReady.waitP()
-    # testUser = {
-    #   username: 'bob'
-    #   password: 'required'
-    #   email: 'this@that'
-    #   emailVerified: true
-    #   role: 'owner'
-    # } 
-    # $rootScope.user = otgParse.mergeSessionUser(testUser)
+
+
     $rootScope.user = $scope.user = otgParse.mergeSessionUser()
 
     $scope.$watch 'user.tosAgree', (newVal, oldVal)->
@@ -623,14 +588,19 @@ angular
     $scope.$on 'sync.debounceComplete', ()->
         $scope.hideLoading()
         $scope.$broadcast('scroll.refreshComplete')
-        return      
+        $scope.on.localStorageSnapshot()
+        return     
+
+    $ionicPlatform.on 'pause',  ()-> 
+      $scope.on.localStorageSnapshot()
 
 
     $scope.SYNC_cameraRoll_Orders = ()->
       console.log ">>> $scope.SYNC_cameraRoll_Orders"
       cameraRoll.loadCameraRollP(null, 'force').finally ()->
         if !$scope.deviceReady.isOnline()
-          return $scope.$broadcast('sync.debounceComplete')
+          $scope.$broadcast('sync.debounceComplete')
+          return 
           
         otgWorkorderSync.SYNC_ORDERS(
           $scope, 'owner', 'force'
@@ -804,11 +774,11 @@ angular
       deviceReady.waitP()
       .then ()->
         $scope.config['no-view-headers'] = deviceReady.isWebView() && false
-        $rootScope.deviceId = deviceReady.deviceId()
+        $rootScope.device.id = deviceReady.deviceId()
 
-        console.log "\n\n>>> deviceId="+$rootScope.deviceId
-        # _LOAD_MOMENTS_FROM_CAMERA_ROLL_P()
-        return cameraRoll.loadCameraRollP()
+        console.log "\n\n>>> deviceId="+$rootScope.device.id
+        # return cameraRoll.loadCameraRollP() 
+        return # restore cameraRoll.map snapshot
       .finally ()->
         if !deviceReady.isWebView()
           # browser
@@ -838,6 +808,7 @@ angular
       cameraRoll: cameraRoll
       workorders: otgWorkorderSync._workorderColl
       imgCache: imageCacheSvc
+      ls: $localStorage
     }
 
   ]
