@@ -401,19 +401,21 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
         
         CGSize imageSize = CGSizeMake([width doubleValue], [height doubleValue]);
         
-        NSMutableArray *imageRequests = [[NSMutableArray alloc] initWithCapacity:[identifiers count]];
+        //NSMutableArray *imageRequests = [[NSMutableArray alloc] initWithCapacity:[identifiers count]];
         for(PHAsset *asset in fetchResults) {
-            PHImageRequestID request = [[PHImageManager defaultManager] requestImageForAsset:asset targetSize:imageSize contentMode:resizeMode options:requestOptions resultHandler:^(UIImage *result, NSDictionary *info) {
+//            PHImageRequestID request = [[PHImageManager defaultManager] requestImageForAsset:asset targetSize:imageSize
+        [[PHImageManager defaultManager] requestImageForAsset:asset targetSize:imageSize
+        contentMode:resizeMode options:requestOptions resultHandler:^(UIImage *result, NSDictionary *info) {
                 
                 __block UIImage *resultImage = result;
                 
-                NSUInteger index = [imageRequests indexOfObject:info[PHImageResultRequestIDKey]];
-                if(index == NSNotFound) {
-                    NSLog(@"Warning: received orphaned image request. Should not be happening.");
-                    return;
-                }
+//                NSUInteger index = [imageRequests indexOfObject:info[PHImageResultRequestIDKey]];
+//                if(index == NSNotFound) {
+//                    NSLog(@"Warning: received orphaned image request. Should not be happening.");
+//                    return;
+//                }
                 
-                PHAsset *asset = fetchResults[index];
+                //PHAsset *asset = fetchResults[index];
                 NSString *identifier = [asset localIdentifier];
                 
                 if(info[PHImageErrorKey]) {
@@ -498,7 +500,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                     [weakself.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
                 }];
             }];
-            [imageRequests addObject:@(request)];
+            //[imageRequests addObject:@(request)];
         }
         
     }];
