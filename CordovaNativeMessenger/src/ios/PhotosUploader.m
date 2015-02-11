@@ -16,10 +16,12 @@ static NSString *parseRESTAPIKey = @"3n5AwFGDO1n0YLEa1zLQfHwrFGpTnQUSZoRrFoD9";
 
 static NSString *sessionIdentifierKey = @"com.on-the-go.PhotosUploaderSessionIdentifier";
 static NSString *sessionInfosKey = @"com.on-the-go.PhotosUploaderSessionInfos";
+static NSString *lastLiveSessionsKey = @"com.on-the-go.PhotosUploaderLastLiveSessions";
 
 static NSMutableSet *scheduledTasks;
 static NSOperationQueue *serialQueue;
 
+static int identifierSuffixLength = 37;
 
 @interface PhotosUploader () <NSURLSessionTaskDelegate, NSURLSessionDelegate, NSURLSessionDataDelegate>
 
@@ -30,19 +32,37 @@ static NSOperationQueue *serialQueue;
     PHImageManager *_cachingImageManager;
 }
 
-- (NSURLSession *)creteNewSession:(NSString *)identifier {
++(NSMutableArray *)lastLiveSessionsIdentifiers {
+    NSArray *ar = [NSUserDefaults.standardUserDefaults objectForKey:lastLiveSessionsKey];
+    return [ar mutableCopy] ?: [NSMutableArray new];
+}
 
++(void)saveLastLiveSessionIdentifiers:(NSArray *)lastLiveIdentifiers {
+    if (lastLiveIdentifiers) {
+        [NSUserDefaults.standardUserDefaults setObject:lastLiveIdentifiers forKey:lastLiveSessionsKey];
+    }
+    else {
+        [NSUserDefaults.standardUserDefaults removeObjectForKey:lastLiveSessionsKey];
+    }
+    
+    [NSUserDefaults.standardUserDefaults synchronize];
+}
+
+- (NSURLSession *)creteNewSession:(NSString *)identifier allowsCellularAccess:(BOOL)allowsCellularAccess {
+    
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:identifier];
     [config setDiscretionary:YES];
-    [config setAllowsCellularAccess:self.allowsCellularAccess];
+    [config setAllowsCellularAccess:allowsCellularAccess];
     [config setSessionSendsLaunchEvents:YES];
     
     NSURLSession *backgroundUploadSession = [NSURLSession sessionWithConfiguration:config delegate:(id<NSURLSessionDelegate>)self delegateQueue:[NSOperationQueue mainQueue]];
-    
-    _delegates = [NSHashTable hashTableWithOptions:NSHashTableWeakMemory];
-    [serialQueue addBlock:^(void(^operation)(void)) {
-        [backgroundUploadSession getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
-            
+    if (backgroundUploadSession) {
+        NSMutableArray *sessions = [self.class lastLiveSessionsIdentifiers];
+        [sessions addObject:identifier];
+        [self.class saveLastLiveSessionIdentifiers:sessions];
+    }
+    [backgroundUploadSession getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
+        [serialQueue addBlock:^(void(^operation)(void)) {
             [uploadTasks enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
                 [scheduledTasks addObject:obj];
             }];
@@ -56,6 +76,12 @@ static NSOperationQueue *serialQueue;
     [super load];
     serialQueue = [NSOperationQueue createSerialQueue];
     scheduledTasks = [NSMutableSet new];
+    NSArray *arr = [self lastLiveSessionsIdentifiers];
+    [arr enumerateObjectsUsingBlock:^(NSString *obj, NSUInteger idx, BOOL *stop) {
+        NSString *originalIdentifier = [obj substringToIndex:obj.length - identifierSuffixLength];
+        id uploader = [[self alloc] initInternalWithFullIdentifier:obj];
+        self.instances[originalIdentifier] = uploader;
+    }];
 }
 
 -(NSMutableDictionary *)sessionInfosDictionary {
@@ -87,7 +113,7 @@ static NSOperationQueue *serialQueue;
     if (!obj) {
         return NO;
     }
-    
+    [self deleteDataForTaskInfo:obj];
     [dict removeObjectForKey:identifier];
     [self saveSessionInfos:dict];
     return YES;
@@ -102,21 +128,33 @@ static NSOperationQueue *serialQueue;
     return [self sessionInfosDictionary][identifier];
 }
 
--(instancetype)initInternalWithIdentifier:(NSString *)identifier {
++(BOOL)defaultAllowsCellularAccess {
+    NSData *prefsData = [NSUserDefaults.standardUserDefaults objectForKey:@"prefs"];
+    
+    BOOL _allowsCellularAccess = NO;
+    if (prefsData) {
+        id prefs = [NSJSONSerialization JSONObjectWithData:prefsData options:0 error:nil];
+        BOOL allowsCell = [[prefs objectForKey:@"upload"][@"use-cellular-data"] boolValue];
+        _allowsCellularAccess = allowsCell;
+    }
+    return _allowsCellularAccess;
+}
+
+-(instancetype)initInternalWithFullIdentifier:(NSString *)identifier {
     if (self = [super init]) {
         _cachingImageManager = [PHImageManager new];
-        NSData *prefsData = [NSUserDefaults.standardUserDefaults objectForKey:@"prefs"];
         
-        _allowsCellularAccess = YES;
-        if (prefsData) {
-            id prefs = [NSJSONSerialization JSONObjectWithData:prefsData options:0 error:nil];
-            BOOL allowsCell = [[prefs objectForKey:@"upload"][@"use-cellular-data"] boolValue];
-             _allowsCellularAccess = allowsCell;
-        }
-       
-        _backgroundUploadSession = [self creteNewSession:identifier];
+        _allowsCellularAccess = [self.class defaultAllowsCellularAccess];
+        _delegates = [NSHashTable hashTableWithOptions:NSHashTableWeakMemory];
+        _backgroundUploadSession = [self creteNewSession:identifier allowsCellularAccess:self.allowsCellularAccess];
     }
     return self;
+}
+
+-(instancetype)initInternalWithIdentifier:(NSString *)identifier {
+    NSString *uuid = [NSUUID.UUID UUIDString];
+    NSString *newIdentifier = [NSString stringWithFormat:@"%@.%@", identifier, uuid];
+    return [self initInternalWithFullIdentifier:newIdentifier];
 }
 
 +(NSMutableDictionary *)instances {
@@ -130,7 +168,9 @@ static NSOperationQueue *serialQueue;
 
 +(PhotosUploader *)uploaderWithSessionConfigurationIdentifier:(NSString *)identifier {
     if (!identifier.length) return nil;
-    PhotosUploader *u = self.instances[identifier];
+    
+    NSString *ident = identifier.length > identifierSuffixLength ? [identifier substringToIndex:identifier.length - identifierSuffixLength] : identifier;
+    PhotosUploader *u = self.instances[identifier] ?: self.instances[ident];
     if (!u) {
         u = [[self alloc] initInternalWithIdentifier:identifier];
         self.instances[identifier] = u;
@@ -147,18 +187,38 @@ static NSOperationQueue *serialQueue;
     if (_allowsCellularAccess == allowsCellularAccess) {
         return;
     }
+    _allowsCellularAccess = allowsCellularAccess;
     [serialQueue addBlock:^(void(^operation)(void)) {
         NSURLSession *oldBG = _backgroundUploadSession;
-        _backgroundUploadSession = [self creteNewSession:oldBG.configuration.identifier];
+        NSString *oldIdentifier = oldBG.configuration.identifier;
+        NSString *uuid = [[NSUUID UUID] UUIDString];
+        NSString *newIndetifier = [oldIdentifier substringToIndex:oldBG.configuration.identifier.length - (identifierSuffixLength)];
+        newIndetifier = [NSString stringWithFormat:@"%@.%@", newIndetifier, uuid];
+        _backgroundUploadSession = [self creteNewSession:newIndetifier allowsCellularAccess:_allowsCellularAccess];
+//        [scheduledTasks enumerateObjectsUsingBlock:^(NSURLSessionUploadTask *obj, BOOL *stop) {
+//            [obj cancel];
+//        }];
+//        [scheduledTasks removeAllObjects];
+        
         [oldBG invalidateAndCancel];
         
-       [[self allSessionTaskInfos] enumerateObjectsUsingBlock:^(NSURLSessionTaskInfo *obj, NSUInteger idx, BOOL *stop) {
-           NSString *identifier = obj.asset;
-           NSString *imagePath = [self imagePathForAssetIdentifier:identifier];
-           NSURLSessionUploadTask *task = [self parseUplaodTaskForFilePath:imagePath additinalHeaderKeys:@{@"X-Image-Identifier":identifier}];
-           [task resume];
-           [scheduledTasks addObject:task];
-       }];
+         if (oldBG) {
+             NSMutableArray *sessions = [self.class lastLiveSessionsIdentifiers];
+             [sessions removeObject:oldIdentifier];
+             [self.class saveLastLiveSessionIdentifiers:sessions];
+         }
+        
+        [[self allSessionTaskInfos] enumerateObjectsUsingBlock:^(NSURLSessionTaskInfo *obj, NSUInteger idx, BOOL *stop) {
+            if (obj.hasFinished)
+                return;
+            
+            NSString *identifier = obj.asset;
+            NSString *imagePath = [self imagePathForAssetIdentifier:identifier];
+            NSURLSessionUploadTask *task = [self parseUplaodTaskForFilePath:imagePath additinalHeaderKeys:@{@"X-Image-Identifier":identifier}];
+            [task resume];
+            [scheduledTasks addObject:task];
+        }];
+        operation();
     }];
 }
 
@@ -270,7 +330,6 @@ static NSOperationQueue *serialQueue;
        }];
     }
     
-    NSLog(@"Assets Count: %lu", (unsigned long)assets.count);
     for (PHAsset *obj in assets) {
         BOOL alreadyScheduled = [self isAssetScheduled:obj];
         if (alreadyScheduled) {
@@ -295,9 +354,10 @@ static NSOperationQueue *serialQueue;
             CGFloat side = round(obj.pixelHeight * scale);
             originalImageSize = CGSizeMake(side,side);
         }
-        [serialQueue addBlock:^(void(^operation)(void)) {
-            [_cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
+        [_cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
+            [serialQueue addBlock:^(void(^operation)(void)) {
                 if ([info[PHImageResultIsDegradedKey] boolValue]) {
+                    operation();
                     return;
                 }
                 NSError *err = info[PHImageErrorKey];
@@ -319,6 +379,7 @@ static NSOperationQueue *serialQueue;
                     //store image
                     NSString *fullPath = [self imagePathForAssetIdentifier:obj.localIdentifier];
                     if (![data writeToFile:fullPath atomically:YES]) {
+                        operation();
                         return;
                     }
                     
@@ -366,7 +427,7 @@ static NSOperationQueue *serialQueue;
             if ([identifier isEqualToString:assetID]) {
                 *stop = found = YES;
                 [obj cancel];
-                [self deleteDataForTask:obj];
+                [self removeSessionTaskInfoWithIdentifier:identifier];
             }
         }];
         operation();
@@ -389,13 +450,12 @@ static NSOperationQueue *serialQueue;
     return success;
 }
 
--(void)deleteDataForTask:(NSURLSessionTask *)task {
+-(void)deleteDataForTaskInfo:(NSURLSessionTaskInfo *)task {
     
     [serialQueue addBlock:^(void(^operation)(void)) {
-        NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+        NSString *identifier = task.asset;
         NSString *path = [self imagePathForAssetIdentifier:identifier];
         [NSFileManager.defaultManager removeItemAtPath:path error:nil];
-        [scheduledTasks removeObject:task];
         operation();
     }];
 }
@@ -424,17 +484,21 @@ totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
  */
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
 didCompleteWithError:(NSError *)error {
-    NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-    [self deleteDataForTask:task];
+    
+    [scheduledTasks removeObject:task];
+    
     if (error.code == NSURLErrorCancelled && _backgroundUploadSession != session) {
         //take care of session canceled;
         return;
     }
     
+    NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
     NSURLSessionTaskInfo *info = [self sessionTaskInfoForIdentifier:identifier];
     info.error = error;
     info.progress = 1;
     [self saveSessionInfos:[self sessionInfosDictionary]];
+    
+    
     NSLog(@"Finished task with image identifier: %@ with error:%@", identifier, error);
     
     for (id<PhotosUploaderDelegate>delegate in _delegates) {
@@ -442,22 +506,25 @@ didCompleteWithError:(NSError *)error {
             [delegate photoUploader:self didFinishUploadAssetIdentifier:identifier];
         }
     }
+    [self scheduleLocalNotification:NSStringFromSelector(_cmd)];
 }
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
 didReceiveResponse:(NSURLResponse *)response
  completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler {
     completionHandler(NSURLSessionResponseBecomeDownload);
+    [self scheduleLocalNotification:NSStringFromSelector(_cmd)];
 }
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
 didBecomeDownloadTask:(NSURLSessionDownloadTask *)downloadTask {
-    
+    [self scheduleLocalNotification:NSStringFromSelector(_cmd)];
 }
 
 - (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask
 didFinishDownloadingToURL:(NSURL *)location {
-    
+    [self scheduleLocalNotification:NSStringFromSelector(_cmd)];
+
 }
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
@@ -467,18 +534,6 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
     
 }
 
-/* The task has received a request specific authentication challenge.
- * If this delegate is not implemented, the session specific authentication challenge
- * will *NOT* be called and the behavior will be the same as using the default handling
- * disposition.
- */
-//- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
-//didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
-// completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential *credential))completionHandler {
-//     NSURLCredential *cred = [NSURLCredential credentialWithUser:@"browser" password:@"password" persistence:NSURLCredentialPersistenceForSession];
-//    completionHandler(NSURLSessionAuthChallengeUseCredential, cred);
-//    
-//}
 
 /* Sent if a task requires a new, unopened body stream.  This may be
  * necessary when authentication has failed for any request that
@@ -486,7 +541,7 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
  */
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
  needNewBodyStream:(void (^)(NSInputStream *bodyStream))completionHandler {
-    
+    [self scheduleLocalNotification:NSStringFromSelector(_cmd)];
 }
 
 
@@ -500,7 +555,7 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
     if(!data.length) return;
     
     [self appendData:data toTask:dataTask];
-    NSLog(@"%@",dataTask);
+   [self scheduleLocalNotification:NSStringFromSelector(_cmd)];
 }
 
 /* Invoke the completion routine with a valid NSCachedURLResponse to
@@ -512,7 +567,7 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
  willCacheResponse:(NSCachedURLResponse *)proposedResponse
  completionHandler:(void (^)(NSCachedURLResponse *cachedResponse))completionHandler {
-    
+    [self scheduleLocalNotification:NSStringFromSelector(_cmd)];
 }
 
 -(void)URLSessionDidFinishEventsForBackgroundURLSession:(NSURLSession *)session {
@@ -523,5 +578,14 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
         }
     }
 }
+
+-(void)scheduleLocalNotification:(NSString *)notificationText {
+    UILocalNotification* localNotification = [[UILocalNotification alloc] init];
+    localNotification.fireDate = [NSDate dateWithTimeIntervalSinceNow:1];
+    localNotification.alertBody = notificationText;
+    localNotification.timeZone = [NSTimeZone defaultTimeZone];
+    [[UIApplication sharedApplication] scheduleLocalNotification:localNotification];
+}
+
 
 @end
