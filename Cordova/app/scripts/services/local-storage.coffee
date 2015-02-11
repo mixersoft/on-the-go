@@ -22,7 +22,8 @@ angular
     this.defaults = {
       device:
         id: '00000000000'
-        isWebView: null
+        platform: {}
+        isDevice: null
         isBrowser: null
       config: # default app config params
         'app-bootstrap' : true
@@ -70,6 +71,7 @@ angular
         map: []       
       # used by imageCacheSvc
       fileURI_Cache: {}
+      fileURI_Archive: {}
       fileURI_MostRecent : []
         # TODO: organize cache by image size
     }
@@ -101,6 +103,12 @@ angular
       _.each keys, (key)->
         return if !self.defaults[key]?
         return $storage[key] = {}
+
+    this.reset = (storage='local')->
+      this.clear()
+      _.each _.keys( this.defaults ), (key)->
+        return $storage[key] = self.defaults[key]
+
     return
   ]
 
@@ -164,6 +172,7 @@ angular
     self = {
       # index of cached files by UUID
       cacheIndex : $localStorage['fileURI_Cache'] 
+      archiveIndex: $localStorage['fileURI_Archive'] # for saved favorites
       # stack for garbage collection, mostRecently used UUID on the 'top'
       # use copy and update $localStorage['fileURI_MostRecent'] in debounced method
       mostRecent : angular.copy $localStorage['fileURI_MostRecent'] 
@@ -193,7 +202,7 @@ angular
           self.mostRecent = _.unique(self.mostRecent)
           $localStorage['fileURI_MostRecent'] = self.mostRecent
           if self.mostRecent.length >  self.LIMITS.MOST_RECENT
-            self.clearStashedP('preview', self.LIMITS.MAX_PREVIEW)          
+            self.clearStashedP('preview', self.LIMITS.MAX_PREVIEW, 'appCache')          
           return
         , 5000 # 5*60*1000
         , {
@@ -219,30 +228,36 @@ angular
         dataURL = "data:image/jpg;base64," if !dataURL
         return self.cordovaFile_CHECK_P(UUID, size, dataURL)
 
-      stashFile: (UUID, size, fileURL, fileSize)->
+      stashFile: (UUID, size, fileURL, fileSize, repo='appCache')->
         console.warn "stashFile with no SIZE, UUID="+UUID if !size
+
+        stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
         hashKey = [ UUID[0...36] ,size].join(':') 
         # console.log "\n\n >>> STASH file=" + hashKey + ", url=" + fileURL
-        self.cacheIndex[hashKey] = {
+        self[stashKey][hashKey] = {
           fileURL: fileURL
           fileSize: fileSize
         }
 
-      stashSize: ()->
-        total = _.reduce self.cacheIndex, (total, o)->
+      stashSize: (repo='appCache')->
+        stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
+        total = _.reduce self[stashKey], (total, o)->
             return total += o.fileSize
           , 0
         return total
 
-      stashStats: ()->
+      stashStats: (repo='appCache')->
+        stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
         return {
-          size: _bytesToSize( self.stashSize() )
-          count: _.values( self.cacheIndex ).length
+          size: _bytesToSize( self.stashSize(repo) )
+          count: _.values( self[stashKey] ).length
         }
 
-      unstashFileP: (UUID, size, defer = false)->
+
+      unstashFileP: (UUID, size, defer = false, repo='appCache')->
+        stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
         hashKey = if size then hashKey = [ UUID[0...36] ,size].join(':') else UUID
-        o = self.cacheIndex[hashKey]
+        o = self[stashKey][hashKey]
         return $q.reject("stashFile not found") if !o
         filename = self.CACHE_DIR + o.fileURL.split('/').pop()
         # console.log "remove o.fileURL="+o.fileURL.slice(-60)+", filename="+filename
@@ -250,7 +265,7 @@ angular
             # console.log "\n %%% $cordovaFile.removeFile complete, filename=" + filename.slice(-60)
             # console.log retval # $$$
             return hashKey if defer
-            delete self.cacheIndex[ hashKey ]
+            delete self[stashKey][ hashKey ]
             return
           , (err)->
             if err.code == 1 # NOT FOUND
@@ -258,38 +273,41 @@ angular
             else 
               console.warn "\n %%% $cordovaFile.removeFile error, code="+err.code +", filename=" + filename.slice(-60)
             return hashKey if defer
-            delete self.cacheIndex[ hashKey ]
+            delete self[stashKey][ hashKey ]
             return
-        
+      
+
 
       ## @param type string, [preview|thumbnail], keep = count 
-      clearStashedP: (type, keep)->
+      clearStashedP: (type, keep, repo='appCache')->
+        stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
         $timeout ()->
-            console.log "\n\n *** clearStashedP() begin, size="+self.stashSize()
+            console.log "\n\n *** clearStashedP() begin, size="+self.stashSize(repo)
             promises = []
 
-            if keep && type
+            if keep && type && repo=='appCache'
               keyOfType = _.filter self.mostRecent, (hashKey)->
                 return hashKey.indexOf(type) > -1
               hashKeys = keyOfType.slice keep
-            else if keep
+            else if keep && repo=='appCache'
               hashKeys = self.mostRecent.slice keep
             else 
-              hashKeys = _.keys self.cacheIndex
+              hashKeys = _.keys self[stashKey]
 
             _.each hashKeys, (hashKey)->
               return if type && hashKey.indexOf(type) == -1
-              promises.push self.unstashFileP(hashKey, null, 'defer')
+              promises.push self.unstashFileP(hashKey, null, 'defer', repo)
             return $q.all(promises).then (hashKeys)->
-              # make changes to self.cacheIndex outside of $localStorage $watch
-              self.cacheIndex = otgLocalStorage.defer 'fileURI_Cache', (o)->
+              # make changes to self[stashKey] outside of $localStorage $watch
+              localStorageKey = if repo == 'appCache' then 'fileURI_Cache' else 'fileURI_Archive'
+              self[stashKey] = otgLocalStorage.defer localStorageKey, (o)->
                 # update mostRecent, persist on next debounce
-                self.mostRecent = _.difference self.mostRecent, hashKeys
+                self.mostRecent = _.difference self.mostRecent, hashKeys if repo=='appCache'
                 # update sacheIndex
                 return _.omit o, hashKeys 
 
-              self.mostRecent = self.mostRecent.slice(0,keep) if keep
-              console.log "*** clearStashedP() END, size="+self.stashSize()
+              self.mostRecent = self.mostRecent.slice(0,keep) if keep && repo=='appCache'
+              console.log "*** clearStashedP() END, size="+self.stashSize(repo)
           , 100
 
       getCacheKeyFromFilename: (filename)->
@@ -496,7 +514,7 @@ angular
           return self.cacheRoot = dirEntry
       .then (dirEntry)->
         if _.isEmpty self.cacheIndex
-          console.log "\n @@@load imgCacheSvc.cacheIndex from cordovaFile_LOAD_CACHED_P"
+          console.warn "@@@load imgCacheSvc.cacheIndex EMPTY, check fs with cordovaFile_LOAD_CACHED_P"
           self.cordovaFile_LOAD_CACHED_P()
         else
           console.log "\n @@@load imgCacheSvc.cacheIndex from $localStorage"

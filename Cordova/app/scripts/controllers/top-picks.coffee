@@ -321,13 +321,12 @@ angular.module('ionBlankApp')
           trailing: false
         }
 
-      test: ()->
-        $scope._TEST_nativeUploader()
-        # _TEST_imageCacheSvc()
-        # $scope.loadMomentsFromCameraRollP().then ()->
-        #   $scope.filteredPhotos = $filter('ownerPhotosByType')(cameraRoll.map(),'topPicks')
-        #   console.log "AFTER loading cameraRoll, filteredPhotos.length="+$scope.filteredPhotos.length
 
+
+      test: ()->
+        # $scope._TEST_nativeUploader()
+        # _TEST_imageCacheSvc()
+        return
     }
 
     # args = {changed:bool }
@@ -359,7 +358,8 @@ angular.module('ionBlankApp')
 
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
-      $scope.on.reloadDataSet() if $state.includes('app.top-picks')
+      if $state.includes('app.top-picks')
+        $scope.on.reloadDataSet() 
       return 
 
     $scope.cameraRoll = cameraRoll  # DEPRECATE???
@@ -372,8 +372,8 @@ angular.module('ionBlankApp')
     $scope.$on '$ionicView.beforeEnter', ()->
       # cached view becomes active 
       return if !$scope.deviceReady.isOnline()
-      console.log "\n\n\n %%% ionicView.beforeEnter > DEBOUNCED_SYNC_cameraRoll_Orders "
-      $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
+      console.log "\n\n\n %%% ionicView.beforeEnter > app.sync.DEBOUNCED_cameraRoll_Orders "
+      $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 
@@ -391,7 +391,7 @@ angular.module('ionBlankApp')
         # first time only
         if _.isEmpty cameraRoll.map()
           $scope.showLoading(true)
-          $scope.DEBOUNCED_SYNC_cameraRoll_Orders()  # first time only
+          $scope.app.sync.DEBOUNCED_cameraRoll_Orders()  # first time only
         else 
           # WARNING: lazySrc bug, uses lorempixel before deviceReady.isWebView(0)
           $scope.on.reloadDataSet() # restored from localStorage

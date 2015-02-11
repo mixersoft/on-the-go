@@ -44,12 +44,12 @@ angular.module('ionBlankApp')
 
     $scope.on = {
       refresh: ()->
-        $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
+        $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
         return      
     }
 
     # NOTE: ng-repat = order in filteredOrders = (workorders = $root.orders | filter:filterStatusNotComplete )
-    # set by $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
+    # set by $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
     _workorders = $rootScope.orders
 
     $scope.$on '$ionicView.loaded', ()->
@@ -59,7 +59,7 @@ angular.module('ionBlankApp')
     $scope.$on '$ionicView.beforeEnter', ()->
       return if !$scope.deviceReady.isOnline()
       $scope.showLoading(true)
-      $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
+      $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
       return
 
 

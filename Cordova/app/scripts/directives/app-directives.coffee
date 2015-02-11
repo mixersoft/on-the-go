@@ -13,8 +13,8 @@ angular.module('ionBlankApp')
 #   lorempixel (for brower debug)
 # uses $q.promise to load src 
 .directive 'lazySrc', [
-  'deviceReady', 'PLUGIN_CAMERA_CONSTANTS', 'cameraRoll', 'imageCacheSvc', '$rootScope', 'TEST_DATA'
-  (deviceReady, CAMERA, cameraRoll, imageCacheSvc, $rootScope, TEST_DATA)->
+  '$localStorage', 'PLUGIN_CAMERA_CONSTANTS', 'cameraRoll', 'imageCacheSvc', '$rootScope', 'TEST_DATA'
+  ($localStorage, CAMERA, cameraRoll, imageCacheSvc, $rootScope, TEST_DATA)->
 
     _setLazySrc = (element, UUID, format)->
       throw "ERROR: asset is missing UUID" if !UUID
@@ -25,8 +25,8 @@ angular.module('ionBlankApp')
 
       isWorkorder = $rootScope.$state.includes('app.workorders') || $rootScope.$state.includes('app.orders')
       isWorkorderMoment = IMAGE_SIZE=='thumbnail' && isWorkorder
-      # WARNING: must be after deviceReady.waitP()
-      isBrowser = !deviceReady.isWebView()
+      # WARNING: must be after $localStorage.waitP()
+      isBrowser = $localStorage['device'].isBrowser
 
       # special condition, Editor Workstation with no local photos
       if isBrowser && photo?.from == 'PARSE' 
@@ -91,6 +91,7 @@ angular.module('ionBlankApp')
         
 
     _useLoremPixel = (element, UUID, format)->
+      console.error "ERROR: using lorempixel from device" if $localStorage['device'].isDevice
       scope = element.scope()
       switch format
         when 'thumbnail'
@@ -112,7 +113,9 @@ angular.module('ionBlankApp')
           # UUID = UUID[0...36] # localStorage might balk at '/' in pathname
           # console.log "\n\n $$$ attrs.$observe 'lazySrc', UUID+" + UUID
           element.attr('uuid', UUID)
-          return src = _setLazySrc(element, UUID, format) 
+          src = _setLazySrc(element, UUID, format) 
+          console.error "ERROR: using lazySrc BEFORE deviceReady.waitP()" if $localStorage['device'].isDevice==null
+          return src
 
         return
   }

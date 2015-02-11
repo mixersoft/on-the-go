@@ -319,6 +319,7 @@ angular.module('ionBlankApp')
 
 
     $scope.$on '$ionicView.beforeEnter', ()->
+      # see: $scope.on.cameraRollSelected(), calendarSelected()
       return 
 
     $scope.$on '$ionicView.enter', ()->

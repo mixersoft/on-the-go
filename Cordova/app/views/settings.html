@@ -1,6 +1,6 @@
 <ion-view title="Settings" hide-back-button="false" >
   <ion-nav-buttons side="right"> 
-    <button  class="button button-icon icon ion-help-circled" ng-click="toggleHelp()"></button>
+    <button  class="button button-icon icon ion-help-circled" ng-click="app.toggleHelp()"></button>
   </ion-nav-buttons>
   <ion-content id="settings" class="has-header" ng-class="{help: config.help}">
     <ul class="list">
@@ -120,8 +120,8 @@
       </li>  
       <li class="item">
       Saved Photos: <span>{{menu.archived.count}}</span> Photos, <span>{{menu.archived.count}}</span> MB
-      <button class="button button-assertive button-full" ng-class="{disabled:!menu.archived.count}">
-        <i class="icon ion-ios-trash"></i> 
+      <button class="button button-assertive button-full" ng-class="{disabled:!watch.archive.count}">
+        <i class="icon" ng-class="watch.isWorking.clearArchive ? 'ion-loading-b' : 'ion-ios-trash' "></i> 
         Remove Saved Photos
       </button>
       </li>
@@ -129,7 +129,7 @@
       App Cache: <span>{{watch.imgCache.count}}</span> Files, <span>{{watch.imgCache.size}}</span>
       <button class="button button-assertive button-full" ng-class="{disabled: !watch.imgCache.count}"
       ng-click="on.clearCache()">
-        <i class="icon ion-ios-trash"></i> 
+        <i class="icon" ng-class="watch.isWorking.clearAppCache ? 'ion-loading-b' : 'ion-ios-trash' "></i> 
         Clear App Cache
       </button>
       </li>

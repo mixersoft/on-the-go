@@ -394,20 +394,24 @@ angular
 
 
 .controller 'AppCtrl', [
-  '$scope', '$rootScope', '$ionicModal', '$timeout', '$q', 
-  '$ionicPlatform', '$localStorage', 'otgLocalStorage'
-  'SideMenuSwitcher', '$ionicSideMenuDelegate', '$ionicLoading'
-  'otgData', 'otgParse', 'otgWorkorder', 'otgWorkorderSync', 'otgUploader'
+  '$scope', '$rootScope', '$timeout', '$q', 
+  '$ionicPlatform', '$ionicModal', '$ionicLoading'
+  '$localStorage', 'otgLocalStorage'
+  'SideMenuSwitcher', '$ionicSideMenuDelegate', 
+  'otgParse', 'otgWorkorderSync'
   'snappiMessengerPluginService', 'i18n'
-  'deviceReady', 'cameraRoll', 'appConsole'
-  'TEST_DATA', 'imageCacheSvc'
-  ($scope, $rootScope, $ionicModal, $timeout, $q, 
-    $ionicPlatform, $localStorage, otgLocalStorage
-    SideMenuSwitcher, $ionicSideMenuDelegate, $ionicLoading,
-    otgData, otgParse, otgWorkorder, otgWorkorderSync, otgUploader
+  'deviceReady', 'cameraRoll'
+  'TEST_DATA', 'otgData', 'imageCacheSvc', 'appConsole'
+  ($scope, $rootScope, $timeout, $q, 
+    $ionicPlatform, $ionicModal, $ionicLoading,
+    $localStorage, otgLocalStorage
+    SideMenuSwitcher, $ionicSideMenuDelegate, 
+    otgParse, otgWorkorderSync
     snappiMessengerPluginService, i18n
-    deviceReady, cameraRoll, appConsole,
-    TEST_DATA, imageCacheSvc  )->
+    deviceReady, cameraRoll,
+    # debug/browser only
+    TEST_DATA, otgData, imageCacheSvc, appConsole  
+    )->
 
     # dynamically update left side menu
     $scope.SideMenuSwitcher = SideMenuSwitcher  
@@ -422,28 +426,6 @@ angular
     }).then((modal)-> 
       $scope.modal = modal;
     );
-
-    # // Triggered in the login modal to close it
-    $scope.closeLogin = ()->
-      $scope.modal.hide();
-
-    # // Open the login modal
-    $scope.login = ()->
-      $scope.modal.show();
-
-    # // Perform the login action when the user submits the login form
-    $scope.doLogin = ()->
-      console.log('Doing login', $scope.loginData);
-
-      # // Simulate a login delay. Remove this and replace with your login
-      # // code if using a login system
-      $timeout(()->
-          $scope.closeLogin();
-        , 1000);
-
-    $scope.toggleHelp = ()->
-      $scope.config.help = !$scope.config.help  
-      console.log "help="+ if $scope.config.help then 'ON' else 'OFF'
 
 
     # 
@@ -470,17 +452,6 @@ angular
 
     window.i18n = $rootScope.i18n = $scope.i18n = i18n;
 
-    $scope.menu = {
-      top_picks: 
-        count: 0
-      orders:
-        count: 0
-      archived:
-        count: 0
-      uploader:
-        count: 0
-    }
-
     # copy these to app scope
     ADD_TO_APP_SCOPE = {
       'deviceReady' : deviceReady 
@@ -493,19 +464,9 @@ angular
     }
     _.extend $scope, ADD_TO_APP_SCOPE
 
-    ## localStorage 
-    # config values read from localstorage, set in otgLocalStorage
-    otgLocalStorage.loadDefaultsIfEmpty([
-      'config', 'menuCounts', 'device'
-      'topPicks'
-      'cameraRoll'
-    ]) 
-    $rootScope.config =  $scope.config = $localStorage['config']
-    $rootScope.counts = $localStorage['menuCounts']
-    $rootScope.device = $localStorage['device']
-    $rootScope.device.id = '0123456789'
 
-    $scope.on = {
+    # prototypal inheritance, for access from child controllers
+    $scope.app = {
       menu: (type='owner')->
         switch type
           when 'owner'
@@ -514,14 +475,92 @@ angular
             SideMenuSwitcher.leftSide.src='partials/workorders/left-side-menu'
         $ionicSideMenuDelegate.toggleLeft()
         return
+
       localStorageSnapshot: ()->
         # cameraRoll
         $localStorage['cameraRoll'].map = cameraRoll.map()
         # imgCacheSvc.cacheIndex
         return
 
-    }
+      toggleHelp : ()->
+        $scope.config.help = !$scope.config.help  
+        console.log "help="+ if $scope.config.help then 'ON' else 'OFF'
 
+      sync: 
+        cameraRoll_Orders: ()-> 
+          console.log ">>> SYNC_cameraRoll_Orders"
+          cameraRoll.loadCameraRollP(null, 'force').finally ()->
+            if !$scope.deviceReady.isOnline()
+              $scope.$broadcast('sync.debounceComplete')
+              return 
+              
+            otgWorkorderSync.SYNC_ORDERS(
+              $scope, 'owner', 'force'
+              , ()->
+                $scope.$broadcast('sync.debounceComplete')
+                return
+            )
+          return
+
+        DEBOUNCED_cameraRoll_Orders: ()->
+          debounced = _.debounce ()->
+            console.log "\n\n >>> DEBOUNCED_cameraRoll_Orders fired"
+            $scope.app.sync.cameraRoll_Orders()
+            return
+          , 5000 # 5*60*1000
+          , {
+            leading: true
+            trailing: false
+          }
+          debounced() # call immediately
+          $scope.app.sync.DEBOUNCED_cameraRoll_Orders = debounced # save for future calls
+          return
+
+
+      # initial app preferences, priority to NSUserDefaults via plugin
+      appPreferences : {
+        store: (newVal, oldVal)->
+          if plugins?.appPreferences?
+            prefs = plugins.appPreferences
+            ok = ()-> # appPreferences.store returns "OK"
+              # console.log "NSUserDefaults save OK"
+              # prefs.fetch okAlert, fail, 'prefs'
+              return
+
+            okAlert = (value)->
+              console.log "NSUserDefaults fetch SUCCESS: value=" + JSON.stringify value
+              return  
+
+            fail = (err)->
+              console.warn "NSUserDefaults: error=" + JSON.stringify err
+              return
+
+            return prefs.store ok, fail, 'prefs', newVal
+          else 
+            # save to localStorage
+            return
+        load: ()->
+          # for completeness only: $localStorage['config']  > appPreferences
+          promise = $q.defer()
+          if plugins?.appPreferences
+            # use appPrefereces
+            plugins.appPreferences.fetch (value)->
+                if _.isEmpty(value)
+                  cfg = {status:"EMPTY"}
+                else  
+                  cfg = JSON.parse(value) 
+                return promise.resolve(cfg)   
+
+              , (err)->
+                console.warn "AppPreferences load() FAIL: error=" + JSON.stringify err
+                return promise.resolve($scope.config) 
+              , 'prefs'
+          else 
+            promise.resolve({status:"PLUGIN unavailable"}) 
+
+          return promise.promise
+      }
+    }
 
 
     $rootScope.user = $scope.user = otgParse.mergeSessionUser()
@@ -535,89 +574,36 @@ angular
         , (error)->
           console.log error
 
-    # respond to changes of app.settings
+    # respond to changes of app.settings, BEFORE $localStorage['config'] 
     $scope.$watch 'config', (newVal, oldVal)->
         # console.log "app: upload=" + JSON.stringify newVal.upload
-        return _prefs.store newVal, oldVal
+        return $scope.app.appPreferences['store'] newVal, oldVal
       , true
 
 
-    # initial app preferences, priority to NSUserDefaults via plugin
-    _prefs = {
-      store: (newVal, oldVal)->
-        if plugins?.appPreferences?
-          prefs = plugins.appPreferences
-          ok = ()-> # appPreferences.store returns "OK"
-            # console.log "NSUserDefaults save OK"
-            # prefs.fetch okAlert, fail, 'prefs'
-            return
-
-          okAlert = (value)->
-            console.log "NSUserDefaults fetch SUCCESS: value=" + JSON.stringify value
-            return  
-
-          fail = (err)->
-            console.warn "NSUserDefaults: error=" + JSON.stringify err
-            return
-
-          return prefs.store ok, fail, 'prefs', newVal
-        else 
-          # save to localStorage
-          return
-      load: ()->
-        promise = $q.defer()
-        if plugins?.appPreferences
-          # use appPrefereces
-          plugins.appPreferences.fetch (value)->
-              if _.isEmpty(value)
-                cfg = {status:"EMPTY"}
-              else  
-                cfg = JSON.parse(value) 
-              return promise.resolve(cfg)   
-
-            , (err)->
-              console.warn "AppPreferences load() FAIL: error=" + JSON.stringify err
-              return promise.resolve($scope.config) 
-            , 'prefs'
-        else 
-          promise.resolve({status:"PLUGIN unavailable"}) 
-
-        return promise.promise
-    }
 
     $scope.$on 'sync.debounceComplete', ()->
         $scope.hideLoading()
         $scope.$broadcast('scroll.refreshComplete')
-        $scope.on.localStorageSnapshot()
+        $scope.app.localStorageSnapshot()
         return     
 
     $ionicPlatform.on 'pause',  ()-> 
-      $scope.on.localStorageSnapshot()
+      $scope.app.localStorageSnapshot()
 
 
-    $scope.SYNC_cameraRoll_Orders = ()->
-      console.log ">>> $scope.SYNC_cameraRoll_Orders"
-      cameraRoll.loadCameraRollP(null, 'force').finally ()->
-        if !$scope.deviceReady.isOnline()
-          $scope.$broadcast('sync.debounceComplete')
-          return 
-          
-        otgWorkorderSync.SYNC_ORDERS(
-          $scope, 'owner', 'force'
-          , ()->
-            $scope.$broadcast('sync.debounceComplete')
-            return
-        )
+    _RESTORE_FROM_LOCALSTORAGE = ()->
+      # config values read from localstorage, set in otgLocalStorage
+      otgLocalStorage.loadDefaultsIfEmpty([
+        'config', 'menuCounts'
+        'topPicks'
+        'cameraRoll'
+      ]) 
+      $rootScope.config =  $scope.config = $localStorage['config']
+      $rootScope.counts = $localStorage['menuCounts']
+      $rootScope.device = $localStorage['device']
       return
-    $scope.DEBOUNCED_SYNC_cameraRoll_Orders = _.debounce ()->
-          console.log "\n\n >>> DEBOUNCED!!!"
-          $scope.SYNC_cameraRoll_Orders()
-          return
-        , 5000 # 5*60*1000
-        , {
-          leading: true
-          trailing: false
-        }
+
 
     # Dev/Debug tools
     _LOAD_DEBUG_TOOLS = ()->
@@ -713,60 +699,62 @@ angular
 
      
 
-    $scope._TEST_nativeUploader = ()->
-      # register handlers for native uploader
-      assetIds = _.pluck cameraRoll.map(), 'UUID'
+    # $scope._TEST_nativeUploader = ()->
+    #   # register handlers for native uploader
+    #   assetIds = _.pluck cameraRoll.map(), 'UUID'
 
-      # snappiMessengerPluginService.on.didFinishAssetUpload ( resp )->
-      #     console.log '\n\n ***** TEST_nativeUploader: handler for didFinishAssetUpload'
-      #     console.log resp
-      #     return 
+    #   # snappiMessengerPluginService.on.didFinishAssetUpload ( resp )->
+    #   #     console.log '\n\n ***** TEST_nativeUploader: handler for didFinishAssetUpload'
+    #   #     console.log resp
+    #   #     return 
 
-      # snappiMessengerPluginService.on.didUploadAssetProgress ( resp )->
-      #     _logOnce resp.asset, '\n\n ***** TEST_nativeUploader: handler for didUploadAssetProgress' + JSON.stringify resp
-      #     return     
+    #   # snappiMessengerPluginService.on.didUploadAssetProgress ( resp )->
+    #   #     _logOnce resp.asset, '\n\n ***** TEST_nativeUploader: handler for didUploadAssetProgress' + JSON.stringify resp
+    #   #     return     
 
-      # snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
-      #     console.log "\n\n ***** TEST_nativeUploader: didBeginAssetUpload"
-      #     console.log resp
-      #     return
+    #   # snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
+    #   #     console.log "\n\n ***** TEST_nativeUploader: didBeginAssetUpload"
+    #   #     console.log resp
+    #   #     return
 
-      # add to nativeUploader queue
-      assetIds = assetIds[0...3]
+    #   # add to nativeUploader queue
+    #   assetIds = assetIds[0...3]
 
 
-      data = {
-        assets: assetIds
-        options: 
-          # targetWidth: 640
-          # targetHeight: 640
-          # resizeMode: 'aspectFit'
-          autoRotate: true       # always true with PHImageContentModeAspectFit?
-          maxWidth: 720
+    #   data = {
+    #     assets: assetIds
+    #     options: 
+    #       # targetWidth: 640
+    #       # targetHeight: 640
+    #       # resizeMode: 'aspectFit'
+    #       autoRotate: true       # always true with PHImageContentModeAspectFit?
+    #       maxWidth: 720
 
-      }
-      snappiMessengerPluginService.scheduleAssetsForUploadP(data.assets, data.options)
-      # window.Messenger['scheduleAssetsForUpload'](  data
-      #     , (resp)->
-      #       return console.log "test: scheduleAssetsForUpload.onSuccess, count=" + assetIds.length
-      #     , (err)->
-      #       return console.log "test: scheduleAssetsForUpload.onError. Timeout?"
-      #   )
+    #   }
+    #   snappiMessengerPluginService.scheduleAssetsForUploadP(data.assets, data.options)
+    #   # window.Messenger['scheduleAssetsForUpload'](  data
+    #   #     , (resp)->
+    #   #       return console.log "test: scheduleAssetsForUpload.onSuccess, count=" + assetIds.length
+    #   #     , (err)->
+    #   #       return console.log "test: scheduleAssetsForUpload.onError. Timeout?"
+    #   #   )
 
-      $timeout ()->
-          snappiMessengerPluginService.getScheduledAssetsP().then (assetIds)->
-            console.log "\n\n*** onSuccess getScheduledAssetsP()"
-            console.log assetIds
-        , 3000
+    #   $timeout ()->
+    #       snappiMessengerPluginService.getScheduledAssetsP().then (assetIds)->
+    #         console.log "\n\n*** onSuccess getScheduledAssetsP()"
+    #         console.log assetIds
+    #     , 3000
 
-      $timeout ()->
-          window.Messenger['getScheduledAssets']( (assetIds)->
-            console.log "\n\n*** onSuccess DIRECT getScheduledAssets()"
-            console.log assetIds
-          )
-        , 3000
+    #   $timeout ()->
+    #       window.Messenger['getScheduledAssets']( (assetIds)->
+    #         console.log "\n\n*** onSuccess DIRECT getScheduledAssets()"
+    #         console.log assetIds
+    #       )
+    #     , 3000
 
     init = ()->
+      _RESTORE_FROM_LOCALSTORAGE()
+
       _LOAD_MODALS()
 
       _LOAD_DEBUG_TOOLS()
@@ -775,27 +763,29 @@ angular
       .then ()->
         $scope.config['no-view-headers'] = deviceReady.isWebView() && false
         $rootScope.device.id = deviceReady.deviceId()
-
         console.log "\n\n>>> deviceId="+$rootScope.device.id
-        # return cameraRoll.loadCameraRollP() 
+      .then ()->
+        return if deviceReady.isWebView() == false
+        # loadMomentThumbnails on timer, cancel if done elsewhere
+        # for reload cameraRoll.map() from localStorage
+        _cancel = $timeout ()->
+            cameraRoll.loadMomentsFromCameraRoll()
+            .then cameraRoll.loadMomentThumbnailsP
+            .done ()->
+              console.log "\n @@@load cameraRoll thumbnails loaded from init timer"
+            return
+          , 3000
+        _off = $rootScope.$on 'cameraRoll.beforeLoadMomentThumbnails', ()->
+          $timeout.cancel _cancel 
+          _off()
+          _off = _cancel = null
         return # restore cameraRoll.map snapshot
       .finally ()->
         if !deviceReady.isWebView()
           # browser
           _LOAD_BROWSER_TOOLS() 
           $scope.orders = TEST_DATA.orders 
-        
-        _prefs.load().then (config)->
-          if config?.status == "PLUGIN unavailable"
-            console.warn "AppPreferences" + config.status
-          else if config?.status == "EMPTY"
-            console.log "NSUserDefaults=" + JSON.stringify config
-            _prefs.store $scope.config
-          else 
-            console.log "NSUserDefaults=" + JSON.stringify config
-            _.extend $scope.config, config
-          return
-
+      
         # promise = otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.$state.includes('app.workorders')
         promise = otgParse.checkBacklogP().then (backlog)->
           $scope.config.system['order-standby'] = backlog.get('status') == 'standby'

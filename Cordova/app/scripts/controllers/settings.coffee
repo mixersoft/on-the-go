@@ -160,6 +160,12 @@ angular.module('ionBlankApp')
     $scope.otgProfile = otgProfile
 
     $scope.watch = {
+      isWorking:
+        clearAppCache: false
+        clearArchive: false
+      archive: 
+        size: '0 Bytes'
+        count: 0        
       imgCache: 
         size: '0 Bytes'
         count: 0
@@ -171,8 +177,16 @@ angular.module('ionBlankApp')
         $scope.showLoading(true, 3000)
         $scope.watch.iframeOpened[name] = 1
       clearCache: ()->
-        imageCacheSvc.clearStashedP().then ()->
-          _.extend $scope.watch.imgCache, imageCacheSvc.stashStats()
+        $scope.watch.isWorking.clearAppCache = true
+        imageCacheSvc.clearStashedP(null, null, 'appCache').then ()->
+          _.extend $scope.watch.imgCache, imageCacheSvc.stashStats('appCache')
+          $scope.watch.isWorking.clearAppCache = false
+      clearArchive: ()->
+        return  # not yet implemented in localStorage, need to add new folder
+        $scope.watch.isWorking.clearArchive = true
+        imageCacheSvc.clearStashedP(null, null, 'archive').then ()->
+          _.extend $scope.watch.archive, imageCacheSvc.stashStats('archive')
+          $scope.watch.isWorking.clearArchive = false
     }
 
     $scope.signOut = (ev)->

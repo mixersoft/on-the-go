@@ -46,20 +46,21 @@ angular
 }
 
 .factory 'deviceReady', [
-  '$q', '$timeout',  '$ionicPlatform', '$cordovaNetwork'
-  ($q, $timeout, $ionicPlatform, $cordovaNetwork)->
+  '$q', '$timeout',  '$ionicPlatform', '$cordovaNetwork', '$localStorage', 'otgLocalStorage'
+  ($q, $timeout, $ionicPlatform, $cordovaNetwork, $localStorage, otgLocalStorage)->
+
+    otgLocalStorage.loadDefaultsIfEmpty('device')
+
     _promise = null
     _timeout = 2000
-    _device = null
-    _isWebView = null
     _contentWidth = null 
-    _deviceready = {
-      deviceId: ()->
-        return "browser" if !_deviceready.isWebView()
-        return _device?.uuid
+    self = {
 
-      isWebView: ()->
-        return _isWebView
+      deviceId: ()->  # DEPRECATE
+        return $localStorage['device'].id
+
+      isWebView: ()-> # DEPRECATE
+        return $localStorage['device'].isDevice
 
       contentWidth: (force)->
         return _contentWidth if _contentWidth && !force
@@ -69,22 +70,32 @@ angular
         return _promise if _promise
         deferred = $q.defer()
         _cancel = $timeout ()->
-            console.log "$ionicPlatform.ready NOT!!!"
+            console.warn "$ionicPlatform.ready TIMEOUT!!!"
             return deferred.reject("ERROR: ionicPlatform.ready does not respond")
           , _timeout
         $ionicPlatform.ready ()->
           $timeout.cancel _cancel
-          # $rootScope.device.id = $cordovaDevice.getUUID()
-          _device = ionic.Platform.device()
-          _isWebView = ionic.Platform.isWebView()
-          console.log "$ionicPlatform reports deviceready, device.UUID=" + _deviceready.deviceId()
-          return deferred.resolve("deviceready")
+          platform = _.defaults ionic.Platform.device(), {
+            available: false
+            cordova: false
+            platform: 'browser'
+            uuid: 'browser'
+          }
+          $localStorage['device'] = {
+            id: platform.uuid
+            platform : platform
+            isDevice: ionic.Platform.isWebView()
+            isBrowser: ionic.Platform.isWebView() == false
+           }
+          console.log "$ionicPlatform reports deviceReady, device.id=" + $localStorage['device'].id
+          return deferred.resolve( angular.copy $localStorage['device'] )
         return _promise = deferred.promise
+
       isOnline: ()->
-        return true if _deviceready.isWebView() == false
+        return true if $localStorage['device'].isBrowser
         return !$cordovaNetwork.isOffline()
     }
-    return _deviceready
+    return self
 ]
 .factory 'cameraRoll', [
   '$q', '$timeout', '$rootScope', 'deviceReady', 'PLUGIN_CAMERA_CONSTANTS', 'snappiMessengerPluginService', 'imageCacheSvc'
@@ -162,31 +173,21 @@ angular
 
           end = new Date().getTime()
           console.log "\n*** mapAssetsLibraryP() complete, elapsed=" + (end-start)/1000
-          moments = self.loadMomentsFromCameraRoll( mapped ) # mapped -> moments
-          # camraRoll ready
 
-          if false && "appConsole"
-            retval = {
-              title: "*** snappiMessengerPluginService.mapAssetsLibraryP() ***"
-              elapsed : (end-start)/1000
-              'moment[0].value' : moments[0].value
-              'mapped[0..10]': mapped[0..10]
-            }
-            appConsole.show( retval )
-
-          return mapped
-        .then (mapped)->
-          promise = self.loadMomentThumbnailsP(5000)
           # don't wait for promise
+          promise = self.loadMomentsFromCameraRoll( mapped ) # mapped -> moments
+          .then self.loadMomentThumbnailsP
+          .done ()->
+            console.log "\n @@@load cameraRoll thumbnails loaded from loadCameraRollP()"
+          # cameraRoll ready
           return mapped
 
         .catch (error)->
-          # console.warn "ERROR: loadCameraRollP, error="+JSON.stringify( error )[0..100]
+          console.warn "ERROR: loadCameraRollP, error="+JSON.stringify( error )[0..100]
           # appConsole.show( error)
           return $q.reject(error)
 
         .finally ()->
-          
           return
 
       loadFavoritesP: (delay=10)->
@@ -205,10 +206,10 @@ angular
       loadMomentThumbnailsP: (delay=10)->
         # preload thumbnail DataURLs for self moment previews
         momentPreviewAssets = self.getMomentPreviewAssets() 
-        options = {size: 'thumbnail'}
+        options = {
+          size: 'thumbnail'
+        }
         
-        # return 'skip'
-
         notCached = _.filter( 
           momentPreviewAssets
           , (photo)->
@@ -218,7 +219,9 @@ angular
         )
         console.log "\n\n\n*** preloading moment thumbnails for UUIDs, count=" + notCached.length 
         # console.log notCached
+        $rootScope.$broadcast 'cameraRoll.beforeLoadMomentThumbnails' # for cancel loading timer
         return self.loadPhotosP(notCached, options, delay)
+
 
 
       loadPhotosP: (photos, options, delay=10)->
@@ -229,7 +232,11 @@ angular
             return snappiMessengerPluginService.getDataURLForAssetsByChunks_P( 
               photos
               , options                         
-              , null  # onEach, called for cameraRoll thumbnails and favorites
+              # , null  # onEach, called for cameraRoll thumbnails and favorites
+              , (photo)->
+                dataType = if photo.data[0...10]=='data:image' then 'DATA_URL' else 'FILE_URI'
+                if dataType == 'FILE_URI'
+                  imageCacheSvc.stashFile(photo.UUID, size, photo.data, photo.dataSize) # FILE_URI
               , snappiMessengerPluginService.SERIES_DELAY_MS 
             )
             .then ()->
@@ -469,6 +476,7 @@ angular
         # self.dataURLs[size][UUID] = found.fileURL  if found # for localStorage
 
         # console.log self.dataURLs[size][UUID]
+        # DEPRECATE if we are using DestinationType = FILE_URI
         found = self.dataURLs[size][UUID] if !found
         if !found && UUID.length == 36
           found = _.find self.dataURLs[size], (o,key)->
@@ -538,7 +546,7 @@ angular
 
       # called by cameraRoll.queueDataURL()
       fetchDataURLsFromQueue : ()->
-        console.warn "@@@@@@  DEPRECATE??? cameraRoll.fetchDataURLsFromQueue"
+        console.warn "@@@@@@  cameraRoll.fetchDataURLsFromQueue"
         queuedAssets = self.queue()
 
         chunks = {}

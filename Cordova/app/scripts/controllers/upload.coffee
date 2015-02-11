@@ -637,7 +637,7 @@ angular.module('ionBlankApp')
       # cached view becomes active 
       $scope.on.fetchWarningsP()
       return if !$scope.deviceReady.isOnline()
-      return $scope.DEBOUNCED_SYNC_cameraRoll_Orders()
+      return $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 
