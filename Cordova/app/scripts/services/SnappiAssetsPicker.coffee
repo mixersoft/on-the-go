@@ -242,7 +242,7 @@ angular
               , (photo)->
                 dataType = if photo.data[0...10]=='data:image' then 'DATA_URL' else 'FILE_URI'
                 if dataType == 'FILE_URI'
-                  imageCacheSvc.stashFile(photo.UUID, size, photo.data, photo.dataSize) # FILE_URI
+                  imageCacheSvc.stashFile(photo.UUID, options.size, photo.data, photo.dataSize) # FILE_URI
               , snappiMessengerPluginService.SERIES_DELAY_MS 
             )
             .then ()->

@@ -166,7 +166,9 @@ angular.module('ionBlankApp')
     _lookupPhoto = null
     _getAsPhotos = (uuids)->
       return _.map uuids, (uuid)->
-        return _.findWhere _lookupPhoto, {UUID: uuid}
+        photo = _lookupPhoto[uuid]
+        console.warn ">>> otgMoment photo not found, UUID="+uuid if !photo
+        return photo
 
     _getMomentHeight = (moment, index)->
       days = moment.value.length
@@ -192,7 +194,8 @@ angular.module('ionBlankApp')
         # element.text 'this is the moment directive'
         scope.options = _setSizes(element)
         scope.getAsPhotos = _getAsPhotos
-        _lookupPhoto = otgData.parsePhotosFromMoments cameraRoll.moments if !_lookupPhoto
+        if _lookupPhoto==null
+          _lookupPhoto = _.indexBy( otgData.parsePhotosFromMoments( cameraRoll.moments ), 'UUID')
         scope.getMomentHeight = _getMomentHeight
         scope.getOverflowPhotos = _getOverflowPhotos
         scope.otgWorkorder = otgWorkorder
