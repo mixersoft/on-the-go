@@ -213,9 +213,13 @@ static NSOperationQueue *serialQueue;
     return fullPath;
 }
 
--(void)unscheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers completuon:(void(^)(NSString *identifier, BOOL wasCanceled))completion {
+-(void)unscheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers completion:(void(^)(NSString *identifier, BOOL wasCanceled))completion {
     [localPHAssetIdentifiers enumerateObjectsUsingBlock:^(NSString * obj, NSUInteger idx, BOOL *stop) {
-        [self stopUploadingAssetWithID:obj completion:completion];
+        [self stopUploadingAssetWithID:obj completion:^(NSString *identifier, BOOL wasCanceled) {
+            if (completion) {
+                completion(obj, wasCanceled);
+            }
+        }];
     }];
 }
 
