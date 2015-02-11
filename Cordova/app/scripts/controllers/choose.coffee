@@ -306,7 +306,7 @@ angular.module('ionBlankApp')
     $scope.cameraRoll = cameraRoll
     $scope.$watchCollection 'cameraRoll.moments', (newV, oldV)->
       # console.log "\n\n %%% watched cameraRoll.moments change, update filter %%% \n\n"
-      return if !deviceReady.isWebView()
+      return if deviceReady.device().isBrowser
       return cameraRoll.loadMomentThumbnailsP()
 
 

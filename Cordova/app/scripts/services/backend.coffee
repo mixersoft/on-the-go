@@ -281,7 +281,7 @@ angular
           'errors': []
         }
         parsePhotos = photosColl?.toJSON?() || []
-        checkDeviceId = deviceReady.isWebView() && $rootScope.$state.includes('app.workorders') == false
+        checkDeviceId = deviceReady.device().isDevice && $rootScope.$state.includes('app.workorders') == false
         if checkDeviceId == false
           promise = $q.when()
           # add, remove = [] for workorder syncs...
@@ -361,7 +361,7 @@ angular
       SYNC_ORDERS : (scope, force, DELAY=10, whenDoneP)->
         # run AFTER cameraRoll loaded
         # return if _.isEmpty $rootScope.sessionUser
-        # if deviceReady.isWebView() && _.isEmpty cameraRoll.map()
+        # if deviceReady.device().isDevice && _.isEmpty cameraRoll.map()
         #   return whenDoneP() if whenDoneP
 
         options = {
@@ -430,7 +430,7 @@ angular
       SYNC_WORKORDERS : (scope, force, DELAY=10, whenDoneP)->
         # run AFTER cameraRoll loaded
         return if _.isEmpty $rootScope.sessionUser
-        return if deviceReady.isWebView() && _.isEmpty cameraRoll.map()
+        return if deviceReady.device().isDevice && _.isEmpty cameraRoll.map()
 
         options = {
           role: 'editor'
@@ -992,7 +992,7 @@ angular
         UPLOAD_IMAGE_SIZE = size || 'preview'
         return deviceReady.waitP().then self.checkSessionUserP() 
           .then ()->
-            if deviceReady.isWebView() == false
+            if deviceReady.device().isBrowser
               return $q.reject( {
                 UUID: UUID
                 message: "error: file upload not available from browser"

@@ -236,7 +236,7 @@ angular.module('ionBlankApp')
       givingApp: ()->
         appId = 'id669261809'
         target = "http://icangowithout.com/"
-        if deviceReady.isWebView() 
+        if deviceReady.device().isDevice 
           # target = 'itms-apps://itunes.apple.com/app/' + appId 
           ref = window.open(target, '_system', 'location=yes')
           return false
@@ -383,7 +383,7 @@ angular.module('ionBlankApp')
       # console.log "init: state="+$state.current.name
       $scope.checkout = otgWorkorder.checkout.getSelectedAsMoments()
       $scope.watch.servicePlan = _getTotal($scope.checkout)
-      if $scope.watch.servicePlan.total==0 && deviceReady.isWebView()==false
+      if $scope.watch.servicePlan.total==0 && deviceReady.device().isBrowser
         DEV.getSampleCheckout()
 
       _wizard.validateSteps()

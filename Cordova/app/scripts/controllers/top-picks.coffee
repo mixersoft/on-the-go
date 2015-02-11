@@ -223,7 +223,7 @@ angular.module('ionBlankApp')
       addShare: (event, item)->
         event.preventDefault();
         event.stopPropagation()
-        if !deviceReady.isWebView()
+        if deviceReady.device().isBrowser
           confirmPopup = $ionicPopup.alert {
             title: "Sharing Not Available"
             template: "Sorry, sharing is only available from a mobile device."
@@ -297,7 +297,7 @@ angular.module('ionBlankApp')
         # console.log "Swipe, item.UUID=" + item.UUID
         return
       cardClick: (scope, ev, item)->
-        return if deviceReady.isWebView()
+        return if deviceReady.device().isDevice
         clickSide = ev.offsetX/ev.currentTarget.clientWidth
         clickSide = 'left' if clickSide < 0.33 
         clickSide = 'right' if clickSide > 0.67  

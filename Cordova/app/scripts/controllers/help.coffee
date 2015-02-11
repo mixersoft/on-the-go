@@ -29,7 +29,7 @@ angular.module('ionBlankApp')
   	openHref : ($ev, dest)->
 	  	target = $ev.currentTarget
 	  	dest = dest || target.href
-	  	if $scope.deviceReady.isWebView()
+	  	if $scope.deviceReady.device().isDevice
 	  		window.open(dest,'_system', 'location=yes');  # doesn't work
 	  		return false
 	  	else if target.tagName != 'A'

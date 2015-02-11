@@ -22,7 +22,7 @@ angular.module('ionBlankApp')
       # UPLOADER_TYPE = 'parse'
       UPLOADER_TYPE = 'background'
 
-      UPLOADER_TYPE = 'parse' if deviceReady.isWebView()==false
+      UPLOADER_TYPE = 'parse' if deviceReady.device().isBrowser
       switch UPLOADER_TYPE
         when "background"
           self.uploader = _bkgFileUploader
@@ -518,7 +518,7 @@ angular.module('ionBlankApp')
         return self.uploader.isEnabled && self.uploader.remaining  
 
       isOffline: ()->
-        return false if !deviceReady.isWebView()
+        return false if deviceReady.device().isBrowser
         return $cordovaNetwork.isOffline()
 
       allowCellularNetwork: (value)->
@@ -526,13 +526,13 @@ angular.module('ionBlankApp')
         return self._allowCellularNetwork
 
       isCellularNetwork: ()->
-        return false if !deviceReady.isWebView()
+        return false if deviceReady.device().isBrowser
         type = $cordovaNetwork.getNetwork()
         isCellular = [Connection.CELL, Connection.CELL_2G, Connection.CELL_3G, Connection.CELL_4G].indexOf(type) > -1
         return isCellular
 
       connectionOK: ()->
-        return true if !deviceReady.isWebView()
+        return true if deviceReady.device().isBrowser
         if $cordovaNetwork.isOffline()
           return false
         if self.isCellularNetwork() && !self.allowCellularNetwork()

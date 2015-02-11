@@ -54,6 +54,8 @@ angular
     _promise = null
     _timeout = 2000
     _contentWidth = null 
+    _device = {}    # read only
+
     self = {
 
       deviceId: ()->  # DEPRECATE
@@ -61,6 +63,9 @@ angular
 
       isWebView: ()-> # DEPRECATE
         return $localStorage['device'].isDevice
+
+      device: ()->
+        return _device
 
       contentWidth: (force)->
         return _contentWidth if _contentWidth && !force
@@ -87,8 +92,9 @@ angular
             isDevice: ionic.Platform.isWebView()
             isBrowser: ionic.Platform.isWebView() == false
            }
+          _device = angular.copy $localStorage['device']
           console.log "$ionicPlatform reports deviceReady, device.id=" + $localStorage['device'].id
-          return deferred.resolve( angular.copy $localStorage['device'] )
+          return deferred.resolve( _device )
         return _promise = deferred.promise
 
       isOnline: ()->
@@ -252,7 +258,7 @@ angular
                   photos: cameraRoll.map()[0..TEST_LIMIT]
                   dataURLs: {}
                 }
-                if deviceReady.isWebView()
+                if deviceReady.device().isDevice
                   _.each cameraRoll.dataURLs[IMAGE_FORMAT], (dataURL,uuid)->
                     truncated.dataURLs[uuid] = dataURL[0...40]
                 else 
@@ -395,7 +401,7 @@ angular
         found = self.getDataURL(UUID, options.size) if !options.noCache
         return $q.when(found) if found
         # load from cameraRoll
-        role = if deviceReady.isWebView() then 'owner' else 'editor'
+        role = if deviceReady.device().isDevice then 'owner' else 'editor'
         switch role
           when 'owner'   # !! DEVICE, check deviceId as well
             return snappiMessengerPluginService.getDataURLForAssets_P( 
@@ -497,7 +503,7 @@ angular
       # IMAGE_WIDTH should be computedWidth - 2 for borders
       getCollectionRepeatHeight : (photo, IMAGE_WIDTH)->
         if !IMAGE_WIDTH
-          MAX_WIDTH = if deviceReady.isWebView() then 320 else 640
+          MAX_WIDTH = if deviceReady.device().isDevice then 320 else 640
           IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, MAX_WIDTH)
         if !photo.scaledH > 0
           if photo.originalWidth && photo.originalHeight
@@ -515,7 +521,7 @@ angular
       # called by getDataURL, but NOT getDataURL_P
       queueDataURL : (UUID, size='preview')->
         console.warn "@@@@@@  DEPRECATE??? cameraRoll.queueDataURL"
-        return if !deviceReady.isWebView()
+        return if deviceReady.device().isBrowser
         self._queue[UUID] = { 
           UUID: UUID
           size: size, 
@@ -611,7 +617,7 @@ angular
           }
 
     deviceReady.waitP().then ()->
-      if deviceReady.isWebView()
+      if deviceReady.device().isDevice
         # do NOT load TEST_DATA, wait for otgParse call by:
         # workorder: otgParse.fetchWorkorderPhotosByWoIdP()
         # top-picks: otgParse.fetchPhotosByOwnerP

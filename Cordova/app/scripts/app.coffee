@@ -447,7 +447,7 @@ angular
     $scope.hideSplash = ()->
       deviceReady.waitP()
       .then ()->
-        navigator.splashscreen?.hide() if deviceReady.isWebView()
+        navigator.splashscreen?.hide() if deviceReady.device().isDevice
         return
 
     window.i18n = $rootScope.i18n = $scope.i18n = i18n;
@@ -761,11 +761,11 @@ angular
 
       deviceReady.waitP()
       .then ()->
-        $scope.config['no-view-headers'] = deviceReady.isWebView() && false
+        $scope.config['no-view-headers'] = deviceReady.device().isDevice && false
         $rootScope.device.id = deviceReady.deviceId()
         console.log "\n\n>>> deviceId="+$rootScope.device.id
       .then ()->
-        return if deviceReady.isWebView() == false
+        return if deviceReady.device().isBrowser
         # loadMomentThumbnails on timer, cancel if done elsewhere
         # for reload cameraRoll.map() from localStorage
         _cancel = $timeout ()->
@@ -781,7 +781,7 @@ angular
           _off = _cancel = null
         return # restore cameraRoll.map snapshot
       .finally ()->
-        if !deviceReady.isWebView()
+        if deviceReady.device().isBrowser
           # browser
           _LOAD_BROWSER_TOOLS() 
           $scope.orders = TEST_DATA.orders 

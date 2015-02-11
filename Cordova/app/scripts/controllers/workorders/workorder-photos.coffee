@@ -160,7 +160,7 @@ angular.module('ionBlankApp')
         # console.log "Swipe, item.id=" + item.id
         return  
       cardClick: (scope, ev, item)->
-        return if deviceReady.isWebView()
+        return if deviceReady.device().isDevice
         clickSide = ev.offsetX/ev.currentTarget.clientWidth
         clickSide = 'left' if clickSide < 0.33 
         clickSide = 'right' if clickSide > 0.67  
