@@ -213,9 +213,9 @@ static NSOperationQueue *serialQueue;
     return fullPath;
 }
 
--(void)unscheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers {
+-(void)unscheduleAssetsWithIdentifiers:(NSArray *)localPHAssetIdentifiers completuon:(void(^)(NSString *identifier, BOOL wasCanceled))completion {
     [localPHAssetIdentifiers enumerateObjectsUsingBlock:^(NSString * obj, NSUInteger idx, BOOL *stop) {
-        [self stopUploadingAssetWithID:obj completion:nil];
+        [self stopUploadingAssetWithID:obj completion:completion];
     }];
 }
 
@@ -353,13 +353,12 @@ static NSOperationQueue *serialQueue;
     return [_backgroundUploadSession uploadTaskWithRequest:request fromFile:[NSURL fileURLWithPath:filePath]];
 }
 
--(void)stopUploadingAssetWithID:(NSString *)assetID completion:(void(^)(bool fond))completion {
-    
+-(void)stopUploadingAssetWithID:(NSString *)assetID completion:(void(^)(NSString *identifier, BOOL wasCanceled))completion {
+    __block NSString *identifier = nil;
     __block BOOL found = NO;
     [serialQueue addBlock:^(void(^operation)(void)) {
-        
         [scheduledTasks enumerateObjectsUsingBlock:^(NSURLSessionUploadTask *obj, BOOL *stop) {
-            NSString *identifier = obj.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
+            identifier = obj.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
             if ([identifier isEqualToString:assetID]) {
                 *stop = found = YES;
                 [obj cancel];
@@ -369,7 +368,7 @@ static NSOperationQueue *serialQueue;
         operation();
         if (completion) {
             [[NSOperationQueue mainQueue] addOperationWithBlock:^{
-                completion(found);
+                completion(identifier, found);
             }];
         }
     }];
@@ -377,22 +376,11 @@ static NSOperationQueue *serialQueue;
 
 
 -(BOOL)appendData:(NSData *)data toTask:(NSURLSessionTask *)task {
-    //NSFileWrapperReadingImmediate
     bool success = YES;
      NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
     NSDictionary *d = [self sessionInfosDictionary];
     NSURLSessionTaskInfo *info = d[identifier];
-    //NSMutableData *_data = [_responseDataWrappers objectForKey:identifier];
-//    if (!_data) {
-//        //create wrapper
-//        
-//        _data = [NSMutableData data];
-//        [_responseDataWrappers setObject:_data forKey:identifier];
-//    }
     [info.data appendData:data];
-//    NSError *error;
-//    [_data writeToURL:[self fileURLOfDataForTask:task] options:NSDataWritingAtomic error:&error];
-//    success = error == nil;
     [self saveSessionInfos:d];
     return success;
 }
@@ -401,9 +389,6 @@ static NSOperationQueue *serialQueue;
     
     [serialQueue addBlock:^(void(^operation)(void)) {
         NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-        //delete data
-        //[_responseDataWrappers removeObjectForKey:identifier];
-        //[NSFileManager.defaultManager removeItemAtURL:[self fileURLOfDataForTask:task] error:nil];
         NSString *path = [self imagePathForAssetIdentifier:identifier];
         [NSFileManager.defaultManager removeItemAtPath:path error:nil];
         [scheduledTasks removeObject:task];

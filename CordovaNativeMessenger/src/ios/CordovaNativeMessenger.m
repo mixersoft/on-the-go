@@ -91,9 +91,10 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
     
     NSDictionary *data = command.arguments.firstObject;
     NSArray *assets = data[@"assets"];
-    [PhotosUploader.sharedInstance unscheduleAssetsWithIdentifiers:assets];
-    
-    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
+    [PhotosUploader.sharedInstance unscheduleAssetsWithIdentifiers:assets completion:^(NSString *identifier, BOOL wasCanceled) {
+        NSDictionary *d = @{@"asset":identifier, @"wasCanceled":@(wasCanceled)};
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:d] callbackId:command.callbackId];
+    }];
 }
 
 -(void)bindListener:(CDVInvokedUrlCommand*) command {
@@ -567,23 +568,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
 
 #pragma mark PhotosUploaderDelegate
 
--(void)photoUploader:(PhotosUploader *)uploader didCancelUploadAssetIdentifier:(NSString *)assetIdentifier {
-    [self.class sendMessage:@{@"assets":@[assetIdentifier]} WithCommand:kUnscheduleAssetsForUploadCommandValue];
-}
-
 -(void)photoUploader:(PhotosUploader *)uploader didFinishUploadAssetIdentifier:(NSString *)assetIdentifier {
-    
-//    NSMutableDictionary *dict = [@{@"asset":assetIdentifier, @"success":@(error == nil)} mutableCopy];
-//    if (error) {
-//        [dict setObject:@(NO) forKey:@"success"];
-//        [dict setObject:@(error.code) forKey:@"errorCode"];
-//    }
-//    
-//    if (data.length) {
-//        NSError *parseError = nil;
-//        NSDictionary *d = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:&parseError];
-//        [dict addEntriesFromDictionary:d];
-//    }
     
     [self.class sendMessage:@{@"asset":assetIdentifier} WithCommand:kDidFinishAssetUploadCommandValue];
     
