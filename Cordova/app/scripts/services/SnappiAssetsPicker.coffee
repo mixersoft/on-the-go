@@ -181,10 +181,10 @@ angular
           console.log "\n*** mapAssetsLibraryP() complete, elapsed=" + (end-start)/1000
 
           # don't wait for promise
-          promise = self.loadMomentsFromCameraRoll( mapped ) # mapped -> moments
-          .then self.loadMomentThumbnailsP
-          .done ()->
+          moments = self.loadMomentsFromCameraRoll( mapped )
+          promise = self.loadMomentThumbnailsP().then ()->
             console.log "\n @@@load cameraRoll thumbnails loaded from loadCameraRollP()"
+
           # cameraRoll ready
           return mapped
 
@@ -678,6 +678,7 @@ angular
 
 
         didBeginAssetUpload : (handler)-> 
+          # called AFTER background task is scheduled, see also: didFailToScheduleAsset()
           #  asset:{string phasset id}
           return window.Messenger.on( 'didBeginAssetUpload', handler )
 
@@ -707,7 +708,9 @@ angular
         #
 
         didFailToScheduleAsset : (handler)-> 
-          #  resp = { asset, errorCode }
+          # resp = { asset, errorCode, isMissing }
+          # resp.isMissing==true if UUID does not exist, fail BEFORE task scheduling
+          # otherwise, check resp.errorCode
           return window.Messenger.on( 'didFailToScheduleAsset', handler )
 
         unscheduleAssetsForUpload : (handler)-> 

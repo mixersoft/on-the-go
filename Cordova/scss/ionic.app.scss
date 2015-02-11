@@ -572,6 +572,13 @@ otg-moment-date-range {
   .warning {
     color: $energized;
   }
+  .warn-scheduling {
+    .fine {
+      font-size:0.85em;
+      line-height:1.2;
+      text-align: left;
+    }
+  }
   .big-red-button {
     margin: 20px auto;
     width:240px;

@@ -14,7 +14,7 @@ angular.module('ionBlankApp')
     deviceReady, snappiMessengerPluginService)->
 
     # ### private
-    _CHUNKSIZE = 10 # set to $rootScope.config['upload']['CHUNKSIZE']
+    _CHUNKSIZE = 50 # set to $rootScope.config['upload']['CHUNKSIZE']
     # ###
 
     deviceReady.waitP().then ()->
@@ -306,29 +306,44 @@ angular.module('ionBlankApp')
         return _.keys( _bkgFileUploader._scheduled ).length +  _bkgFileUploader._readyToSchedule.length
 
       pauseQueueP: ()->
-        return PLUGIN.unscheduleAllAssetsP().then (resp)->
-          _pauseQueueP = ()->
-            console.log "unscheduleAllAssetsP complete" + JSON.stringify resp
-            # remainingScheduled at the front of the queue
-            remainingScheduledAssetIds = _.reduce _bkgFileUploader._scheduled, (result, v,k)->
-                return result if v == 1  # onProgress Done
-                return result if _bkgFileUploader._complete[k]? # complete
-                result.push k
-                return result
-              , []
+        return PLUGIN.unscheduleAllAssetsP()
+        .then (resp)->
+          console.log "1. unscheduleAllAssetsP returned, resp=" + JSON.stringify resp
+          return $q.when()
 
-            _bkgFileUploader._readyToSchedule = _.unique remainingScheduledAssetIds.concat( _bkgFileUploader._readyToSchedule ) 
-            _bkgFileUploader._scheduled = {}
-            _bkgFileUploader._complete = {}
-            self.remaining( _bkgFileUploader.count() )
-            _bkgFileUploader.isPausingP = null
-            return
+          'skip'
 
           dfd = $q.defer()
-          $timeout ()->
-              _pauseQueueP()
-              return dfd.resolve()
-            , 1000
+          # didFinish() will 
+          #     _bkgFileUploader._readyToSchedule.unshift( photo.UUID )
+          #     and remove from  _bkgFileUploader._scheduled
+          # watch for _.isEmpty(_bkgFileUploader._scheduled)
+          isUnscheduledComplete = ()->
+             return _.isEmpty(_bkgFileUploader._scheduled) && _bkgFileUploader._readyToSchedule.length
+
+          $rootScope.$watch _bkgFileUploader._scheduled, (newV, oldV)->
+            if isUnscheduledComplete()
+              _bkgFileUploader.isPausingP = null
+              return dfd.resolve() 
+
+          _cancel = $timeout ()->
+            $rootScope.$broadcast 'bkgUploader:taskComplete'
+            return
+          , 3000
+          _off = $rootScope.$on 'bkgUploader:taskComplete', ()->
+          $timeout.cancel _cancel 
+          _off()
+          _off = _cancel = null    
+
+          # _pauseQueueP = ()->
+          #   # console.log "2. unscheduleAllAssetsP complete, resp=" + JSON.stringify resp
+          #   # _bkgFileUploader._readyToSchedule = _.unique remainingScheduledAssetIds.concat( _bkgFileUploader._readyToSchedule ) 
+          #   _bkgFileUploader._scheduled = {}
+          #   _bkgFileUploader._complete = {}
+          #   self.remaining( _bkgFileUploader.count() )
+          #   _bkgFileUploader.isPausingP = null
+          #   $rootScope.$broadcast 'uploader.schedulingComplete'
+          #   return
           return _bkgFileUploader.isPausingP = dfd.promise
 
         
@@ -345,19 +360,31 @@ angular.module('ionBlankApp')
           _bkgFileUploader._readyToSchedule = []
           return 
 
+      isSchedulingComplete: ()->
+        notComplete = _.filter _bkgFileUploader._scheduled, (v,k)->
+          return true if `v==null`
+        return false if notComplete.length
+        # isComplete = _.some(_.values(_bkgFileUploader._scheduled), null) == false
+        $rootScope.$broadcast 'uploader.schedulingComplete'
+        return true
+
+
       oneBegan: (resp)->
         try
           console.log "\n >>> native-uploader Began: for assetId="+resp.asset
           _bkgFileUploader._scheduled[resp.asset] = 0
+          _bkgFileUploader.isSchedulingComplete()
         catch e
-          # ...
+        return
         
       oneScheduleError : (resp)->
         # resp.asset
         # resp.errorCode
+        # resp.isMissing
         resp['success'] = false
         resp['message'] = 'error: failed to schedule'
         _bkgFileUploader.oneCompleteP(resp)
+        _bkgFileUploader.isSchedulingComplete()
         return resp
 
         
@@ -503,10 +530,7 @@ angular.module('ionBlankApp')
 
       enable : (action)-> 
         return $rootScope['config']['upload']['enabled'] if `action==null`
-        isEnabled = 
-          if action == 'toggle'
-          then !self.uploader.enable()
-          else !!action
+        isEnabled = self.uploader.enable(action)
         return $rootScope['config']['upload']['enabled'] = isEnabled
       remaining: (value)->
         return self.uploader.remaining if `value==null`
@@ -566,6 +590,10 @@ angular.module('ionBlankApp')
 
     $scope.otgUploader = otgUploader
 
+    $scope.$on 'uploader.schedulingComplete', (ev)->
+      $scope.watch.isScheduling = false
+      ev.stopPropagation?()
+      return
 
     $scope.redButton = {
       press: (ev)-> 
@@ -575,10 +603,15 @@ angular.module('ionBlankApp')
         # console.log "press button"
         $scope.on.fetchWarningsP()
         .then (networkOK)->
-          if otgUploader.enable('toggle')
-            target.addClass('enabled') 
+          isEnabled = otgUploader.enable('toggle')
+          if isEnabled
+            target.addClass('enabled')
+            if otgUploader.uploader.type == 'background' && otgUploader.uploader.count()
+              $scope.watch.isScheduling = true 
           else 
             target.removeClass('enabled') 
+            if otgUploader.uploader.type == 'background' && otgUploader.uploader.count()
+              $scope.watch.isUnscheduling = true 
           return
       release: (ev)-> 
         target = angular.element(ev.currentTarget)
@@ -591,11 +624,13 @@ angular.module('ionBlankApp')
     $scope.watch = {
       remaining: 0
       warnings: null
+      isScheduling: false
+      isUnscheduling: false
     }
 
     $scope.on = {
       refresh: ()->
-        return $scope.SYNC_cameraRoll_Orders()  
+        return $scope.app.sync.cameraRoll_Orders()  
       fetchWarningsP : ()->
         return deviceReady.waitP()
         .then ()->
@@ -628,7 +663,7 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
-      otgUploader.onLastProgressTimeout( $scope.on.fetchWarningsP )
+      
       return if !$scope.deviceReady.isOnline()
       $scope.showLoading(true)      
       return
@@ -642,5 +677,7 @@ angular.module('ionBlankApp')
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 
       return 
+    $scope.deviceReady.waitP().then ()->
+      otgUploader.onLastProgressTimeout( $scope.on.fetchWarningsP )  
 
 ]

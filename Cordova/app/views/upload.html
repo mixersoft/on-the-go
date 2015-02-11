@@ -28,6 +28,12 @@
 
     <div class="row"><div class="col col-offset-10 col-80 text-center">
       <div class="fine warning" ng-bind="watch.warnings"></div>
+      <div class="list list-positive" ng-show="watch.isScheduling">
+        <div class="warn-scheduling item-icon-left" >
+          <i class="icon icon-large energized ion-loading-b"></i>
+          <div class="fine energized">Please wait until scheduling is complete.</div>
+        </div>
+      </div>
       <h3 class="inverse ">The Big Red Button <span class="nowrap">is {{otgUploader.enable() ? 'ON' : 'OFF'}}</span></h3>
       <div>This button controls the upload of photos to our servers. 
         <span ng-show="!otgUploader.enable()">Go ahead, press it when you are ready to upload.</span>

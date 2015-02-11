@@ -308,7 +308,7 @@ angular.module('ionBlankApp')
             scope.swipeCard.swipeOver('right')
 
       refresh: ()->
-        $scope.SYNC_cameraRoll_Orders()
+        $scope.app.sync.cameraRoll_Orders()
         return 
 
       DEBOUNCED_cameraRollSnapshot : _.debounce ()->
