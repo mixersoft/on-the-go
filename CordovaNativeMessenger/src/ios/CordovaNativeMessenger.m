@@ -120,8 +120,8 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
 -(void)setAllowsCellularAccess:(CDVInvokedUrlCommand*)command {
     BOOL newCandidate = [[command argumentAtIndex:0] boolValue];
     [PhotosUploader.sharedInstance setAllowsCellularAccess:newCandidate];
+    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
 }
-
 
 -(void)mapCollections:(CDVInvokedUrlCommand*) command {    
    [self.commandDelegate runInBackground:^{
