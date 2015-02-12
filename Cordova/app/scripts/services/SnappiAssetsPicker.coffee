@@ -641,38 +641,8 @@ angular
       CHUNK_SIZE : 30
       SERIES_DELAY_MS: 100
 
-      _callP : (method, data, TIMEOUT=10000)->
-        return $q.when "Messenger Plugin not available" if !window.Messenger?
-        dfd = $q.defer()
-        cancel = $timeout ()->
-            return dfd.reject("TIMEOUT: snappiMessengerPluginService - " + method)
-          , TIMEOUT
-        onSuccess = (resp)->
-            console.log ">>> callP returned for method=" + method
-            $timeout.cancel(cancel)
-            return dfd.resolve(resp)
-        onError = (err)->
-            $timeout.cancel(cancel)
-            return dfd.reject(err)
-        switch method
-          when 'getScheduledAssets', 'unscheduleAllAssets'
-          ,'suspendAllAssetUploads', 'resumeAllAssetUploads'
-          ,'allSessionTaskInfos'
-            args = [onSuccess]
-          when 'scheduleAssetsForUpload', 'unscheduleAssetsForUpload'
-          ,'sessionTaskInfoForIdentifier', 'removeSessionTaskInfoWithIdentifier'
-          , 'setAllowsCellularAccess'
-            args = [data, onSuccess, onError]
-          when 'setFavorite'
-            args = [data.UUID, data.favorite, onSuccess, onError]
-          else
-            throw "ERROR: invalid method. name=" + method
-        console.log ">>> callP calling method=" + method + ", args.length=" + args.length     
-        window.Messenger[method].apply( this, args )
-        return dfd.promise 
-
       on : 
-        photoStreamChange : (handler)-> 
+        XXXphotoStreamChange : (handler)-> 
           #  updated:{array of phasset ids}, removed:{array of phasset ids}, added:{array of phasset ids}
           return window.Messenger.on( 'photoStreamChange', handler )
 
@@ -690,11 +660,7 @@ angular
 
         didFinishAssetUpload : (handler)-> 
           # asset:{string phasset id}, 
-          # refactor: moved to sessionTaskInfoForIdentifier(resp.asset)
-              # name:{string (Parse name)}    
-              # url: Parse URL
-              # success: bool
-              # errorCode: int
+          # call sessionTaskInfoForIdentifier(resp.asset) to get status
           return window.Messenger.on( 'didFinishAssetUpload', handler )
 
 
@@ -713,29 +679,52 @@ angular
           # otherwise, check resp.errorCode
           return window.Messenger.on( 'didFailToScheduleAsset', handler )
 
-        unscheduleAssetsForUpload : (handler)-> 
+        XXXunscheduleAssetsForUpload : (handler)-> 
           #   assets:{array of phasset ids}
           return window.Messenger.on( 'unscheduleAssetsForUpload', handler )
 
         #
         #  native Calendar control
         #
-        scheduleDayRangeForUpload : (handler)-> 
+        XXXscheduleDayRangeForUpload : (handler)-> 
           #  fromDate:{string}, toDate:{string}
           return window.Messenger.on( 'scheduleDayRangeForUpload', handler )
 
-        unscheduleDayRangeForUpload : (handler)-> 
+        XXXunscheduleDayRangeForUpload : (handler)-> 
           #  fromDate:{string}, toDate:{string}
           return window.Messenger.on( 'unscheduleDayRangeForUpload', handler )
 
 
-      # For communicating back with the native, we’ve defined two methods for you to call. The first is a response to the same command for returning whatever is your last phasset that the native has given you, the second is for passing array of phasset ids to be scheduled for background upload. I am not exactly sure how this happens on the Cordova side but I am guessing there should be a method in the messenger you can call an pass in the command string and a dictionary. I’ve listed the command names and data dictionary key:value pairs.
-      # //Responds
-      lastImageAssetIDP : (resp)-> 
-        # o = {  
-        #  asset:[UUID, UUID, UUID, ... ]
-        # }
-        return _MessengerPLUGIN._callP( 'lastImageAssetID' )
+
+      _callP : (method, data, TIMEOUT=10000)->
+        return $q.when "Messenger Plugin not available" if !window.Messenger?
+        dfd = $q.defer()
+        cancel = $timeout ()->
+            return dfd.reject("TIMEOUT: snappiMessengerPluginService - " + method)
+          , TIMEOUT
+        onSuccess = (resp)->
+            console.log ">>> callP returned for method=" + method + ", resp=" + JSON.stringify(resp)[0..100]
+            $timeout.cancel(cancel)
+            return dfd.resolve(resp)
+        onError = (err)->
+            $timeout.cancel(cancel)
+            return dfd.reject(err)
+        switch method
+          when 'getScheduledAssets', 'unscheduleAllAssets'
+          ,'suspendAllAssetUploads', 'resumeAllAssetUploads'
+          ,'allSessionTaskInfos'
+            args = [onSuccess]
+          when 'scheduleAssetsForUpload', 'unscheduleAssetsForUpload'
+          ,'sessionTaskInfoForIdentifier', 'removeSessionTaskInfoWithIdentifier'
+          , 'setAllowsCellularAccess'
+            args = [data, onSuccess, onError]
+          when 'setFavorite'
+            args = [data.UUID, data.favorite, onSuccess, onError]
+          else
+            throw "ERROR: invalid method. name=" + method
+        # console.log ">>> callP calling method=" + method + ", args.length=" + args.length     
+        window.Messenger[method].apply( this, args )
+        return dfd.promise 
 
       setAllowsCellularAccessP : (value)->
         return _MessengerPLUGIN._callP( 'setAllowsCellularAccess', value ) 
@@ -760,11 +749,11 @@ angular
         return _MessengerPLUGIN._callP( 'scheduleAssetsForUpload', data )  
 
       getScheduledAssetsP : ()-> 
-        console.log "\n\n*** calling getScheduledAssetsP"
+        # console.log "\n\n*** calling getScheduledAssetsP"
         return _MessengerPLUGIN._callP( 'getScheduledAssets')  
 
       unscheduleAllAssetsP : ()-> 
-        console.log "\n\n*** calling unscheduleAllAssets"
+        # console.log "\n\n*** calling unscheduleAllAssets"
         return _MessengerPLUGIN._callP( 'unscheduleAllAssets')  
 
       suspendAllAssetUploadsP : ()->
@@ -781,7 +770,7 @@ angular
       sessionTaskInfoForIdentifierP : (UUID)->
         # resp = { asset, progress, hasFinished, success, errorCode, url, name }
           # asset: "AC072879-DA36-4A56-8A04-4D467C878877/L0/001"
-          # errorCode: 0
+          # errorCode: 0, ERROR_CANCELLED = -999
           # hasFinished: true
           # name: "tfss....jpg"
           # progress: 1
@@ -797,7 +786,7 @@ angular
 
 
       mapAssetsLibraryP: (options={})->
-        console.log "mapAssetsLibrary() calling window.Messenger.mapAssetsLibrary(assets)"
+        # console.log "mapAssetsLibrary() calling window.Messenger.mapAssetsLibrary(assets)"
 
         # defaults = {
         #   # pluck: ['DateTimeOriginal', 'PixelXDimension', 'PixelYDimension', 'Orientation']

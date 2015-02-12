@@ -599,6 +599,10 @@ angular
         'topPicks'
         'cameraRoll'
       ]) 
+      # do this BEFORE any listeners are registered
+      if $localStorage['config']['upload']['auto-upload'] == false
+        $localStorage['config']['upload']['enabled'] = false # force
+
       $rootScope.config =  $scope.config = $localStorage['config']
       $rootScope.counts = $localStorage['menuCounts']
       $rootScope.device = $localStorage['device']
@@ -769,8 +773,7 @@ angular
         # loadMomentThumbnails on timer, cancel if done elsewhere
         # for reload cameraRoll.map() from localStorage
         _cancel = $timeout ()->
-            cameraRoll.loadMomentsFromCameraRoll()
-            .then cameraRoll.loadMomentThumbnailsP
+            cameraRoll.loadCameraRollP(null, false)
             .done ()->
               console.log "\n @@@load cameraRoll thumbnails loaded from init timer"
             return

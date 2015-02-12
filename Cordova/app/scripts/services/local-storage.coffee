@@ -37,8 +37,7 @@ angular
           'auto-upload': false
           'use-cellular-data': false
           'use-720p-service': true
-          'rate-control': 80
-          'CHUNKSIZE': 5
+          'CHUNKSIZE': 10
         archive:
           'copy-top-picks': false
           'copy-favorites': false  
