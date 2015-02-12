@@ -34,14 +34,14 @@ static CGFloat defaultCompressionQuality = 0.7;
     PHImageManager *_cachingImageManager;
 }
 
-+(NSMutableArray *)lastLiveSessionsIdentifiers {
++(NSMutableSet *)lastLiveSessionsIdentifiers {
     NSArray *ar = [NSUserDefaults.standardUserDefaults objectForKey:lastLiveSessionsKey];
-    return [ar mutableCopy] ?: [NSMutableArray new];
+    return [NSMutableSet setWithArray:ar];
 }
 
-+(void)saveLastLiveSessionIdentifiers:(NSArray *)lastLiveIdentifiers {
++(void)saveLastLiveSessionIdentifiers:(NSSet *)lastLiveIdentifiers {
     if (lastLiveIdentifiers) {
-        [NSUserDefaults.standardUserDefaults setObject:lastLiveIdentifiers forKey:lastLiveSessionsKey];
+        [NSUserDefaults.standardUserDefaults setObject:[lastLiveIdentifiers allObjects] forKey:lastLiveSessionsKey];
     }
     else {
         [NSUserDefaults.standardUserDefaults removeObjectForKey:lastLiveSessionsKey];
@@ -59,7 +59,7 @@ static CGFloat defaultCompressionQuality = 0.7;
     
     NSURLSession *backgroundUploadSession = [NSURLSession sessionWithConfiguration:config delegate:(id<NSURLSessionDelegate>)self delegateQueue:[NSOperationQueue mainQueue]];
     if (backgroundUploadSession) {
-        NSMutableArray *sessions = [self.class lastLiveSessionsIdentifiers];
+        NSMutableSet *sessions = [self.class lastLiveSessionsIdentifiers];
         [sessions addObject:identifier];
         [self.class saveLastLiveSessionIdentifiers:sessions];
     }
@@ -78,8 +78,8 @@ static CGFloat defaultCompressionQuality = 0.7;
     [super load];
     serialQueue = [NSOperationQueue createSerialQueue];
     scheduledTasks = [NSMutableSet new];
-    NSArray *arr = [self lastLiveSessionsIdentifiers];
-    [arr enumerateObjectsUsingBlock:^(NSString *obj, NSUInteger idx, BOOL *stop) {
+    NSMutableSet *arr = [self lastLiveSessionsIdentifiers];
+    [arr enumerateObjectsUsingBlock:^(NSString *obj, BOOL *stop) {
         NSString *originalIdentifier = [obj substringToIndex:obj.length - identifierSuffixLength];
         id uploader = [[self alloc] initInternalWithFullIdentifier:obj];
         self.instances[originalIdentifier] = uploader;
@@ -197,15 +197,11 @@ static CGFloat defaultCompressionQuality = 0.7;
         NSString *newIndetifier = [oldIdentifier substringToIndex:oldBG.configuration.identifier.length - (identifierSuffixLength)];
         newIndetifier = [NSString stringWithFormat:@"%@.%@", newIndetifier, uuid];
         _backgroundUploadSession = [self creteNewSession:newIndetifier allowsCellularAccess:_allowsCellularAccess];
-//        [scheduledTasks enumerateObjectsUsingBlock:^(NSURLSessionUploadTask *obj, BOOL *stop) {
-//            [obj cancel];
-//        }];
-//        [scheduledTasks removeAllObjects];
         
         [oldBG invalidateAndCancel];
         
          if (oldBG) {
-             NSMutableArray *sessions = [self.class lastLiveSessionsIdentifiers];
+             NSMutableSet *sessions = [self.class lastLiveSessionsIdentifiers];
              [sessions removeObject:oldIdentifier];
              [self.class saveLastLiveSessionIdentifiers:sessions];
          }
@@ -512,24 +508,24 @@ didCompleteWithError:(NSError *)error {
             [delegate photoUploader:self didFinishUploadAssetIdentifier:identifier];
         }
     }
-    [self scheduleLocalNotification:NSStringFromSelector(_cmd)];
+
 }
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
 didReceiveResponse:(NSURLResponse *)response
  completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler {
     completionHandler(NSURLSessionResponseBecomeDownload);
-    [self scheduleLocalNotification:NSStringFromSelector(_cmd)];
+
 }
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
 didBecomeDownloadTask:(NSURLSessionDownloadTask *)downloadTask {
-    [self scheduleLocalNotification:NSStringFromSelector(_cmd)];
+
 }
 
 - (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask
 didFinishDownloadingToURL:(NSURL *)location {
-    [self scheduleLocalNotification:NSStringFromSelector(_cmd)];
+
 
 }
 
@@ -547,7 +543,7 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
  */
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
  needNewBodyStream:(void (^)(NSInputStream *bodyStream))completionHandler {
-    [self scheduleLocalNotification:NSStringFromSelector(_cmd)];
+
 }
 
 
@@ -561,7 +557,7 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
     if(!data.length) return;
     
     [self appendData:data toTask:dataTask];
-   [self scheduleLocalNotification:NSStringFromSelector(_cmd)];
+
 }
 
 /* Invoke the completion routine with a valid NSCachedURLResponse to
@@ -573,7 +569,7 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
  willCacheResponse:(NSCachedURLResponse *)proposedResponse
  completionHandler:(void (^)(NSCachedURLResponse *cachedResponse))completionHandler {
-    [self scheduleLocalNotification:NSStringFromSelector(_cmd)];
+
 }
 
 -(void)URLSessionDidFinishEventsForBackgroundURLSession:(NSURLSession *)session {
@@ -583,14 +579,6 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
             [delegate photoUploaderFinishedProcessingBackgroundEvents:self];
         }
     }
-}
-
--(void)scheduleLocalNotification:(NSString *)notificationText {
-    UILocalNotification* localNotification = [[UILocalNotification alloc] init];
-    localNotification.fireDate = [NSDate dateWithTimeIntervalSinceNow:1];
-    localNotification.alertBody = notificationText;
-    localNotification.timeZone = [NSTimeZone defaultTimeZone];
-    [[UIApplication sharedApplication] scheduleLocalNotification:localNotification];
 }
 
 
