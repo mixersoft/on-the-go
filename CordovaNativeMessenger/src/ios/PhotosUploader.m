@@ -495,10 +495,14 @@ didCompleteWithError:(NSError *)error {
     }
     
     NSString *identifier = task.originalRequest.allHTTPHeaderFields[@"X-Image-Identifier"];
-    NSURLSessionTaskInfo *info = [self sessionTaskInfoForIdentifier:identifier];
+    NSDictionary *d = [self sessionInfosDictionary];
+    NSURLSessionTaskInfo *info = d[identifier];
     info.error = error;
-    info.progress = 1;
-    [self saveSessionInfos:[self sessionInfosDictionary]];
+    if (!error) {
+        info.progress = 1;
+    }
+    
+    [self saveSessionInfos:d];
     
     
     NSLog(@"Finished task with image identifier: %@ with error:%@", identifier, error);
