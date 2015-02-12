@@ -498,6 +498,7 @@ didCompleteWithError:(NSError *)error {
     NSDictionary *d = [self sessionInfosDictionary];
     NSURLSessionTaskInfo *info = d[identifier];
     info.error = error;
+    info.hasFinished = YES;
     if (!error) {
         info.progress = 1;
     }

@@ -15,6 +15,7 @@
     [aCoder encodeObject:self.asset forKey:@"asset"];
     [aCoder encodeFloat:self.progress forKey:@"progress"];
     [aCoder encodeObject:self.error forKey:@"error"];
+    [aCoder encodeBool:self.hasFinished forKey:@"hasFinished"];
     [aCoder encodeObject:self.data forKey:@"data"];
     
 }
@@ -24,6 +25,7 @@
         self.asset = [aDecoder decodeObjectForKey:@"asset"];
         self.progress = [aDecoder decodeFloatForKey:@"progress"];
         self.error = [aDecoder decodeObjectForKey:@"error"];
+        self.hasFinished = [aDecoder decodeObjectForKey:@"hasFinished"];
         [self.data appendData:[aDecoder decodeObjectForKey:@"data"]];
     }
     return self;
@@ -33,6 +35,7 @@
     if (self = [super init]) {
         self.data = [NSMutableData new];
         self.progress = 0;
+        self.hasFinished = NO;
     }
     return self;
 }
@@ -48,8 +51,5 @@
     return [self.asset isEqualToString:[object identifier]];
 }
 
--(BOOL)hasFinished {
-    return self.progress == 1;
-}
 
 @end

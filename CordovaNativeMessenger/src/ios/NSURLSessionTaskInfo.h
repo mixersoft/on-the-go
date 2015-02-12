@@ -14,9 +14,7 @@
 @property (nonatomic, assign) CGFloat progress;
 @property (nonatomic, strong) NSError *error;
 @property (nonatomic, strong) NSMutableData *data;
-
-
-@property (nonatomic, readonly) BOOL hasFinished;
+@property (nonatomic, assign) BOOL hasFinished;
 
 
 @end
