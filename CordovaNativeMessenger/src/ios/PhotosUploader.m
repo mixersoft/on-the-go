@@ -23,6 +23,8 @@ static NSOperationQueue *serialQueue;
 
 static int identifierSuffixLength = 37;
 
+static CGFloat defaultCompressionQuality = 0.7;
+
 @interface PhotosUploader () <NSURLSessionTaskDelegate, NSURLSessionDelegate, NSURLSessionDataDelegate>
 
 @end
@@ -348,12 +350,13 @@ static int identifierSuffixLength = 37;
         
         CGSize originalImageSize = CGSizeMake(obj.pixelWidth, obj.pixelHeight);
         NSNumber *maxWidth = options[@"maxWidth"];
-        if (maxWidth && obj.pixelWidth > maxWidth.floatValue) {
+        if (maxWidth && maxWidth.floatValue > 0 && obj.pixelWidth > maxWidth.floatValue) {
             CGFloat scale = (maxWidth.floatValue / obj.pixelWidth);
             originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
             CGFloat side = round(obj.pixelHeight * scale);
             originalImageSize = CGSizeMake(side,side);
         }
+        
         [_cachingImageManager requestImageForAsset:obj targetSize:originalImageSize contentMode:PHImageContentModeAspectFit options:opts resultHandler:^(UIImage *result, NSDictionary *info) {
             [serialQueue addBlock:^(void(^operation)(void)) {
                 if ([info[PHImageResultIsDegradedKey] boolValue]) {
@@ -373,7 +376,10 @@ static int identifierSuffixLength = 37;
                 
                 
                 UIImage *fixedImage = [result imageWithFixedOrientationSized:result.size];
-                NSData *data = UIImageJPEGRepresentation(fixedImage, 1);
+                NSNumber *desiredQuality = options[@"quality"];
+                CGFloat compressionQuality = desiredQuality ? desiredQuality.floatValue : defaultCompressionQuality;
+                
+                NSData *data = UIImageJPEGRepresentation(fixedImage, compressionQuality);
                 
                 if (data.length) {
                     //store image
