@@ -18,6 +18,13 @@
   "cordovaPlugins": [
     "https://github.com/apache/cordova-plugin-inappbrowser.git",
     "../CordovaNativeMessenger",
-    "../CordovaNativeMessenger/"
+    "../CordovaNativeMessenger/",
+    "org.apache.cordova.console",
+    "org.apache.cordova.device",
+    "org.apache.cordova.file",
+    "com.ionic.keyboard",
+    "me.apla.cordova.app-preferences",
+    "https://github.com/EddyVerbruggen/SocialSharing-PhoneGap-Plugin.git",
+    "org.apache.cordova.network-information"
   ]
 }
