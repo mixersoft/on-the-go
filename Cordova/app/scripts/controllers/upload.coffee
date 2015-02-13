@@ -664,17 +664,15 @@ angular.module('ionBlankApp')
         # console.log "press button"
         $scope.on.fetchWarningsP()
         .then (networkOK)->
-          isEnabled = otgUploader.enable('toggle')
-          if isEnabled
+          shouldEnable = !otgUploader.enable()
+          if shouldEnable # enable on Release
             target.addClass('enabled')
-            if otgUploader.uploader.type == 'background' && otgUploader.uploader.count()
-              $scope.watch.isScheduling = true 
           else 
             target.removeClass('enabled') 
-            if otgUploader.uploader.type == 'background' && otgUploader.uploader.count()
-              $scope.watch.isUnscheduling = true 
           return
       release: (ev)-> 
+        target = angular.element(ev.currentTarget)
+        target.removeClass('down')
         end = new Date().getTime()
         duration = end - this.start
         this.start = end
@@ -684,9 +682,16 @@ angular.module('ionBlankApp')
           $scope.watch.isUnscheduling = true 
           otgUploader.uploader.clearQueueP().then ()->
             otgUploader.enable(false)
+        else
+          didEnable = target.hasClass('enabled')
+          $scope.on.fetchWarningsP()
+          .then (networkOK)->
+            # enable on Release, not Press
+            otgUploader.enable(didEnable)
+            if otgUploader.uploader.type == 'background' && otgUploader.uploader.count()
+                $scope.watch.isScheduling = didEnable
+                $scope.watch.isUnscheduling = !didEnable 
 
-        target = angular.element(ev.currentTarget)
-        target.removeClass('down')
         return 
 
     }

@@ -1056,7 +1056,6 @@ angular
 
       uploadPhotoFileP : (UUID, size)->
         # called by parseUploader, _uploadNext()
-        throw "WARNING: uploader type should be 'parse'" if otgUploader.uploader.type != 'parse'
         # upload file then update PhotoObj photo.src, does not know workorder
         # return parseFile = { UUID:, url(): }
         UPLOAD_IMAGE_SIZE = size || 'preview'
