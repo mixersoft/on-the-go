@@ -461,7 +461,7 @@ angular
                   return if workorderObj.get('status') == 'complete'
                   openOrders++
 
-                  if workorderObj.get('devices').indexOf($rootScope.device.id) > -1
+                  if workorderObj.get('devices').indexOf($rootScope.device.id) > -1 
                     p = self.fetchWorkorderPhotosP(workorderObj, options, force )
                     .then (photosColl)->
 
@@ -969,7 +969,7 @@ angular
           promises = []
           _.each photos, (photoObj)->
               p = photoObj.save(update).then (phObj)->
-                console.log "\n\n ### PARSE: 1 photoObj saved, attrs=" + JSON.stringify _.pick photoObj.toJSON(), ['UUID', 'src']
+                console.log "\n\n ### PARSE: photoObj saved, attrs=" + JSON.stringify _.pick photoObj.toJSON(), ['UUID', 'src']
                 return photoObj
               promises.push p 
           return $q.all(promises).then (o)->

@@ -177,7 +177,9 @@ angular.module('ionBlankApp')
         _parseFileUploader.enable(true)
       clearQueueP: ()->
         cleared = _.clone _parseFileUploader._photoFileQueue
+        _parseFileUploader.pauseQueueP()
         _parseFileUploader._photoFileQueue = []
+        self.remaining()
         return $q.when(cleared)
       oneCompleteP: (resp)->
         self.callbacks.onEach(resp) if self.callbacks.onEach
@@ -381,10 +383,11 @@ angular.module('ionBlankApp')
           console.log "\n>>> queueP complete from resumeQueueP(), scheduled=" + JSON.stringify scheduledAssetIds
 
       clearQueueP: ()->
-        return PLUGIN.unscheduleAllAssetsP().then ()->
+        return _bkgFileUploader.pauseQueueP().then ()->
           _bkgFileUploader._scheduled = {}
           _bkgFileUploader._complete = {}
           _bkgFileUploader._readyToSchedule = []
+          self.remaining()
           return 
 
       ##
@@ -647,10 +650,17 @@ angular.module('ionBlankApp')
       return
 
     $scope.redButton = {
+      TAP_HOLD_TO_RESET_QUEUE_TIME: 3000
+      MINIMUM_TIME_BETWEEN_PRESS: 1000 
+      start: 0
       press: (ev)-> 
         # toggle $scope['config']['upload']['enabled'] & $scope.$watch 'config.upload.enabled'
         target = angular.element(ev.currentTarget)
         target.addClass('down') # .activated is same as .enabled
+        now = new Date().getTime()
+        return ev.preventDefault() if (now - this.start) < this.MINIMUM_TIME_BETWEEN_PRESS
+
+        this.start = now
         # console.log "press button"
         $scope.on.fetchWarningsP()
         .then (networkOK)->
@@ -665,6 +675,16 @@ angular.module('ionBlankApp')
               $scope.watch.isUnscheduling = true 
           return
       release: (ev)-> 
+        end = new Date().getTime()
+        duration = end - this.start
+        this.start = end
+        if (duration > this.TAP_HOLD_TO_RESET_QUEUE_TIME)
+          # reset queue
+          console.log "\n >>> resetting upload queue"
+          $scope.watch.isUnscheduling = true 
+          otgUploader.uploader.clearQueueP().then ()->
+            otgUploader.enable(false)
+
         target = angular.element(ev.currentTarget)
         target.removeClass('down')
         return 
