@@ -337,6 +337,76 @@ angular
             return dfd.reject(err)
           return dfd.promise
 
+      _PATCH_DeviceId_OneWorkorder_P: (workorderObj, parsePhotosColl)->
+        changed = {}
+        update = {deviceId: $rootScope.device.id}
+        pr1 = if _.isEmpty parsePhotosColl then  self.fetchWorkorderPhotosP(workorderObj)  else $q.then(parsePhotosColl)
+        return pr1.then (photosColl)->
+          # find photos that are on local device
+          localPhotoUUIDs = _( cameraRoll.map() ).filter( (o)->return !o.from || o.from.slice(0,5)!='PARSE' ).pluck('UUID').value()
+          woPhotoUUIDs = photosColl.pluck 'UUID'
+          overlapUUIDs = _.intersection localPhotoUUIDs, woPhotoUUIDs
+
+          return $q.when([]) if _.isEmpty overlapUUIDs
+          promises = []
+          photosColl.filter (ph)->
+            return if overlapUUIDs.indexOf( ph.attributes.UUID ) == -1
+            oldDeviceId = ph.attributes.deviceId
+            return if oldDeviceId == update.deviceId
+            changed[oldDeviceId] = []
+            pr2 = ph.save(update).then (o)->
+                changed[oldDeviceId].push o.attributes.UUID
+                # console.log "\n\n *** _PATCH_DeviceId changed, UUID=" + o.attributes.UUID
+                return 
+              , (error)->
+                changed[oldDeviceId].push 'error'
+                console.log "\n\n *** _PATCH_DeviceId, error:"
+                return console.log error 
+            promises.push pr2
+            return 
+
+          return $q.all(promises)
+          .then ()->
+              # update workorder
+              return $q.when(changed) if _.empty changed
+
+              woUpdate = {}
+              oldDeviceIds_ChangedPhotos = _.keys(changed)
+              oldDeviceId = workorderObj.get('deviceId')
+              woDevices = _.difference workorderObj.get('devices'), oldDeviceIds_ChangedPhotos
+              woDevices.push update.deviceId
+              woUpdate['devices'] = woDevices
+              if oldDeviceIds_ChangedPhotos.indexOf(workorderObj.get('deviceId')) > -1
+                woUpdate['deviceId'] = update.deviceId 
+              return workorderObj.save(woUpdate).then (woObj)->
+                    changed[oldDeviceId].push "workorder.id="+ woObj.id
+                    # console.log "\n\n *** _PATCH_DeviceId Workorder changed, UUID=" + woObj.attributes.UUID
+                    return changed
+                  , (err)->
+                    changed[oldDeviceId].push 'error: workorderObj'
+                    console.log "\n\n *** _PATCH_DeviceId, error:"
+                    console.log err
+                    return changed
+            , (err)->
+              console.warn "\n\n ERROR: _PATCH_DeviceId Workorder "
+              console.warn err
+
+          .then (resp)->
+            isError = JSON.stringify( resp ).indexOf('error') != -1
+            console.log "\n >>> _PATCH_DeviceId_OneWorkorder_P(), resp=" + JSON.stringify resp
+            return $q.reject(resp) if isError
+            return $q.when( true )
+
+            
+      # connect to Settings > Advanced button
+      _PATCH_DeviceIds_AllWorkorders_P : ()->
+        return self.fetchWorkordersP().then (workorderColl)->
+          promises = []
+          workorderColl.each (workorderObj)->
+            promises.push self._PATCH_DeviceId_OneWorkorder_P( workorderObj ) 
+          return $q.all(promises)
+
+
 
       _PATCH_WorkorderAssets:(parsePhotosColl, patchKeys)->
         _alreadyPatched = {}
