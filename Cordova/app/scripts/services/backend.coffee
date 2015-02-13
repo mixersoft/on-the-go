@@ -106,11 +106,11 @@ angular
           return otgParse.fetchWorkordersByOwnerP(options)
         .then (workorderColl)->
             self._workorderColl[role] = workorderColl
-            console.log "\n *** fetchWorkordersP from backend.coffee, role=" + role
+            # console.log "\n *** fetchWorkordersP from backend.coffee, role=" + role
             return workorderColl
           , (err)->
-            console.log "\n *** fetchWorkordersP catch, role=" + role
-            console.log error
+            console.warn "\n *** fetchWorkordersP catch, role=" + role
+            console.warn error
 
       fetchWorkorderPhotosP : (workorderObj,  options={}, force)->
         options = {owner: true} if _.isEmpty options
@@ -256,7 +256,7 @@ angular
         .then (sync)->
           # upload/remove parseFiles, using either JS API or bkg-uploader
           return self.queueDateRangeFilesP( sync ).then (resp)->
-            console.log "\n\n *** syncWorkorderPhotosP: sync complete for dataRange="+JSON.stringify( _.omit dateRange, 'workorderObj' )
+            # console.log "\n\n *** syncWorkorderPhotosP: sync complete for dataRange="+JSON.stringify( _.omit dateRange, 'workorderObj' )
             return sync
         .catch (err)->
           console.warn "\n\nError: syncWorkorderPhotosP: "+ JSON.stringify err
@@ -360,10 +360,10 @@ angular
                 changed[oldDeviceId].push o.attributes.UUID
                 # console.log "\n\n *** _PATCH_DeviceId changed, UUID=" + o.attributes.UUID
                 return 
-              , (error)->
+              , (err)->
                 changed[oldDeviceId].push 'error'
-                console.log "\n\n *** _PATCH_DeviceId, error:"
-                return console.log error 
+                console.warn "\n\n *** _PATCH_DeviceId, error: "+JSON.stringify err
+                return
             promises.push pr2
             return 
 
@@ -386,8 +386,7 @@ angular
                     return changed
                   , (err)->
                     changed[oldDeviceId].push 'error: workorderObj'
-                    console.log "\n\n *** _PATCH_DeviceId, error:"
-                    console.log err
+                    console.warn "\n\n *** _PATCH_DeviceId, error: "+JSON.stringify err
                     return changed
             , (err)->
               console.warn "\n\n ERROR: _PATCH_DeviceId Workorder "
@@ -395,7 +394,7 @@ angular
 
           .then (resp)->
             isError = JSON.stringify( resp ).indexOf('error') != -1
-            console.log "\n >>> _PATCH_DeviceId_OneWorkorder_P(), resp=" + JSON.stringify resp
+            # console.log "\n >>> _PATCH_DeviceId_OneWorkorder_P(), resp=" + JSON.stringify resp
             return $q.reject(resp) if isError
             return $q.when( true )
 
@@ -423,10 +422,10 @@ angular
           phObj.save( updateFromCameraRoll ).then ()->
               updateFromCameraRoll.UUID = crPhoto.UUID
               _alreadyPatched[crPhoto.UUID] = 1
-              console.log "\n\n *** _PATCH_WorkorderAssets, patched:" + JSON.stringify updateFromCameraRoll
-            , (error)->
-              console.log "\n\n *** _PATCH_WorkorderAssets, error:"
-              return console.log error
+              # console.log "\n\n *** _PATCH_WorkorderAssets, patched:" + JSON.stringify updateFromCameraRoll
+            , (err)->
+              console.warn "\n\n *** _PATCH_WorkorderAssets, error: "+JSON.stringify err
+              return
         return
 
       # wrap in timeouts 
@@ -454,7 +453,7 @@ angular
 
 
         $timeout ()->
-            console.log "\n\n*** BEGIN Workorder Sync for role=" + options.role + "\n"
+            # console.log "\n\n*** BEGIN Workorder Sync for role=" + options.role + "\n"
             self.fetchWorkordersP( options , force ).then (workorderColl)->
 
                 promises = []
@@ -474,12 +473,13 @@ angular
 
                       return self.syncWorkorderPhotosP( workorderObj, photosColl, 'owner' )
                     .then (sync)->
-                        console.log "\n\n *** SYNC_ORDERS: woid=" + workorderObj.id
+                        # console.log "\n\n *** SYNC_ORDERS: woid=" + workorderObj.id
                         # console.log "sync=" + JSON.stringify sync
                         self.updateWorkorderCounts(workorderObj, sync)
                         return sync
                     .then (resp)->
-                        return console.log "done"
+                        # console.log "fetchWorkordersP done"
+                        return 
                       , (err)->
                         console.warn(err) 
                         return $q.when(err)
@@ -491,7 +491,7 @@ angular
 
                 $q.all( promises ).then (o)->
                   $rootScope.orders = scope.workorders = workorderColl.toJSON()
-                  console.log "\n\n*** ORDER SYNC complete for role=" + options.role + "\n"
+                  # console.log "\n\n*** ORDER SYNC complete for role=" + options.role + "\n"
                   $rootScope.$broadcast('sync.ordersComplete')
                   return whenDoneP(workorderColl) if whenDoneP
 
@@ -511,7 +511,7 @@ angular
         }
 
         $timeout ()->
-            console.log "\n\n*** BEGIN Workorder Sync for role=" + options.role + "\n"
+            # console.log "\n\n*** BEGIN Workorder Sync for role=" + options.role + "\n"
             self.fetchWorkordersP( options , force ).then (workorderColl)->
 
                 promises = []
@@ -538,7 +538,7 @@ angular
 
                 $q.all( promises ).then (o)->
                   $rootScope.orders = scope.workorders = workorderColl.toJSON() 
-                  console.log "\n\n*** Workorder SYNC complete for role=" + options.role + "\n"
+                  # console.log "\n\n*** Workorder SYNC complete for role=" + options.role
                   $rootScope.$broadcast('sync.workordersComplete')
                   return whenDoneP(workorderColl) if whenDoneP
           , DELAY
@@ -571,8 +571,7 @@ angular
       PhotoObj : Parse.Object.extend('PhotoObj',  {
           initialize: (attrs, options)->
             if options?.initClass == true
-              console.log "\n\n\n >>>> PhotoObj initialize()\n"
-              console.log attrs
+              console.log "\n\n\n >>>> PhotoObj initialize() attrs=\n" + JSON.stringify attrs
               ## force PhotoObj attributes with first upload by adding classDefaults
               classDefaults = {
                 UUID: '' # char(36)
@@ -887,7 +886,7 @@ angular
         query.equalTo('owner', $rootScope.sessionUser)
         if options.editor
           options.editor = $rootScope.sessionUser if options.editor == true
-          console.warn "\n\n ***  WARNING: using workorder.owner as a proxy for workorder.editor for the moment\n"
+          # console.warn "\n\n ***  WARNING: using workorder.owner as a proxy for workorder.editor for the moment\n"
           query.equalTo('owner', options.editor) 
         collection = query.collection()
         collection.comparator = (o)->
@@ -916,7 +915,7 @@ angular
         query.notEqualTo('remove', true) if options.owner
         if options.editor
           options.editor = $rootScope.sessionUser if options.editor == true
-          console.warn "\n\n ***  WARNING: using workorder.owner as a proxy for workorder.editor for the moment\n"
+          # console.warn "\n\n ***  WARNING: using workorder.owner as a proxy for workorder.editor for the moment\n"
           query.equalTo('owner', options.editor) 
 
         query.limit(1000)  # parse limit, use query.skip() to continue
@@ -971,13 +970,13 @@ angular
           promises = []
           _.each photos, (photoObj)->
               p = photoObj.save(update).then (phObj)->
-                console.log "\n\n ### PARSE: photoObj saved, attrs=" + JSON.stringify _.pick photoObj.toJSON(), ['UUID', 'src']
+                # console.log "\n\n ### PARSE: photoObj saved, attrs=" + JSON.stringify _.pick photoObj.toJSON(), ['UUID', 'src']
                 return photoObj
               promises.push p 
           return $q.all(promises).then (o)->
             if o.length > 1
               update.count = o.length
-              console.log "\n\n ### PARSE: ALL photoObj saved, resp=" + JSON.stringify update
+              # console.log "\n\n ### PARSE: ALL photoObj saved, resp=" + JSON.stringify update
             return $q.when(o)
 
 
@@ -1000,6 +999,7 @@ angular
         # simple pass thru
         return obj.save(data)
         
+      # 'parse' uploader only, requires DataURLs
       uploadFileP : (base64src, photo)->
         if /^data:image/.test(base64src)
           # expecting this prefix: 'data:image/jpg;base64,' + rawBase64
@@ -1051,7 +1051,8 @@ angular
           photoObj = new parseClass.PhotoObj parseData , {initClass: false }
           return photoObj.save()
         .then (o)->
-            return console.log "photoObj.save() complete: " + JSON.stringify o        
+            # console.log "photoObj.save() complete: " + JSON.stringify o.attributes 
+            return 
           , (err)->
             console.warn "ERROR: uploadPhotoMetaP photoObj.save(), err=" + JSON.stringify err
             return $q.reject(err)

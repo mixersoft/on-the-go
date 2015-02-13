@@ -312,7 +312,7 @@ angular.module('ionBlankApp')
         return 
 
       DEBOUNCED_cameraRollSnapshot : _.debounce ()->
-          console.log "\n\n >>> DEBOUNCED!!!"
+          # console.log "\n\n >>> DEBOUNCED!!!"
           $scope.$localStorage['cameraRoll'].map = cameraRoll.map()
           return
         , 5000 # 5*60*1000
@@ -334,7 +334,7 @@ angular.module('ionBlankApp')
       if $state.includes('app.top-picks')
         # pickup iOS .favorite
         # TODO: push NEW favorites if we want to share with other devices in WO
-        console.log '@@@ sync.cameraRollComplete, args=' +JSON.stringify _.keys args
+        # console.log '@@@ sync.cameraRollComplete, args=' +JSON.stringify _.keys args
         $scope.on.reloadDataSet()
       return
 
@@ -343,7 +343,7 @@ angular.module('ionBlankApp')
       
     $scope.$on 'sync.ordersComplete', ()->
       if $state.includes('app.top-picks')
-        console.log '@@@ sync.ordersComplete'
+        # console.log '@@@ sync.ordersComplete'
         if $state.includes('app.top-picks.top-picks')
           $scope.on.reloadDataSet() 
         if $state.includes('app.top-picks.shared')
@@ -366,13 +366,13 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
-      console.log '$ionicView.loaded'
+      # console.log '$ionicView.loaded'
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
       # cached view becomes active 
       return if !$scope.deviceReady.isOnline()
-      console.log "\n\n\n %%% ionicView.beforeEnter > app.sync.DEBOUNCED_cameraRoll_Orders "
+      # console.log "\n\n\n %%% ionicView.beforeEnter > app.sync.DEBOUNCED_cameraRoll_Orders "
       $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
 
     $scope.$on '$ionicView.leave', ()->
@@ -384,7 +384,6 @@ angular.module('ionBlankApp')
     init = ()->
       if _.isEmpty cameraRoll.map()
         cameraRoll.map( $scope.$localStorage['cameraRoll'].map )
-        console.log "@@@ restoring localStorage['cameraRoll'].map"
 
       $scope.config['app-bootstrap'] = false
       $scope.deviceReady.waitP().then ()->

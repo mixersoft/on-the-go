@@ -62,7 +62,7 @@ angular.module('ionBlankApp')
           element.attr('src', src) 
           return 
         
-        console.log "\nlazySrc reports notCached in cameraRoll.dataURLs for format=" + format + ", UUID="+UUID
+        # console.log "\nlazySrc reports notCached in cameraRoll.dataURLs for format=" + format + ", UUID="+UUID
         if !isBrowser || isWorkorder
           # get with promise
           options = {
@@ -83,7 +83,8 @@ angular.module('ionBlankApp')
                 else 
                   'not caching DATA_URL thumbnails'
               else
-                console.warn "\n\n*** WARNING: did collection repeat change the element before getDataURL_P returned?"  
+                'skp'
+                # console.warn "\n\n*** WARNING: did collection repeat change the element before getDataUR
               return
           .catch (error)->
             console.error "_setLazySrc"
@@ -320,7 +321,8 @@ angular.module('ionBlankApp')
 ]
 
 # incomplete - not properly implemented
-.directive 'imgCache', [ 'otgImgCache'
+# cache http URLs locally for workorders
+.directive 'XXXimgCache', [ 'otgImgCache'
     (otgImgCache)->
       return {
         restrict: 'A'

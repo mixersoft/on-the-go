@@ -75,7 +75,7 @@ angular
         return _promise if _promise
         deferred = $q.defer()
         _cancel = $timeout ()->
-            console.warn "$ionicPlatform.ready TIMEOUT!!!"
+            # console.warn "$ionicPlatform.ready TIMEOUT!!!"
             return deferred.reject("ERROR: ionicPlatform.ready does not respond")
           , _timeout
         $ionicPlatform.ready ()->
@@ -93,7 +93,7 @@ angular
             isBrowser: ionic.Platform.isWebView() == false
            }
           _device = angular.copy $localStorage['device']
-          console.log "$ionicPlatform reports deviceReady, device.id=" + $localStorage['device'].id
+          # console.log "$ionicPlatform reports deviceReady, device.id=" + $localStorage['device'].id
           return deferred.resolve( _device )
         return _promise = deferred.promise
 
@@ -178,12 +178,13 @@ angular
         .then ( mapped )->
 
           end = new Date().getTime()
-          console.log "\n*** mapAssetsLibraryP() complete, elapsed=" + (end-start)/1000
+          # console.log "\n*** mapAssetsLibraryP() complete, elapsed=" + (end-start)/1000
 
           # don't wait for promise
           moments = self.loadMomentsFromCameraRoll( mapped )
           promise = self.loadMomentThumbnailsP().then ()->
-            console.log "\n @@@load cameraRoll thumbnails loaded from loadCameraRollP()"
+            # console.log "\n @@@load cameraRoll thumbnails loaded from loadCameraRollP()"
+            return
 
           # cameraRoll ready
           return mapped
@@ -205,7 +206,7 @@ angular
             return false if imageCacheSvc.isStashed( photo.UUID, options.size ) 
             return false if self.dataURLs[options.size][photo.UUID]?
             return true
-        console.log "\n\n\n*** preloading favorite previews for UUIDs, count=" + notCached.length 
+        # console.log "\n\n\n*** preloading favorite previews for UUIDs, count=" + notCached.length 
         # console.log notCached
         return self.loadPhotosP(notCached, options, delay)
 
@@ -239,7 +240,7 @@ angular
             return false if self.dataURLs[options.size][photo.UUID]?
             return true
         )
-        console.log "\n\n\n*** preloading moment thumbnails for UUIDs, count=" + notCached.length 
+        # console.log "\n\n\n*** preloading moment thumbnails for UUIDs, count=" + notCached.length 
         # console.log notCached
         $rootScope.$broadcast 'cameraRoll.beforeLoadMomentThumbnails' # for cancel loading timer
         return self.loadPhotosP(notCached, options, delay)
@@ -278,7 +279,7 @@ angular
             )
             .then ()->
               end = new Date().getTime()
-              console.log "\n*** thumbnail preload complete, elapsed=" + (end-start)/1000
+              # console.log "\n*** thumbnail preload complete, elapsed=" + (end-start)/1000
               dfd.resolve('success')
             .then ()->
               return
@@ -367,7 +368,7 @@ angular
       addDataURL: (size, options)->
         # console.log "\n\n adding for size=" + size
         if !/preview|thumbnail/.test( size )
-          return console.log "ERROR: invalid dataURL size, size=" + size
+          return console.warn "ERROR: invalid dataURL size, size=" + size
         _logOnce "sdkhda", "WARNING: NOT truncating to UUID(36), UUID="+options.UUID if options.UUID.length > 36
 
         imgSrc = options.data || options.dataURL
@@ -487,7 +488,7 @@ angular
 
       
         if !found # still not found, add to queue for fetch
-          console.log "STILL NOT FOUND queueDataURL(UUID)=" + UUID
+          # console.log "STILL NOT FOUND queueDataURL(UUID)=" + UUID
           self.queueDataURL(UUID, size)
           # calls:
            # > debounced_fetchDataURLsFromQueue 
@@ -498,7 +499,6 @@ angular
 
       # called by getDataURL, but NOT getDataURL_P
       queueDataURL : (UUID, size='preview')->
-        console.warn "@@@@@@  DEPRECATE??? cameraRoll.queueDataURL"
         return if deviceReady.device().isBrowser
         self._queue[UUID] = { 
           UUID: UUID
@@ -506,26 +506,22 @@ angular
         }
         # # don't wait for promise
         self.debounced_fetchDataURLsFromQueue()
-        # return
-
         # $rootScope.$broadcast 'cameraRoll.queuedDataURL'
+        return
 
 
       # called by cameraRoll.queueDataURL()
       fetchDataURLsFromQueue : ()->
-        console.warn "@@@@@@  cameraRoll.fetchDataURLsFromQueue"
         queuedAssets = self.queue()
 
         chunks = {}
         _.each ['preview', 'thumbnail'], (size)->
           assets = _.filter queuedAssets, (o)->return o?.size == size
           chunks[size] = assets if assets.length
-        # console.log chunks
-
 
         promises = []
         _.each chunks, (assets, size)->
-          console.log "\n\n *** fetchDataURLsFromQueueP START! size=" + size + ", count=" + assets.length + "\n"
+          # console.log "\n\n *** fetchDataURLsFromQueueP START! size=" + size + ", count=" + assets.length + "\n"
           promises.push snappiMessengerPluginService.getDataURLForAssetsByChunks_P(
               assets, 
               {size: size},
@@ -537,14 +533,14 @@ angular
               return photos 
 
         return $q.all(promises).then (o)->
-            console.log "*** fetchDataURLsFromQueueP $q All Done! \n" 
+            # console.log "*** fetchDataURLsFromQueueP $q All Done! \n" 
+            return
 
       debounced_fetchDataURLsFromQueue : ()->
         return console.log "\n\n\n ***** Placeholder: add debounce on init *********"
 
       # getter, or reset queue
       queue: (clear, PREVIEW_LIMIT = 50 )->
-        console.warn "@@@@@@  DEPRECATE??? cameraRoll.queue"
         self._queue = {} if clear=='clear'
 
         thumbnails = _.filter self._queue, {size: 'thumbnail'}
@@ -709,7 +705,7 @@ angular
             return dfd.reject("TIMEOUT: snappiMessengerPluginService - " + method)
           , TIMEOUT
         onSuccess = (resp)->
-            console.log ">>> callP returned for method=" + method + ", resp=" + JSON.stringify(resp)[0..100]
+            # console.log ">>> callP returned for method=" + method + ", resp=" + JSON.stringify(resp)[0..100]
             $timeout.cancel(cancel)
             return dfd.resolve(resp)
         onError = (err)->
@@ -751,7 +747,7 @@ angular
           assets: assetIds
           options: options
         }
-        console.log "\n\n*** scheduleAssetsForUpload, data=\n" + JSON.stringify( data )
+        # console.log "\n\n*** scheduleAssetsForUpload, data=\n" + JSON.stringify( data )
         return _MessengerPLUGIN._callP( 'scheduleAssetsForUpload', data )  
 
       getScheduledAssetsP : ()-> 
@@ -843,11 +839,12 @@ angular
               # cameraRoll.addDataURL(photo.format, photo)
               # console.log "\n*****************************\n"
 
-            console.log "\n********** updated cameraRoll.dataURLs for this batch ***********\n"
+            # console.log "\n********** updated cameraRoll.dataURLs for this batch ***********\n"
 
             return photos
           , (errors)->
-            console.log errors
+            console.warn "ERROR: getDataURLForAssetsByChunks_P"
+            console.warn errors
             return $q.reject(errors)  # pass it on
 
       ##
@@ -876,10 +873,11 @@ angular
               # console.log photos
               _.each photos, (chunkOfPhotos, k)->
                 allPhotos = allPhotos.concat( chunkOfPhotos )
-              console.log "\n\n>>>  $q.all() done, dataURLs for all chunks retrieved!, length=" + allPhotos.length + "\n\n"
+              # console.log "\n\n>>>  $q.all() done, dataURLs for all chunks retrieved!, length=" + allPhotos.length + "\n\n"
               return allPhotos
             , (errors)->
-              console.error errors  
+              console.warn "ERROR: getDataURLForAssetsByChunks_P"
+              console.warn errors  
 
         allPhotos = []
         recurivePromise = (chunks, delayMS)->
@@ -907,7 +905,7 @@ angular
           return $q.when(allPhotos) if error == 'done'
           return $q.reject(error)
         .then (allPhotos)->
-          console.log "\n\n>>>  SERIES fetch done, dataURLs for all chunks retrieved!, length=" + allPhotos.length + "\n\n"
+          # console.log "\n\n>>>  SERIES fetch done, dataURLs for all chunks retrieved!, length=" + allPhotos.length + "\n\n"
           return allPhotos
 
       ##
@@ -967,14 +965,14 @@ angular
             if retval.errors.length == 0
               end = new Date().getTime()
               elapsed = (end-start)/1000
-              console.log "\n>>>>>>>> window.Messenger.getPhotoById()  complete, count=" + retval.photos.length + " , elapsed=" + elapsed + "\n\n"
+              # console.log "\n>>>>>>>> window.Messenger.getPhotoById()  complete, count=" + retval.photos.length + " , elapsed=" + elapsed + "\n\n"
               return dfd.resolve ( retval.photos ) 
             else if retval.photos.length && retval.errors.length 
-              console.log "WARNING: SOME errors occurred in Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
+              # console.warn "WARNING: SOME errors occurred in Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
               # ???: how do we handle the errors? save them until last?
               return dfd.resolve ( retval.photos ) 
             else if retval.errors.length 
-              console.error "ERROR: Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
+              console.warn "ERROR: Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
               return dfd.reject retval.errors
 
 

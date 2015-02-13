@@ -92,7 +92,7 @@ angular
     this.defer = (key, fnDefer)->
       orig = $localStorage[key] 
       _copy = angular.copy orig
-      console.log "\n\n @@@@ localStorage deferred updates"
+      # console.log "\n\n @@@@ localStorage deferred updates"
       _copy = fnDefer(_copy)
       return $localStorage[key] = _copy
 
@@ -146,8 +146,8 @@ angular
         blob = new Blob([dataView], { type: mimeString })
         # console.log("$$$ Private.dataURItoBlob AFTER new Blob")
         return blob;
-      catch error
-        console.log('ERROR: Blob support not available for dataURItoBlob')
+      catch err
+        console.warn('ERROR: Blob support not available for dataURItoBlob')
       return false
 
 
@@ -281,7 +281,7 @@ angular
       clearStashedP: (type, keep, repo='appCache')->
         stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
         $timeout ()->
-            console.log "\n\n *** clearStashedP() begin, size="+self.stashSize(repo)
+            # console.log "\n\n *** clearStashedP() begin, size="+self.stashSize(repo)
             promises = []
 
             if keep && type && repo=='appCache'
@@ -306,7 +306,7 @@ angular
                 return _.omit o, hashKeys 
 
               self.mostRecent = self.mostRecent.slice(0,keep) if keep && repo=='appCache'
-              console.log "*** clearStashedP() END, size="+self.stashSize(repo)
+              # console.log "*** clearStashedP() END, size="+self.stashSize(repo)
           , 100
 
       getCacheKeyFromFilename: (filename)->
@@ -341,18 +341,17 @@ angular
               promises.push self.getMetaData_P(file).then (meta)->
                 fileSize = meta.size
                 self.stashFile UUID, size, fileURL, fileSize
-                console.log "\n @@@load> " + UUID + '-' + size + ' : '+ fileURL.slice(-60)
+                # console.log "\n @@@load> " + UUID + '-' + size + ' : '+ fileURL.slice(-60)
                 return fileSize
 
               filenames.push file.name
               return
-            console.log "\n\n *** cordovaFile_LOAD_CACHED_P cached. file count=" + filenames.length
+            # console.log "\n\n *** cordovaFile_LOAD_CACHED_P cached. file count=" + filenames.length
             # console.log filenames # $$$  
             return $q.all(promises).then (sizes)->
               return dfd.resolve(filenames)
           , (err)->
-            console.log "ERROR: cordovaFile_LOAD_CACHED_P"
-            console.log err # $$$
+            console.warn "ERROR: cordovaFile_LOAD_CACHED_P" + JSON.stringify err # $$$
             dfd.reject( "ERROR: reading directory entries")
 
         return dfd.promise
@@ -378,11 +377,11 @@ angular
         return $q.reject('ERROR: unable to get valid Filename') if !filePath
 
         # filePath = result['target']['localURL']
-        console.log "\n\n >>> $ngCordovaFile.checkFile() for file=" + filePath
+        # console.log "\n\n >>> $ngCordovaFile.checkFile() for file=" + filePath
         return $cordovaFile.checkFile( self.CACHE_DIR + filePath )
         .catch (error)->
           # console.log error # $$$
-          console.log "$ngCordovaFile.checkFile() says DOES NOT EXIST, file=" + filePath + "\n\n"
+          # console.log "$ngCordovaFile.checkFile() says DOES NOT EXIST, file=" + filePath + "\n\n"
           return $q.reject(error)
         .then (file)->
           ### example {
@@ -428,8 +427,8 @@ angular
             self.stashFile UUID, size, fileURL, fileSize
             return fileURL
         .catch (error)->
-          console.log error # $$$
-          console.log "$ngCordovaFile.checkFile() some OTHER error, file=" + filePath + "\n\n"
+          console.warn error # $$$
+          console.warn "$ngCordovaFile.checkFile() some OTHER error, file=" + filePath + "\n\n"
           return $q.reject(error)
 
 
@@ -443,7 +442,7 @@ angular
           console.warn "error: cordovaFile_WRITE_P="+ dataURL[0...100]
           console.warn error
 
-        console.log "\n >>> $ngCordovaFile.writeFile() for file=" + filePath
+        # console.log "\n >>> $ngCordovaFile.writeFile() for file=" + filePath
         return $cordovaFile.writeFile( self.CACHE_DIR + filePath, blob, {'append': false} )
         .then (ProgressEvent)->
             # check ProgressEvent.target.length, ProgressEvent.target.localURL
@@ -456,8 +455,8 @@ angular
             # console.log retval # $$$
             return retval
         .catch (error)->
-            console.log "$ngCordovaFile writeFile ERROR"
-            console.log error # $$$
+            console.warn "$ngCordovaFile writeFile ERROR"
+            console.warn error # $$$
             return $q.reject(error)
         .then (retval)->
           fileSize = retval.fileSize
@@ -481,8 +480,8 @@ angular
           self.stashFile(UUID, size, retval.fileURL, retval.fileSize)
           return retval.fileURL
         .catch (error)->
-          console.log "$ngCordovaFile cordovaFile_CACHE_P ERROR"
-          console.log error   # $$$
+          console.warn "$ngCordovaFile cordovaFile_CACHE_P ERROR"
+          console.warn error   # $$$
           return $q.reject(error)
 
       # use dataURL for now, but stash to FileURL and replace when ready
@@ -496,7 +495,7 @@ angular
         .catch ()->
           self.cordovaFile_CACHE_P(UUID, IMAGE_SIZE, dataURL)
         .then (fileURL)->
-          console.log "\n\n >>> $ngCordovaFile.cordovaFile_USE_CACHED_P() should be cached by now, fileURL=" + fileURL
+          # console.log "\n\n >>> $ngCordovaFile.cordovaFile_USE_CACHED_P() should be cached by now, fileURL=" + fileURL
           $target.attr('src', fileURL) if $target
           return fileURL
 
@@ -508,18 +507,19 @@ angular
       # self.CACHE_DIR = cordova.file.documentsDirectory if cordova?.file
       self.CACHE_DIR = '/' # ./Library/files/  it seems $cordovaFile requires this as root
       $cordovaFile.checkDir( self.CACHE_DIR ).then (dirEntry)->
-          console.log "$ngCordovaFile.checkDir()"
-          console.log dirEntry # $$$
+          # console.log "$ngCordovaFile.checkDir()"
+          # console.log dirEntry # $$$
           return self.cacheRoot = dirEntry
       .then (dirEntry)->
         if _.isEmpty self.cacheIndex
-          console.warn "@@@load imgCacheSvc.cacheIndex EMPTY, check fs with cordovaFile_LOAD_CACHED_P"
+          # console.warn "@@@load imgCacheSvc.cacheIndex EMPTY, check fs with cordovaFile_LOAD_CACHED_P"
           self.cordovaFile_LOAD_CACHED_P()
         else
-          console.log "\n @@@load imgCacheSvc.cacheIndex from $localStorage"
+          # console.log "\n @@@load imgCacheSvc.cacheIndex from $localStorage"
       .catch (error)->
-          console.log error # $$$
-          console.log "$ngCordovaFile.checkDir() error, file=" + self.CACHE_DIR + "\n\n"
+        console.warn "$ngCordovaFile.checkDir() error, file=" + self.CACHE_DIR 
+        console.warn error # $$$
+          
       # .then ()->
       #   return $cordovaFile.createDir( 'CACHE_DIR' )
       # .then (dirEntry)->

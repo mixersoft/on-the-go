@@ -78,7 +78,7 @@ angular.module('ionBlankApp')
     $scope.workorder = null
 
     $scope.DEBOUNCED_SYNC_workorders = _.debounce ()->
-      console.log "\n\n >>> DEBOUNCED!!!"
+      # console.log "\n\n >>> DEBOUNCED!!!"
       onComplete = ()->
         $scope.hideLoading()
         $scope.$broadcast('scroll.refreshComplete')

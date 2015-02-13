@@ -28,9 +28,9 @@ angular.module('ionBlankApp')
           self.uploader._registerBkgUploaderHandlers()
 
           self.uploader.getQueueP().then (assetIds)->
-            console.log "otgUploader init: remaining=" + _bkgFileUploader.remaining
+            # console.log "otgUploader init: remaining=" + _bkgFileUploader.remaining
           if self.uploader.enable()==false
-            console.log "otgUploader init: PAUSE queue"
+            # console.log "otgUploader init: PAUSE queue"
             self.uploader.pauseQueueP()
           self.remaining( )
 
@@ -50,10 +50,10 @@ angular.module('ionBlankApp')
         self.uploader.enable( newVal['enabled'] )
         # Q: should we enable uploader???
       if newVal['use-720p-service'] != oldVal['use-720p-service']  
-        console.log "otgUploader: use-720p-service=" + newVal['use-720p-service']
+        # console.log "otgUploader: use-720p-service=" + newVal['use-720p-service']
         self.uploader.use720p( newVal['use-720p-service'] )
       if newVal['use-cellular-data'] != oldVal['use-cellular-data']  
-        console.log "otgUploader: use-cellular-data=" + newVal['use-cellular-data']
+        # console.log "otgUploader: use-cellular-data=" + newVal['use-cellular-data']
         self._allowCellularNetwork = newVal['use-cellular-data']
         self.uploader.onNetworkAccessChanged(newVal['use-cellular-data'])
       return
@@ -85,7 +85,7 @@ angular.module('ionBlankApp')
           return PLUGIN.allSessionTaskInfosP()
           .then (resp)->
             if _.isEmpty resp
-              console.log "\n >>> background upload tasks empty"
+              # console.log "\n >>> background upload tasks empty"
               return 
             finished = _.filter resp, (status)-> return !!status.hasFinished
             promises = []
@@ -208,7 +208,7 @@ angular.module('ionBlankApp')
               }
               return otgParse.updatePhotoP( photo, 'src')
             .then (resp)->
-              console.log "_parseFileUploader update photo.src complete"
+              # console.log "_parseFileUploader update photo.src complete"
               self.remaining( )
               _parseFileUploader.oneCompleteP(resp)
               return resp
@@ -275,7 +275,7 @@ angular.module('ionBlankApp')
         return _bkgFileUploader.isEnabled if wasEnabled == _bkgFileUploader.isEnabled
 
         if _bkgFileUploader.isEnabled 
-          console.log "\n>>> calling resumeQueueP from enable..."
+          # console.log "\n>>> calling resumeQueueP from enable..."
           promise = _bkgFileUploader.isPausingP || $q.when()
           promise.then _bkgFileUploader.resumeQueueP
         else # disabled
@@ -343,7 +343,7 @@ angular.module('ionBlankApp')
               scheduledButNotStarted = _.filter _bkgFileUploader._scheduled, (v,k)->
                 return true if `v==null`
               assetIds = _.keys scheduledButNotStarted
-              console.log "_reschedule_Scheduled_Items_P: " + JSON.stringify assetIds
+              # console.log "_reschedule_Scheduled_Items_P: " + JSON.stringify assetIds
               _.each assetIds, (UUID)->
                 delete _bkgFileUploader._scheduled[UUID]
                 _bkgFileUploader.schedule(UUID,'front')
@@ -358,7 +358,7 @@ angular.module('ionBlankApp')
         # enabled
         options = _.pick _bkgFileUploader.cfg, ['allowsCellularAccess', 'maxWidth', 'auto-rotate', 'quality']  
         return PLUGIN.scheduleAssetsForUploadP(assetIds, options).then ()->
-          console.log "\n>>> otgUploader.queueP(): scheduleAssetsForUploadP complete\n\n"
+          # console.log "\n>>> otgUploader.queueP(): scheduleAssetsForUploadP complete"
           return _.keys _bkgFileUploader._scheduled
         .catch (err)->
           console.warn "\n >>> ERROR PLUGIN.scheduleAssetsForUploadP() " + JSON.stringify err
@@ -373,7 +373,7 @@ angular.module('ionBlankApp')
       pauseQueueP: ()->
         return PLUGIN.unscheduleAllAssetsP()
         .then ()->
-          console.log "1. unscheduleAllAssetsP returned"
+          # console.log "unscheduleAllAssetsP returned"
           $rootScope.$broadcast 'uploader.schedulingComplete'  # assume any active scheduling is cancelled
           $timeout ()->
               return if _bkgFileUploader.enable()
@@ -389,7 +389,7 @@ angular.module('ionBlankApp')
       resumeQueueP: ()->
         # just queue a chunk from _bkgFileUploader._readyToSchedule
         return _bkgFileUploader.queueP().then (scheduledAssetIds)->
-          console.log "\n>>> queueP complete from resumeQueueP(), scheduled=" + JSON.stringify scheduledAssetIds
+          # console.log "\n>>> queueP complete from resumeQueueP(), scheduled=" + JSON.stringify scheduledAssetIds
 
       clearQueueP: ()->
         return _bkgFileUploader.pauseQueueP().then ()->
@@ -423,7 +423,7 @@ angular.module('ionBlankApp')
 
       oneBegan: (resp)->
         try
-          console.log "\n >>> native-uploader Began: for assetId="+resp.asset
+          # console.log "\n >>> native-uploader Began: for assetId="+resp.asset
           _bkgFileUploader._scheduled[resp.asset] = 0
           _bkgFileUploader.isSchedulingComplete()
         catch e
@@ -443,7 +443,7 @@ angular.module('ionBlankApp')
         try
           progress = resp.totalBytesSent / resp.totalBytesExpectedToSend
           resp.progress = Math.round(progress*100)/100
-          console.log "\n >>> native-uploader Progress: " + JSON.stringify _.pick resp, ['asset', 'progress'] 
+          # console.log "\n >>> native-uploader Progress: " + JSON.stringify _.pick resp, ['asset', 'progress'] 
           _bkgFileUploader._scheduled[resp.asset] = resp.progress
           LastProgress.restart()
         catch e
@@ -457,10 +457,10 @@ angular.module('ionBlankApp')
               # console.log "\n\n >>> handleUploaderTaskFinishedP" + JSON.stringify status
               status.hasFinished = true
               return _bkgFileUploader.oneCompleteP(status) # if status.hasFinished
-              console.warn "ERROR: expecting task finished here"
+              console.warn "ERROR: expecting task finished here. hasFinished bug?"
               return $q.reject(status)
             , (err)->
-              console.log "\n\n %%% ERROR sessionTaskInfoForIdentifierP(): " + JSON.stringify err  
+              console.warn "\n\n %%% ERROR sessionTaskInfoForIdentifierP(): " + JSON.stringify err  
               $q.reject(err)
           .finally ()-> # or always()
               PLUGIN.removeSessionTaskInfoWithIdentifierP(UUID)
@@ -481,7 +481,7 @@ angular.module('ionBlankApp')
             UUID: resp.asset
             src: if resp.success then resp.url else resp.message || 'error: native-uploader'
           }
-          console.log "\n\n >>> oneCompleteP" + JSON.stringify resp
+          # console.log "\n\n >>> oneCompleteP" + JSON.stringify resp
 
           return otgParse.updatePhotoP( photo, 'src')
           .then null, (err)->
@@ -508,7 +508,6 @@ angular.module('ionBlankApp')
             remaining = self.remaining()
             if remaining == 0
               $timeout( _bkgFileUploader.allComplete )
-            console.log "onComplete: remaining files=" + remaining
             return photos
           .then null, (err)->
               console.warn "\n\noneCompleteP otgParse.updatePhotoP error"
@@ -532,11 +531,12 @@ angular.module('ionBlankApp')
       onNetworkAccessChanged: (allowsCellularAccess)->
         PLUGIN.setAllowsCellularAccessP(allowsCellularAccess)
         .then (resp)->
-            console.log "\n\n setAllowsCellularAccess() OK, set value=" + allowsCellularAccess
-            console.log "_bkgFileUploader: scheduled tasks reset to allowsCellularAccess="+allowsCellularAccess
+            # console.log "\n\n setAllowsCellularAccess() OK, set value=" + allowsCellularAccess
+            # console.log "_bkgFileUploader: scheduled tasks reset to allowsCellularAccess="+allowsCellularAccess
+            return
           , (err)->
-            console.log "\n\n setAllowsCellularAccess() ERROR, set value=" + allowsCellularAccess
-            console.log err 
+            console.warn "\n\n setAllowsCellularAccess() ERROR, set value=" + allowsCellularAccess
+            console.warn err 
         return
 
         # HACK: clear queue, then reschedule with updated value for allowsCellularAccess  
@@ -550,13 +550,13 @@ angular.module('ionBlankApp')
       _complete:{}
       _registerBkgUploaderHandlers: ()->
         # TODO: confirm callbacks are set
-        console.log "PLUGIN event handlers registered!!!"
+        # console.log "PLUGIN event handlers registered!!!"
         PLUGIN.on.didFinishAssetUpload (resp)->
           # expecting resp.asset
           return _bkgFileUploader.handleUploaderTaskFinishedP(resp.asset)
 
-        PLUGIN.on.didUploadAssetProgress (resp)->
-          return _bkgFileUploader.oneProgress(resp)      
+        # PLUGIN.on.didUploadAssetProgress (resp)->
+        #   return _bkgFileUploader.oneProgress(resp)      
 
         PLUGIN.on.didBeginAssetUpload (resp)->
           return _bkgFileUploader.oneBegan(resp)
@@ -687,7 +687,7 @@ angular.module('ionBlankApp')
         this.start = end
         if (duration > this.TAP_HOLD_TO_RESET_QUEUE_TIME)
           # reset queue
-          console.log "\n >>> resetting upload queue"
+          # console.log "\n >>> resetting upload queue"
           $scope.watch.isUnscheduling = true 
           otgUploader.uploader.clearQueueP().then ()->
             otgUploader.enable(false)

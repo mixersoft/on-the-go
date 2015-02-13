@@ -484,11 +484,11 @@ angular
 
       toggleHelp : ()->
         $scope.config.help = !$scope.config.help  
-        console.log "help="+ if $scope.config.help then 'ON' else 'OFF'
+        # console.log "help="+ if $scope.config.help then 'ON' else 'OFF'
 
       sync: 
         cameraRoll_Orders: ()-> 
-          console.log ">>> SYNC_cameraRoll_Orders"
+          # console.log ">>> SYNC_cameraRoll_Orders"
           cameraRoll.loadCameraRollP(null, 'force').finally ()->
             if !$scope.deviceReady.isOnline()
               $scope.$broadcast('sync.debounceComplete')
@@ -504,7 +504,7 @@ angular
 
         DEBOUNCED_cameraRoll_Orders: ()->
           debounced = _.debounce ()->
-            console.log "\n\n >>> DEBOUNCED_cameraRoll_Orders fired"
+            # console.log "\n\n >>> DEBOUNCED_cameraRoll_Orders fired"
             $scope.app.sync.cameraRoll_Orders()
             return
           , 5000 # 5*60*1000
@@ -528,7 +528,7 @@ angular
               return
 
             okAlert = (value)->
-              console.log "NSUserDefaults fetch SUCCESS: value=" + JSON.stringify value
+              # console.log "NSUserDefaults fetch SUCCESS: value=" + JSON.stringify value
               return  
 
             fail = (err)->
@@ -619,7 +619,7 @@ angular
     _LOAD_BROWSER_TOOLS = ()->
       # load TEST_DATA
       if $rootScope.user?.role != 'editor'
-        console.log "\n\n *** loading TEST_DATA: TODO: MOVE TO _LOAD_BROWSER_TOOLS ***\n\n"
+        # console.log "\n\n *** loading TEST_DATA: TODO: MOVE TO _LOAD_BROWSER_TOOLS ***\n\n"
         cameraRoll.orders = TEST_DATA.orders
         photos_ByDateUUID = TEST_DATA.cameraRoll_byDate
         cameraRoll.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( photos_ByDateUUID ), 2
@@ -767,7 +767,7 @@ angular
       .then ()->
         $scope.config['no-view-headers'] = deviceReady.device().isDevice && false
         $rootScope.device.id = deviceReady.deviceId()
-        console.log "\n\n>>> deviceId="+$rootScope.device.id
+        # console.log "\n\n>>> deviceId="+$rootScope.device.id
       .then ()->
         return if deviceReady.device().isBrowser
         # loadMomentThumbnails on timer, cancel if done elsewhere
@@ -775,7 +775,7 @@ angular
         _cancel = $timeout ()->
             cameraRoll.loadCameraRollP(null, false)
             .done ()->
-              console.log "\n @@@load cameraRoll thumbnails loaded from init timer"
+              # console.log "\n @@@load cameraRoll thumbnails loaded from init timer"
             return
           , 3000
         _off = $rootScope.$on 'cameraRoll.beforeLoadMomentThumbnails', ()->

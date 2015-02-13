@@ -34,7 +34,6 @@ angular.module('ionBlankApp')
         animation: 'slide-in-up'
       }
     .then (modal)->
-        console.log "modal ready"
         self._modal = modal
       , (error)->
         console.log "Error: $ionicModal.fromTemplate"
