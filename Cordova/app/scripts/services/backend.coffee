@@ -289,8 +289,10 @@ angular
           parsePhotos = _.filter parsePhotos, (photo)->
               return photo.deviceId == $rootScope.device.id
           promise = cameraRoll.mapP(null, false).then (mappedPhotos)->
+
             cameraRollInDateRange = _.filter mappedPhotos, (o)->
               o.date = cameraRoll.getDateFromLocalTime o.dateTaken if !o.date
+              return false if o.from?.slice(0,5)=='PARSE' 
               return dateRange.from <= o.date <= dateRange.to
 
             cameraRollAssetIds = _.pluck(cameraRollInDateRange, 'UUID')

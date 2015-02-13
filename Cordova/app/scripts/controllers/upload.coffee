@@ -329,9 +329,11 @@ angular.module('ionBlankApp')
           added = _.difference added, _.keys(_bkgFileUploader._scheduled)
           assetIds = assetIds.concat(added)
 
-        if _.isEmpty assetIds  
+        if _.isEmpty assetIds  # nothing new to schedule
+
           # nothing scheduled && nothing readyToSchedule
-          return $q.when([]) if _bkgFileUploader.isSchedulingComplete()
+          if _bkgFileUploader.isSchedulingComplete()
+            return $q.when([]) 
           # check if _scheduled is actually scheduled 
           return PLUGIN.getScheduledAssetsP().then (assetIds)->
             # issue is when unschedule does NOT move _scheduled back to _readyToSchedule
@@ -341,6 +343,7 @@ angular.module('ionBlankApp')
               scheduledButNotStarted = _.filter _bkgFileUploader._scheduled, (v,k)->
                 return true if `v==null`
               assetIds = _.keys scheduledButNotStarted
+              console.log "_reschedule_Scheduled_Items_P: " + JSON.stringify assetIds
               _.each assetIds, (UUID)->
                 delete _bkgFileUploader._scheduled[UUID]
                 _bkgFileUploader.schedule(UUID,'front')
@@ -372,7 +375,13 @@ angular.module('ionBlankApp')
         .then ()->
           console.log "1. unscheduleAllAssetsP returned"
           $rootScope.$broadcast 'uploader.schedulingComplete'  # assume any active scheduling is cancelled
-
+          $timeout ()->
+              return if _bkgFileUploader.enable()
+              # HACK: sometimes there are scheduled items that are stuck on didBegin, but never get progress
+              #     reset/reschedule these
+              onlyDidBegin = _( _bkgFileUploader._scheduled ).values().unique().filter().value().length == 0
+              return _bkgFileUploader._scheduled = {} if onlyDidBegin
+            , 5000
           # cleanup, didFinishAssetUpload > oneComplete: errorCode=-999 ERROR_CANCELLED moves to _readyToSchedule
           # _bkgFileUploader._readyToSchedule = _.unique remainingScheduledAssetIds.concat( _bkgFileUploader._readyToSchedule ) 
           return 

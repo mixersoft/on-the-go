@@ -310,7 +310,7 @@ angular
           foundInMap.from = 'CameraRoll<PARSE' 
           # cameraRoll photo.favorite has priority
           # BUT, we need to listen for onChange favorite OUTSIDE app and post(?)
-          console.log "%%% isLocal, photo=" + JSON.stringify _.pick  foundInMap, ['from', 'caption', 'rating', 'xxxfavorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId']
+          # console.log "%%% isLocal, photo=" + JSON.stringify _.pick  foundInMap, ['from', 'caption', 'rating', 'xxxfavorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId']
           return true # triggers $broadcast cameraRoll.updated for topPicks refresh
         else if !isLocal && foundInMap # update Workorder Photo from Parse
           _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot'] # copy Edit fields
