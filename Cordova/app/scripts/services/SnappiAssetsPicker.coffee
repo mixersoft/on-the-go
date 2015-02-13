@@ -209,6 +209,22 @@ angular
         # console.log notCached
         return self.loadPhotosP(notCached, options, delay)
 
+      # load moments, but not photos
+      loadMomentsFromCameraRoll: (mapped)->
+        ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
+        mapped = self._mapAssetsLibrary if !mapped
+
+        # cameraRoll._mapAssetsLibrary -> cameraRoll.moments
+        photosByDate = otgData.mapDateTakenByDays(mapped, "like TEST_DATA")
+        # replace cameraRoll.moments
+        justUUIDsByDate = {} # JUST [{date:[UUID,]},{}]
+        _.each _.keys( photosByDate) , (key)->
+          justUUIDsByDate[key] = _.pluck photosByDate[key], 'UUID'
+        # console.log justUUIDsByDate
+        self.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( justUUIDsByDate ), 2
+
+        return self.moments
+        
       loadMomentThumbnailsP: (delay=10)->
         # preload thumbnail DataURLs for self moment previews
         momentPreviewAssets = self.getMomentPreviewAssets() 
@@ -228,7 +244,22 @@ angular
         $rootScope.$broadcast 'cameraRoll.beforeLoadMomentThumbnails' # for cancel loading timer
         return self.loadPhotosP(notCached, options, delay)
 
-
+      getMomentPreviewAssets:(moments)->
+        moments = self.moments if !moments
+        # preload cameraRoll preview thumbnails
+        previewPhotos = []
+        PREVIEW_LIMIT = 5 # 5 thumbnails per moment/date
+        IMAGE_FORMAT = 'thumbnail'
+        _.each moments, (v,k,l)->
+          if v['type'] == 'moment'
+            _.each v['value'], (v2,k2,l2)->
+              if v2['type'] == 'date'
+                _.each v2['value'][0...PREVIEW_LIMIT], (UUID)->
+                  previewPhotos.push {
+                      UUID: UUID,
+                      # date: v2['key']
+                    }
+        return previewPhotos
 
       loadPhotosP: (photos, options, delay=10)->
         return $q.when('success') if _.isEmpty photos
@@ -272,10 +303,7 @@ angular
           , delay  
         return dfd.promise   
 
-      clearPhotos_PARSE : ()->
-        # on logout
-        self.photos = _.filter self.photos, (photo)->
-            return photo.from != 'PARSE'
+
 
       addOrUpdatePhoto_FromWorkorder: (photo)->
         # photo could be in local cameraRoll, or if $rootScope.$state.includes('app.workorders') a workorder photo
@@ -320,6 +348,13 @@ angular
           return false
 
 
+
+
+      clearPhotos_PARSE : ()->
+        # on logout
+        self.photos = _.filter self.photos, (photo)->
+            return photo.from != 'PARSE'
+
       isDataURL : (src)->
         throw "isDataURL() ERROR: expecting string" if typeof src != 'string'
         return /^data:image/.test( src )
@@ -350,23 +385,6 @@ angular
       addParseURL : (parsePhoto, size)->
         self.dataURLs[size][parsePhoto.UUID] = parsePhoto.src
         return parsePhoto.src
-
-
-      # load moments, but not photos
-      loadMomentsFromCameraRoll: (mapped)->
-        ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
-        mapped = self._mapAssetsLibrary if !mapped
-
-        # cameraRoll._mapAssetsLibrary -> cameraRoll.moments
-        photosByDate = otgData.mapDateTakenByDays(mapped, "like TEST_DATA")
-        # replace cameraRoll.moments
-        justUUIDsByDate = {} # JUST [{date:[UUID,]},{}]
-        _.each _.keys( photosByDate) , (key)->
-          justUUIDsByDate[key] = _.pluck photosByDate[key], 'UUID'
-        # console.log justUUIDsByDate
-        self.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( justUUIDsByDate ), 2
-
-        return self.moments
 
 
       getDateFromLocalTime : (dateTaken)->
@@ -435,27 +453,6 @@ angular
               $q.reject('photo not available')
 
 
-      resampleP : (imgOrSrc, W=320, H=null)->
-        return $q.reject('Missing Image') if !imgOrSrc
-        console.log "*** resize & convert to base64 using Resample.js ******* imgOrSrc=" + imgOrSrc
-        dfd = $q.defer()
-        done = (dataURL)->
-          console.log "resampled data=" + JSON.stringify {
-            size: dataURL.length
-            data: dataURL[0..60]
-          }
-          dfd.resolve(dataURL)
-          return
-        try 
-          Resample.one()?.resample imgOrSrc
-            ,   W
-            ,   H    # targetHeight
-            ,   dfd
-            ,   "image/jpeg"
-        catch ex  
-          dfd.reject(imgOrSrc)
-        return dfd.promise
-
       ### queue photo for retrieval, put into imgCacheSvc for later access
         called by: 
           directive:lazySrc
@@ -499,25 +496,6 @@ angular
            #     > getDataURLForAssetsByChunks_P()
         return found
 
-
-      # IMAGE_WIDTH should be computedWidth - 2 for borders
-      getCollectionRepeatHeight : (photo, IMAGE_WIDTH)->
-        if !IMAGE_WIDTH
-          MAX_WIDTH = if deviceReady.device().isDevice then 320 else 640
-          IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, MAX_WIDTH)
-        if !photo.scaledH > 0
-          if photo.originalWidth && photo.originalHeight
-            aspectRatio = photo.originalHeight/photo.originalWidth 
-            # console.log "index="+index+", UUID="+photo.UUID+", origW="+photo.originalWidth + " origH="+photo.originalHeight
-            h = aspectRatio * IMAGE_WIDTH
-          else # browser/TEST_DATA
-            throw "ERROR: original photo dimensions are missing"
-          photo.scaledW = IMAGE_WIDTH  
-          photo.scaledH = h
-        else 
-          h = photo.scaledH
-        return h
-
       # called by getDataURL, but NOT getDataURL_P
       queueDataURL : (UUID, size='preview')->
         console.warn "@@@@@@  DEPRECATE??? cameraRoll.queueDataURL"
@@ -532,23 +510,6 @@ angular
 
         # $rootScope.$broadcast 'cameraRoll.queuedDataURL'
 
-      # getter, or reset queue
-      queue: (clear, PREVIEW_LIMIT = 50 )->
-        console.warn "@@@@@@  DEPRECATE??? cameraRoll.queue"
-        self._queue = {} if clear=='clear'
-
-        thumbnails = _.filter self._queue, {size: 'thumbnail'}
-        previews = _.filter self._queue, {size: 'preview'}
-
-        if previews.length > PREVIEW_LIMIT
-          _logOnce 'iegd', "cameraRoll.queue() 'preview' PREVIEW_LIMIT="+PREVIEW_LIMIT
-          remainder = previews[PREVIEW_LIMIT..]
-
-        batch = thumbnails.concat previews.slice(0, PREVIEW_LIMIT)
-        self._queue = if remainder?.length then _.indexBy( remainder, 'UUID') else {}
-
-        # order by thumbnails then previews
-        return batch
 
       # called by cameraRoll.queueDataURL()
       fetchDataURLsFromQueue : ()->
@@ -581,23 +542,68 @@ angular
       debounced_fetchDataURLsFromQueue : ()->
         return console.log "\n\n\n ***** Placeholder: add debounce on init *********"
 
+      # getter, or reset queue
+      queue: (clear, PREVIEW_LIMIT = 50 )->
+        console.warn "@@@@@@  DEPRECATE??? cameraRoll.queue"
+        self._queue = {} if clear=='clear'
 
-      getMomentPreviewAssets:(moments)->
-        moments = self.moments if !moments
-        # preload cameraRoll preview thumbnails
-        previewPhotos = []
-        PREVIEW_LIMIT = 5 # 5 thumbnails per moment/date
-        IMAGE_FORMAT = 'thumbnail'
-        _.each moments, (v,k,l)->
-          if v['type'] == 'moment'
-            _.each v['value'], (v2,k2,l2)->
-              if v2['type'] == 'date'
-                _.each v2['value'][0...PREVIEW_LIMIT], (UUID)->
-                  previewPhotos.push {
-                      UUID: UUID,
-                      # date: v2['key']
-                    }
-        return previewPhotos
+        thumbnails = _.filter self._queue, {size: 'thumbnail'}
+        previews = _.filter self._queue, {size: 'preview'}
+
+        if previews.length > PREVIEW_LIMIT
+          _logOnce 'iegd', "cameraRoll.queue() 'preview' PREVIEW_LIMIT="+PREVIEW_LIMIT
+          remainder = previews[PREVIEW_LIMIT..]
+
+        batch = thumbnails.concat previews.slice(0, PREVIEW_LIMIT)
+        self._queue = if remainder?.length then _.indexBy( remainder, 'UUID') else {}
+
+        # order by thumbnails then previews
+        return batch
+
+
+
+
+
+
+      # IMAGE_WIDTH should be computedWidth - 2 for borders
+      getCollectionRepeatHeight : (photo, IMAGE_WIDTH)->
+        if !IMAGE_WIDTH
+          MAX_WIDTH = if deviceReady.device().isDevice then 320 else 640
+          IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, MAX_WIDTH)
+        if !photo.scaledH > 0
+          if photo.originalWidth && photo.originalHeight
+            aspectRatio = photo.originalHeight/photo.originalWidth 
+            # console.log "index="+index+", UUID="+photo.UUID+", origW="+photo.originalWidth + " origH="+photo.originalHeight
+            h = aspectRatio * IMAGE_WIDTH
+          else # browser/TEST_DATA
+            throw "ERROR: original photo dimensions are missing"
+          photo.scaledW = IMAGE_WIDTH  
+          photo.scaledH = h
+        else 
+          h = photo.scaledH
+        return h
+
+      resampleP : (imgOrSrc, W=320, H=null)->
+        return $q.reject('Missing Image') if !imgOrSrc
+        console.log "*** resize & convert to base64 using Resample.js ******* imgOrSrc=" + imgOrSrc
+        dfd = $q.defer()
+        done = (dataURL)->
+          console.log "resampled data=" + JSON.stringify {
+            size: dataURL.length
+            data: dataURL[0..60]
+          }
+          dfd.resolve(dataURL)
+          return
+        try 
+          Resample.one()?.resample imgOrSrc
+            ,   W
+            ,   H    # targetHeight
+            ,   dfd
+            ,   "image/jpeg"
+        catch ex  
+          dfd.reject(imgOrSrc)
+        return dfd.promise
+
 
       # array of moments
       moments: []
