@@ -152,7 +152,7 @@
 
 
 <script id="partials/pricing" type="text/ng-template">
-  <div class="card has-header">
+  <div class="card has-header" ng-if=0>
     <div class="item item-divider text-center item-balanced">
     Suggested Donations
     </div>
@@ -164,6 +164,18 @@
       </div>
     </div>
   </div>
+  <div class="card has-header" ng-if=1>
+    <div class="item item-divider text-center item-balanced">
+    Your Lucky Day!
+    </div>
+    <div class="item item-text-wrap text-left">
+      <div>
+        We are offering <b>3 days free</b> for our first 100 orders. 
+        Promo codes are available during checkout. 
+      </div>
+    </div>
+  </div>
+  </div>  
   <div class="card has-header">
     <div class="item item-divider text-center item-positive">
     Daily
