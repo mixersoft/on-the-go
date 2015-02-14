@@ -35,7 +35,12 @@ angular.module('ionBlankApp')
         ## in: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
         # out: {2014-07-14:[{dateTaken: UUID: }, ]}
         return _.reduce photos, (result, o)->
-            if o.dateTaken.indexOf('+')>-1
+            if !o.dateTaken
+              # dateTaken missing, assume Browser, done in _LOAD_BROWSER_TOOLS() 
+              return result
+              # o.dateTaken = new Date().toJSON()[0...10]
+              # datetime = new Date(o.dateTaken) 
+            else if o.dateTaken.indexOf('+')>-1
               datetime = new Date(o.dateTaken) 
               # console.log "compare times: " + datetime + "==" +o.dateTaken
             else 

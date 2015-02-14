@@ -153,13 +153,18 @@ angular
             'not updated'
           return mapped
 
+      filterDeviceOnly: (photos)->
+        photos = photos || self.map()
+        return _( photos ).filter( (o)->return !o.from || o.from.slice(0,5)!='PARSE' ).value()
+
       setFavoriteP: (photo)->
         return snappiMessengerPluginService.setFavoriteP(photo)
 
 
-      loadCameraRollP: (options, force=true)->
+      loadCameraRollP: (options={}, force=true)->
         defaults = {
           size: 'thumbnail'
+          type: 'favorites,moments' # defaults
           # pluck: ['favorite','mediaType', 'mediaSubTypes', 'hidden']  
           # fromDate: null
           # toDate: null
@@ -171,20 +176,22 @@ angular
         start = new Date().getTime()
         return self.mapP(options, force)
         .then (mapped)->
-          promise = self.loadFavoritesP(5000)
+          promise = self.loadFavoritesP(5000) if options.type.indexOf('favorites') > -1
           # don't wait for promise
           return mapped
 
         .then ( mapped )->
 
-          end = new Date().getTime()
+          # end = new Date().getTime()
           # console.log "\n*** mapAssetsLibraryP() complete, elapsed=" + (end-start)/1000
+          return mapped if deviceReady.device().isBrowser
 
           # don't wait for promise
-          moments = self.loadMomentsFromCameraRoll( mapped )
-          promise = self.loadMomentThumbnailsP().then ()->
-            # console.log "\n @@@load cameraRoll thumbnails loaded from loadCameraRollP()"
-            return
+          if options.type.indexOf('moments') > -1
+            moments = self.loadMomentsFromCameraRoll( mapped )
+            promise = self.loadMomentThumbnailsP().then ()->
+              # console.log "\n @@@load cameraRoll thumbnails loaded from loadCameraRollP()"
+              return
 
           # cameraRoll ready
           return mapped
@@ -192,15 +199,21 @@ angular
         .catch (error)->
           console.warn "ERROR: loadCameraRollP, error="+JSON.stringify( error )[0..100]
           # appConsole.show( error)
+          if error == "ERROR: window.Messenger Plugin not available" && deviceReady.device().isBrowser
+            $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', {type:'moments'}
+            $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', {type:'favorites'}
+            return true
           return $q.reject(error)
-
         .finally ()->
           return
 
       loadFavoritesP: (delay=10)->
         # load 'preview' of favorites from cameraRoll, from mapAssetsLibrary()
         favorites = _.filter self.map(), {favorite: true}
-        options = {size: 'preview'}
+        options = {
+          size: 'preview'
+          type: 'favorites'
+        }
         # check against imageCacheSvc
         notCached = _.filter favorites, (photo)->
             return false if imageCacheSvc.isStashed( photo.UUID, options.size ) 
@@ -213,17 +226,18 @@ angular
       # load moments, but not photos
       loadMomentsFromCameraRoll: (mapped)->
         ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
-        mapped = self._mapAssetsLibrary if !mapped
+        # filter: remove  photos.from=='PARSE'
+        deviceOnly = self.filterDeviceOnly mapped
 
         # cameraRoll._mapAssetsLibrary -> cameraRoll.moments
-        photosByDate = otgData.mapDateTakenByDays(mapped, "like TEST_DATA")
+        photosByDate = otgData.mapDateTakenByDays(deviceOnly, "like TEST_DATA")
         # replace cameraRoll.moments
         justUUIDsByDate = {} # JUST [{date:[UUID,]},{}]
         _.each _.keys( photosByDate) , (key)->
           justUUIDsByDate[key] = _.pluck photosByDate[key], 'UUID'
         # console.log justUUIDsByDate
         self.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( justUUIDsByDate ), 2
-
+        # done on 'cameraRoll.loadPhotosComplete', type=thumbnail
         return self.moments
         
       loadMomentThumbnailsP: (delay=10)->
@@ -231,6 +245,7 @@ angular
         momentPreviewAssets = self.getMomentPreviewAssets() 
         options = {
           size: 'thumbnail'
+          type: 'moments'
         }
         
         notCached = _.filter( 
@@ -243,6 +258,10 @@ angular
         # console.log "\n\n\n*** preloading moment thumbnails for UUIDs, count=" + notCached.length 
         # console.log notCached
         $rootScope.$broadcast 'cameraRoll.beforeLoadMomentThumbnails' # for cancel loading timer
+        # done on 'cameraRoll.loadPhotosComplete', type=thumbnail
+        if _.isEmpty notCached
+          $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', options # for cancel loading timer
+          return $q.when 'success'
         return self.loadPhotosP(notCached, options, delay)
 
       getMomentPreviewAssets:(moments)->
@@ -280,6 +299,7 @@ angular
             .then ()->
               end = new Date().getTime()
               # console.log "\n*** thumbnail preload complete, elapsed=" + (end-start)/1000
+              $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', options # for cancel loading timer
               dfd.resolve('success')
             .then ()->
               return
@@ -353,8 +373,7 @@ angular
 
       clearPhotos_PARSE : ()->
         # on logout
-        self.photos = _.filter self.photos, (photo)->
-            return photo.from != 'PARSE'
+        self.photos = self.filterDeviceOnly(self.photos)
 
       isDataURL : (src)->
         throw "isDataURL() ERROR: expecting string" if typeof src != 'string'

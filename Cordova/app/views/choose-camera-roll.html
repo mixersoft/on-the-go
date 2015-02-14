@@ -1,5 +1,10 @@
 
 <ion-content id="choose-tab-camera-roll" class="has-footer">
+    <ion-refresher
+      pulling-text=""
+      on-refresh="on.refresh()">
+    </ion-refresher>
+
   <!-- header card  -->
   <swipe-cards><swipe-card class="card header-card" fly="out"
     on-destroy="on.dontShowHint(this, keep)"
@@ -19,5 +24,5 @@
   </swipe-card></swipe-cards>
   <!-- collection-repeat of moments -->
   <!-- <div ng-include="'views/template/moment.html'"></div> -->
-  <otg-moment otg-model="cameraRoll.moments"></otg-moment>
+  <otg-moment otg-model="watch.cameraRoll.moments"></otg-moment>
 </ion-content> 

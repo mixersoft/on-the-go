@@ -803,7 +803,7 @@ angular
               # console.log "\n @@@load cameraRoll thumbnails loaded from init timer"
             return
           , 3000
-        _off = $rootScope.$on 'cameraRoll.beforeLoadMomentThumbnails', ()->
+        _off = $rootScope.$on 'cameraRoll.beforeLoadMomentThumbnails', (ev, cancel)->
           $timeout.cancel _cancel 
           _off()
           _off = _cancel = null
