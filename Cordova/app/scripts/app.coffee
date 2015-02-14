@@ -20,9 +20,10 @@ angular
   'angular-datepicker'
   'ngStorage'
 ])
-.config ($ionicConfigProvider)->
-  $ionicConfigProvider.backButton.text('Back').icon('ion-ios-arrow-back');
-
+.config ['$ionicConfigProvider', 
+  ($ionicConfigProvider)->
+    $ionicConfigProvider.backButton.text('Back').icon('ion-ios-arrow-back');
+]
 .run [
   '$rootScope', '$state', '$stateParams', '$ionicPlatform', 'PARSE_CREDENTIALS'
   ($rootScope, $state, $stateParams, $ionicPlatform, PARSE_CREDENTIALS)->
@@ -47,6 +48,30 @@ angular
       console.log ["\n\n _logOnce:", message, " \n\n"].join(' &&& ')
       return _alreadyLogged[id] = message
 ]
+
+# .factory '$templateCache', [
+#   '$cacheFactory', '$http', '$injector'
+#   ($cacheFactory, $http, $injector)->
+#     cache = $cacheFactory('templates')
+#     self = {
+#       get: (url)->
+#         fromCache = cache.get url
+#         return fromCache if (fromCache)
+
+#         return promise = $http.get(url).then (resp)->
+#           $injector.get('$compile')(resp.data)
+#           return resp
+#         .then (resp)->
+#           return {
+#             status: resp.status
+#             data: cache.get(url)
+#           }
+#       put: (key, value)->
+#         cache.put key, value
+#     }
+#     return self
+# ]
+
 .factory 'SideMenuSwitcher', ['$window',
 ($window)->
 
@@ -78,7 +103,7 @@ angular
   }
   return self
 ]
-.config ($stateProvider, $urlRouterProvider)->
+.config ['$stateProvider', '$urlRouterProvider', ($stateProvider, $urlRouterProvider)->
   $stateProvider
     .state('app', {
       url: "/app",
@@ -392,7 +417,7 @@ angular
   $urlRouterProvider.otherwise('/app/top-picks/top-picks');  
   # $urlRouterProvider.otherwise('/app/settings');  
 
-
+]
 .controller 'AppCtrl', [
   '$scope', '$rootScope', '$timeout', '$q', 
   '$ionicPlatform', '$ionicModal', '$ionicLoading'
