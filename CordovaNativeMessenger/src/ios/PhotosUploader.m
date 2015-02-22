@@ -389,7 +389,11 @@ static CGFloat defaultCompressionQuality = 0.7;
                     info.asset = obj.localIdentifier;
                     [self addSessionTaskInfo:info];
                     
-                    NSURLSessionUploadTask *task = [self parseUplaodTaskForFilePath:fullPath additinalHeaderKeys:@{@"X-Image-Identifier":obj.localIdentifier}];
+                    NSURLSessionUploadTask *task = [self parseUplaodTaskForFilePath:fullPath additinalHeaderKeys:@{
+                            @"X-Image-Identifier":obj.localIdentifier,
+                            @"X-Container-Identifier":options[@"container"]
+                            }
+                                                    ];
                     [task resume];
                     [scheduledTasks addObject:task];
                     
@@ -407,12 +411,37 @@ static CGFloat defaultCompressionQuality = 0.7;
 }
 
 -(NSURLSessionUploadTask *)parseUplaodTaskForFilePath:(NSString *)filePath additinalHeaderKeys:(NSDictionary *)additionalKeys {
-    NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", filePath.lastPathComponent];
+    NSString *path = [NSString stringWithFormat:@"http://app.snaphappi.com:8765/api/containers/%@/upload", additionalKeys[@"X-Container-Identifier"]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60];
     [request setHTTPMethod:@"POST"];
     [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-Application-Id"];
     [request addValue:parseRESTAPIKey forHTTPHeaderField:@"X-Parse-REST-API-Key"];
-    [request addValue:@"image/jpeg" forHTTPHeaderField:@"Content-Type"];
+    /**
+     * Need to POST as multipart/form-data
+     * example Request Payload (from console):
+     * (note: owner and UUID fields were sent as part of formData, but we are also sending in header via additionalKeys, see line:393
+       )
+     
+     ------WebKitFormBoundaryvAFxE3BqNj661ERe
+     Content-Disposition: form-data; name="owner"
+     
+     DEQBCEektV
+     ------WebKitFormBoundaryvAFxE3BqNj661ERe
+     Content-Disposition: form-data; name="UUID"
+     
+     2A456415-B1AE-424A-9795-A0625A768EBD/L0/001
+     ------WebKitFormBoundaryvAFxE3BqNj661ERe
+     Content-Disposition: form-data; name="file"; filename="IMG_1422.JPG"
+     Content-Type: image/jpeg
+     
+     
+     ------WebKitFormBoundaryvAFxE3BqNj661ERe--
+     
+     
+     */
+    NSString *boundary = [NSString stringWithFormat:@"Boundary-%@", [[NSUUID UUID] UUIDString]];
+    NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary ];
+    [request addValue:contentType forHTTPHeaderField:@"Content-Type"];
     [additionalKeys enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         [request addValue:obj forHTTPHeaderField:key];
     }];

@@ -253,6 +253,7 @@ angular.module('ionBlankApp')
         maxWidth: 720
         quality: 0.7
         allowsCellularAccess: false
+        container: null # use User.id 
         CHUNKSIZE: 100
       setCfg: (uploadCfg)->
         _bkgFileUploader.use720p(uploadCfg['use-720p-service'])
@@ -356,7 +357,9 @@ angular.module('ionBlankApp')
         _.defaults( _bkgFileUploader._scheduled, _.object(assetIds) )
           
         # enabled
+
         options = _.pick _bkgFileUploader.cfg, ['allowsCellularAccess', 'maxWidth', 'auto-rotate', 'quality']  
+        options['container'] = $rootScope.sessionUser.id
         return PLUGIN.scheduleAssetsForUploadP(assetIds, options).then ()->
           # console.log "\n>>> otgUploader.queueP(): scheduleAssetsForUploadP complete"
           return _.keys _bkgFileUploader._scheduled
