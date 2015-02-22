@@ -168,7 +168,12 @@ angular.module('ionBlankApp')
     _getAsPhotos = (uuids)->
       return _.map uuids, (uuid)->
         photo = _lookupPhoto[uuid]
-        console.warn ">>> otgMoment photo not found, UUID="+uuid if !photo
+        if !photo
+          photo = _.find(cameraRoll.map(),{UUID:uuid})
+          if !photo
+            console.warn ">>> otgMoment photo not found, UUID="+uuid if !photo
+          else 
+            _lookupPhoto[uuid] = photo # add NEW photo from cameraRoll
         return photo
 
     _getMomentHeight = (moment, index)->
