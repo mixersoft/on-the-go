@@ -313,7 +313,8 @@ angular.module('ionBlankApp')
           self.remaining()
 
         # DONE if uploader paused
-        return  $q.when([]) if _bkgFileUploader.isEnabled == false
+        if _bkgFileUploader.isEnabled == false
+          return  $q.when([]) 
 
         # then schedule another chunk if the queue is running low
         scheduled = _.each _bkgFileUploader._scheduled, (v,k)->

@@ -416,32 +416,7 @@ static CGFloat defaultCompressionQuality = 0.7;
     [request setHTTPMethod:@"POST"];
     [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-Application-Id"];
     [request addValue:parseRESTAPIKey forHTTPHeaderField:@"X-Parse-REST-API-Key"];
-    /**
-     * Need to POST as multipart/form-data
-     * example Request Payload (from console):
-     * (note: owner and UUID fields were sent as part of formData, but we are also sending in header via additionalKeys, see line:393
-       )
-     
-     ------WebKitFormBoundaryvAFxE3BqNj661ERe
-     Content-Disposition: form-data; name="owner"
-     
-     DEQBCEektV
-     ------WebKitFormBoundaryvAFxE3BqNj661ERe
-     Content-Disposition: form-data; name="UUID"
-     
-     2A456415-B1AE-424A-9795-A0625A768EBD/L0/001
-     ------WebKitFormBoundaryvAFxE3BqNj661ERe
-     Content-Disposition: form-data; name="file"; filename="IMG_1422.JPG"
-     Content-Type: image/jpeg
-     
-     
-     ------WebKitFormBoundaryvAFxE3BqNj661ERe--
-     
-     
-     */
-    NSString *boundary = [NSString stringWithFormat:@"Boundary-%@", [[NSUUID UUID] UUIDString]];
-    NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary ];
-    [request addValue:contentType forHTTPHeaderField:@"Content-Type"];
+    [request addValue:@"image/jpeg" forHTTPHeaderField:@"Content-Type"];
     [additionalKeys enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         [request addValue:obj forHTTPHeaderField:key];
     }];
