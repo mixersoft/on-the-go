@@ -241,7 +241,7 @@ angular
       stashSize: (repo='appCache')->
         stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
         total = _.reduce self[stashKey], (total, o)->
-            return total += o.fileSize
+            return total += o.fileSize || 0
           , 0
         return total
 

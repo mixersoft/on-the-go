@@ -306,7 +306,7 @@ angular.module('ionBlankApp')
 
     $scope.$on 'cameraRoll.loadPhotosComplete', (ev, options)-> 
       return if options.type != 'moments'
-      $scope.$broadcast('scroll.refreshComplete')
+      $rootScope.$broadcast('scroll.refreshComplete')
       # console.log "\n\n %%% watched cameraRoll.moments change, update filter %%% \n\n"
       return
 

@@ -171,7 +171,7 @@ angular.module('ionBlankApp')
             scope.swipeCard.swipeOver('right')
       refresh: ()->
         $scope.on.reloadDataSet() 
-        $scope.$broadcast('scroll.refreshComplete')
+        $rootScope.$broadcast('scroll.refreshComplete')
 
     }
 

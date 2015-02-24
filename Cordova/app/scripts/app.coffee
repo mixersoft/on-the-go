@@ -516,13 +516,13 @@ angular
           # console.log ">>> SYNC_cameraRoll_Orders"
           cameraRoll.loadCameraRollP(null, 'force').finally ()->
             if !$scope.deviceReady.isOnline()
-              $scope.$broadcast('sync.debounceComplete')
+              $rootScope.$broadcast('sync.debounceComplete')
               return 
               
             otgWorkorderSync.SYNC_ORDERS(
               $scope, 'owner', 'force'
               , ()->
-                $scope.$broadcast('sync.debounceComplete')
+                $rootScope.$broadcast('sync.debounceComplete')
                 return
             )
           return
@@ -605,11 +605,22 @@ angular
         return $scope.app.appPreferences['store'] newVal, oldVal
       , true
 
+    $scope.$on 'user:sign-out', (args)->
+      console.log "$broadcast user:sign-out received"
+      $rootScope.counts = {
+        'top-picks': 0
+        uploaderRemaining: 0
+        orders: 0
+      }
+      cameraRoll.loadCameraRollP(null, 'force')
+      return
 
+    $scope.$on 'sync.cameraRollComplete', (args)->
+      $scope.app.localStorageSnapshot()
 
     $scope.$on 'sync.debounceComplete', ()->
         $scope.hideLoading()
-        $scope.$broadcast('scroll.refreshComplete')
+        $rootScope.$broadcast('scroll.refreshComplete')
         $scope.app.localStorageSnapshot()
         return     
 
@@ -799,8 +810,6 @@ angular
         # for reload cameraRoll.map() from localStorage
         _cancel = $timeout ()->
             cameraRoll.loadCameraRollP(null, false)
-            .done ()->
-              # console.log "\n @@@load cameraRoll thumbnails loaded from init timer"
             return
           , 3000
         _off = $rootScope.$on 'cameraRoll.beforeLoadMomentThumbnails', (ev, cancel)->
@@ -825,6 +834,7 @@ angular
       user: $rootScope.user
       cameraRoll: cameraRoll
       workorders: otgWorkorderSync._workorderColl
+      woSync: otgWorkorderSync
       imgCache: imageCacheSvc
       ls: $localStorage
     }
