@@ -21,7 +21,8 @@ angular.module('ionBlankApp')
       IMAGE_SIZE = format || 'thumbnail'
 
       # priorities: stashed FileURL > cameraRoll.dataURL > photo.src
-      photo = element.scope().item
+      scope = element.scope()
+      photo = scope.item || scope.photo  # TODO: refactor in TopPicks, use scope.photo
 
       isWorkorder = $rootScope.$state.includes('app.workorders') || $rootScope.$state.includes('app.orders')
       isWorkorderMoment = IMAGE_SIZE=='thumbnail' && isWorkorder
@@ -219,8 +220,8 @@ angular.module('ionBlankApp')
 .directive 'otgMomentDateRange', [
 # renders moment as a dateRange, used in Orders or Workorders  
 # adds an end-cap not found in otgMoment
-  'otgData'
-  (otgData)->
+  'otgData', 'cameraRoll'
+  (otgData, cameraRoll)->
 
     options = defaults = {
       breakpoint: 480
@@ -308,6 +309,16 @@ angular.module('ionBlankApp')
         if options.rows == 2
           summary.value.push sampled.splice(0, options.thumbnailLimit)
         summary.value.push sampled
+
+      # get updated values from cameraRoll.map()
+      _.each summary.value[0], (o)->
+        photo = _.find( cameraRoll.map(), {UUID: o.UUID})
+        _.extend( o, photo) if photo  
+        if o.from == 'PARSE' && o.src.indexOf('snaphappi.com') > -1
+          parts = o.src.split('/')
+          parts.push( '.thumbs/sq~' + parts.pop() )
+          o.src = parts.join('/')
+        return
       return summary
 
     self = {
