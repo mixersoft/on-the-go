@@ -29,22 +29,28 @@ angular.module('ionBlankApp')
       # WARNING: must be after $localStorage.waitP()
       isBrowser = $localStorage['device'].isBrowser
 
-      # special condition, Editor Workstation with no local photos
-      if isBrowser && photo?.from == 'PARSE' 
-        # orders or workorders from PARSE, use photo.src
-        if format == 'thumbnail'
-          # TODO: workorder thumbnails should be resampled.
-          "skip"
-        url = cameraRoll.addParseURL(photo, format) # cache photo.src into dataURL
-        return element.attr('src', url)  
+      if isWorkorderMoment
+        mappedPhoto = _.find( cameraRoll.map(), {UUID: photo.UUID})
+        _.extend( photo, mappedPhoto) if mappedPhoto  
 
-      if isBrowser && photo && photo.from == 'PARSE' 
-        # DEBUG mode on browser
-        return element.attr('src', photo.src)  
+        # get updated values from cameraRoll.map()
+        if _.isEmpty photo.src
+          thumbSrc = ''
+        else if photo.src.indexOf('snaphappi.com') == -1
+          thumbSrc = ''
+        else if photo.src.indexOf('/sq~') > -1
+          thumbSrc = photo.src
+        else 
+          parts = photo.src.split('/')
+          parts.push( '.thumbs/sq~' + parts.pop() )
+          thumbSrc = photo.src = parts.join('/')
+        
+        return element.attr('src', thumbSrc)
+      if isWorkorder
+        return element.attr('src', photo.src) 
 
       # return if isBrowser && !photo # digest cycle not ready yet  
-
-      if isBrowser
+      if isBrowser && !isWorkorder
         return _useLoremPixel(element, UUID, format)
 
 
@@ -310,15 +316,6 @@ angular.module('ionBlankApp')
           summary.value.push sampled.splice(0, options.thumbnailLimit)
         summary.value.push sampled
 
-      # get updated values from cameraRoll.map()
-      _.each summary.value[0], (o)->
-        photo = _.find( cameraRoll.map(), {UUID: o.UUID})
-        _.extend( o, photo) if photo  
-        if o.from == 'PARSE' && o.src.indexOf('snaphappi.com') > -1
-          parts = o.src.split('/')
-          parts.push( '.thumbs/sq~' + parts.pop() )
-          o.src = parts.join('/')
-        return
       return summary
 
     self = {
