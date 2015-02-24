@@ -149,7 +149,18 @@ angular.module('ionBlankApp')
           _parseFileUploader._uploadNextP()
         return _parseFileUploader.isEnabled          
 
-      queueP: (assetIds)->
+      queueP: (sync)->
+        sync =_.defaults (sync || {}) , {
+          'addFile':[]
+          'complete':[]
+          'remove':[]
+        }
+
+        # remove 'complete', 'remove' from queue
+        removeFromQueue = sync['complete'].concat sync['remove']
+        _parseFileUploader._photoFileQueue = _.difference _parseFileUploader._photoFileQueue, removeFromQueue
+
+        assetIds = sync['addFile']
         # entrypoint: called by otgWorkorderSync.queueDateRangeFilesP
         # queue immediately, 
         # but uploader must check isEnable before each upload
@@ -293,11 +304,26 @@ angular.module('ionBlankApp')
         return _bkgFileUploader._readyToSchedule
 
 
-      queueP: (assetIds=[])->
+      # @param sync Object, sync = {queued:[], complete:[], }
+      queueP: (sync)->
+        sync =_.defaults (sync || {}) , {
+          'addFile':[]
+          'complete':[]
+          'remove':[]
+        }
+        assetIds = sync['addFile']
 
         # entrypoint: called by otgWorkorderSync.queueDateRangeFilesP
         # called by enable() and onNetworkAccessChanged() > enable()
         # otgWorkorderSync.queueDateRangeFilesP(sync) OR _bkgFileUploader.enable(true)
+
+        # remove 'complete', 'remove' from queue
+        removeFromQueue = sync['complete'].concat sync['remove']
+        _bkgFileUploader._readyToSchedule = _.difference _bkgFileUploader._readyToSchedule, removeFromQueue
+        _.each removeFromQueue, (UUID)->
+          _bkgFileUploader._complete[UUID] = 1
+          delete _bkgFileUploader._scheduled[UUID]
+
 
         #   promise = otgUploader.queueP( sync['addFile'] )
         # add to _readyToSchedule queue if isEnabled == false
@@ -480,45 +506,67 @@ angular.module('ionBlankApp')
           # success: 1
           # url: "http://files.parsetfss.com/tfss....jpg"        
         try
-          # refactor: otgWorkorderSync.queueDateRangeFilesP() callbacks
+          # parse PhotoObj.src handled by image-store
+          _bkgFileUploader.queueP() 
           photo = {
             UUID: resp.asset
-            src: if resp.success then resp.url else resp.message || 'error: native-uploader'
           }
-          # console.log "\n\n >>> oneCompleteP" + JSON.stringify resp
+          if !resp.success && resp.errorCode == ERROR_CANCELLED
+            # add back to _readyToSchedule
+            _bkgFileUploader.schedule(photo.UUID,'front')
+          else if !resp.success # resp.errorCode < 0
+            _bkgFileUploader._complete[photo.UUID] = resp.errorCode  || resp.message # errorCode < 0
+            _bkgFileUploader.oneError(resp)
+          else 
+            _bkgFileUploader._complete[photo.UUID] = 1
+            self.callbacks.onEach(resp) if self.callbacks.onEach
 
-          return otgParse.updatePhotoP( photo, 'src')
-          .then null, (err)->
-            return $q.reject(err)
-          .then (photos)-> # array of photoObj
-            # update JS queue
-            # remove from  _bkgFileUploader._scheduled and save on _complete
+          delete _bkgFileUploader._scheduled[photo.UUID] 
+          remaining = self.remaining()
+          if remaining == 0
+            $timeout( _bkgFileUploader.allComplete )
+          return $q.when(photo)
 
-            # schedule more, as necessary
-            _bkgFileUploader.queueP() 
+
+          # # refactor: otgWorkorderSync.queueDateRangeFilesP() callbacks
+          # photo = {
+          #   UUID: resp.asset
+          #   src: if resp.success then resp.url else resp.message || 'error: native-uploader'
+          # }
+          # # console.log "\n\n >>> oneCompleteP" + JSON.stringify resp
+
+          # return otgParse.updatePhotoP( photo, 'src')
+          # .then null, (err)->
+          #   return $q.reject(err)
+          # .then (photos)-> # array of photoObj
+          #   # update JS queue
+          #   # remove from  _bkgFileUploader._scheduled and save on _complete
+
+          #   # schedule more, as necessary
+          #   _bkgFileUploader.queueP() 
 
             
-            if !resp.success && resp.errorCode == ERROR_CANCELLED
-              # add back to _readyToSchedule
-              _bkgFileUploader.schedule(photo.UUID,'front')
-            else if !resp.success # resp.errorCode < 0
-              _bkgFileUploader._complete[photo.UUID] = resp.errorCode  || resp.message # errorCode < 0
-              _bkgFileUploader.oneError(resp)
-            else 
-              _bkgFileUploader._complete[photo.UUID] = 1
-              self.callbacks.onEach(resp) if self.callbacks.onEach
+          #   if !resp.success && resp.errorCode == ERROR_CANCELLED
+          #     # add back to _readyToSchedule
+          #     _bkgFileUploader.schedule(photo.UUID,'front')
+          #   else if !resp.success # resp.errorCode < 0
+          #     _bkgFileUploader._complete[photo.UUID] = resp.errorCode  || resp.message # errorCode < 0
+          #     _bkgFileUploader.oneError(resp)
+          #   else 
+          #     _bkgFileUploader._complete[photo.UUID] = 1
+          #     self.callbacks.onEach(resp) if self.callbacks.onEach
 
-            delete _bkgFileUploader._scheduled[photo.UUID] 
-            remaining = self.remaining()
-            if remaining == 0
-              $timeout( _bkgFileUploader.allComplete )
-            return photos
-          .then null, (err)->
-              console.warn "\n\noneCompleteP otgParse.updatePhotoP error"
-              console.warn err
-              _bkgFileUploader._complete[photo.UUID] = err.message || err
-              _bkgFileUploader.oneError(err)
-              return $q.reject(err)
+          #   delete _bkgFileUploader._scheduled[photo.UUID] 
+          #   remaining = self.remaining()
+          #   if remaining == 0
+          #     $timeout( _bkgFileUploader.allComplete )
+          #   return photos
+          # .then null, (err)->
+          #     console.warn "\n\noneCompleteP otgParse.updatePhotoP error"
+          #     console.warn err
+          #     _bkgFileUploader._complete[photo.UUID] = err.message || err
+          #     _bkgFileUploader.oneError(err)
+          #     return $q.reject(err)
         catch e
           return $q.reject(e)
 

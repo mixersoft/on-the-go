@@ -332,7 +332,7 @@ angular
           sync['addFile'] = _.difference sync['queued'], queuedAssetIds
           sync['addFile'] = sync['addFile'].concat _.difference sync['errors'], queuedAssetIds if retryErrors
 
-          promise = otgUploader.uploader.queueP( sync['addFile'])
+          promise = otgUploader.uploader.queueP( sync )
           .then (resp)->
             return dfd.resolve(sync)
           .catch (err)->
