@@ -31,6 +31,35 @@ angular.module('ionBlankApp')
         return d.toJSON() if asJSON
         return d
 
+      parseIOSCollections: (collections)->
+        # expecting [ {startDate: , endDate:, localizedTitle: , localizedLocationNames: , moments: [] , collectionListSubtype: , collectionListType: },{}]
+        # moments = [ {startDate: , endDate:, localizedLocationNames: , "localizedTitle" , assetCollectionSubtype: ,assetCollectionType: ,assets: ,estimatedAssetCount: }, {} ]
+        # parsed = []
+        byDate = {}
+        _.each collections, (collection)->
+          # oneC = _.pick collection, ['startDate', 'endDate', 'localizedTitle', 'localizedLocationNames']
+          # oneC.moments = []
+          _.each collection.moments, (moment)->
+            oneM = _.pick moment, ['startDate' , 'endDate', 'localizedTitle', 'localizedLocationNames']
+            return if !oneM['localizedTitle']
+
+            oneM.count = moment['estimatedAssetCount']
+            dates = _.unique [oneM.startDate, oneM.endDate]  # TODO: fill in the dateRange
+            _.each dates, (date)->
+              byDate[date] = [0] if !byDate[date]
+              lastCount = byDate[date].shift()
+              byDate[date] = _.unique byDate[date].concat [oneM['localizedTitle']], oneM['localizedLocationNames']
+              byDate[date].unshift( lastCount + oneM.count )
+              return
+
+            return 
+          return
+          # parsed.push oneC
+          # return { date: [ count, label, loc, loc ], date:[], etc. }
+        return byDate
+
+
+
       mapDateTakenByDays: (photos )->
         ## in: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
         # out: {2014-07-14:[{dateTaken: UUID: }, ]}

@@ -338,6 +338,13 @@ otg-moment {
       padding: 0;
     }
   }
+  .moment-label {
+    font-family: "Helvetica Neue",Roboto,sans-serif;
+    font-size: 0.9em;
+    text-overflow:ellipsis;
+    overflow:hidden;
+    white-space:nowrap;
+  }
   .item-complex .item-content {
     padding: 0;
   }

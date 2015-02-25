@@ -654,7 +654,9 @@ angular
 
     _LOAD_BROWSER_TOOLS = ()->
       # load TEST_DATA
-      if $rootScope.user?.role != 'editor'
+      if $rootScope.user?.role == 'editor'
+        'skip'
+      else
         # console.log "\n\n *** loading TEST_DATA: TODO: MOVE TO _LOAD_BROWSER_TOOLS ***\n\n"
         cameraRoll.orders = TEST_DATA.orders
         photos_ByDateUUID = TEST_DATA.cameraRoll_byDate

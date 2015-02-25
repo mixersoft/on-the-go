@@ -106,8 +106,7 @@ angular
 .factory 'cameraRoll', [
   '$q', '$timeout', '$rootScope', 'deviceReady', 'PLUGIN_CAMERA_CONSTANTS', 'snappiMessengerPluginService', 'imageCacheSvc'
   'TEST_DATA', 'otgData', 'appConsole'
-  ($q, $timeout, $rootScope, deviceReady, CAMERA, snappiMessengerPluginService, imageCacheSvc, 
-    TEST_DATA, otgData, appConsole)->
+  ($q, $timeout, $rootScope, deviceReady, CAMERA, snappiMessengerPluginService, imageCacheSvc, TEST_DATA, otgData, appConsole)->
     _getAsLocalTime = (d, asJSON=true)->
         d = new Date() if !d    # now
         d = new Date(d) if !_.isDate(d)
@@ -135,6 +134,72 @@ angular
         self._mapAssetsLibrary = angular.copy snapshot if `snapshot!=null`
         return self._mapAssetsLibrary
 
+      'iOSCollections': {
+        ## methods specific to iOS photos framework collections for GPS labels
+        _raw: []
+        # {'2015-02-22':[ count, label, location, location, ... ] }
+        _parsed: {}
+
+
+        getLabelForDates: (dates, sort='weight')->
+          byDate = self.iOSCollections.getByDate()
+          byDate['2014-09-08'] = byDate['2015-02-17'] 
+          byDate['2014-09-07'] = byDate['2015-02-19'] 
+          byDate['2014-09-06'] = byDate['2015-02-18'] 
+
+
+          switch sort
+            when 'weight'
+              dates.sort().reverse()
+              byWeight = _.reduce dates, (result, date)->
+                  return result if !byDate[date]
+                  [count, label, locations...] = byDate[date]
+                  result.push {date: date, count: byDate[date][0] }
+                  return result
+                , []
+              byWeight = _.sortBy byWeight, 'count'
+              byWeight.reverse()              
+
+              # dates = dates.sort()
+              dates = _.pluck byWeight, 'date'
+            when 'date'
+              dates.sort()
+
+          label = _.reduce dates, (result, date)->
+
+              return result if !byDate[date]
+              [count, label, locations...] = byDate[date]
+
+              result.labels.push label
+              result.locations = result.locations.concat locations
+              return result;
+            , {
+              labels: []
+              locations: []
+            }
+
+          _.each _.keys( label), (key)-> label[key] = _.unique label[key]
+          return label
+
+        getByDate: ()-> 
+          return self.iOSCollections._parsed
+
+        mapP: (force=null)->
+          if !_.isEmpty(self.iOSCollections._parsed) && !force 
+            return $q.when(self.iOSCollections._parsed) 
+
+          start = new Date().getTime()
+          if deviceReady.device().isBrowser
+            promise = $q.when(TEST_DATA.iosCollections)
+          else
+            promise = snappiMessengerPluginService.mapCollectionsP()
+
+          return promise.then (collections)->
+            self.iOSCollections._raw = collections
+            self.iOSCollections._parsed = otgData.parseIOSCollections( self.iOSCollections._raw )
+            console.log "\nCameraRoll.iOSCollections.mapP() elapsed=", (new Date().getTime() - start)
+            return self.iOSCollections._parsed   
+      }
       mapP: (options, force=null)->
         if !force && self._mapAssetsLibrary?
           $rootScope.$broadcast('sync.cameraRollComplete', {changed:false})
@@ -146,7 +211,7 @@ angular
             self._mapAssetsLibrary = mapped 
             $rootScope.$broadcast('sync.cameraRollComplete', {changed:true})
           else if force
-            # NOTE: this will reflect deletions if we don't merge
+            # NOTE: this will reflect deletions if we ddebug.on't merge
             self._mapAssetsLibrary = mapped 
             $rootScope.$broadcast('sync.cameraRollComplete', {changed:true})
           else
@@ -175,6 +240,10 @@ angular
 
         start = new Date().getTime()
         return self.mapP(options, force)
+        .then (mapped)->
+          forceCollection = $rootScope.$state.includes('app.choose.camera-roll') && force
+          promise = self.iOSCollections.mapP(forceCollection)
+          return mapped
         .then (mapped)->
           promise = self.loadFavoritesP(5000) if options.type.indexOf('favorites') > -1
           # don't wait for promise
@@ -663,10 +732,6 @@ angular
       SERIES_DELAY_MS: 100
 
       on : 
-        XXXphotoStreamChange : (handler)-> 
-          #  updated:{array of phasset ids}, removed:{array of phasset ids}, added:{array of phasset ids}
-          return window.Messenger.on( 'photoStreamChange', handler )
-
 
         didBeginAssetUpload : (handler)-> 
           # called AFTER background task is scheduled, see also: didFailToScheduleAsset()
@@ -699,10 +764,6 @@ angular
           # resp.isMissing==true if UUID does not exist, fail BEFORE task scheduling
           # otherwise, check resp.errorCode
           return window.Messenger.on( 'didFailToScheduleAsset', handler )
-
-        XXXunscheduleAssetsForUpload : (handler)-> 
-          #   assets:{array of phasset ids}
-          return window.Messenger.on( 'unscheduleAssetsForUpload', handler )
 
         #
         #  native Calendar control
@@ -805,6 +866,24 @@ angular
         # onError: UUID not found
         return _MessengerPLUGIN._callP( 'removeSessionTaskInfoWithIdentifier', UUID) 
 
+
+      mapCollectionsP: ()->
+        # expecting [ {startDate: , endDate:, localizedTitle: , localizedLocationNames: , moments: [] , collectionListSubtype: , collectionListType: },{}]
+        # moments = [ {startDate: , endDate:, localizedLocationNames: , "localizedTitle" , assetCollectionSubtype: ,assetCollectionType: ,assets: ,estimatedAssetCount: }, {} ]
+        # console.log "mapCollections() calling window.Messenger.mapCollections(assets)"
+        return deviceReady.waitP().then (retval)->
+          dfd = $q.defer()
+          return $q.reject "ERROR: window.Messenger Plugin not available" if !(window.Messenger?.mapCollections)
+          # console.log "about to call Messenger.mapAssetsLibrary(), Messenger.properties=" + JSON.stringify _.keys window.Messenger.prototype 
+          window.Messenger.mapCollections (mapped)->
+              ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
+              # attributes: UUID, dateTaken, mediaType, MediaSubTypes, hidden, favorite, originalWidth, originalHeight
+              # console.log "\n *** mapAssetsLibrary Got it!!! length=" + mapped.length
+              return dfd.resolve ( mapped )
+            , (error)->
+              return dfd.reject("ERROR: Messengerm.mapCollections(), msg=" + JSON.stringify error)
+          # console.log "called Messenger.mapAssetsLibrary(), waiting for callbacks..."
+          return dfd.promise
 
       mapAssetsLibraryP: (options={})->
         # console.log "mapAssetsLibrary() calling window.Messenger.mapAssetsLibrary(assets)"

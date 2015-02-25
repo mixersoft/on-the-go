@@ -8,6 +8,7 @@
         collection-item-height="getMomentHeight(moment, $index)"
         >
           <ion-item>
+            <div class="moment-label" ng-bind="getMomentLabel(moment)"></div>
             <div class="list-group-item camera-roll-date"
               ng-repeat="day in moment.value"> 
 

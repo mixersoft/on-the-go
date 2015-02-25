@@ -187,9 +187,14 @@ angular.module('ionBlankApp')
       days = moment.value.length
       paddingTop = 10
       padding = 16+1
+      padding += 20 # .moment-label
       h = days * (this.options.thumbnailSize+1) + padding * 2
       # console.log "i="+index+", moment.key="+moment.key+", h="+h
       return h  
+
+    _getMomentLabel = (moment)->
+      label = cameraRoll.iOSCollections.getLabelForDates(_.pluck( moment.value, 'key'))
+      return label.labels.concat(label.locations).join(', ')    
 
     _getOverflowPhotos = (photos)->
       # console.log "\n\n_getOverflowPhotos  ** photo.length=" + photos.length+"\n"
@@ -206,13 +211,16 @@ angular.module('ionBlankApp')
       link: (scope, element, attrs) ->
         # element.text 'this is the moment directive'
         scope.options = _setSizes(element)
-        scope.getAsPhotos = _getAsPhotos
         if _lookupPhoto==null
           _lookupPhoto = _.indexBy( otgData.parsePhotosFromMoments( cameraRoll.moments ), 'UUID')
-        scope.getMomentHeight = _getMomentHeight
-        scope.getOverflowPhotos = _getOverflowPhotos
-        scope.otgWorkorder = otgWorkorder
-        scope.ClassSelected = scope.$parent.ClassSelected
+        _.extend scope, {
+          getAsPhotos: _getAsPhotos
+          getOverflowPhotos :_getOverflowPhotos
+          getMomentHeight: _getMomentHeight
+          getMomentLabel: _getMomentLabel          
+          otgWorkorder: otgWorkorder
+          ClassSelected: scope.$parent.ClassSelected
+        }
         return
       }
 ]
