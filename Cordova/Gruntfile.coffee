@@ -14,20 +14,12 @@ module.exports = (grunt)->
   grunt.registerTask('optimize', [ 
     'copy:optimize'
     'useminPrepare'
+    'concat'
     'uglify'
     'cssmin'
-    # 'cssmin:generated' 
-    # 'concat:app-build'
-    # 'concat:vendor-build'
-    # 'concat:app-min'
-    # 'concat:vendor-min'
-    # 'concat'
     'usemin'
   ])
 
-  uglifyNew = require('grunt-usemin-uglifynew');
-  # grunt.loadNpmTasks('grunt-usemin-uglifynew')
-  
 
   # Configuration
   grunt.config.init
@@ -50,9 +42,11 @@ module.exports = (grunt)->
     FONT_FILES:     '**/font'
     DATA_FILES:     '**/*.json'
 
+
+
     copy:
       optimize:
-        src:'<%= WWW_DIR %>/index.html'
+        src:'<%= APP_DIR %>/index.html'
         dest:'<%= BUILD_DIR %>/index.html'
       #
       # App images from Bower `components` & `client`
@@ -209,7 +203,8 @@ module.exports = (grunt)->
       options: 
         flow: 
           steps: 
-            js: [uglifyNew, 'concat']
+            # js: [uglifyNew, 'concat']
+            js: ['concat', 'uglifyjs']
             css: ['cssmin']
           post: []
 
@@ -217,16 +212,6 @@ module.exports = (grunt)->
       options:
         mangle:
           except: ['**/*.min.js']
-
-    # concat:
-    #   'postGenerated':
-    #     files:
-    #       dest: 'dist/css/vendor-app.min.css'
-    #       src: [ 
-    #         'dist/css/bootstrap.min.css',
-    #         'dist/css/ionic.app.min.css',
-    #         'dist/css/component.min.css'
-    #       ]
 
 
 
@@ -236,8 +221,6 @@ module.exports = (grunt)->
   grunt.loadNpmTasks('grunt-contrib-uglify')
   grunt.loadNpmTasks('grunt-contrib-concat')
 
-  uglifyNew = require('grunt-usemin-uglifynew');
-  # grunt.loadNpmTasks('grunt-usemin-uglifynew')
   
 
   grunt.loadNpmTasks('grunt-usemin')
