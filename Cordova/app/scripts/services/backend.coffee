@@ -353,7 +353,7 @@ angular
 
           promises = []
           if !_.isEmpty(overlapUUIDs)
-            photosColl.filter (ph)->
+            photosColl.each (ph)->
               return if overlapUUIDs.indexOf( ph.attributes.UUID ) == -1
               oldDeviceId = ph.attributes.deviceId
               return if oldDeviceId == update.deviceId

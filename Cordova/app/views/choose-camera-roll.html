@@ -17,7 +17,12 @@
     <div class="item item-text-wrap"
     >
       {{i18n.tr('header-card').body}}
+
+      <div class="assertive text-center" ng-if="user.role=='editor'&& deviceReady.device().isBrowser">
+        Disabled in Workorder-Editor Mode
+      </div>
     </div>
+    
     <div class="item item-divider">
       <p class="fine cursor-pointer" ng-click="on.dontShowHint(this.$parent)"><i class="icon ion-close-circled"> {{i18n.tr('dont-show','app')}}</i></p>
     </div>
@@ -25,4 +30,5 @@
   <!-- collection-repeat of moments -->
   <!-- <div ng-include="'views/template/moment.html'"></div> -->
   <otg-moment otg-model="watch.cameraRoll.moments"></otg-moment>
+
 </ion-content> 

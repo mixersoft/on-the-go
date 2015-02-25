@@ -51,6 +51,12 @@ angular.module('ionBlankApp')
       orderBy: 
         key: 'dateTaken'
         reverse: false
+      getHeaderLabel: (photo, keys)->
+        label = _.pick( photo, keys )
+        label.dateTaken = $filter('date')(photo.dateTaken, 'MM/dd/yyyy @ h:mma' ) if label.dateTaken
+        if keys.indexOf('dim') > -1
+          label.dim = [photo.originalWidth, photo.originalHeight].join('x')
+        return photo.headerLabel = JSON.stringify(label).replace(/\"/g,'')
     }      
 
     # use dot notation for prototypal inheritance in child scopes
@@ -90,6 +96,7 @@ angular.module('ionBlankApp')
           $scope.on._info = value
         $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() if $scope.on._info != revert
         return $scope.on._info  
+
 
       notTopPick: (event, item)->
         if event
