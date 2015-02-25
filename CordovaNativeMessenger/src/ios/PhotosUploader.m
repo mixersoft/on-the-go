@@ -349,7 +349,7 @@ static CGFloat defaultCompressionQuality = 0.7;
         if (maxWidth && maxWidth.floatValue > 0 && obj.pixelWidth > maxWidth.floatValue) {
             CGFloat scale = (maxWidth.floatValue / obj.pixelWidth);
             originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
-            CGFloat side = round(obj.pixelHeight * scale);
+            CGFloat side = round(obj.pixelWidth * scale);
             originalImageSize = CGSizeMake(side,side);
         }
         
