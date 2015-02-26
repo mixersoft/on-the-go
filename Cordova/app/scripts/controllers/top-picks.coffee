@@ -31,11 +31,45 @@ angular.module('ionBlankApp')
         return d.toJSON() if asJSON
         return d
 
+      parseIOSCollections: (collections)->
+        # expecting [ {startDate: , endDate:, localizedTitle: , localizedLocationNames: , moments: [] , collectionListSubtype: , collectionListType: },{}]
+        # moments = [ {startDate: , endDate:, localizedLocationNames: , "localizedTitle" , assetCollectionSubtype: ,assetCollectionType: ,assets: ,estimatedAssetCount: }, {} ]
+        # parsed = []
+        byDate = {}
+        _.each collections, (collection)->
+          # oneC = _.pick collection, ['startDate', 'endDate', 'localizedTitle', 'localizedLocationNames']
+          # oneC.moments = []
+          _.each collection.moments, (moment)->
+            oneM = _.pick moment, ['startDate' , 'endDate', 'localizedTitle', 'localizedLocationNames']
+            return if !oneM['localizedTitle']
+
+            oneM.count = moment['estimatedAssetCount']
+            dates = _.unique [oneM.startDate, oneM.endDate]  # TODO: fill in the dateRange
+            _.each dates, (date)->
+              byDate[date] = [0] if !byDate[date]
+              lastCount = byDate[date].shift()
+              byDate[date] = _.unique byDate[date].concat [oneM['localizedTitle']], oneM['localizedLocationNames']
+              byDate[date].unshift( lastCount + oneM.count )
+              return
+
+            return 
+          return
+          # parsed.push oneC
+          # return { date: [ count, label, loc, loc ], date:[], etc. }
+        return byDate
+
+
+
       mapDateTakenByDays: (photos )->
         ## in: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
         # out: {2014-07-14:[{dateTaken: UUID: }, ]}
         return _.reduce photos, (result, o)->
-            if o.dateTaken.indexOf('+')>-1
+            if !o.dateTaken
+              # dateTaken missing, assume Browser, done in _LOAD_BROWSER_TOOLS() 
+              return result
+              # o.dateTaken = new Date().toJSON()[0...10]
+              # datetime = new Date(o.dateTaken) 
+            else if o.dateTaken.indexOf('+')>-1
               datetime = new Date(o.dateTaken) 
               # console.log "compare times: " + datetime + "==" +o.dateTaken
             else 
@@ -312,7 +346,7 @@ angular.module('ionBlankApp')
         return 
 
       DEBOUNCED_cameraRollSnapshot : _.debounce ()->
-          console.log "\n\n >>> DEBOUNCED!!!"
+          # console.log "\n\n >>> DEBOUNCED!!!"
           $scope.$localStorage['cameraRoll'].map = cameraRoll.map()
           return
         , 5000 # 5*60*1000
@@ -334,7 +368,7 @@ angular.module('ionBlankApp')
       if $state.includes('app.top-picks')
         # pickup iOS .favorite
         # TODO: push NEW favorites if we want to share with other devices in WO
-        console.log '@@@ sync.cameraRollComplete, args=' +JSON.stringify _.keys args
+        # console.log '@@@ sync.cameraRollComplete, args=' +JSON.stringify _.keys args
         $scope.on.reloadDataSet()
       return
 
@@ -343,7 +377,7 @@ angular.module('ionBlankApp')
       
     $scope.$on 'sync.ordersComplete', ()->
       if $state.includes('app.top-picks')
-        console.log '@@@ sync.ordersComplete'
+        # console.log '@@@ sync.ordersComplete'
         if $state.includes('app.top-picks.top-picks')
           $scope.on.reloadDataSet() 
         if $state.includes('app.top-picks.shared')
@@ -366,13 +400,13 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
-      console.log '$ionicView.loaded'
+      # console.log '$ionicView.loaded'
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
       # cached view becomes active 
       return if !$scope.deviceReady.isOnline()
-      console.log "\n\n\n %%% ionicView.beforeEnter > app.sync.DEBOUNCED_cameraRoll_Orders "
+      # console.log "\n\n\n %%% ionicView.beforeEnter > app.sync.DEBOUNCED_cameraRoll_Orders "
       $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
 
     $scope.$on '$ionicView.leave', ()->
@@ -384,7 +418,6 @@ angular.module('ionBlankApp')
     init = ()->
       if _.isEmpty cameraRoll.map()
         cameraRoll.map( $scope.$localStorage['cameraRoll'].map )
-        console.log "@@@ restoring localStorage['cameraRoll'].map"
 
       $scope.config['app-bootstrap'] = false
       $scope.deviceReady.waitP().then ()->

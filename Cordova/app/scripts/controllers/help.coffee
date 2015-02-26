@@ -8,7 +8,7 @@
  # Controller of the ionBlankApp
 ###
 angular.module('ionBlankApp')
-.controller 'HelpCtrl', ($scope) ->
+.controller 'HelpCtrl', ['$scope', ($scope) ->
   $scope.label = {
     title: "Resources"
   }
@@ -38,4 +38,5 @@ angular.module('ionBlankApp')
 	    	return true
 
 	}
+]
   

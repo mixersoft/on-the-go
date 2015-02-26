@@ -35,6 +35,10 @@ cordova.define('cordova/plugin/Messenger', function(require, exports, module) {
 		exec(callback, null, "CordovaNativeMessenger", "mapAssetsLibrary", []);
 	};
 
+	Messenger.prototype.mapCollections = function(callback) {
+		exec(callback, null, "CordovaNativeMessenger", "mapCollections", []);
+	};	
+
 	Messenger.prototype.getPhotoById =function(identifier, options, onSuccess, onError) {
 		exec(onSuccess, onError, "CordovaNativeMessenger", "getPhotoById", [identifier, options]);
 	}

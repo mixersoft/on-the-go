@@ -1,5 +1,10 @@
 
 <ion-content id="choose-tab-camera-roll" class="has-footer">
+    <ion-refresher
+      pulling-text=""
+      on-refresh="on.refresh()">
+    </ion-refresher>
+
   <!-- header card  -->
   <swipe-cards><swipe-card class="card header-card" fly="out"
     on-destroy="on.dontShowHint(this, keep)"
@@ -12,12 +17,18 @@
     <div class="item item-text-wrap"
     >
       {{i18n.tr('header-card').body}}
+
+      <div class="assertive text-center" ng-if="user.role=='editor'&& deviceReady.device().isBrowser">
+        Disabled in Workorder-Editor Mode
+      </div>
     </div>
+    
     <div class="item item-divider">
       <p class="fine cursor-pointer" ng-click="on.dontShowHint(this.$parent)"><i class="icon ion-close-circled"> {{i18n.tr('dont-show','app')}}</i></p>
     </div>
   </swipe-card></swipe-cards>
   <!-- collection-repeat of moments -->
   <!-- <div ng-include="'views/template/moment.html'"></div> -->
-  <otg-moment otg-model="cameraRoll.moments"></otg-moment>
+  <otg-moment otg-model="watch.cameraRoll.moments"></otg-moment>
+
 </ion-content> 

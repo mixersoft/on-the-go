@@ -119,14 +119,14 @@
         </p>
       </li>  
       <li class="item">
-      Saved Photos: <span>{{menu.archived.count}}</span> Photos, <span>{{menu.archived.count}}</span> MB
+      Saved Photos: <span ng-bind="watch.archive.count"></span> Photos, <span ng-bind="watch.archive.size"></span> MB
       <button class="button button-assertive button-full" ng-class="{disabled:!watch.archive.count}">
-        <i class="icon" ng-class="watch.isWorking.clearArchive ? 'ion-loading-b' : 'ion-ios-trash' "></i> 
+        <i class="icon" ng-class="watch.isWorking.clearArchive ? 'ion-loading-b' : 'ion-ios-trash' "></i>
         Remove Saved Photos
       </button>
       </li>
       <li class="item">
-      App Cache: <span>{{watch.imgCache.count}}</span> Files, <span>{{watch.imgCache.size}}</span>
+      App Cache: <span ng-bind="watch.imgCache.count"></span> Files, <span ng-bind="watch.imgCache.size"></span>
       <button class="button button-assertive button-full" ng-class="{disabled: !watch.imgCache.count}"
       ng-click="on.clearCache()">
         <i class="icon" ng-class="watch.isWorking.clearAppCache ? 'ion-loading-b' : 'ion-ios-trash' "></i> 
@@ -149,6 +149,21 @@
         <p class='fine text-stable' ng-show="config.sharing['use-720p-sharing']==false">Share full-resolution photo for best image quality.
         </p>
       </li>
+
+      <li class="item item-divider" ng-click="on.toggleShowAdvanced()">Advanced</li>
+      <div ng-class='{invisible:!watch.showAdvanced}'>
+        <li class="item">
+        <button class="button button-assertive button-full"
+        ng-click="on.resetDeviceId()" ng-class="{disabled: deviceReady.device().isBrowser}">
+        <i class="icon" ng-class="watch.isWorking.resetDeviceId ? 'ion-loading-b' : 'ion-settings' "></i>
+           Reset DeviceId
+        </button>
+        <p class='fine text-stable' >
+        Resets the DeviceId in our DB so we know which photos are on your device.
+        </p>
+        </li>
+      </div>
+
     </ul>
   </ion-content>
 </ion-view>

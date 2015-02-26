@@ -3,15 +3,23 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
-    <title></title>
+    <meta name="description"            content="On-the-Go by Snaphappi">
+    <meta name="author"                 content="michael@snaphappi.com">
+    <title>On-the-Go App</title>
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon" />
+
 
 
     <!-- compiled css output -->
-    <link href="css/bootstrap.css" rel="stylesheet">
-    <link href="css/ionic.app.css" rel="stylesheet">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/ionic.app.min.css" rel="stylesheet">
+    <!-- build:css css/components.min.css -->
+    <link href="components/angular-native-picker/build/themes/default.css" rel="stylesheet">
+    <link href="components/angular-native-picker/build/themes/default.date.css" rel="stylesheet">
+    <!-- endbuild -->
 
     <!-- ionic/angularjs js -->
-    <script src="lib/ionic/js/ionic.bundle.js"></script>
+    <script src="lib/ionic/js/ionic.bundle.min.js"></script>
 
     <!-- cordova script (this will be a 404 during development) -->
     <script src="components/ngCordova/dist/ng-cordova.js"></script>
@@ -24,14 +32,23 @@
 
 
     <!-- bower:js -->
-    <script src="components/lodash/dist/lodash.compat.js"></script>
+    <script src="components/lodash/lodash.min.js"></script>
     <!-- endbower -->
 
 
+    <!-- build:js js/vendor-BODY.min.js -->
+    <script src="vendor-js/ionic.swipecards-h.js"></script>
+    <script src="components/ngstorage/ngStorage.js"></script>
+    <script src="components/parse-js-sdk/lib/parse.js"></script>
+    <script src="vendor-js/angular-native-datepicker.js"></script>   
+    <script src="vendor-js/resample.js"></script> 
+    <!-- endbuild -->
 
-    <!-- build:js({.tmp,app}) js/scripts.js -->
-    <script src="js/services/backend.js"></script>
+    
+    
+    <!-- build:js js/app.min.js -->
     <script src="js/app.js"></script>
+    <script src="js/services/backend.js"></script>
     <script src="js/controllers/top-picks.js"></script>
     <script src="js/controllers/choose.js"></script>
     <script src="js/controllers/checkout.js"></script>
@@ -41,21 +58,13 @@
     <script src="js/controllers/help.js"></script>
     <script src="js/services/test_data.js"></script>
     <script src="js/directives/app-directives.js"></script>
-    <script src="vendor-js/ionic.swipecards-h.js"></script>
     <script src="js/services/i18n.js"></script>
     <script src="js/services/SnappiAssetsPicker.js"></script>
     <script src="js/services/local-storage.js"></script>
     <script src="js/controllers/workorders/workorders.js"></script>
     <script src="js/controllers/workorders/workorder-photos.js"></script>
-    <script src="components/ngstorage/ngStorage.js"></script>
-    <script src="components/parse-js-sdk/lib/parse.js"></script>
-    <!-- // <script src="components/angular-native-picker/build/angular-datepicker.js"></script> -->
-    <script src="vendor-js/angular-native-datepicker.js"></script>
-    <link href="components/angular-native-picker/build/themes/default.css" rel="stylesheet">
-    <link href="components/angular-native-picker/build/themes/default.date.css" rel="stylesheet">
-
-    <script src="vendor-js/resample.js"></script>
     <!-- endbuild -->
+    
 
     <ion-nav-view class="hide" name="appPartials"></ion-nav-view>
     <ion-nav-view class="hide" name="workorderPartials"></ion-nav-view>

@@ -9,13 +9,11 @@
 ###
 angular.module('ionBlankApp')
 .factory 'otgUploader', [
-  '$timeout', '$q', '$rootScope', '$ionicPlatform', 'otgData', 'otgParse', 'cameraRoll', '$cordovaNetwork', 'deviceReady', 'snappiMessengerPluginService'
+  '$timeout', '$q', '$rootScope', '$ionicPlatform', 'otgData', 'otgParse', 'cameraRoll', '$cordovaNetwork', 
+  'deviceReady', 'snappiMessengerPluginService'
   ($timeout, $q, $rootScope, $ionicPlatform, otgData, otgParse, cameraRoll, $cordovaNetwork, 
     deviceReady, snappiMessengerPluginService)->
 
-    # ### private
-    _CHUNKSIZE = 50 # set to $rootScope.config['upload']['CHUNKSIZE']
-    # ###
 
     deviceReady.waitP().then ()->
       # UPLOADER_TYPE = [parse|background]
@@ -30,45 +28,53 @@ angular.module('ionBlankApp')
           self.uploader._registerBkgUploaderHandlers()
 
           self.uploader.getQueueP().then (assetIds)->
-            self.remaining( assetIds.length)
-            console.log "otgUploader init: remaining=" + _bkgFileUploader.remaining
+            # console.log "otgUploader init: remaining=" + _bkgFileUploader.remaining
           if self.uploader.enable()==false
-            console.log "otgUploader init: PAUSE queue"
+            # console.log "otgUploader init: PAUSE queue"
             self.uploader.pauseQueueP()
+          self.remaining( )
 
-          #debug
-          window.debug.up = self.uploader
+
 
         else # when "parse"
           self.uploader = _parseFileUploader
           self.type = self.uploader.type
 
-      # CHECK if we are re-launching after bkg tasks scheduled
       _PROCESS_BKG_UPLOADS()
       return
 
+
+    _SET_UPLOADER_CONFIG = (newVal, oldVal={})->
+      if newVal['enabled'] != oldVal['enabled']  
+        # console.log "otgUploader: enabled=" + newVal['enabled']
+        self.uploader.enable( newVal['enabled'] )
+        # Q: should we enable uploader???
+      if newVal['use-720p-service'] != oldVal['use-720p-service']  
+        # console.log "otgUploader: use-720p-service=" + newVal['use-720p-service']
+        self.uploader.use720p( newVal['use-720p-service'] )
+      if newVal['use-cellular-data'] != oldVal['use-cellular-data']  
+        # console.log "otgUploader: use-cellular-data=" + newVal['use-cellular-data']
+        self._allowCellularNetwork = newVal['use-cellular-data']
+        self.uploader.onNetworkAccessChanged(newVal['use-cellular-data'])
+      return
+
     $rootScope.$watch 'config.upload', (newVal, oldVal)->
-        if newVal['enabled'] != oldVal['enabled']  
-          # console.log "otgUploader: enabled=" + newVal['enabled']
-          self.uploader.enable( newVal['enabled'] )
-        if newVal['use-720p-service'] != oldVal['use-720p-service']  
-          console.log "otgUploader: use-720p-service=" + newVal['use-720p-service']
-          self.uploader.use720p( newVal['use-720p-service'] )
-        if newVal['use-cellular-data'] != oldVal['use-cellular-data']  
-          console.log "otgUploader: use-cellular-data=" + newVal['use-cellular-data']
-          self._allowCellularNetwork = newVal['use-cellular-data']
-          self.uploader.onNetworkAccessChanged(newVal['use-cellular-data'])
+        _SET_UPLOADER_CONFIG(newVal, oldVal)
 
         if newVal['auto-upload'] != oldVal['auto-upload'] 
-          $rootScope.config['upload']['enabled'] = $rootScope.config['upload']['auto-upload'] 
-        
-        _CHUNKSIZE = newVal['CHUNKSIZE'] if newVal['CHUNKSIZE']
+          # forces toggle enabled
+          $rootScope.config['upload']['enabled'] = $rootScope.config['upload']['auto-upload']
+          self.enable($rootScope.config['upload']['enabled'])
 
         return
       , true
 
-    _PROCESS_BKG_UPLOADS = ()->  
+
+
+    _PROCESS_BKG_UPLOADS = ()-> 
+      _SET_UPLOADER_CONFIG( $rootScope['config'].upload )
       return if !$rootScope.sessionUser
+      
       switch self.uploader.type
         when 'parse'  
           return if !self.enable() || !self.connectionOK()
@@ -79,7 +85,7 @@ angular.module('ionBlankApp')
           return PLUGIN.allSessionTaskInfosP()
           .then (resp)->
             if _.isEmpty resp
-              console.log "\n >>> background upload tasks empty"
+              # console.log "\n >>> background upload tasks empty"
               return 
             finished = _.filter resp, (status)-> return !!status.hasFinished
             promises = []
@@ -94,7 +100,9 @@ angular.module('ionBlankApp')
         when 'parse' 
           return 
         when 'background'
-          return
+          done = _bkgFileUploader.isSchedulingComplete()
+          done = done || _bkgFileUploader.isUnschedulingComplete()
+          return done
 
 
 
@@ -123,6 +131,9 @@ angular.module('ionBlankApp')
       # isActive == isEnabled && remaining
       cfg:
         UPLOAD_IMAGE_SIZE: 'preview'
+        allowsCellularAccess: false # use connectionOK() instead
+      setCfg: (uploadCfg)->
+        _parseFileUploader.use720p(uploadCfg['use-720p-service'])
       use720p: (action=false)->
         _parseFileUploader.cfg.UPLOAD_IMAGE_SIZE = 'preview' if action
         _parseFileUploader.cfg.UPLOAD_IMAGE_SIZE = 'original' if !action
@@ -138,7 +149,18 @@ angular.module('ionBlankApp')
           _parseFileUploader._uploadNextP()
         return _parseFileUploader.isEnabled          
 
-      queueP: (assetIds)->
+      queueP: (sync)->
+        sync =_.defaults (sync || {}) , {
+          'addFile':[]
+          'complete':[]
+          'remove':[]
+        }
+
+        # remove 'complete', 'remove' from queue
+        removeFromQueue = sync['complete'].concat sync['remove']
+        _parseFileUploader._photoFileQueue = _.difference _parseFileUploader._photoFileQueue, removeFromQueue
+
+        assetIds = sync['addFile']
         # entrypoint: called by otgWorkorderSync.queueDateRangeFilesP
         # queue immediately, 
         # but uploader must check isEnable before each upload
@@ -147,7 +169,7 @@ angular.module('ionBlankApp')
 
         # NOTE: queue tracks file uploads ONLY, photoMeta should already be on parse
         _parseFileUploader._photoFileQueue = _.unique _parseFileUploader._photoFileQueue.concat(assetIds)
-        self.remaining( _parseFileUploader._photoFileQueue.length)
+        self.remaining()
         if 'queue useDataURLs' 
           # preload DataURLs using cameraRoll.queue(), preloading is debounced
           _.each assetIds, (UUID)->
@@ -158,13 +180,17 @@ angular.module('ionBlankApp')
         return $q.when(_parseFileUploader._photoFileQueue)             
       getQueueP: ()->
         return $q.when _parseFileUploader._photoFileQueue
+      count: ()->
+        return _parseFileUploader.remaining = _parseFileUploader._photoFileQueue.length
       pauseQueueP: ()->
         _parseFileUploader.enable(false)
       resumeQueueP: ()->
         _parseFileUploader.enable(true)
       clearQueueP: ()->
         cleared = _.clone _parseFileUploader._photoFileQueue
+        _parseFileUploader.pauseQueueP()
         _parseFileUploader._photoFileQueue = []
+        self.remaining()
         return $q.when(cleared)
       oneCompleteP: (resp)->
         self.callbacks.onEach(resp) if self.callbacks.onEach
@@ -193,8 +219,8 @@ angular.module('ionBlankApp')
               }
               return otgParse.updatePhotoP( photo, 'src')
             .then (resp)->
-              console.log "_parseFileUploader update photo.src complete"
-              self.remaining( _parseFileUploader._photoFileQueue.length)
+              # console.log "_parseFileUploader update photo.src complete"
+              self.remaining( )
               _parseFileUploader.oneCompleteP(resp)
               return resp
               _parseFileUploader._uploadNextP() if _parseFileUploader.isEnabled && self.connectionOK()
@@ -228,6 +254,7 @@ angular.module('ionBlankApp')
         , LastProgress.delay 
       }
 
+
     _bkgFileUploader = { # uses snappiMessengerPluginService
       type: 'background' 
       isEnabled: false
@@ -235,10 +262,20 @@ angular.module('ionBlankApp')
       isPausingP: null
       cfg: 
         maxWidth: 720
+        quality: 0.7
         allowsCellularAccess: false
+        container: null # use User.id 
+        CHUNKSIZE: 200
+      setCfg: (uploadCfg)->
+        _bkgFileUploader.use720p(uploadCfg['use-720p-service'])
+        _bkgFileUploader.allowsCellularAccess = uploadCfg['use-cellular-data']
       use720p: (action=false)->
-        _bkgFileUploader.cfg.maxWidth = 720 if action
-        _bkgFileUploader.cfg.maxWidth = false if !action
+        if action
+          _bkgFileUploader.cfg.maxWidth = 720
+          _bkgFileUploader.cfg.CHUNKSIZE = 200
+        else if !action
+          _bkgFileUploader.cfg.maxWidth = false 
+          _bkgFileUploader.cfg.CHUNKSIZE = 5
         return action
       enable: (action)->
         return _bkgFileUploader.isEnabled if `action==null`
@@ -250,50 +287,111 @@ angular.module('ionBlankApp')
         return _bkgFileUploader.isEnabled if wasEnabled == _bkgFileUploader.isEnabled
 
         if _bkgFileUploader.isEnabled 
-          console.log "\n>>> calling resumeQueueP from enable..."
+          # console.log "\n>>> calling resumeQueueP from enable..."
           promise = _bkgFileUploader.isPausingP || $q.when()
           promise.then _bkgFileUploader.resumeQueueP
         else # disabled
           _bkgFileUploader.pauseQueueP()
         return _bkgFileUploader.isEnabled  
 
-      queueP: (assetIds=[])->
+      schedule: (assetIds, front=false)->
+        return _bkgFileUploader._readyToSchedule if _.isEmpty assetIds
+        assetIds = [assetIds] if _.isString(assetIds)
+        if front
+          _bkgFileUploader._readyToSchedule = _.unique assetIds.concat(_bkgFileUploader._readyToSchedule) 
+        else
+          _bkgFileUploader._readyToSchedule = _.unique _bkgFileUploader._readyToSchedule.concat(assetIds)
+        self.remaining()
+        return _bkgFileUploader._readyToSchedule
+
+
+      # @param sync Object, sync = {queued:[], complete:[], }
+      queueP: (sync)->
+        sync =_.defaults (sync || {}) , {
+          'addFile':[]  # set in queueDateRangeFilesP()
+          'complete':[]
+          'remove':[]
+        }
+        assetIds = sync['addFile']
 
         # entrypoint: called by otgWorkorderSync.queueDateRangeFilesP
         # called by enable() and onNetworkAccessChanged() > enable()
         # otgWorkorderSync.queueDateRangeFilesP(sync) OR _bkgFileUploader.enable(true)
-        #   promise = otgUploader.queueP( sync['addFile'] )
 
-        # add to _readyToSchedule queue, then schedule a chunk, as necessary
+        # remove 'complete', 'remove' from queue
+        removeFromQueue = sync['complete'].concat sync['remove']
+        _bkgFileUploader._readyToSchedule = _.difference _bkgFileUploader._readyToSchedule, removeFromQueue
+        _.each removeFromQueue, (UUID)->
+          _bkgFileUploader._complete[UUID] = 1
+          delete _bkgFileUploader._scheduled[UUID]
+
+        #   promise = otgUploader.queueP( sync['addFile'] )
+        # add to _readyToSchedule queue if isEnabled == false
+        # schedule more from _readyToSchedule if isEnabled
         if assetIds.length
           assetIds = _.filter assetIds, (UUID)->
             return false if _bkgFileUploader._complete[UUID] == 1
             return false if _bkgFileUploader._scheduled[UUID]?
             return true
 
-          _bkgFileUploader._readyToSchedule = _.unique _bkgFileUploader._readyToSchedule.concat(assetIds)
-          console.log "\n>>> queueP count=" + _bkgFileUploader.count()
-          self.remaining( _bkgFileUploader.count() )
 
-        scheduled = _.filter _bkgFileUploader._scheduled, (v,k)->
-          return v != 1 
-        return $q.when(_.keys scheduled) if scheduled.length > (_CHUNKSIZE/3)
-        
+          _bkgFileUploader.schedule(assetIds)
+          self.remaining()
+
+        # DONE if uploader paused
+        if _bkgFileUploader.isEnabled == false
+          self.remaining()
+          return  $q.when([]) 
+
+        # then schedule another chunk if the queue is running low
+        _.each _bkgFileUploader._scheduled, (v,k)->
+          delete _bkgFileUploader._scheduled[k] if v==1
+          return
+        # DONE if uploader already fully scheduled
+        scheduled = _.keys _bkgFileUploader._scheduled
+        if scheduled.length > Math.min(_bkgFileUploader.cfg.CHUNKSIZE/2, 10)
+          return $q.when(scheduled) 
+
         # schedule more from _bkgFileUploader._readyToSchedule
         assetIds = []
+        _CHUNKSIZE = _bkgFileUploader.cfg.CHUNKSIZE
         while assetIds.length < _CHUNKSIZE && _bkgFileUploader._readyToSchedule.length > 0
           added = _bkgFileUploader._readyToSchedule.splice(0,_CHUNKSIZE)
           added = _.difference added, _.keys(_bkgFileUploader._scheduled)
           assetIds = assetIds.concat(added)
 
-        return $q.when([]) if _.isEmpty assetIds  # all scheduled, but not all done
+        if _.isEmpty assetIds  # nothing new to schedule from _readyToSchedule
+          self.remaining()
+          # nothing scheduled && nothing readyToSchedule
+          if _bkgFileUploader.isSchedulingComplete()
+            return $q.when([]) 
+          # check if _scheduled is actually scheduled 
+          return PLUGIN.getScheduledAssetsP().then (assetIds)->
+            # issue is when unschedule does NOT move _scheduled back to _readyToSchedule
+            console.error "BUG: _scheduled items are not found in getScheduledAssets()"
+            # should we just reschedule?
+            _reschedule_Scheduled_Items_P = ()->
+              scheduledButNotStarted = _.filter _bkgFileUploader._scheduled, (v,k)->
+                return true if `v==null`
+              assetIds = _.keys scheduledButNotStarted
+              # console.log "_reschedule_Scheduled_Items_P: " + JSON.stringify assetIds
+              _.each assetIds, (UUID)->
+                delete _bkgFileUploader._scheduled[UUID]
+                _bkgFileUploader.schedule(UUID,'front')
+                return
+              return _bkgFileUploader.queueP(assetIds)
+            return _reschedule_Scheduled_Items_P()
+
+           
 
         _.defaults( _bkgFileUploader._scheduled, _.object(assetIds) )
           
         # enabled
-        options = _.pick _bkgFileUploader.cfg, ['allowsCellularAccess', 'maxWidth', 'auto-rotate']  
+
+        options = _.pick _bkgFileUploader.cfg, ['allowsCellularAccess', 'maxWidth', 'auto-rotate', 'quality']  
+        options['container'] = $rootScope.sessionUser.id
         return PLUGIN.scheduleAssetsForUploadP(assetIds, options).then ()->
-          console.log "\n>>> otgUploader.queueP(): scheduleAssetsForUploadP complete\n\n"
+          # console.log "\n>>> otgUploader.queueP(): scheduleAssetsForUploadP complete"
           return _.keys _bkgFileUploader._scheduled
         .catch (err)->
           console.warn "\n >>> ERROR PLUGIN.scheduleAssetsForUploadP() " + JSON.stringify err
@@ -303,75 +401,62 @@ angular.module('ionBlankApp')
         return $q.when _.keys( _bkgFileUploader._scheduled ).concat( _bkgFileUploader._readyToSchedule )
         
       count: ()->
-        return _.keys( _bkgFileUploader._scheduled ).length +  _bkgFileUploader._readyToSchedule.length
+        return _bkgFileUploader.remaining = _.keys( _bkgFileUploader._scheduled ).length +  _bkgFileUploader._readyToSchedule.length
 
       pauseQueueP: ()->
         return PLUGIN.unscheduleAllAssetsP()
-        .then (resp)->
-          console.log "1. unscheduleAllAssetsP returned, resp=" + JSON.stringify resp
-          return $q.when()
-
-          'skip'
-
-          dfd = $q.defer()
-          # didFinish() will 
-          #     _bkgFileUploader._readyToSchedule.unshift( photo.UUID )
-          #     and remove from  _bkgFileUploader._scheduled
-          # watch for _.isEmpty(_bkgFileUploader._scheduled)
-          isUnscheduledComplete = ()->
-             return _.isEmpty(_bkgFileUploader._scheduled) && _bkgFileUploader._readyToSchedule.length
-
-          $rootScope.$watch _bkgFileUploader._scheduled, (newV, oldV)->
-            if isUnscheduledComplete()
-              _bkgFileUploader.isPausingP = null
-              return dfd.resolve() 
-
-          _cancel = $timeout ()->
-            $rootScope.$broadcast 'bkgUploader:taskComplete'
-            return
-          , 3000
-          _off = $rootScope.$on 'bkgUploader:taskComplete', ()->
-          $timeout.cancel _cancel 
-          _off()
-          _off = _cancel = null    
-
-          # _pauseQueueP = ()->
-          #   # console.log "2. unscheduleAllAssetsP complete, resp=" + JSON.stringify resp
-          #   # _bkgFileUploader._readyToSchedule = _.unique remainingScheduledAssetIds.concat( _bkgFileUploader._readyToSchedule ) 
-          #   _bkgFileUploader._scheduled = {}
-          #   _bkgFileUploader._complete = {}
-          #   self.remaining( _bkgFileUploader.count() )
-          #   _bkgFileUploader.isPausingP = null
-          #   $rootScope.$broadcast 'uploader.schedulingComplete'
-          #   return
-          return _bkgFileUploader.isPausingP = dfd.promise
-
+        .then ()->
+          # console.log "unscheduleAllAssetsP returned"
+          $rootScope.$broadcast 'uploader.schedulingComplete'  # assume any active scheduling is cancelled
+          $timeout ()->
+              return if _bkgFileUploader.enable()
+              # HACK: sometimes there are scheduled items that are stuck on didBegin, but never get progress
+              #     reset/reschedule these
+              onlyDidBegin = _( _bkgFileUploader._scheduled ).values().unique().filter().value().length == 0
+              return _bkgFileUploader._scheduled = {} if onlyDidBegin
+            , 5000
+          # cleanup, didFinishAssetUpload > oneComplete: errorCode=-999 ERROR_CANCELLED moves to _readyToSchedule
+          # _bkgFileUploader._readyToSchedule = _.unique remainingScheduledAssetIds.concat( _bkgFileUploader._readyToSchedule ) 
+          return 
         
       resumeQueueP: ()->
         # just queue a chunk from _bkgFileUploader._readyToSchedule
         return _bkgFileUploader.queueP().then (scheduledAssetIds)->
-          console.log "\n>>> queueP complete from resumeQueueP()"
-          console.log scheduledAssetIds
+          # console.log "\n>>> queueP complete from resumeQueueP(), scheduled=" + JSON.stringify scheduledAssetIds
 
       clearQueueP: ()->
-        return PLUGIN.unscheduleAllAssetsP().then ()->
+        return _bkgFileUploader.pauseQueueP().then ()->
           _bkgFileUploader._scheduled = {}
           _bkgFileUploader._complete = {}
           _bkgFileUploader._readyToSchedule = []
+          self.remaining()
           return 
 
+      ##
+      ## async background Task completion: call from on 'pause'/'resume'
+      ##
+      ##    
       isSchedulingComplete: ()->
+        # waiting for _scheduled={ [key]:int }
         notComplete = _.filter _bkgFileUploader._scheduled, (v,k)->
           return true if `v==null`
         return false if notComplete.length
-        # isComplete = _.some(_.values(_bkgFileUploader._scheduled), null) == false
         $rootScope.$broadcast 'uploader.schedulingComplete'
         return true
+
+      isUnschedulingComplete: ()-> # maybe not critical
+        # waiting for _scheduled={ }
+        isComplete = _.isEmpty(_bkgFileUploader._scheduled) && _bkgFileUploader._readyToSchedule.length
+        return false if !isComplete
+        $rootScope.$broadcast 'uploader.UNschedulingComplete'
+        return true
+
+
 
 
       oneBegan: (resp)->
         try
-          console.log "\n >>> native-uploader Began: for assetId="+resp.asset
+          # console.log "\n >>> native-uploader Began: for assetId="+resp.asset
           _bkgFileUploader._scheduled[resp.asset] = 0
           _bkgFileUploader.isSchedulingComplete()
         catch e
@@ -387,70 +472,64 @@ angular.module('ionBlankApp')
         _bkgFileUploader.isSchedulingComplete()
         return resp
 
-        
-
       oneProgress: (resp)->
         try
           progress = resp.totalBytesSent / resp.totalBytesExpectedToSend
           resp.progress = Math.round(progress*100)/100
-          console.log "\n >>> native-uploader Progress: " + JSON.stringify _.pick resp, ['asset', 'progress'] 
+          # console.log "\n >>> native-uploader Progress: " + JSON.stringify _.pick resp, ['asset', 'progress'] 
           _bkgFileUploader._scheduled[resp.asset] = resp.progress
           LastProgress.restart()
         catch e
           # ...
         
       handleUploaderTaskFinishedP: (UUID)->
+        ERROR_CANCELLED = -999
         return PLUGIN.sessionTaskInfoForIdentifierP(UUID)
           .then (status)->
               # status = { asset, progress, hasFinished, success, errorCode, url, name }
-              return _bkgFileUploader.oneCompleteP(status)
+              # console.log "\n\n >>> handleUploaderTaskFinishedP" + JSON.stringify status
+              status.hasFinished = true
+              return _bkgFileUploader.oneCompleteP(status) # if status.hasFinished
+              console.warn "ERROR: expecting task finished here. hasFinished bug?"
+              return $q.reject(status)
             , (err)->
-              console.log "\n\n %%% ERROR sessionTaskInfoForIdentifierP(): " + JSON.stringify err  
+              console.warn "\n\n %%% ERROR sessionTaskInfoForIdentifierP(): " + JSON.stringify err  
               $q.reject(err)
           .finally ()-> # or always()
               PLUGIN.removeSessionTaskInfoWithIdentifierP(UUID)
 
       oneCompleteP: (resp)->
+        ERROR_CANCELLED = -999
+        # resp = { asset, progress, hasFinished, success, errorCode, url, name }
+          # asset: "AC072879-DA36-4A56-8A04-4D467C878877/L0/001"
+          # errorCode: 0, ERROR_CANCELLED = -999
+          # hasFinished: true
+          # name: "tfss....jpg"
+          # progress: 1
+          # success: 1
+          # url: "http://files.parsetfss.com/tfss....jpg"        
         try
-          # refactor: otgWorkorderSync.queueDateRangeFilesP() callbacks
+          # parse PhotoObj.src handled by image-store
+          _bkgFileUploader.queueP() 
           photo = {
             UUID: resp.asset
-            src: if resp.success then resp.url else resp.message || 'error: native-uploader'
           }
-          console.log "\n\n >>> oneCompleteP" + JSON.stringify resp
+          if !resp.success && resp.errorCode == ERROR_CANCELLED
+            # add back to _readyToSchedule
+            _bkgFileUploader.schedule(photo.UUID,'front')
+          else if !resp.success # resp.errorCode < 0
+            _bkgFileUploader._complete[photo.UUID] = resp.errorCode  || resp.message # errorCode < 0
+            _bkgFileUploader.oneError(resp)
+          else 
+            _bkgFileUploader._complete[photo.UUID] = 1
+            self.callbacks.onEach(resp) if self.callbacks.onEach
 
-          return otgParse.updatePhotoP( photo, 'src')
-          .then null, (err)->
-            return $q.reject(err)
-          .then (photos)-> # array of photoObj
-            # update JS queue
-            # remove from  _bkgFileUploader._scheduled and save on _complete
+          delete _bkgFileUploader._scheduled[photo.UUID] 
+          remaining = self.remaining()
+          if remaining == 0
+            $timeout( _bkgFileUploader.allComplete )
+          return $q.when(photo)
 
-            _bkgFileUploader.queueP() # schedule more, as necessary
-
-            ERROR_CANCELLED = -999
-            if resp.success == false && resp.errorCode == ERROR_CANCELLED
-              # add back to _readyToSchedule
-              _bkgFileUploader._readyToSchedule.unshift( photo.UUID )
-            else if resp.success == false
-              _bkgFileUploader._complete[photo.UUID] = resp.errorCode  || resp.message # errorCode < 0
-              _bkgFileUploader.oneError(resp)
-            else 
-              _bkgFileUploader._complete[photo.UUID] = 1
-              self.callbacks.onEach(resp) if self.callbacks.onEach
-
-            delete _bkgFileUploader._scheduled[photo.UUID] 
-            remaining = self.remaining( _bkgFileUploader.count() )
-            if remaining == 0
-              $timeout( _bkgFileUploader.allComplete )
-            console.log "onComplete: remaining files=" + remaining
-            return photos
-          .then null, (err)->
-              console.warn "\n\noneCompleteP otgParse.updatePhotoP error"
-              console.warn err
-              _bkgFileUploader._complete[photo.UUID] = err.message || err
-              _bkgFileUploader.oneError(err)
-              return $q.reject(err)
         catch e
           return $q.reject(e)
 
@@ -467,11 +546,12 @@ angular.module('ionBlankApp')
       onNetworkAccessChanged: (allowsCellularAccess)->
         PLUGIN.setAllowsCellularAccessP(allowsCellularAccess)
         .then (resp)->
-            console.log "\n\n setAllowsCellularAccess() OK, set value=" + allowsCellularAccess
-            console.log "_bkgFileUploader: scheduled tasks reset to allowsCellularAccess="+allowsCellularAccess
+            # console.log "\n\n setAllowsCellularAccess() OK, set value=" + allowsCellularAccess
+            # console.log "_bkgFileUploader: scheduled tasks reset to allowsCellularAccess="+allowsCellularAccess
+            return
           , (err)->
-            console.log "\n\n setAllowsCellularAccess() ERROR, set value=" + allowsCellularAccess
-            console.log err 
+            console.warn "\n\n setAllowsCellularAccess() ERROR, set value=" + allowsCellularAccess
+            console.warn err 
         return
 
         # HACK: clear queue, then reschedule with updated value for allowsCellularAccess  
@@ -485,13 +565,13 @@ angular.module('ionBlankApp')
       _complete:{}
       _registerBkgUploaderHandlers: ()->
         # TODO: confirm callbacks are set
-        console.log "PLUGIN event handlers registered!!!"
+        # console.log "PLUGIN event handlers registered!!!"
         PLUGIN.on.didFinishAssetUpload (resp)->
           # expecting resp.asset
           return _bkgFileUploader.handleUploaderTaskFinishedP(resp.asset)
 
-        PLUGIN.on.didUploadAssetProgress (resp)->
-          return _bkgFileUploader.oneProgress(resp)      
+        # PLUGIN.on.didUploadAssetProgress (resp)->
+        #   return _bkgFileUploader.oneProgress(resp)      
 
         PLUGIN.on.didBeginAssetUpload (resp)->
           return _bkgFileUploader.oneBegan(resp)
@@ -532,11 +612,9 @@ angular.module('ionBlankApp')
         return $rootScope['config']['upload']['enabled'] if `action==null`
         isEnabled = self.uploader.enable(action)
         return $rootScope['config']['upload']['enabled'] = isEnabled
-      remaining: (value)->
-        return self.uploader.remaining if `value==null`
-        self.uploader.remaining = value
-        $rootScope.counts.uploaderRemaining = value
-        return value
+      remaining: ()->
+        self.uploader.count()
+        return $rootScope.counts.uploaderRemaining = self.uploader.remaining
 
       isActive: ()->
         return self.uploader.isEnabled && self.uploader.remaining  
@@ -596,26 +674,54 @@ angular.module('ionBlankApp')
       return
 
     $scope.redButton = {
+      TAP_HOLD_TO_RESET_QUEUE_TIME: 3000
+      MINIMUM_TIME_BETWEEN_PRESS: 1000 
+      MAX_DRAG_Y_TO_ENABLE: 50
+      start: 0
+      pageY: null
       press: (ev)-> 
         # toggle $scope['config']['upload']['enabled'] & $scope.$watch 'config.upload.enabled'
         target = angular.element(ev.currentTarget)
         target.addClass('down') # .activated is same as .enabled
+        now = new Date().getTime()
+        return ev.preventDefault() if (now - this.start) < this.MINIMUM_TIME_BETWEEN_PRESS
+
+        this.start = now
+        this.pageY = ev.gesture.center.pageY
         # console.log "press button"
         $scope.on.fetchWarningsP()
         .then (networkOK)->
-          isEnabled = otgUploader.enable('toggle')
-          if isEnabled
+          shouldEnable = !otgUploader.enable()
+          if shouldEnable # enable on Release
             target.addClass('enabled')
-            if otgUploader.uploader.type == 'background' && otgUploader.uploader.count()
-              $scope.watch.isScheduling = true 
           else 
             target.removeClass('enabled') 
-            if otgUploader.uploader.type == 'background' && otgUploader.uploader.count()
-              $scope.watch.isUnscheduling = true 
           return
       release: (ev)-> 
         target = angular.element(ev.currentTarget)
         target.removeClass('down')
+        end = new Date().getTime()
+        duration = end - this.start
+        this.start = end
+        isRefresh = ev.gesture.center.pageY - this.pageY > this.MAX_DRAG_Y_TO_ENABLE
+        # console.log 'isRefresh=', isRefresh
+        this.pageY = null
+        if (duration > this.TAP_HOLD_TO_RESET_QUEUE_TIME)
+          # reset queue
+          # console.log "\n >>> resetting upload queue"
+          $scope.watch.isUnscheduling = true 
+          otgUploader.uploader.clearQueueP().then ()->
+            otgUploader.enable(false)
+        else if isRefresh==false
+          didEnable = target.hasClass('enabled')
+          $scope.on.fetchWarningsP()
+          .then (networkOK)->
+            # enable on Release, not Press
+            otgUploader.enable(didEnable)
+            if otgUploader.uploader.type == 'background' && otgUploader.uploader.count()
+                $scope.watch.isScheduling = didEnable
+                $scope.watch.isUnscheduling = !didEnable 
+
         return 
 
     }
@@ -670,6 +776,14 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.beforeEnter', ()->
       # cached view becomes active 
+      isEnabled = otgUploader.enable()
+      # init button to match otgUploader state
+      redButton = angular.element(document.getElementById('big-red-button'))
+      if isEnabled
+        redButton.addClass('enabled').removeClass('down')
+      else 
+        redButton.removeClass('enabled').removeClass('down')
+
       $scope.on.fetchWarningsP()
       return if !$scope.deviceReady.isOnline()
       return $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
@@ -678,6 +792,17 @@ angular.module('ionBlankApp')
       # cached view becomes in-active 
       return 
     $scope.deviceReady.waitP().then ()->
-      otgUploader.onLastProgressTimeout( $scope.on.fetchWarningsP )  
+      otgUploader.onLastProgressTimeout( $scope.on.fetchWarningsP ) 
+      
+
+
+
+
+        
+
+
+
+    # debug
+    _.extend window.debug, { up : otgUploader.uploader } 
 
 ]

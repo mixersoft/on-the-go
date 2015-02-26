@@ -81,7 +81,7 @@
             <!-- header -->
             <div class="item item-divider item-stable padding-horizontal"
             ng-if="on.showInfo()">
-              <div class="caption capitalize">{{item.caption || item.assetId}}</div>
+              <div class="caption capitalize" ng-bind="watch.getHeaderLabel(item, ['dim','dateTaken'])"></div>
             </div>
 
             <!-- body -->

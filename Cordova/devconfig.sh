@@ -90,6 +90,7 @@ cp ./www/components/ionicons/scss/* ./www/lib/ionic/scss/ionicons/
 
 
 # rebuild project with plugin updates
+ionic plugin rm com.snaphappi.native-messenger.Messenger; ionic plugin add ../CordovaNativeMessenger
 ionic platform remove ios; ionic platform add ios;
 cp -R ./resources/* ./platforms/ios/On-the-Go/Resources/
 ionic plugin rm com.snaphappi.native-messenger.Messenger; ionic plugin add ../CordovaNativeMessenger

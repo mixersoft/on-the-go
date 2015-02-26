@@ -157,7 +157,7 @@ angular.module('ionBlankApp')
           # self.watch.isSelected = self.isSelected()
           return
         clearSelected: ()->
-          console.log "*** clearSelected!!!"
+          # console.log "*** clearSelected!!!"
           _data = []
           _.extend _selected, _reset
           return
@@ -199,7 +199,7 @@ angular.module('ionBlankApp')
             selected = newVal
           # selected = _datepicker.instance.get('select', $scope.watch.datePickerOptions.formatSubmit)
           dateRange = _datepicker.dateRange(selected)
-          console.log dateRange
+          # console.log dateRange
           return
         isSelected: (targetDate)->
           date = _datepicker._getAsLocalTime(targetDate.obj, true)[0...10]
@@ -252,7 +252,7 @@ angular.module('ionBlankApp')
           input = document.getElementById('datepicker-input')
           return $timeout _waitForRender, 100 if !input
 
-          console.log "datepicker activate ***"
+          # console.log "datepicker activate ***"
           selected = _datepicker.dateRange()
           otgWorkorder.on.selectByCalendar(selected.from, selected.to) if selected.from
           window.P = _datepicker.instance.start().open(true)
@@ -273,6 +273,7 @@ angular.module('ionBlankApp')
 
 
     $scope.watch = {
+      cameraRoll: cameraRoll
       datePickerOptions: _datepicker.datePickerOptions
       dateRange:
         from: null
@@ -292,9 +293,9 @@ angular.module('ionBlankApp')
     $rootScope.$on '$stateChangeStart', (event, toState, toParams, fromState, fromParams)->
       if toState.name.indexOf('app.choose') == 0 
         if fromState.name.indexOf('app.checkout') == 0
-          console.log "BACK BUTTON DETECTED from checkout????? " + fromState.name + ' > ' + toState.name
+          # console.log "BACK BUTTON DETECTED from checkout????? " + fromState.name + ' > ' + toState.name
         else
-          console.log "state.transitionTo: " + fromState.name + ' > ' + toState.name
+          # console.log "state.transitionTo: " + fromState.name + ' > ' + toState.name
           switch toState.name
             when 'app.choose.calendar'
               return otgWorkorder.on.clearSelected()
@@ -303,11 +304,11 @@ angular.module('ionBlankApp')
               return otgWorkorder.on.clearSelected()
 
 
-    $scope.cameraRoll = cameraRoll
-    $scope.$watchCollection 'cameraRoll.moments', (newV, oldV)->
+    $scope.$on 'cameraRoll.loadPhotosComplete', (ev, options)-> 
+      return if options.type != 'moments'
+      $rootScope.$broadcast('scroll.refreshComplete')
       # console.log "\n\n %%% watched cameraRoll.moments change, update filter %%% \n\n"
-      return if deviceReady.device().isBrowser
-      return cameraRoll.loadMomentThumbnailsP()
+      return
 
 
     $scope.$on '$ionicView.loaded', ()->
@@ -354,7 +355,7 @@ angular.module('ionBlankApp')
 
     $scope.on = {
       hScrollable : ($ev)->
-        console.log "hScrollable(): make camera-roll-date H scrollable"
+        # console.log "hScrollable(): make camera-roll-date H scrollable"
         return
       dontShowHint : (hide, keep)->
         # check config['dont-show-again'] to see if we should hide hint card
@@ -369,7 +370,7 @@ angular.module('ionBlankApp')
         return $scope.config['dont-show-again']['choose']?[current]
       clearSelected : (ev)->
         if $state.includes('app.choose.calendar')
-           angular.element(debug.picker.$root[0].querySelectorAll('[data-clear]')).triggerHandler('click')
+           angular.element(_datepicker.instance.$root[0].querySelectorAll('[data-clear]')).triggerHandler('click')
         else 
           otgWorkorder.on.clearSelected(ev)
         return
@@ -383,15 +384,18 @@ angular.module('ionBlankApp')
         _datepicker.deactivate()
         return
       cameraRollSelected : (value)->
-        cameraRoll.loadMomentThumbnailsP()
+        cameraRoll.loadCameraRollP({type:'moments'}, false)
         return true
+
+      refresh: ()->
+        cameraRoll.loadCameraRollP({type:'moments'}, 'force')
+        .then ()->
+          # done on 'cameraRoll.loadPhotosComplete'
+          return
+
 
     }
 
 
-    init()
-
-
-         
 
   ]

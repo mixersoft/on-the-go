@@ -263,7 +263,7 @@ angular.module('ionBlankApp')
     
     # TODO: make camera-roll date HScroll to see all thumbs
     $scope.hScrollable = ($ev)->
-      console.log "hScrollable(): make camera-roll-date H scrollable"
+      # console.log "hScrollable(): make camera-roll-date H scrollable"
       return
 
     # ???: is there a better way to access controllerScope within an ng-repat

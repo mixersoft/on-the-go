@@ -75,7 +75,7 @@ angular
         return _promise if _promise
         deferred = $q.defer()
         _cancel = $timeout ()->
-            console.warn "$ionicPlatform.ready TIMEOUT!!!"
+            # console.warn "$ionicPlatform.ready TIMEOUT!!!"
             return deferred.reject("ERROR: ionicPlatform.ready does not respond")
           , _timeout
         $ionicPlatform.ready ()->
@@ -93,7 +93,7 @@ angular
             isBrowser: ionic.Platform.isWebView() == false
            }
           _device = angular.copy $localStorage['device']
-          console.log "$ionicPlatform reports deviceReady, device.id=" + $localStorage['device'].id
+          # console.log "$ionicPlatform reports deviceReady, device.id=" + $localStorage['device'].id
           return deferred.resolve( _device )
         return _promise = deferred.promise
 
@@ -106,8 +106,7 @@ angular
 .factory 'cameraRoll', [
   '$q', '$timeout', '$rootScope', 'deviceReady', 'PLUGIN_CAMERA_CONSTANTS', 'snappiMessengerPluginService', 'imageCacheSvc'
   'TEST_DATA', 'otgData', 'appConsole'
-  ($q, $timeout, $rootScope, deviceReady, CAMERA, snappiMessengerPluginService, imageCacheSvc, 
-    TEST_DATA, otgData, appConsole)->
+  ($q, $timeout, $rootScope, deviceReady, CAMERA, snappiMessengerPluginService, imageCacheSvc, TEST_DATA, otgData, appConsole)->
     _getAsLocalTime = (d, asJSON=true)->
         d = new Date() if !d    # now
         d = new Date(d) if !_.isDate(d)
@@ -135,6 +134,72 @@ angular
         self._mapAssetsLibrary = angular.copy snapshot if `snapshot!=null`
         return self._mapAssetsLibrary
 
+      'iOSCollections': {
+        ## methods specific to iOS photos framework collections for GPS labels
+        _raw: []
+        # {'2015-02-22':[ count, label, location, location, ... ] }
+        _parsed: {}
+
+
+        getLabelForDates: (dates, sort='weight')->
+          byDate = self.iOSCollections.getByDate()
+          byDate['2014-09-08'] = byDate['2015-02-17'] 
+          byDate['2014-09-07'] = byDate['2015-02-19'] 
+          byDate['2014-09-06'] = byDate['2015-02-18'] 
+
+
+          switch sort
+            when 'weight'
+              dates.sort().reverse()
+              byWeight = _.reduce dates, (result, date)->
+                  return result if !byDate[date]
+                  [count, label, locations...] = byDate[date]
+                  result.push {date: date, count: byDate[date][0] }
+                  return result
+                , []
+              byWeight = _.sortBy byWeight, 'count'
+              byWeight.reverse()              
+
+              # dates = dates.sort()
+              dates = _.pluck byWeight, 'date'
+            when 'date'
+              dates.sort()
+
+          label = _.reduce dates, (result, date)->
+
+              return result if !byDate[date]
+              [count, label, locations...] = byDate[date]
+
+              result.labels.push label
+              result.locations = result.locations.concat locations
+              return result;
+            , {
+              labels: []
+              locations: []
+            }
+
+          _.each _.keys( label), (key)-> label[key] = _.unique label[key]
+          return label
+
+        getByDate: ()-> 
+          return self.iOSCollections._parsed
+
+        mapP: (force=null)->
+          if !_.isEmpty(self.iOSCollections._parsed) && !force 
+            return $q.when(self.iOSCollections._parsed) 
+
+          start = new Date().getTime()
+          if deviceReady.device().isBrowser
+            promise = $q.when(TEST_DATA.iosCollections)
+          else
+            promise = snappiMessengerPluginService.mapCollectionsP()
+
+          return promise.then (collections)->
+            self.iOSCollections._raw = collections
+            self.iOSCollections._parsed = otgData.parseIOSCollections( self.iOSCollections._raw )
+            console.log "\nCameraRoll.iOSCollections.mapP() elapsed=", (new Date().getTime() - start)
+            return self.iOSCollections._parsed   
+      }
       mapP: (options, force=null)->
         if !force && self._mapAssetsLibrary?
           $rootScope.$broadcast('sync.cameraRollComplete', {changed:false})
@@ -146,20 +211,25 @@ angular
             self._mapAssetsLibrary = mapped 
             $rootScope.$broadcast('sync.cameraRollComplete', {changed:true})
           else if force
-            # NOTE: this will reflect deletions if we don't merge
+            # NOTE: this will reflect deletions if we ddebug.on't merge
             self._mapAssetsLibrary = mapped 
             $rootScope.$broadcast('sync.cameraRollComplete', {changed:true})
           else
             'not updated'
           return mapped
 
+      filterDeviceOnly: (photos)->
+        photos = photos || self.map()
+        return _( photos ).filter( (o)->return !o.from || o.from.slice(0,5)!='PARSE' ).value()
+
       setFavoriteP: (photo)->
         return snappiMessengerPluginService.setFavoriteP(photo)
 
 
-      loadCameraRollP: (options, force=true)->
+      loadCameraRollP: (options={}, force=true)->
         defaults = {
           size: 'thumbnail'
+          type: 'favorites,moments' # defaults
           # pluck: ['favorite','mediaType', 'mediaSubTypes', 'hidden']  
           # fromDate: null
           # toDate: null
@@ -171,19 +241,26 @@ angular
         start = new Date().getTime()
         return self.mapP(options, force)
         .then (mapped)->
-          promise = self.loadFavoritesP(5000)
+          forceCollection = $rootScope.$state.includes('app.choose.camera-roll') && force
+          promise = self.iOSCollections.mapP(forceCollection)
+          return mapped
+        .then (mapped)->
+          promise = self.loadFavoritesP(5000) if options.type.indexOf('favorites') > -1
           # don't wait for promise
           return mapped
 
         .then ( mapped )->
 
-          end = new Date().getTime()
-          console.log "\n*** mapAssetsLibraryP() complete, elapsed=" + (end-start)/1000
+          # end = new Date().getTime()
+          # console.log "\n*** mapAssetsLibraryP() complete, elapsed=" + (end-start)/1000
+          return mapped if deviceReady.device().isBrowser
 
           # don't wait for promise
-          moments = self.loadMomentsFromCameraRoll( mapped )
-          promise = self.loadMomentThumbnailsP().then ()->
-            console.log "\n @@@load cameraRoll thumbnails loaded from loadCameraRollP()"
+          if options.type.indexOf('moments') > -1
+            moments = self.loadMomentsFromCameraRoll( mapped )
+            promise = self.loadMomentThumbnailsP().then ()->
+              # console.log "\n @@@load cameraRoll thumbnails loaded from loadCameraRollP()"
+              return
 
           # cameraRoll ready
           return mapped
@@ -191,29 +268,53 @@ angular
         .catch (error)->
           console.warn "ERROR: loadCameraRollP, error="+JSON.stringify( error )[0..100]
           # appConsole.show( error)
+          if error == "ERROR: window.Messenger Plugin not available" && deviceReady.device().isBrowser
+            $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', {type:'moments'}
+            $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', {type:'favorites'}
+            return true
           return $q.reject(error)
-
         .finally ()->
           return
 
       loadFavoritesP: (delay=10)->
         # load 'preview' of favorites from cameraRoll, from mapAssetsLibrary()
         favorites = _.filter self.map(), {favorite: true}
-        options = {size: 'preview'}
+        options = {
+          size: 'preview'
+          type: 'favorites'
+        }
         # check against imageCacheSvc
         notCached = _.filter favorites, (photo)->
             return false if imageCacheSvc.isStashed( photo.UUID, options.size ) 
             return false if self.dataURLs[options.size][photo.UUID]?
             return true
-        console.log "\n\n\n*** preloading favorite previews for UUIDs, count=" + notCached.length 
+        # console.log "\n\n\n*** preloading favorite previews for UUIDs, count=" + notCached.length 
         # console.log notCached
         return self.loadPhotosP(notCached, options, delay)
 
+      # load moments, but not photos
+      loadMomentsFromCameraRoll: (mapped)->
+        ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
+        # filter: remove  photos.from=='PARSE'
+        deviceOnly = self.filterDeviceOnly mapped
+
+        # cameraRoll._mapAssetsLibrary -> cameraRoll.moments
+        photosByDate = otgData.mapDateTakenByDays(deviceOnly, "like TEST_DATA")
+        # replace cameraRoll.moments
+        justUUIDsByDate = {} # JUST [{date:[UUID,]},{}]
+        _.each _.keys( photosByDate) , (key)->
+          justUUIDsByDate[key] = _.pluck photosByDate[key], 'UUID'
+        # console.log justUUIDsByDate
+        self.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( justUUIDsByDate ), 2
+        # done on 'cameraRoll.loadPhotosComplete', type=thumbnail
+        return self.moments
+        
       loadMomentThumbnailsP: (delay=10)->
         # preload thumbnail DataURLs for self moment previews
         momentPreviewAssets = self.getMomentPreviewAssets() 
         options = {
           size: 'thumbnail'
+          type: 'moments'
         }
         
         notCached = _.filter( 
@@ -223,12 +324,31 @@ angular
             return false if self.dataURLs[options.size][photo.UUID]?
             return true
         )
-        console.log "\n\n\n*** preloading moment thumbnails for UUIDs, count=" + notCached.length 
+        # console.log "\n\n\n*** preloading moment thumbnails for UUIDs, count=" + notCached.length 
         # console.log notCached
         $rootScope.$broadcast 'cameraRoll.beforeLoadMomentThumbnails' # for cancel loading timer
+        # done on 'cameraRoll.loadPhotosComplete', type=thumbnail
+        if _.isEmpty notCached
+          $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', options # for cancel loading timer
+          return $q.when 'success'
         return self.loadPhotosP(notCached, options, delay)
 
-
+      getMomentPreviewAssets:(moments)->
+        moments = self.moments if !moments
+        # preload cameraRoll preview thumbnails
+        previewPhotos = []
+        PREVIEW_LIMIT = 5 # 5 thumbnails per moment/date
+        IMAGE_FORMAT = 'thumbnail'
+        _.each moments, (v,k,l)->
+          if v['type'] == 'moment'
+            _.each v['value'], (v2,k2,l2)->
+              if v2['type'] == 'date'
+                _.each v2['value'][0...PREVIEW_LIMIT], (UUID)->
+                  previewPhotos.push {
+                      UUID: UUID,
+                      # date: v2['key']
+                    }
+        return previewPhotos
 
       loadPhotosP: (photos, options, delay=10)->
         return $q.when('success') if _.isEmpty photos
@@ -247,7 +367,8 @@ angular
             )
             .then ()->
               end = new Date().getTime()
-              console.log "\n*** thumbnail preload complete, elapsed=" + (end-start)/1000
+              # console.log "\n*** thumbnail preload complete, elapsed=" + (end-start)/1000
+              $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', options # for cancel loading timer
               dfd.resolve('success')
             .then ()->
               return
@@ -272,10 +393,7 @@ angular
           , delay  
         return dfd.promise   
 
-      clearPhotos_PARSE : ()->
-        # on logout
-        self.photos = _.filter self.photos, (photo)->
-            return photo.from != 'PARSE'
+
 
       addOrUpdatePhoto_FromWorkorder: (photo)->
         # photo could be in local cameraRoll, or if $rootScope.$state.includes('app.workorders') a workorder photo
@@ -310,7 +428,7 @@ angular
           foundInMap.from = 'CameraRoll<PARSE' 
           # cameraRoll photo.favorite has priority
           # BUT, we need to listen for onChange favorite OUTSIDE app and post(?)
-          console.log "%%% isLocal, photo=" + JSON.stringify _.pick  foundInMap, ['from', 'caption', 'rating', 'xxxfavorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId']
+          # console.log "%%% isLocal, photo=" + JSON.stringify _.pick  foundInMap, ['from', 'caption', 'rating', 'xxxfavorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId']
           return true # triggers $broadcast cameraRoll.updated for topPicks refresh
         else if !isLocal && foundInMap # update Workorder Photo from Parse
           _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot'] # copy Edit fields
@@ -319,6 +437,12 @@ angular
             console.log "%%% NOT isLocal, photo=" + JSON.stringify _.pick foundInMap, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot']
           return false
 
+
+
+
+      clearPhotos_PARSE : ()->
+        # on logout
+        self.photos = self.filterDeviceOnly(self.photos)
 
       isDataURL : (src)->
         throw "isDataURL() ERROR: expecting string" if typeof src != 'string'
@@ -332,7 +456,7 @@ angular
       addDataURL: (size, options)->
         # console.log "\n\n adding for size=" + size
         if !/preview|thumbnail/.test( size )
-          return console.log "ERROR: invalid dataURL size, size=" + size
+          return console.warn "ERROR: invalid dataURL size, size=" + size
         _logOnce "sdkhda", "WARNING: NOT truncating to UUID(36), UUID="+options.UUID if options.UUID.length > 36
 
         imgSrc = options.data || options.dataURL
@@ -350,23 +474,6 @@ angular
       addParseURL : (parsePhoto, size)->
         self.dataURLs[size][parsePhoto.UUID] = parsePhoto.src
         return parsePhoto.src
-
-
-      # load moments, but not photos
-      loadMomentsFromCameraRoll: (mapped)->
-        ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
-        mapped = self._mapAssetsLibrary if !mapped
-
-        # cameraRoll._mapAssetsLibrary -> cameraRoll.moments
-        photosByDate = otgData.mapDateTakenByDays(mapped, "like TEST_DATA")
-        # replace cameraRoll.moments
-        justUUIDsByDate = {} # JUST [{date:[UUID,]},{}]
-        _.each _.keys( photosByDate) , (key)->
-          justUUIDsByDate[key] = _.pluck photosByDate[key], 'UUID'
-        # console.log justUUIDsByDate
-        self.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( justUUIDsByDate ), 2
-
-        return self.moments
 
 
       getDateFromLocalTime : (dateTaken)->
@@ -435,27 +542,6 @@ angular
               $q.reject('photo not available')
 
 
-      resampleP : (imgOrSrc, W=320, H=null)->
-        return $q.reject('Missing Image') if !imgOrSrc
-        console.log "*** resize & convert to base64 using Resample.js ******* imgOrSrc=" + imgOrSrc
-        dfd = $q.defer()
-        done = (dataURL)->
-          console.log "resampled data=" + JSON.stringify {
-            size: dataURL.length
-            data: dataURL[0..60]
-          }
-          dfd.resolve(dataURL)
-          return
-        try 
-          Resample.one()?.resample imgOrSrc
-            ,   W
-            ,   H    # targetHeight
-            ,   dfd
-            ,   "image/jpeg"
-        catch ex  
-          dfd.reject(imgOrSrc)
-        return dfd.promise
-
       ### queue photo for retrieval, put into imgCacheSvc for later access
         called by: 
           directive:lazySrc
@@ -490,7 +576,7 @@ angular
 
       
         if !found # still not found, add to queue for fetch
-          console.log "STILL NOT FOUND queueDataURL(UUID)=" + UUID
+          # console.log "STILL NOT FOUND queueDataURL(UUID)=" + UUID
           self.queueDataURL(UUID, size)
           # calls:
            # > debounced_fetchDataURLsFromQueue 
@@ -498,6 +584,69 @@ angular
            #     > queue()
            #     > getDataURLForAssetsByChunks_P()
         return found
+
+      # called by getDataURL, but NOT getDataURL_P
+      queueDataURL : (UUID, size='preview')->
+        return if deviceReady.device().isBrowser
+        self._queue[UUID] = { 
+          UUID: UUID
+          size: size, 
+        }
+        # # don't wait for promise
+        self.debounced_fetchDataURLsFromQueue()
+        # $rootScope.$broadcast 'cameraRoll.queuedDataURL'
+        return
+
+
+      # called by cameraRoll.queueDataURL()
+      fetchDataURLsFromQueue : ()->
+        queuedAssets = self.queue()
+
+        chunks = {}
+        _.each ['preview', 'thumbnail'], (size)->
+          assets = _.filter queuedAssets, (o)->return o?.size == size
+          chunks[size] = assets if assets.length
+
+        promises = []
+        _.each chunks, (assets, size)->
+          # console.log "\n\n *** fetchDataURLsFromQueueP START! size=" + size + ", count=" + assets.length + "\n"
+          promises.push snappiMessengerPluginService.getDataURLForAssetsByChunks_P(
+              assets, 
+              {size: size},
+              (photo)->
+                dataType = if photo.data[0...10]=='data:image' then 'DATA_URL' else 'FILE_URI'
+                if dataType == 'FILE_URI'
+                  imageCacheSvc.stashFile(photo.UUID, size, photo.data, photo.dataSize) # FILE_URI
+            ).then (photos)->
+              return photos 
+
+        return $q.all(promises).then (o)->
+            # console.log "*** fetchDataURLsFromQueueP $q All Done! \n" 
+            return
+
+      debounced_fetchDataURLsFromQueue : ()->
+        return console.log "\n\n\n ***** Placeholder: add debounce on init *********"
+
+      # getter, or reset queue
+      queue: (clear, PREVIEW_LIMIT = 50 )->
+        self._queue = {} if clear=='clear'
+
+        thumbnails = _.filter self._queue, {size: 'thumbnail'}
+        previews = _.filter self._queue, {size: 'preview'}
+
+        if previews.length > PREVIEW_LIMIT
+          _logOnce 'iegd', "cameraRoll.queue() 'preview' PREVIEW_LIMIT="+PREVIEW_LIMIT
+          remainder = previews[PREVIEW_LIMIT..]
+
+        batch = thumbnails.concat previews.slice(0, PREVIEW_LIMIT)
+        self._queue = if remainder?.length then _.indexBy( remainder, 'UUID') else {}
+
+        # order by thumbnails then previews
+        return batch
+
+
+
+
 
 
       # IMAGE_WIDTH should be computedWidth - 2 for borders
@@ -518,86 +667,27 @@ angular
           h = photo.scaledH
         return h
 
-      # called by getDataURL, but NOT getDataURL_P
-      queueDataURL : (UUID, size='preview')->
-        console.warn "@@@@@@  DEPRECATE??? cameraRoll.queueDataURL"
-        return if deviceReady.device().isBrowser
-        self._queue[UUID] = { 
-          UUID: UUID
-          size: size, 
-        }
-        # # don't wait for promise
-        self.debounced_fetchDataURLsFromQueue()
-        # return
+      resampleP : (imgOrSrc, W=320, H=null)->
+        return $q.reject('Missing Image') if !imgOrSrc
+        console.log "*** resize & convert to base64 using Resample.js ******* imgOrSrc=" + imgOrSrc
+        dfd = $q.defer()
+        done = (dataURL)->
+          console.log "resampled data=" + JSON.stringify {
+            size: dataURL.length
+            data: dataURL[0..60]
+          }
+          dfd.resolve(dataURL)
+          return
+        try 
+          Resample.one()?.resample imgOrSrc
+            ,   W
+            ,   H    # targetHeight
+            ,   dfd
+            ,   "image/jpeg"
+        catch ex  
+          dfd.reject(imgOrSrc)
+        return dfd.promise
 
-        # $rootScope.$broadcast 'cameraRoll.queuedDataURL'
-
-      # getter, or reset queue
-      queue: (clear, PREVIEW_LIMIT = 50 )->
-        console.warn "@@@@@@  DEPRECATE??? cameraRoll.queue"
-        self._queue = {} if clear=='clear'
-
-        thumbnails = _.filter self._queue, {size: 'thumbnail'}
-        previews = _.filter self._queue, {size: 'preview'}
-
-        if previews.length > PREVIEW_LIMIT
-          _logOnce 'iegd', "cameraRoll.queue() 'preview' PREVIEW_LIMIT="+PREVIEW_LIMIT
-          remainder = previews[PREVIEW_LIMIT..]
-
-        batch = thumbnails.concat previews.slice(0, PREVIEW_LIMIT)
-        self._queue = if remainder?.length then _.indexBy( remainder, 'UUID') else {}
-
-        # order by thumbnails then previews
-        return batch
-
-      # called by cameraRoll.queueDataURL()
-      fetchDataURLsFromQueue : ()->
-        console.warn "@@@@@@  cameraRoll.fetchDataURLsFromQueue"
-        queuedAssets = self.queue()
-
-        chunks = {}
-        _.each ['preview', 'thumbnail'], (size)->
-          assets = _.filter queuedAssets, (o)->return o?.size == size
-          chunks[size] = assets if assets.length
-        # console.log chunks
-
-
-        promises = []
-        _.each chunks, (assets, size)->
-          console.log "\n\n *** fetchDataURLsFromQueueP START! size=" + size + ", count=" + assets.length + "\n"
-          promises.push snappiMessengerPluginService.getDataURLForAssetsByChunks_P(
-              assets, 
-              {size: size},
-              (photo)->
-                dataType = if photo.data[0...10]=='data:image' then 'DATA_URL' else 'FILE_URI'
-                if dataType == 'FILE_URI'
-                  imageCacheSvc.stashFile(photo.UUID, size, photo.data, photo.dataSize) # FILE_URI
-            ).then (photos)->
-              return photos 
-
-        return $q.all(promises).then (o)->
-            console.log "*** fetchDataURLsFromQueueP $q All Done! \n" 
-
-      debounced_fetchDataURLsFromQueue : ()->
-        return console.log "\n\n\n ***** Placeholder: add debounce on init *********"
-
-
-      getMomentPreviewAssets:(moments)->
-        moments = self.moments if !moments
-        # preload cameraRoll preview thumbnails
-        previewPhotos = []
-        PREVIEW_LIMIT = 5 # 5 thumbnails per moment/date
-        IMAGE_FORMAT = 'thumbnail'
-        _.each moments, (v,k,l)->
-          if v['type'] == 'moment'
-            _.each v['value'], (v2,k2,l2)->
-              if v2['type'] == 'date'
-                _.each v2['value'][0...PREVIEW_LIMIT], (UUID)->
-                  previewPhotos.push {
-                      UUID: UUID,
-                      # date: v2['key']
-                    }
-        return previewPhotos
 
       # array of moments
       moments: []
@@ -641,41 +731,7 @@ angular
       CHUNK_SIZE : 30
       SERIES_DELAY_MS: 100
 
-      _callP : (method, data, TIMEOUT=10000)->
-        return $q.when "Messenger Plugin not available" if !window.Messenger?
-        dfd = $q.defer()
-        cancel = $timeout ()->
-            return dfd.reject("TIMEOUT: snappiMessengerPluginService - " + method)
-          , TIMEOUT
-        onSuccess = (resp)->
-            console.log ">>> callP returned for method=" + method
-            $timeout.cancel(cancel)
-            return dfd.resolve(resp)
-        onError = (err)->
-            $timeout.cancel(cancel)
-            return dfd.reject(err)
-        switch method
-          when 'getScheduledAssets', 'unscheduleAllAssets'
-          ,'suspendAllAssetUploads', 'resumeAllAssetUploads'
-          ,'allSessionTaskInfos'
-            args = [onSuccess]
-          when 'scheduleAssetsForUpload', 'unscheduleAssetsForUpload'
-          ,'sessionTaskInfoForIdentifier', 'removeSessionTaskInfoWithIdentifier'
-          , 'setAllowsCellularAccess'
-            args = [data, onSuccess, onError]
-          when 'setFavorite'
-            args = [data.UUID, data.favorite, onSuccess, onError]
-          else
-            throw "ERROR: invalid method. name=" + method
-        console.log ">>> callP calling method=" + method + ", args.length=" + args.length     
-        window.Messenger[method].apply( this, args )
-        return dfd.promise 
-
       on : 
-        photoStreamChange : (handler)-> 
-          #  updated:{array of phasset ids}, removed:{array of phasset ids}, added:{array of phasset ids}
-          return window.Messenger.on( 'photoStreamChange', handler )
-
 
         didBeginAssetUpload : (handler)-> 
           # called AFTER background task is scheduled, see also: didFailToScheduleAsset()
@@ -690,11 +746,7 @@ angular
 
         didFinishAssetUpload : (handler)-> 
           # asset:{string phasset id}, 
-          # refactor: moved to sessionTaskInfoForIdentifier(resp.asset)
-              # name:{string (Parse name)}    
-              # url: Parse URL
-              # success: bool
-              # errorCode: int
+          # call sessionTaskInfoForIdentifier(resp.asset) to get status
           return window.Messenger.on( 'didFinishAssetUpload', handler )
 
 
@@ -713,29 +765,48 @@ angular
           # otherwise, check resp.errorCode
           return window.Messenger.on( 'didFailToScheduleAsset', handler )
 
-        unscheduleAssetsForUpload : (handler)-> 
-          #   assets:{array of phasset ids}
-          return window.Messenger.on( 'unscheduleAssetsForUpload', handler )
-
         #
         #  native Calendar control
         #
-        scheduleDayRangeForUpload : (handler)-> 
+        XXXscheduleDayRangeForUpload : (handler)-> 
           #  fromDate:{string}, toDate:{string}
           return window.Messenger.on( 'scheduleDayRangeForUpload', handler )
 
-        unscheduleDayRangeForUpload : (handler)-> 
+        XXXunscheduleDayRangeForUpload : (handler)-> 
           #  fromDate:{string}, toDate:{string}
           return window.Messenger.on( 'unscheduleDayRangeForUpload', handler )
 
 
-      # For communicating back with the native, we’ve defined two methods for you to call. The first is a response to the same command for returning whatever is your last phasset that the native has given you, the second is for passing array of phasset ids to be scheduled for background upload. I am not exactly sure how this happens on the Cordova side but I am guessing there should be a method in the messenger you can call an pass in the command string and a dictionary. I’ve listed the command names and data dictionary key:value pairs.
-      # //Responds
-      lastImageAssetIDP : (resp)-> 
-        # o = {  
-        #  asset:[UUID, UUID, UUID, ... ]
-        # }
-        return _MessengerPLUGIN._callP( 'lastImageAssetID' )
+
+      _callP : (method, data, TIMEOUT=10000)->
+        return $q.when "Messenger Plugin not available" if !window.Messenger?
+        dfd = $q.defer()
+        cancel = $timeout ()->
+            return dfd.reject("TIMEOUT: snappiMessengerPluginService - " + method)
+          , TIMEOUT
+        onSuccess = (resp)->
+            # console.log ">>> callP returned for method=" + method + ", resp=" + JSON.stringify(resp)[0..100]
+            $timeout.cancel(cancel)
+            return dfd.resolve(resp)
+        onError = (err)->
+            $timeout.cancel(cancel)
+            return dfd.reject(err)
+        switch method
+          when 'getScheduledAssets', 'unscheduleAllAssets'
+          ,'suspendAllAssetUploads', 'resumeAllAssetUploads'
+          ,'allSessionTaskInfos'
+            args = [onSuccess]
+          when 'scheduleAssetsForUpload', 'unscheduleAssetsForUpload'
+          ,'sessionTaskInfoForIdentifier', 'removeSessionTaskInfoWithIdentifier'
+          , 'setAllowsCellularAccess'
+            args = [data, onSuccess, onError]
+          when 'setFavorite'
+            args = [data.UUID, data.favorite, onSuccess, onError]
+          else
+            throw "ERROR: invalid method. name=" + method
+        # console.log ">>> callP calling method=" + method + ", args.length=" + args.length     
+        window.Messenger[method].apply( this, args )
+        return dfd.promise 
 
       setAllowsCellularAccessP : (value)->
         return _MessengerPLUGIN._callP( 'setAllowsCellularAccess', value ) 
@@ -756,15 +827,15 @@ angular
           assets: assetIds
           options: options
         }
-        console.log "\n\n*** scheduleAssetsForUpload, data=\n" + JSON.stringify( data )
+        # console.log "\n\n*** scheduleAssetsForUpload, data=\n" + JSON.stringify( data )
         return _MessengerPLUGIN._callP( 'scheduleAssetsForUpload', data )  
 
       getScheduledAssetsP : ()-> 
-        console.log "\n\n*** calling getScheduledAssetsP"
+        # console.log "\n\n*** calling getScheduledAssetsP"
         return _MessengerPLUGIN._callP( 'getScheduledAssets')  
 
       unscheduleAllAssetsP : ()-> 
-        console.log "\n\n*** calling unscheduleAllAssets"
+        # console.log "\n\n*** calling unscheduleAllAssets"
         return _MessengerPLUGIN._callP( 'unscheduleAllAssets')  
 
       suspendAllAssetUploadsP : ()->
@@ -781,7 +852,7 @@ angular
       sessionTaskInfoForIdentifierP : (UUID)->
         # resp = { asset, progress, hasFinished, success, errorCode, url, name }
           # asset: "AC072879-DA36-4A56-8A04-4D467C878877/L0/001"
-          # errorCode: 0
+          # errorCode: 0, ERROR_CANCELLED = -999
           # hasFinished: true
           # name: "tfss....jpg"
           # progress: 1
@@ -796,8 +867,26 @@ angular
         return _MessengerPLUGIN._callP( 'removeSessionTaskInfoWithIdentifier', UUID) 
 
 
+      mapCollectionsP: ()->
+        # expecting [ {startDate: , endDate:, localizedTitle: , localizedLocationNames: , moments: [] , collectionListSubtype: , collectionListType: },{}]
+        # moments = [ {startDate: , endDate:, localizedLocationNames: , "localizedTitle" , assetCollectionSubtype: ,assetCollectionType: ,assets: ,estimatedAssetCount: }, {} ]
+        # console.log "mapCollections() calling window.Messenger.mapCollections(assets)"
+        return deviceReady.waitP().then (retval)->
+          dfd = $q.defer()
+          return $q.reject "ERROR: window.Messenger Plugin not available" if !(window.Messenger?.mapCollections)
+          # console.log "about to call Messenger.mapAssetsLibrary(), Messenger.properties=" + JSON.stringify _.keys window.Messenger.prototype 
+          window.Messenger.mapCollections (mapped)->
+              ## example: [{"dateTaken":"2014-07-14T07:28:17+03:00","UUID":"E2741A73-D185-44B6-A2E6-2D55F69CD088/L0/001"}]
+              # attributes: UUID, dateTaken, mediaType, MediaSubTypes, hidden, favorite, originalWidth, originalHeight
+              # console.log "\n *** mapAssetsLibrary Got it!!! length=" + mapped.length
+              return dfd.resolve ( mapped )
+            , (error)->
+              return dfd.reject("ERROR: Messengerm.mapCollections(), msg=" + JSON.stringify error)
+          # console.log "called Messenger.mapAssetsLibrary(), waiting for callbacks..."
+          return dfd.promise
+
       mapAssetsLibraryP: (options={})->
-        console.log "mapAssetsLibrary() calling window.Messenger.mapAssetsLibrary(assets)"
+        # console.log "mapAssetsLibrary() calling window.Messenger.mapAssetsLibrary(assets)"
 
         # defaults = {
         #   # pluck: ['DateTimeOriginal', 'PixelXDimension', 'PixelYDimension', 'Orientation']
@@ -848,11 +937,12 @@ angular
               # cameraRoll.addDataURL(photo.format, photo)
               # console.log "\n*****************************\n"
 
-            console.log "\n********** updated cameraRoll.dataURLs for this batch ***********\n"
+            # console.log "\n********** updated cameraRoll.dataURLs for this batch ***********\n"
 
             return photos
           , (errors)->
-            console.log errors
+            console.warn "ERROR: getDataURLForAssetsByChunks_P"
+            console.warn errors
             return $q.reject(errors)  # pass it on
 
       ##
@@ -881,10 +971,11 @@ angular
               # console.log photos
               _.each photos, (chunkOfPhotos, k)->
                 allPhotos = allPhotos.concat( chunkOfPhotos )
-              console.log "\n\n>>>  $q.all() done, dataURLs for all chunks retrieved!, length=" + allPhotos.length + "\n\n"
+              # console.log "\n\n>>>  $q.all() done, dataURLs for all chunks retrieved!, length=" + allPhotos.length + "\n\n"
               return allPhotos
             , (errors)->
-              console.error errors  
+              console.warn "ERROR: getDataURLForAssetsByChunks_P"
+              console.warn errors  
 
         allPhotos = []
         recurivePromise = (chunks, delayMS)->
@@ -912,7 +1003,7 @@ angular
           return $q.when(allPhotos) if error == 'done'
           return $q.reject(error)
         .then (allPhotos)->
-          console.log "\n\n>>>  SERIES fetch done, dataURLs for all chunks retrieved!, length=" + allPhotos.length + "\n\n"
+          # console.log "\n\n>>>  SERIES fetch done, dataURLs for all chunks retrieved!, length=" + allPhotos.length + "\n\n"
           return allPhotos
 
       ##
@@ -972,14 +1063,14 @@ angular
             if retval.errors.length == 0
               end = new Date().getTime()
               elapsed = (end-start)/1000
-              console.log "\n>>>>>>>> window.Messenger.getPhotoById()  complete, count=" + retval.photos.length + " , elapsed=" + elapsed + "\n\n"
+              # console.log "\n>>>>>>>> window.Messenger.getPhotoById()  complete, count=" + retval.photos.length + " , elapsed=" + elapsed + "\n\n"
               return dfd.resolve ( retval.photos ) 
             else if retval.photos.length && retval.errors.length 
-              console.log "WARNING: SOME errors occurred in Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
+              # console.warn "WARNING: SOME errors occurred in Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
               # ???: how do we handle the errors? save them until last?
               return dfd.resolve ( retval.photos ) 
             else if retval.errors.length 
-              console.error "ERROR: Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
+              console.warn "ERROR: Messenger.getPhotoById(), errors=" + JSON.stringify retval.errors
               return dfd.reject retval.errors
 
 

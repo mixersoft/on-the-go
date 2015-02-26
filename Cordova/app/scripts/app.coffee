@@ -20,9 +20,10 @@ angular
   'angular-datepicker'
   'ngStorage'
 ])
-.config ($ionicConfigProvider)->
-  $ionicConfigProvider.backButton.text('Back').icon('ion-ios-arrow-back');
-
+.config ['$ionicConfigProvider', 
+  ($ionicConfigProvider)->
+    $ionicConfigProvider.backButton.text('Back').icon('ion-ios-arrow-back');
+]
 .run [
   '$rootScope', '$state', '$stateParams', '$ionicPlatform', 'PARSE_CREDENTIALS'
   ($rootScope, $state, $stateParams, $ionicPlatform, PARSE_CREDENTIALS)->
@@ -47,6 +48,30 @@ angular
       console.log ["\n\n _logOnce:", message, " \n\n"].join(' &&& ')
       return _alreadyLogged[id] = message
 ]
+
+# .factory '$templateCache', [
+#   '$cacheFactory', '$http', '$injector'
+#   ($cacheFactory, $http, $injector)->
+#     cache = $cacheFactory('templates')
+#     self = {
+#       get: (url)->
+#         fromCache = cache.get url
+#         return fromCache if (fromCache)
+
+#         return promise = $http.get(url).then (resp)->
+#           $injector.get('$compile')(resp.data)
+#           return resp
+#         .then (resp)->
+#           return {
+#             status: resp.status
+#             data: cache.get(url)
+#           }
+#       put: (key, value)->
+#         cache.put key, value
+#     }
+#     return self
+# ]
+
 .factory 'SideMenuSwitcher', ['$window',
 ($window)->
 
@@ -78,7 +103,7 @@ angular
   }
   return self
 ]
-.config ($stateProvider, $urlRouterProvider)->
+.config ['$stateProvider', '$urlRouterProvider', ($stateProvider, $urlRouterProvider)->
   $stateProvider
     .state('app', {
       url: "/app",
@@ -392,7 +417,7 @@ angular
   $urlRouterProvider.otherwise('/app/top-picks/top-picks');  
   # $urlRouterProvider.otherwise('/app/settings');  
 
-
+]
 .controller 'AppCtrl', [
   '$scope', '$rootScope', '$timeout', '$q', 
   '$ionicPlatform', '$ionicModal', '$ionicLoading'
@@ -484,27 +509,27 @@ angular
 
       toggleHelp : ()->
         $scope.config.help = !$scope.config.help  
-        console.log "help="+ if $scope.config.help then 'ON' else 'OFF'
+        # console.log "help="+ if $scope.config.help then 'ON' else 'OFF'
 
       sync: 
         cameraRoll_Orders: ()-> 
-          console.log ">>> SYNC_cameraRoll_Orders"
+          # console.log ">>> SYNC_cameraRoll_Orders"
           cameraRoll.loadCameraRollP(null, 'force').finally ()->
             if !$scope.deviceReady.isOnline()
-              $scope.$broadcast('sync.debounceComplete')
+              $rootScope.$broadcast('sync.debounceComplete')
               return 
               
             otgWorkorderSync.SYNC_ORDERS(
               $scope, 'owner', 'force'
               , ()->
-                $scope.$broadcast('sync.debounceComplete')
+                $rootScope.$broadcast('sync.debounceComplete')
                 return
             )
           return
 
         DEBOUNCED_cameraRoll_Orders: ()->
           debounced = _.debounce ()->
-            console.log "\n\n >>> DEBOUNCED_cameraRoll_Orders fired"
+            # console.log "\n\n >>> DEBOUNCED_cameraRoll_Orders fired"
             $scope.app.sync.cameraRoll_Orders()
             return
           , 5000 # 5*60*1000
@@ -528,7 +553,7 @@ angular
               return
 
             okAlert = (value)->
-              console.log "NSUserDefaults fetch SUCCESS: value=" + JSON.stringify value
+              # console.log "NSUserDefaults fetch SUCCESS: value=" + JSON.stringify value
               return  
 
             fail = (err)->
@@ -580,11 +605,22 @@ angular
         return $scope.app.appPreferences['store'] newVal, oldVal
       , true
 
+    $scope.$on 'user:sign-out', (args)->
+      console.log "$broadcast user:sign-out received"
+      $rootScope.counts = {
+        'top-picks': 0
+        uploaderRemaining: 0
+        orders: 0
+      }
+      cameraRoll.loadCameraRollP(null, 'force')
+      return
 
+    $scope.$on 'sync.cameraRollComplete', (args)->
+      $scope.app.localStorageSnapshot()
 
     $scope.$on 'sync.debounceComplete', ()->
         $scope.hideLoading()
-        $scope.$broadcast('scroll.refreshComplete')
+        $rootScope.$broadcast('scroll.refreshComplete')
         $scope.app.localStorageSnapshot()
         return     
 
@@ -599,6 +635,10 @@ angular
         'topPicks'
         'cameraRoll'
       ]) 
+      # do this BEFORE any listeners are registered
+      if $localStorage['config']['upload']['auto-upload'] == false
+        $localStorage['config']['upload']['enabled'] = false # force
+
       $rootScope.config =  $scope.config = $localStorage['config']
       $rootScope.counts = $localStorage['menuCounts']
       $rootScope.device = $localStorage['device']
@@ -614,8 +654,10 @@ angular
 
     _LOAD_BROWSER_TOOLS = ()->
       # load TEST_DATA
-      if $rootScope.user?.role != 'editor'
-        console.log "\n\n *** loading TEST_DATA: TODO: MOVE TO _LOAD_BROWSER_TOOLS ***\n\n"
+      if $rootScope.user?.role == 'editor'
+        'skip'
+      else
+        # console.log "\n\n *** loading TEST_DATA: TODO: MOVE TO _LOAD_BROWSER_TOOLS ***\n\n"
         cameraRoll.orders = TEST_DATA.orders
         photos_ByDateUUID = TEST_DATA.cameraRoll_byDate
         cameraRoll.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( photos_ByDateUUID ), 2
@@ -763,19 +805,16 @@ angular
       .then ()->
         $scope.config['no-view-headers'] = deviceReady.device().isDevice && false
         $rootScope.device.id = deviceReady.deviceId()
-        console.log "\n\n>>> deviceId="+$rootScope.device.id
+        # console.log "\n\n>>> deviceId="+$rootScope.device.id
       .then ()->
         return if deviceReady.device().isBrowser
         # loadMomentThumbnails on timer, cancel if done elsewhere
         # for reload cameraRoll.map() from localStorage
         _cancel = $timeout ()->
-            cameraRoll.loadMomentsFromCameraRoll()
-            .then cameraRoll.loadMomentThumbnailsP
-            .done ()->
-              console.log "\n @@@load cameraRoll thumbnails loaded from init timer"
+            cameraRoll.loadCameraRollP(null, false)
             return
           , 3000
-        _off = $rootScope.$on 'cameraRoll.beforeLoadMomentThumbnails', ()->
+        _off = $rootScope.$on 'cameraRoll.beforeLoadMomentThumbnails', (ev, cancel)->
           $timeout.cancel _cancel 
           _off()
           _off = _cancel = null
@@ -797,6 +836,7 @@ angular
       user: $rootScope.user
       cameraRoll: cameraRoll
       workorders: otgWorkorderSync._workorderColl
+      woSync: otgWorkorderSync
       imgCache: imageCacheSvc
       ls: $localStorage
     }

@@ -48,7 +48,7 @@
         </div>
       <hr>
       <div class="row">
-        <div class="col col-67 text-right">Suggested Donation:</div>
+        <div class="col col-67 text-right">Total:</div>
         <div class="col">{{watch.servicePlan.total | currency:'$'}}</div>
       </div>
       <div class="row">
@@ -149,7 +149,8 @@
 <script type="text/ng-template" id="partials/checkout/payment">
   <ion-view title="Payment"  hide-back-button="true"><ion-content delegate-handle="checkout" class="has-footer">
 
-    <div ng-include="'partials/checkout/promo-card'"></div>
+    <div ng-include="'partials/checkout/promo-card'" ng-if=1 ></div>
+    <div ng-include="'partials/checkout/give-instead'" ng-if=0 ></div>
 
     <div class="card">
       <ion-item class="item-divider item-calm">

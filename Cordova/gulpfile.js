@@ -11,7 +11,8 @@ var paths = {
   sass: ['./scss/**/*.scss'],
   coffee: ['./app/scripts/**/*.coffee'],
   views: ['./app/views/**/*.html'],
-  legal: ['./app/legal/**/*.html']
+  legal: ['./app/legal/**/*.html'],
+  build: ['./dist/**/*', '!./dist/components/**']
 };
 
 gulp.task('default', ['sass', 'coffee', 'copy:html']);
@@ -75,3 +76,7 @@ gulp.task('copy:more', function(){
     .pipe(gulp.dest('./www/'));
 })
 
+gulp.task('copy:build', function(){
+  gulp.src(paths.build)
+    .pipe(gulp.dest('./www/'));
+})

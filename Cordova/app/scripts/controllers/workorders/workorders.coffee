@@ -78,10 +78,10 @@ angular.module('ionBlankApp')
     $scope.workorder = null
 
     $scope.DEBOUNCED_SYNC_workorders = _.debounce ()->
-      console.log "\n\n >>> DEBOUNCED!!!"
+      # console.log "\n\n >>> DEBOUNCED!!!"
       onComplete = ()->
         $scope.hideLoading()
-        $scope.$broadcast('scroll.refreshComplete')
+        $rootScope.$broadcast('scroll.refreshComplete')
         return
       otgWorkorderSync.SYNC_WORKORDERS($scope, 'editor', 'force', onComplete)
     , 5000 # 5*60*1000

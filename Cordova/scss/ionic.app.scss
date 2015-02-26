@@ -338,6 +338,13 @@ otg-moment {
       padding: 0;
     }
   }
+  .moment-label {
+    font-family: "Helvetica Neue",Roboto,sans-serif;
+    font-size: 0.9em;
+    text-overflow:ellipsis;
+    overflow:hidden;
+    white-space:nowrap;
+  }
   .item-complex .item-content {
     padding: 0;
   }
@@ -590,7 +597,7 @@ otg-moment-date-range {
     -moz-box-shadow: 10px 10px 23px -4px rgba(0,0,0,0.65);
     box-shadow: 10px 10px 23px -4px rgba(0,0,0,0.65);
 
-    &.down , &.enabled {
+    &.down{
       -webkit-box-shadow: inset 10px 10px 23px -4px rgba(0,0,0,0.65);
       -moz-box-shadow: inset 10px 10px 23px -4px rgba(0,0,0,0.65);
       box-shadow: inset 10px 10px 23px -4px rgba(0,0,0,0.65);

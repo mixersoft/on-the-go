@@ -21,29 +21,36 @@ angular.module('ionBlankApp')
       IMAGE_SIZE = format || 'thumbnail'
 
       # priorities: stashed FileURL > cameraRoll.dataURL > photo.src
-      photo = element.scope().item
+      scope = element.scope()
+      photo = scope.item || scope.photo  # TODO: refactor in TopPicks, use scope.photo
 
       isWorkorder = $rootScope.$state.includes('app.workorders') || $rootScope.$state.includes('app.orders')
       isWorkorderMoment = IMAGE_SIZE=='thumbnail' && isWorkorder
       # WARNING: must be after $localStorage.waitP()
       isBrowser = $localStorage['device'].isBrowser
 
-      # special condition, Editor Workstation with no local photos
-      if isBrowser && photo?.from == 'PARSE' 
-        # orders or workorders from PARSE, use photo.src
-        if format == 'thumbnail'
-          # TODO: workorder thumbnails should be resampled.
-          "skip"
-        url = cameraRoll.addParseURL(photo, format) # cache photo.src into dataURL
-        return element.attr('src', url)  
+      if isWorkorderMoment
+        mappedPhoto = _.find( cameraRoll.map(), {UUID: photo.UUID})
+        _.extend( photo, mappedPhoto) if mappedPhoto  
 
-      if isBrowser && photo && photo.from == 'PARSE' 
-        # DEBUG mode on browser
-        return element.attr('src', photo.src)  
+        # get updated values from cameraRoll.map()
+        if _.isEmpty photo.src
+          thumbSrc = ''
+        else if photo.src.indexOf('snaphappi.com') == -1
+          thumbSrc = ''
+        else if photo.src.indexOf('/sq~') > -1
+          thumbSrc = photo.src
+        else 
+          parts = photo.src.split('/')
+          parts.push( '.thumbs/sq~' + parts.pop() )
+          thumbSrc = photo.src = parts.join('/')
+        
+        return element.attr('src', thumbSrc)
+      if isWorkorder
+        return element.attr('src', photo.src) 
 
       # return if isBrowser && !photo # digest cycle not ready yet  
-
-      if isBrowser
+      if isBrowser && !isWorkorder
         return _useLoremPixel(element, UUID, format)
 
 
@@ -62,7 +69,7 @@ angular.module('ionBlankApp')
           element.attr('src', src) 
           return 
         
-        console.log "\nlazySrc reports notCached in cameraRoll.dataURLs for format=" + format + ", UUID="+UUID
+        # console.log "\nlazySrc reports notCached in cameraRoll.dataURLs for format=" + format + ", UUID="+UUID
         if !isBrowser || isWorkorder
           # get with promise
           options = {
@@ -83,7 +90,8 @@ angular.module('ionBlankApp')
                 else 
                   'not caching DATA_URL thumbnails'
               else
-                console.warn "\n\n*** WARNING: did collection repeat change the element before getDataURL_P returned?"  
+                'skp'
+                # console.warn "\n\n*** WARNING: did collection repeat change the element before getDataUR
               return
           .catch (error)->
             console.error "_setLazySrc"
@@ -167,16 +175,26 @@ angular.module('ionBlankApp')
     _getAsPhotos = (uuids)->
       return _.map uuids, (uuid)->
         photo = _lookupPhoto[uuid]
-        console.warn ">>> otgMoment photo not found, UUID="+uuid if !photo
+        if !photo
+          photo = _.find(cameraRoll.map(),{UUID:uuid})
+          if !photo
+            console.warn ">>> otgMoment photo not found, UUID="+uuid if !photo
+          else 
+            _lookupPhoto[uuid] = photo # add NEW photo from cameraRoll
         return photo
 
     _getMomentHeight = (moment, index)->
       days = moment.value.length
       paddingTop = 10
       padding = 16+1
+      padding += 20 # .moment-label
       h = days * (this.options.thumbnailSize+1) + padding * 2
       # console.log "i="+index+", moment.key="+moment.key+", h="+h
       return h  
+
+    _getMomentLabel = (moment)->
+      label = cameraRoll.iOSCollections.getLabelForDates(_.pluck( moment.value, 'key'))
+      return label.labels.concat(label.locations).join(', ')    
 
     _getOverflowPhotos = (photos)->
       # console.log "\n\n_getOverflowPhotos  ** photo.length=" + photos.length+"\n"
@@ -193,13 +211,16 @@ angular.module('ionBlankApp')
       link: (scope, element, attrs) ->
         # element.text 'this is the moment directive'
         scope.options = _setSizes(element)
-        scope.getAsPhotos = _getAsPhotos
         if _lookupPhoto==null
           _lookupPhoto = _.indexBy( otgData.parsePhotosFromMoments( cameraRoll.moments ), 'UUID')
-        scope.getMomentHeight = _getMomentHeight
-        scope.getOverflowPhotos = _getOverflowPhotos
-        scope.otgWorkorder = otgWorkorder
-        scope.ClassSelected = scope.$parent.ClassSelected
+        _.extend scope, {
+          getAsPhotos: _getAsPhotos
+          getOverflowPhotos :_getOverflowPhotos
+          getMomentHeight: _getMomentHeight
+          getMomentLabel: _getMomentLabel          
+          otgWorkorder: otgWorkorder
+          ClassSelected: scope.$parent.ClassSelected
+        }
         return
       }
 ]
@@ -213,8 +234,8 @@ angular.module('ionBlankApp')
 .directive 'otgMomentDateRange', [
 # renders moment as a dateRange, used in Orders or Workorders  
 # adds an end-cap not found in otgMoment
-  'otgData'
-  (otgData)->
+  'otgData', 'cameraRoll'
+  (otgData, cameraRoll)->
 
     options = defaults = {
       breakpoint: 480
@@ -302,6 +323,7 @@ angular.module('ionBlankApp')
         if options.rows == 2
           summary.value.push sampled.splice(0, options.thumbnailLimit)
         summary.value.push sampled
+
       return summary
 
     self = {
@@ -320,7 +342,8 @@ angular.module('ionBlankApp')
 ]
 
 # incomplete - not properly implemented
-.directive 'imgCache', [ 'otgImgCache'
+# cache http URLs locally for workorders
+.directive 'XXXimgCache', [ 'otgImgCache'
     (otgImgCache)->
       return {
         restrict: 'A'

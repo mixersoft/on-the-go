@@ -102,7 +102,7 @@
             <!-- header -->
             <div class="item item-divider item-stable padding-horizontal"
             ng-if="on.showInfo()">
-              <div class="caption capitalize">{{item.caption || item.UUID}}</div>
+              <div class="caption capitalize">{{item.caption || (item.dateTaken | date:'MM/dd/yyyy @ h:mma')}}</div>
             </div>
 
             <!-- body -->

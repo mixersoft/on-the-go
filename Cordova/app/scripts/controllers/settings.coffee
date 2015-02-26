@@ -160,9 +160,11 @@ angular.module('ionBlankApp')
     $scope.otgProfile = otgProfile
 
     $scope.watch = {
+      showAdvanced: false 
       isWorking:
         clearAppCache: false
         clearArchive: false
+        resetDeviceId: false
       archive: 
         size: '0 Bytes'
         count: 0        
@@ -187,6 +189,20 @@ angular.module('ionBlankApp')
         imageCacheSvc.clearStashedP(null, null, 'archive').then ()->
           _.extend $scope.watch.archive, imageCacheSvc.stashStats('archive')
           $scope.watch.isWorking.clearArchive = false
+      toggleShowAdvanced: ()->
+        $scope.watch.showAdvanced = !$scope.watch.showAdvanced
+      resetDeviceId: ()->
+        return if $scope.deviceReady.device().isBrowser
+        msg = "Are you sure you want to\nreset your DevideId?"
+        resp = window.confirm(msg)
+        if resp 
+          $scope.watch.isWorking.resetDeviceId = true
+          $timeout ()->
+            otgWorkorderSync._PATCH_DeviceIds_AllWorkorders_P()
+            .then ()-> 
+              $scope.watch.isWorking.resetDeviceId = false
+        return
+
     }
 
     $scope.signOut = (ev)->
@@ -194,12 +210,8 @@ angular.module('ionBlankApp')
       otgProfile.signOut()
       _.extend $scope.user, $rootScope.user
       otgWorkorderSync.clear()
-      $rootScope.counts = {
-        'top-picks': 0
-        uploaderRemaining: 0
-        orders: 0
-      }
       otgUploader.uploader.clearQueueP()
+      $rootScope.$broadcast 'user:sign-out' 
       $state.transitionTo('app.settings.sign-in')
       return     
     
