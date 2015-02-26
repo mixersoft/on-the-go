@@ -320,7 +320,8 @@ static CGFloat defaultCompressionQuality = 0.7;
         }
         
        [missingObjects enumerateObjectsUsingBlock:^(NSString *obj, NSUInteger idx, BOOL *stop) {
-           for (id<PhotosUploaderDelegate>delegate in _delegates) {
+           NSArray *s = [_delegates allObjects];
+           for (id<PhotosUploaderDelegate>delegate in s) {
                if ([delegate respondsToSelector:@selector(photoUploader:didFailToScheduleAssetIdentifier:isMissing:error:)]) {
                    [delegate photoUploader:self didFailToScheduleAssetIdentifier:obj isMissing:YES error:nil];
                }
@@ -361,7 +362,8 @@ static CGFloat defaultCompressionQuality = 0.7;
                 }
                 NSError *err = info[PHImageErrorKey];
                 if (err) {
-                    for (id<PhotosUploaderDelegate>delegate in _delegates) {
+                    NSArray *s = [_delegates allObjects];
+                    for (id<PhotosUploaderDelegate>delegate in s) {
                         if ([delegate respondsToSelector:@selector(photoUploader:didFailToScheduleAssetIdentifier:isMissing:error:)]) {
                             [delegate photoUploader:self didFailToScheduleAssetIdentifier:obj.localIdentifier isMissing:NO error:err];
                         }
@@ -397,7 +399,8 @@ static CGFloat defaultCompressionQuality = 0.7;
                     [task resume];
                     [scheduledTasks addObject:task];
                     
-                    for (id<PhotosUploaderDelegate>delegate in _delegates) {
+                    NSArray *s = [_delegates allObjects];
+                    for (id<PhotosUploaderDelegate>delegate in s) {
                         if ([delegate respondsToSelector:@selector(photoUploader:didScheduleUploadForAssetWithIdentifier:)]) {
                             [delegate photoUploader:self didScheduleUploadForAssetWithIdentifier:obj.localIdentifier];
                         }
