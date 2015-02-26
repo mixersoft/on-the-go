@@ -6,16 +6,22 @@ var sass = require('gulp-sass');
 var minifyCss = require('gulp-minify-css');
 var rename = require('gulp-rename');
 var sh = require('shelljs');
+var shell = require('gulp-shell')
+var del = require('del');
+
 
 var paths = {
   sass: ['./scss/**/*.scss'],
   coffee: ['./app/scripts/**/*.coffee'],
   views: ['./app/views/**/*.html'],
   legal: ['./app/legal/**/*.html'],
-  build: ['./dist/**/*', '!./dist/components/**']
+  build: ['./dist/**/*', '!./dist/components/**'],
+  jsDev: ['./www/js/**/*.js', '!./www/js/**/*.min.js']
 };
 
 gulp.task('default', ['sass', 'coffee', 'copy:html']);
+gulp.task('build', ['unbuild', 'grunt:build', 'copy:build', 'clean:jsDev'])
+gulp.task('unbuild', ['clean', 'copy:more', 'default'])
 
 gulp.task('sass', function(done) {
   gulp.src(paths.sass)
@@ -69,6 +75,11 @@ gulp.task('copy:html', function(){
     .pipe(gulp.dest('./www/views/'));
 })
 
+gulp.task('clean', function(cb) {
+  // You can use multiple globbing patterns as you would with `gulp.src`
+  del(['dist', '.tmp','./www/js/*.min.js', ], cb);
+});
+
 gulp.task('copy:more', function(){
   gulp.src(paths.legal)
     .pipe(gulp.dest('./www/legal/'));
@@ -76,7 +87,25 @@ gulp.task('copy:more', function(){
     .pipe(gulp.dest('./www/'));
 })
 
-gulp.task('copy:build', function(){
-  gulp.src(paths.build)
+
+
+gulp.task('grunt:build', ['unbuild'], function(cb){
+  return gulp.src('')
+    .pipe(
+      shell([
+      'grunt build'
+      ])
+    )
+});
+
+
+gulp.task('copy:build', ['grunt:build'], function(cb){
+  return gulp.src(paths.build)
     .pipe(gulp.dest('./www/'));
+})
+
+
+
+gulp.task('clean:jsDev', ['copy:build'], function(cb){
+    del(paths.jsDev, cb)
 })

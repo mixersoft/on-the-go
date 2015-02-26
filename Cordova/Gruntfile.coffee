@@ -6,6 +6,9 @@ module.exports = (grunt)->
       "optimize"    
   ]);
 
+  grunt.registerTask("unbuild", [
+      'copy:optimize'    
+  ]);
   
   # Optimize pre-built, web-accessible resources for production, primarily `usemin`
   # run after `grunt server`
