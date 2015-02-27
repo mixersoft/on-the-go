@@ -48,17 +48,31 @@
         ng-if='0'
         ng-click="on.test()"> Test</button>
       </div>
-      <div class="empty-list" ng-if="watch.filteredOrderedPhotos.length==0 && $state.$current.name=='app.top-picks.top-picks'"> 
+
+
+      <div class="empty-list" ng-if="watch.filteredOrderedPhotos.length==0 && watch.$state.includes('app.top-picks.top-picks')"> 
           <div class="item item-text-wrap">
             <div class="text-center">
               <h2>{{i18n.tr('empty-list').header}}</h2>
-                <div class="text-left">
-                  <div>{{i18n.tr('empty-list').body}}</div>
+                <div ng-if="watch.orderCount==0">
+                  <div class="text-center">
+                    {{i18n.tr('empty-list').choose}}
+                  </div>
+                  <br />
+                  <div>
+                    <button class="button button-balanced button-large" style="white-space: nowrap;"
+                    ui-sref="app.choose.camera-roll">{{i18n.tr('empty-list').buttonLabelChoose}}</button> 
+                  </div>
                 </div>
-                <br />
-                <div>
-                  <button class="button button-balanced button-large" style="white-space: nowrap;"
-                  ui-sref="app.choose.camera-roll">{{i18n.tr('empty-list').buttonLabel}}</button> 
+                <div ng-if="watch.orderCount>0">
+                  <div class="text-center">
+                    {{i18n.tr('empty-list').upload}}
+                  </div>
+                  <br />
+                  <div>
+                    <button class="button button-assertive button-large" style="white-space: nowrap;"
+                    ui-sref="app.uploader">{{i18n.tr('empty-list').buttonLabelUpload}}</button> 
+                  </div>
                 </div>
             </div>
             <button class="button icon ion-image button-assertive button-full"

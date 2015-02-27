@@ -21,15 +21,17 @@ angular.module('onTheGo.i18n', [])
           body: "A selection of Top Picks from our Curators to help you re-live your favorite Moments"
           footer: ""
         'empty-list':
-          header: 'You have no Top Picks'
-          body: "Why don't you get started by sending us some old vacation photos?"
-          buttonLabel: 'Choose Your Days'
+          header: 'You have no Top Picks yet'
+          choose: "Why don't you get started by sending us some old vacation photos?"
+          upload: "Please make sure you have uploaded the photos from your order."
+          buttonLabelChoose: 'Choose Your Days'
+          buttonLabelUpload: 'Upload Photos'
 
       'app.top-picks.favorites':
         title: "Favorites"
         'header-card':
           header: "Favorites"
-          body: "A selection of your Favorite Shots to help you re-live your favorite Moments"
+          body: "A selection of your Favorite Shots to help you re-live your favorite Moments. These include your favorites from other photo Apps"
           footer: "" 
       'app.top-picks.shared':
         title: "Shared"
