@@ -16,11 +16,12 @@ var paths = {
   views: ['./app/views/**/*.html'],
   legal: ['./app/legal/**/*.html'],
   build: ['./dist/**/*', '!./dist/components/**'],
-  jsDev: ['./www/js/**/*.js', '!./www/js/**/*.min.js']
+  jsDev: ['./www/js/**/*.js', '!./www/js/**/*.min.js', '!templates.js'],
+  html2js: ['./www/views/partials/**/*.html']
 };
 
 gulp.task('default', ['sass', 'coffee', 'copy:html']);
-gulp.task('build', ['unbuild', 'grunt:build', 'copy:build', 'clean:jsDev'])
+gulp.task('build', ['unbuild', 'grunt:build', 'copy:build', 'clean:dev'])
 gulp.task('unbuild', ['clean', 'copy:more', 'default'])
 
 gulp.task('sass', function(done) {
@@ -106,6 +107,8 @@ gulp.task('copy:build', ['grunt:build'], function(cb){
 
 
 
-gulp.task('clean:jsDev', ['copy:build'], function(cb){
-    del(paths.jsDev, cb)
+gulp.task('clean:dev', ['copy:build'], function(cb){
+    del(paths.jsDev)
+    del(paths.html2js)
+    cb()
 })

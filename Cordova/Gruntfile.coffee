@@ -154,19 +154,6 @@ module.exports = (grunt)->
       jshint:       [ grunt: true, args: [ 'jshint' ] ]
       # compass:      [ grunt: true, args: [ 'compass' ] ]
 
-    # WARNING: use the following in steroids.compile.sass.coffee to exclude font-awesome
-    # sass:
-    #     dist:
-    #       xxxfiles: [
-    #         {
-    #           expand: true
-    #           cwd: 'www/'
-    #           src: ['**/*.scss', '**/*.sass','!**/font-awesome/**']
-    #           dest: 'dist/'
-    #           ext: '.css'
-    #         }
-    #       ]
-
 
     # Validate app `client` and `server` JS
     jshint:
@@ -217,17 +204,37 @@ module.exports = (grunt)->
           except: ['**/*.min.js']
 
 
+    html2js: {
+      options:
+        base: 'app',
+        module: 'onthego.templates',
+        singleModule: true,
+        useStrict: true,
+        htmlmin: {
+          collapseBooleanAttributes: true,
+          collapseWhitespace: true,
+          removeAttributeQuotes: true,
+          removeComments: true,
+          removeEmptyAttributes: true,
+          removeRedundantAttributes: false,
+          removeScriptTypeAttributes: true,
+          removeStyleLinkTypeAttributes: true
+        }  
+      main:
+        src:['<%= APP_DIR %>views/partials/<%= HTML_FILES %>']
+        dest: '<%= WWW_DIR %>js/templates.js'      
+    }
+
+
 
   grunt.loadNpmTasks('grunt-contrib-copy')
   grunt.loadNpmTasks('grunt-contrib-jshint')
   grunt.loadNpmTasks('grunt-contrib-cssmin')
   grunt.loadNpmTasks('grunt-contrib-uglify')
   grunt.loadNpmTasks('grunt-contrib-concat')
-
-  
-
   grunt.loadNpmTasks('grunt-usemin')
   grunt.loadNpmTasks('grunt-rev')
+  grunt.loadNpmTasks('grunt-html2js')
 
 
 

@@ -1,0 +1,12 @@
+<!-- modal-pricing.html -->
+  <div class="modal">
+    <ion-content>
+      <div class="bar-header bar bar-positive">
+        <h1 class="title">Service Plans</h1>
+          <button class="button button-icon icon ion-close-circled"
+          ng-click="pricelist.hide()"></button>
+      </div>
+      <div ng-include="'views/partials/pricing.html'"></div>
+      <button class="button button-full button-balanced" ng-click="pricelist.hide()">Done</button>
+    </ion-content>
+  </div>

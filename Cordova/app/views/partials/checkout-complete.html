@@ -1,0 +1,43 @@
+<!-- partials/checkout-complete.html -->
+  <ion-view title="Thank You"  hide-back-button="true"><ion-content class="has-footer">
+  <div class="card header-card">
+    <div class="item item-divider item-royal">
+      {{headerCard.header}}
+    </div>
+    <div class="item item-text-wrap">
+      <div ng-if="checkout.count.photos">
+        <h2 class="text-center">Thank You For Your Order!</h2>
+        <div>
+        You have <span class="badge badge-assertive">{{checkout.count.photos}}</span> photos to upload.
+        Be sure to activate the Uploader to begin uploading.
+        </div>
+      </div>
+      <div ng-if="!checkout.count.photos">
+        <h2 class="text-center"> Bon Voyage! Happy Trails! </h2>
+        <div>
+        Don&rsquo;t forget to take lots of photos while you are gone.
+        We&rsquo;ll send you a notification when we find photos from your order. 
+        <br /><br />
+        And be sure to activate the Uploader when you are ready to upload. 
+        </div>
+      </div>
+      <div class="padding-top">
+        Here are some places to go next:
+        <button class="button button-block button-dark icon-left ion-ios-cloud-upload"
+        ui-sref="app.uploader">
+          Uploader
+        </button>
+
+        <button class="button button-block button-assertive icon-left ion-archive"
+        ui-sref="app.orders">
+          Orders
+        </button>
+      </div>
+    </div> 
+    <div class="item item-divider item-royal">
+       {{headerCard.footer}}
+    </div>   
+
+    <div ng-include="'partials/checkout/giving-app'" ng-if="0"></div>
+
+  </ion-content></ion-view>

@@ -343,7 +343,7 @@ angular.module('ionBlankApp')
       # return
 
     # refactor to AppCtrl or service
-    $ionicModal.fromTemplateUrl('partials/modal/pricing', {
+    $ionicModal.fromTemplateUrl('views/partials/modal-pricing.html', {
         scope: $scope,
         animation: 'slide-in-up'
       }).then( (modal)-> 

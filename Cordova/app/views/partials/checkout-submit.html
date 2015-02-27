@@ -1,0 +1,12 @@
+<!-- partials/checkout-submit.html -->
+  <ion-view title="Submit Order"  hide-back-button="true"><ion-content class="has-footer">
+    <ng-include 
+    ng-if="config.system['order-standby']"
+    src="'partials/order-standby'"></ng-include>
+    <ng-include src="'partials/checkout/header-card'"></ng-include>
+    <div class="padding-horizontal">
+      <button class="button button-block button-balanced"
+      ng-click="on.next()"
+      >Submit Order</button>
+    </div>
+  </ion-content></ion-view>

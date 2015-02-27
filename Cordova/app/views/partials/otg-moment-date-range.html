@@ -1,0 +1,40 @@
+  <ion-list class="otg-moment-date-range text-center">
+        <ion-item>
+          <div class="list-group-item camera-roll-date"> 
+            <!-- dates -->
+            <ul class="list-inline" 
+            ng-class="{'text-left':options.rows==2}">
+              <button class="btn btn-from {{options.btnSize}} date selected start" >
+                <div>{{summaryMoment.dateRange.from | date:'dd MMM'}}</div>
+                <div class="day">{{summaryMoment.dateRange.from | date:'EEE'}}</div>
+              </button>
+              <li ng-repeat="photo in summaryMoment.value[0]">
+                <img lazy-src="{{photo.UUID}}" 
+                  format='thumbnail' 
+                  title="taken: {{photo.date}}" 
+                  width="{{options.thumbnailSize}}" 
+                  height="{{options.thumbnailSize}}">
+              </li>
+              <button class="btn btn-to {{options.btnSize}} date selected end" 
+              ng-if="options.rows==1">
+                <div>{{summaryMoment.dateRange.to | date:'dd MMM'}}</div>
+                <div class="day">{{summaryMoment.dateRange.to| date:'EEE'}}</div>
+              </button>
+            </ul>
+            <!-- dates -->
+            <ul class="list-inline text-right" ng-if="options.rows==2">
+              <li ng-repeat="photo in summaryMoment.value[1]">
+                <img lazy-src="{{photo.UUID}}" 
+                  format='thumbnail' 
+                  title="taken: {{photo.date}}" 
+                  width="{{options.thumbnailSize}}" 
+                  height="{{options.thumbnailSize}}">
+              </li>
+              <button class="btn btn-to {{options.btnSize}} date selected end" >
+                <div>{{summaryMoment.dateRange.to | date:'dd MMM'}}</div>
+                <div class="day">{{summaryMoment.dateRange.to| date:'EEE'}}</div>
+              </button>
+            </ul>
+          </div>
+        </ion-item>
+  </ion-list>

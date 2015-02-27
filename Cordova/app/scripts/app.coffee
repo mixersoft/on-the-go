@@ -15,10 +15,12 @@ angular
   'onTheGo.backend',
   'onTheGo.snappiAssetsPicker'
   'onTheGo.localStorage',
+  'snappi.util',
   'ionic.contrib.ui.cards',
   'onTheGo.i18n'
   'angular-datepicker'
   'ngStorage'
+  'onthego.templates'
 ])
 .config ['$ionicConfigProvider', 
   ($ionicConfigProvider)->
@@ -48,29 +50,6 @@ angular
       console.log ["\n\n _logOnce:", message, " \n\n"].join(' &&& ')
       return _alreadyLogged[id] = message
 ]
-
-# .factory '$templateCache', [
-#   '$cacheFactory', '$http', '$injector'
-#   ($cacheFactory, $http, $injector)->
-#     cache = $cacheFactory('templates')
-#     self = {
-#       get: (url)->
-#         fromCache = cache.get url
-#         return fromCache if (fromCache)
-
-#         return promise = $http.get(url).then (resp)->
-#           $injector.get('$compile')(resp.data)
-#           return resp
-#         .then (resp)->
-#           return {
-#             status: resp.status
-#             data: cache.get(url)
-#           }
-#       put: (key, value)->
-#         cache.put key, value
-#     }
-#     return self
-# ]
 
 .factory 'SideMenuSwitcher', ['$window',
 ($window)->
@@ -113,10 +92,6 @@ angular
         'appContent':
           templateUrl: "views/menu.html",
           controller: 'AppCtrl'
-        'appPartials':
-          templateUrl: "views/template/app-partials.html"
-        'workorderPartials':
-          templateUrl: "views/workorders/workorder-partials.html"
     })
 
 
@@ -173,9 +148,6 @@ angular
       }
     })
 
-
-
-
     .state('app.checkout', {
       url: "/checkout",
       abstract: true
@@ -198,7 +170,7 @@ angular
       url: "/payment",
       views: {
         'checkoutContent' : {
-          templateUrl: "partials/checkout/payment"
+          templateUrl: "views/partials/checkout-payment.html"
         }
       }
     })
@@ -222,7 +194,7 @@ angular
       url: "/submit",
       views: {
         'checkoutContent' : {
-          templateUrl: "partials/checkout/submit"
+          templateUrl: "views/partials/checkout-submit.html"
         }
       }
     })
@@ -230,7 +202,7 @@ angular
       url: "/complete",
       views: {
         'checkoutContent' : {
-          templateUrl: "partials/checkout/complete"
+          templateUrl: "views/partials/checkout-complete.html"
         }
       }
     })
@@ -351,7 +323,7 @@ angular
       url: "/pricing",
       views: {
         'helpContent' : {
-          templateUrl: "help/pricing"
+          templateUrl: "views/partials/help-pricing.html"
         }
       }
     })
@@ -359,7 +331,7 @@ angular
       url: "/about",
       views: {
         'helpContent' : {
-          templateUrl: "help/about"
+          templateUrl: "views/partials/help-about.html"
         }
       }
     })   
@@ -424,7 +396,7 @@ angular
   '$localStorage', 'otgLocalStorage'
   'SideMenuSwitcher', '$ionicSideMenuDelegate', 
   'otgParse', 'otgWorkorderSync'
-  'snappiMessengerPluginService', 'i18n'
+  'snappiMessengerPluginService', 'i18n',
   'deviceReady', 'cameraRoll'
   'TEST_DATA', 'otgData', 'imageCacheSvc', 'appConsole'
   ($scope, $rootScope, $timeout, $q, 
@@ -432,7 +404,7 @@ angular
     $localStorage, otgLocalStorage
     SideMenuSwitcher, $ionicSideMenuDelegate, 
     otgParse, otgWorkorderSync
-    snappiMessengerPluginService, i18n
+    snappiMessengerPluginService, i18n, 
     deviceReady, cameraRoll,
     # debug/browser only
     TEST_DATA, otgData, imageCacheSvc, appConsole  
@@ -441,16 +413,6 @@ angular
     # dynamically update left side menu
     $scope.SideMenuSwitcher = SideMenuSwitcher  
     SideMenuSwitcher.leftSide.src = 'partials/left-side-menu'
-
-    # // Form data for the login modal
-    $scope.loginData = {};
-
-    # // Create the login modal that we will use later
-    $ionicModal.fromTemplateUrl('templates/login.html', {
-      scope: $scope
-    }).then((modal)-> 
-      $scope.modal = modal;
-    );
 
 
     # 
@@ -497,7 +459,7 @@ angular
           when 'owner'
             SideMenuSwitcher.leftSide.src='partials/left-side-menu'
           when 'editor'
-            SideMenuSwitcher.leftSide.src='partials/workorders/left-side-menu'
+            SideMenuSwitcher.leftSide.src='views/partials/workorders/left-side-menu.html'
         $ionicSideMenuDelegate.toggleLeft()
         return
 
@@ -739,60 +701,6 @@ angular
         delete $scope.modal.legal
       );  
 
-     
-
-    # $scope._TEST_nativeUploader = ()->
-    #   # register handlers for native uploader
-    #   assetIds = _.pluck cameraRoll.map(), 'UUID'
-
-    #   # snappiMessengerPluginService.on.didFinishAssetUpload ( resp )->
-    #   #     console.log '\n\n ***** TEST_nativeUploader: handler for didFinishAssetUpload'
-    #   #     console.log resp
-    #   #     return 
-
-    #   # snappiMessengerPluginService.on.didUploadAssetProgress ( resp )->
-    #   #     _logOnce resp.asset, '\n\n ***** TEST_nativeUploader: handler for didUploadAssetProgress' + JSON.stringify resp
-    #   #     return     
-
-    #   # snappiMessengerPluginService.on.didBeginAssetUpload (resp)->
-    #   #     console.log "\n\n ***** TEST_nativeUploader: didBeginAssetUpload"
-    #   #     console.log resp
-    #   #     return
-
-    #   # add to nativeUploader queue
-    #   assetIds = assetIds[0...3]
-
-
-    #   data = {
-    #     assets: assetIds
-    #     options: 
-    #       # targetWidth: 640
-    #       # targetHeight: 640
-    #       # resizeMode: 'aspectFit'
-    #       autoRotate: true       # always true with PHImageContentModeAspectFit?
-    #       maxWidth: 720
-
-    #   }
-    #   snappiMessengerPluginService.scheduleAssetsForUploadP(data.assets, data.options)
-    #   # window.Messenger['scheduleAssetsForUpload'](  data
-    #   #     , (resp)->
-    #   #       return console.log "test: scheduleAssetsForUpload.onSuccess, count=" + assetIds.length
-    #   #     , (err)->
-    #   #       return console.log "test: scheduleAssetsForUpload.onError. Timeout?"
-    #   #   )
-
-    #   $timeout ()->
-    #       snappiMessengerPluginService.getScheduledAssetsP().then (assetIds)->
-    #         console.log "\n\n*** onSuccess getScheduledAssetsP()"
-    #         console.log assetIds
-    #     , 3000
-
-    #   $timeout ()->
-    #       window.Messenger['getScheduledAssets']( (assetIds)->
-    #         console.log "\n\n*** onSuccess DIRECT getScheduledAssets()"
-    #         console.log assetIds
-    #       )
-    #     , 3000
 
     init = ()->
       _RESTORE_FROM_LOCALSTORAGE()
@@ -819,6 +727,7 @@ angular
           _off()
           _off = _cancel = null
         return # restore cameraRoll.map snapshot
+        
       .finally ()->
         if deviceReady.device().isBrowser
           # browser

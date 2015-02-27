@@ -1,0 +1,26 @@
+<!-- modal-test-drive.html -->
+  <div class="app-modal">
+    <ion-content>
+      <div class="bar-header bar bar-balanced">
+        <h1 class="title">On-the-Go</h1>
+          <button class="button button-icon icon ion-close-circled"
+          ng-click="isModal.hide()"></button>
+      </div>
+      <div class="body padding" ng-click="$parent.modal.appConsole.hide()">
+        <div class="card header-card">
+          <div class="item item-divider item-header item-positive">
+            Thanks For Taking A Test Drive
+          </div>
+          <div class="item item-text-wrap">
+            <p>This test-drive is intended to demonstrate the basic functionality of our On-the-Go App in a desktop browser. 
+            </p><p>
+            Since you will not have a smartphone Camera Roll from the browser, we have added a few sample photos courtesy of lorempixel.com. 
+            With a few other exceptions, the App behaves similar to what you would see on the smartphone.
+            </p>
+          </div>     
+          <div class="item item-divider item-footer item-positive">
+            <p style="color:white;" class="fine cursor-pointer" ng-click="isModal.dontShowAgain()"><i class="icon ion-close-circled"> Dont Show Again</i></p>
+          </div>
+        </div>
+      </div>
+    </ion-content>

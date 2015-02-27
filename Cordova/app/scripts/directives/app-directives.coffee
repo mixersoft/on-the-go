@@ -327,7 +327,7 @@ angular.module('ionBlankApp')
       return summary
 
     self = {
-      templateUrl:  'partials/otg-moment-date-range'
+      templateUrl:  'views/partials/otg-moment-date-range.html'
       restrict: 'EA'
       scope: 
         moments: '=otgModel'
@@ -398,7 +398,7 @@ angular.module('ionBlankApp')
   '$q'
   ($q)->
     self = {
-      templateUrl: 'partials/workorders/menu-workorder-snapshot'
+      templateUrl: 'views/partials/workorders/menu-workorder-snapshot.html'
       restrict: 'EA'
       scope:{
         order:'=ngModel'

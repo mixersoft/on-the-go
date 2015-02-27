@@ -29,7 +29,7 @@ angular.module('ionBlankApp')
       readyP: null
     }
 
-    _readyP = $ionicModal.fromTemplateUrl 'partials/modal/console', {
+    _readyP = $ionicModal.fromTemplateUrl 'views/partials/modal-console.html', {
         appConsole: self
         animation: 'slide-in-up'
       }

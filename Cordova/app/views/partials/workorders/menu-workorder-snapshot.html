@@ -1,47 +1,4 @@
-<script type="text/ng-template" id="partials/workorders/left-side-menu">
-    <header class="bar bar-header bar-assertive">
-      <h1 class="title">Menu</h1>
-    </header>
-    <ion-content class="has-header">
-      <ion-list>
-        <ion-item class="item-icon-left" nav-clear menu-close ui-sref="app.top-picks.top-picks"
-        ng-click="app.menu('owner')">
-        <i class="icon ion-images positive"></i>
-          Back to App
-        </ion-item>
-        <ion-item class="item-divider">
-          (for Editors only)
-        </ion-item>
-        <ion-item class="item-icon-left" nav-clear menu-close ui-sref="app.workorders.all">
-          <i class="icon ion-archive assertive"></i>
-          Workorders
-        </ion-item>
-        <ion-item class="item-icon-left" nav-clear menu-close 
-          ng-show="user.username"
-          ui-sref="app.settings.profile">
-          <i class="icon ion-person assertive"></i>
-          <div class="username badge badge-positive capitalize padding text-center" 
-          style="position:relative;left:0;top:0;"
-          >{{user.username}}</div>
-        </ion-item>
-        <ion-item class="item-icon-left" nav-clear menu-close 
-        ng-show="!user.username"
-        ui-sref="app.settings.sign-in">
-          <i class="icon ion-person assertive"></i>
-          <div class="username badge badge-energized capitalize padding text-center" 
-          style="position:relative;left:0;top:0;"
-          >Please Sign In</div>
-        </ion-item>
-      </ion-list>
-
-      <div workorder-in-progress-card ng-model="SideMenuSwitcher.watch.workorder"></div>
-
-
-    </ion-content>
-</script>   
-
-
-<script type="text/ng-template" id="partials/workorders/menu-workorder-snapshot">
+<!-- partials/workorders/menu-workorder-snapshot.html -->
   
   <!-- // make into directive, add watch on SideMenuSwitcher.watch.workorder, refresh -->
   
@@ -84,7 +41,8 @@
       <div>Photos: 
         <span class="badge" upload-status 
         ng-class="ngClass_UploadStatus(order)" 
-        ng-bind="ngBind_UploadStatus(order)"></span>
+        ng-bind="ngBind_UploadStatus(order)"
+        ></span>
 
         <ul class="padding-horizontal"><li class="badge badge-light">Expected: {{ order.count_expected }}</li>
         <li class="badge badge-light">Received: {{ order.count_received }}</li>
@@ -107,7 +65,6 @@
     <div class="item item-divider item-assertive">
     <!-- footer  -->
     </div>
-  </div><!--  end workorder-card  -->
-</script> 
+  </div>
 
-
+ <!--  end workorder-card  -->

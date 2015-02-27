@@ -33,7 +33,7 @@ angular.module('ionBlankApp')
           footer: ""  
     }
 
-    # $scope.SideMenuSwitcher.leftSide.src = 'partials/workorders/left-side-menu'
+    # $scope.SideMenuSwitcher.leftSide.src = 'views/partials/workorders/left-side-menu.html'
     $scope.SideMenuSwitcher.watch['workorder'] = null
 
 

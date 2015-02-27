@@ -100,7 +100,7 @@ angular.module('ionBlankApp')
       return if !$scope.deviceReady.isOnline()
       # cached view becomes active 
       # dynamically update left side menu
-      $scope.SideMenuSwitcher.leftSide.src = 'partials/workorders/left-side-menu'
+      $scope.SideMenuSwitcher.leftSide.src = 'views/partials/workorders/left-side-menu.html'
       $scope.SideMenuSwitcher.watch['workorder'] = null
       $scope.DEBOUNCED_SYNC_workorders()
       return

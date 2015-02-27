@@ -2,13 +2,13 @@
 <ion-content class="has-header has-footer">
 
 <div ng-if="on.currentState()=='app.checkout.sign-up'">
-  <div ng-include="'partials/anonymous-signup'"></div> 
+  <div ng-include="'views/partials/anonymous-signup.html'"></div> 
   <div class="list card header-card" >
     <div class="item item-divider item-royal">
       {{headerCard.header}}
     </div>
 
-    <div ng-include src="'partials/anonymous-signup-fields'"></div>
+    <div ng-include src="'views/partials/anonymous-signup-fields.html'"></div>
 
     <div class="item item-divider item-royal">
        {{headerCard.footer}}

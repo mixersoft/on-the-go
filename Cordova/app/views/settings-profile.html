@@ -2,7 +2,7 @@
   <ion-content  id="settings" class="has-header">
 
 <div ng-if="otgProfile.isAnonymous()"> 
-    <div ng-include="'partials/anonymous-signup'"></div> 
+    <div ng-include="'views/partials/anonymous-signup.html'"></div> 
 
     <!-- header card : guest -->
     <div class="list card header-card">
@@ -14,7 +14,7 @@
         </span>
       </div>
 
-      <div ng-include src="'partials/anonymous-signup-fields'"></div>
+      <div ng-include src="'views/partials/anonymous-signup-fields.html'"></div>
 
       
       <div class="item item-text-wrap item-icon-left padding">
@@ -47,7 +47,7 @@
         </span>
       </div>
 
-      <div ng-include src="'partials/anonymous-signup-fields'"></div>
+      <div ng-include src="'views/partials/anonymous-signup-fields.html'"></div>
 
       <!-- // anonymous only -->
       <div class="item item-text-wrap item-icon-left padding">

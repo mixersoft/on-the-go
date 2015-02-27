@@ -1,0 +1,26 @@
+<!-- partials/checkout-payment.html -->
+  <ion-view title="Payment"  hide-back-button="true"><ion-content delegate-handle="checkout" class="has-footer">
+
+    <div ng-include="'partials/checkout/promo-card'" ng-if=1 ></div>
+    <div ng-include="'partials/checkout/give-instead'" ng-if=0 ></div>
+
+    <div class="card">
+      <ion-item class="item-divider item-calm">
+        {{i18n.tr('legal-card').header}}
+      </ion-item>
+      <ion-item class="item-text-wrap legal">
+        <div class='button button-positive button-full' 
+        ng-click="modal.legal.showTab('terms-of-service')">
+          {{i18n.tr('legal-card').tos}}
+        </div>
+        <ion-checkbox id='tos-checkbox' class="item-calm checkbox-balanced" 
+        ng-model="user.tosAgree" 
+        ng-click="on.tosClick($event)">
+          {{i18n.tr('tos-agree', 'app.settings.legal')}}
+        </ion-checkbox>
+      </ion-item>
+    </div>
+
+    <ng-include src="'partials/checkout/header-card'"></ng-include>
+
+  </ion-content></ion-view>
