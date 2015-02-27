@@ -3,6 +3,7 @@ module.exports = (grunt)->
   # Run 'grunt' for steroids connect
   grunt.registerTask("build", [
       "copy", 
+      'html2js'
       "optimize"    
   ]);
 
