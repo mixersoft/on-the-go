@@ -207,11 +207,16 @@ angular
 
         return snappiMessengerPluginService.mapAssetsLibraryP(options) 
         .then ( mapped )->
+          _.each mapped, (o)->
+            o.from = 'CameraRoll'
+            o.deviceId = $rootScope.device.id
+            return
           if _.isEmpty self._mapAssetsLibrary
             self._mapAssetsLibrary = mapped 
             $rootScope.$broadcast('sync.cameraRollComplete', {changed:true})
           else if force
-            # NOTE: this will reflect deletions if we ddebug.on't merge
+            # refresh cameraRoll should not reset PARSE photos. only do so on clearPhotos_PARSE
+            mapped = mapped.concat( self.filterParseOnly() )
             self._mapAssetsLibrary = mapped 
             $rootScope.$broadcast('sync.cameraRollComplete', {changed:true})
           else
@@ -221,6 +226,11 @@ angular
       filterDeviceOnly: (photos)->
         photos = photos || self.map()
         return _( photos ).filter( (o)->return !o.from || o.from.slice(0,5)!='PARSE' ).value()
+
+
+      filterParseOnly: (photos)->
+        photos = photos || self.map()
+        return _( photos ).filter( (o)->return o.from =='PARSE' ).value()
 
       setFavoriteP: (photo)->
         return snappiMessengerPluginService.setFavoriteP(photo)
@@ -436,9 +446,6 @@ angular
           if $state.includes('app.workorders') == false
             console.log "%%% NOT isLocal, photo=" + JSON.stringify _.pick foundInMap, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot']
           return false
-
-
-
 
       clearPhotos_PARSE : ()->
         # on logout

@@ -87,20 +87,25 @@ angular.module('ionBlankApp')
             return result
           , {}
 
-      parsePhotosFromMoments : (moments, source)->
+      parsePhotosFromMoments : (moments, lookup=[])->
         photos = []
         localDefaults = _.clone defaults_photo
-        localDefaults['from'] = source if source
+        if lookup == 'TEST_DATA'
+          localDefaults['from'] = 'TEST_DATA'
+
         _.each moments, (v,k,l)->
           if v['type'] == 'moment'
             _.each v['value'], (v2,k2,l2)->
               if v2['type'] == 'date'
                 _.each v2['value'], (pid)->
-                  photos.push _.defaults {
-                      UUID: pid,
-                      date: v2['key']
-                    }, localDefaults
-
+                  if _.isArray lookup
+                    photo = _.find(lookup,{UUID:pid}) 
+                  if !photo 
+                    photo = _.defaults {
+                        UUID: pid,
+                        date: v2['key']
+                      }, localDefaults
+                  photos.push photo
         # console.log photos 
         return photos
 
@@ -204,7 +209,9 @@ angular.module('ionBlankApp')
       orderBy: 
         key: 'dateTaken'
         reverse: true
-      counts: $scope.$localStorage['topPicks'].counts
+      counts: $scope.$localStorage['topPicks'].counts # init
+      $state: $state
+      orderCount: $rootScope.counts['orders']
     }
 
     # use dot notation for prototypal inheritance in child scopes

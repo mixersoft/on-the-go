@@ -64,7 +64,7 @@ angular.module('ionBlankApp')
         return _selected.selectedPhotos
 
       getContiguousPhotos: ()->
-        return otgData.parsePhotosFromMoments _selected.moments
+        return otgData.parsePhotosFromMoments _selected.moments, cameraRoll.map()
 
 
       countContiguousPhotos: ()->

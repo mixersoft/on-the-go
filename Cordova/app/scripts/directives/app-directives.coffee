@@ -16,6 +16,15 @@ angular.module('ionBlankApp')
   '$localStorage', 'PLUGIN_CAMERA_CONSTANTS', 'cameraRoll', 'imageCacheSvc', '$rootScope', 'TEST_DATA'
   ($localStorage, CAMERA, cameraRoll, imageCacheSvc, $rootScope, TEST_DATA)->
 
+    _getAsSnappiSqThumb = (src='')->
+      return src if src.indexOf('snaphappi.com/svc') == -1  # autoRender not available
+      parts = src.split('/')
+      return src if parts[parts.length-1].indexOf('sq~') == 0 # already an sq~ URL
+      parts.push( '.thumbs/sq~' + parts.pop() )
+      return parts.join('/')
+
+
+
     _setLazySrc = (element, UUID, format)->
       throw "ERROR: asset is missing UUID" if !UUID
       IMAGE_SIZE = format || 'thumbnail'
@@ -24,33 +33,37 @@ angular.module('ionBlankApp')
       scope = element.scope()
       photo = scope.item || scope.photo  # TODO: refactor in TopPicks, use scope.photo
 
-      isWorkorder = $rootScope.$state.includes('app.workorders') || $rootScope.$state.includes('app.orders')
-      isWorkorderMoment = IMAGE_SIZE=='thumbnail' && isWorkorder
+      isWorkorder = $rootScope.$state.includes('app.workorders') 
+      isOrder = $rootScope.$state.includes('app.orders')
+      isMoment = IMAGE_SIZE=='thumbnail' && (isWorkorder || isOrder)
       # WARNING: must be after $localStorage.waitP()
-      isBrowser = $localStorage['device'].isBrowser
+      isBrowser = !isDevice =  $localStorage['device'].isDevice
 
-      if isWorkorderMoment
-        mappedPhoto = _.find( cameraRoll.map(), {UUID: photo.UUID})
-        _.extend( photo, mappedPhoto) if mappedPhoto  
-
+      if isDevice
         # get updated values from cameraRoll.map()
-        if _.isEmpty photo.src
-          thumbSrc = ''
-        else if photo.src.indexOf('snaphappi.com') == -1
-          thumbSrc = ''
-        else if photo.src.indexOf('/sq~') > -1
-          thumbSrc = photo.src
-        else 
-          parts = photo.src.split('/')
-          parts.push( '.thumbs/sq~' + parts.pop() )
-          thumbSrc = photo.src = parts.join('/')
-        
+        mappedPhoto = _.find( cameraRoll.map(), {UUID: photo.UUID})
+        _.extend( photo, mappedPhoto) if mappedPhoto 
+
+      if isMoment && isOrder
+        if isOrder && photo.src?.indexOf('file:') == 0
+          return element.attr('src', photo.src)
+        else
+          thumbSrc = _getAsSnappiSqThumb(photo.src)
+          element.attr('src', thumbSrc)
+          isLocal = (photo.deviceId == $rootScope.device.id)
+          return if !isLocal
+        # else continue to bottom to check isStashed
+
+      if isMoment && isWorkorder # try to use /sq~ images from autoRender
+        thumbSrc = _getAsSnappiSqThumb(photo.src)
         return element.attr('src', thumbSrc)
-      if isWorkorder
+
+
+      if isWorkorder # preview
         return element.attr('src', photo.src) 
 
       # return if isBrowser && !photo # digest cycle not ready yet  
-      if isBrowser && !isWorkorder
+      if !isWorkorder && isBrowser # DEMO mode
         return _useLoremPixel(element, UUID, format)
 
 
@@ -60,17 +73,8 @@ angular.module('ionBlankApp')
         element.attr('src', fileURL)
         return 
       .catch (error)->
-
-        # NOTE: UUID is truncated to 36
-        src = cameraRoll.getDataURL(UUID, IMAGE_SIZE) 
-        if src  
-          # 2. use cached cameraRoll.dataURLs
-          # already cached in cameraRoll.dataURLs, but not yet stashed because of $timeout
-          element.attr('src', src) 
-          return 
-        
         # console.log "\nlazySrc reports notCached in cameraRoll.dataURLs for format=" + format + ", UUID="+UUID
-        if !isBrowser || isWorkorder
+        if isDevice 
           # get with promise
           options = {
             size: IMAGE_SIZE
@@ -78,9 +82,6 @@ angular.module('ionBlankApp')
           }
           return cameraRoll.getDataURL_P( UUID, options ).then (photo)->
               if element.attr('lazy-src') == photo.UUID
-                # TODO: this should now be FILE_URL
-                # confirm that collection-repeat has not reused the element
-                # 3. fetch dataURL from cameraRoll, cache and stash
                 element.attr('src', photo.data)
                 dataType = if photo.data[0...10]=='data:image' then 'DATA_URL' else 'FILE_URI'
                 if IMAGE_SIZE == 'preview' && dataType == 'DATA_URL'
@@ -90,7 +91,7 @@ angular.module('ionBlankApp')
                 else 
                   'not caching DATA_URL thumbnails'
               else
-                'skp'
+                'skip'
                 # console.warn "\n\n*** WARNING: did collection repeat change the element before getDataUR
               return
           .catch (error)->
@@ -212,7 +213,7 @@ angular.module('ionBlankApp')
         # element.text 'this is the moment directive'
         scope.options = _setSizes(element)
         if _lookupPhoto==null
-          _lookupPhoto = _.indexBy( otgData.parsePhotosFromMoments( cameraRoll.moments ), 'UUID')
+          _lookupPhoto = _.indexBy( otgData.parsePhotosFromMoments( cameraRoll.moments, cameraRoll.map() ), 'UUID')
         _.extend scope, {
           getAsPhotos: _getAsPhotos
           getOverflowPhotos :_getOverflowPhotos
@@ -297,7 +298,7 @@ angular.module('ionBlankApp')
 
 
 
-      photos = otgData.parsePhotosFromMoments moments  # mostRecent first
+      photos = otgData.parsePhotosFromMoments moments, cameraRoll.map()  # mostRecent first
       # orders have only 1 selectedMoment, unlike choose
       # TODO:  use reduce with dateRange instead
 
