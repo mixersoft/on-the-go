@@ -3,7 +3,6 @@ module.exports = (grunt)->
   # Run 'grunt' for steroids connect
   grunt.registerTask("build", [
       "copy", 
-      'html2js'
       "optimize"    
   ]);
 
@@ -18,6 +17,7 @@ module.exports = (grunt)->
   grunt.registerTask('optimize', [ 
     'copy:optimize'
     'useminPrepare'
+    'html2js'
     'concat'
     'uglify'
     'cssmin'
@@ -195,6 +195,7 @@ module.exports = (grunt)->
         flow: 
           steps: 
             # js: [uglifyNew, 'concat']
+            # css: ['cssmin']
             js: ['concat', 'uglifyjs']
             css: ['cssmin']
           post: []

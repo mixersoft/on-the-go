@@ -22,7 +22,7 @@ var paths = {
 
 gulp.task('default', ['sass', 'coffee', 'copy:html']);
 gulp.task('build', ['unbuild', 'grunt:build', 'copy:build', 'clean:dev'])
-gulp.task('unbuild', ['clean', 'copy:more', 'default'])
+gulp.task('unbuild', ['clean', 'copy:more', 'default', 'grunt:html2js'])
 
 gulp.task('sass', function(done) {
   gulp.src(paths.sass)
@@ -78,7 +78,7 @@ gulp.task('copy:html', function(){
 
 gulp.task('clean', function(cb) {
   // You can use multiple globbing patterns as you would with `gulp.src`
-  del(['dist', '.tmp','./www/js/*.min.js', ], cb);
+  del(['dist', '.tmp','./www/js/*.min.js' ], cb);
 });
 
 gulp.task('copy:more', function(){
@@ -95,6 +95,16 @@ gulp.task('grunt:build', ['unbuild'], function(cb){
     .pipe(
       shell([
       'grunt build'
+      ])
+    )
+});
+
+
+gulp.task('grunt:html2js', function(cb){
+  return gulp.src('')
+    .pipe(
+      shell([
+      'grunt html2js'
       ])
     )
 });
