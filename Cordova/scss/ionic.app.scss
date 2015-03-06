@@ -30,17 +30,15 @@ $dark:                            #444 !default;
  * Patch ionic beta14 to use ionicons 2.0
  *
  * 
-// in angular.module().config 
+// 1) in angular.module().config 
 $ionicConfigProvider.backButton.text('Back').icon('ion-ios-arrow-back');
 
-cp ./www/components/ionicons/scss ./www/lib/ionic/scss/ionicons/ 
-//  cp ./www/components/ionicons/fonts/* ./www/lib/ionic/fonts/ 
+// 2) edit js/lib/ionic/scss/ionic.scss to set path to ionicons 2.0: // Ionicons
+ "../../../components/ionicons/scss/ionicons.scss",
 
-$ionicons-font-path: "../components/ionicons/fonts" !default;
-@import "www/lib/ionic/scss/ionicons/ionicons-animation";
-
- * 
-*/
+// 3) @import "www/lib/ionic/scss/ionicons/ionicons-animation";
+ *
+ */
 $ionicons-font-path: "../components/ionicons/fonts" !default;
 // Include all of Ionic
 @import "www/lib/ionic/scss/ionic";
