@@ -391,15 +391,15 @@ angular
 
 ]
 .controller 'AppCtrl', [
-  '$scope', '$rootScope', '$timeout', '$q', 
+  '$scope', '$rootScope', '$timeout', '$q', 'angularLoad'
   '$ionicPlatform', '$ionicModal', '$ionicLoading'
   '$localStorage', 'otgLocalStorage'
   'SideMenuSwitcher', '$ionicSideMenuDelegate', 
   'otgParse', 'otgWorkorderSync'
   'snappiMessengerPluginService', 'i18n',
   'deviceReady', 'cameraRoll'
-  'TEST_DATA', 'otgData', 'imageCacheSvc', 'appConsole'
-  ($scope, $rootScope, $timeout, $q, 
+  'otgData', 'imageCacheSvc', 'appConsole'
+  ($scope, $rootScope, $timeout, $q, angularLoad
     $ionicPlatform, $ionicModal, $ionicLoading,
     $localStorage, otgLocalStorage
     SideMenuSwitcher, $ionicSideMenuDelegate, 
@@ -407,7 +407,7 @@ angular
     snappiMessengerPluginService, i18n, 
     deviceReady, cameraRoll,
     # debug/browser only
-    TEST_DATA, otgData, imageCacheSvc, appConsole  
+    otgData, imageCacheSvc, appConsole  
     )->
 
     # dynamically update left side menu
@@ -609,7 +609,6 @@ angular
 
     # Dev/Debug tools
     _LOAD_DEBUG_TOOLS = ()->
-      # currently testing
       $scope.MessengerPlugin = snappiMessengerPluginService
       window.appConsole = $rootScope.appConsole = appConsole
 
@@ -619,27 +618,29 @@ angular
       if $rootScope.user?.role == 'editor'
         'skip'
       else
-        # console.log "\n\n *** loading TEST_DATA: TODO: MOVE TO _LOAD_BROWSER_TOOLS ***\n\n"
-        cameraRoll.orders = TEST_DATA.orders
-        photos_ByDateUUID = TEST_DATA.cameraRoll_byDate
-        cameraRoll.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( photos_ByDateUUID ), 2
-        _photos = otgData.parsePhotosFromMoments cameraRoll.moments, 'TEST_DATA'
-        cameraRoll._mapAssetsLibrary = _.map _photos, (TEST_DATA_photo)->
-          return {UUID: TEST_DATA_photo.UUID, dateTaken: TEST_DATA_photo.date}
-        # add some test data for favorite and shared
-        TEST_DATA.addSomeTopPicks( cameraRoll.map())
-        TEST_DATA.addSomeFavorites( cameraRoll.map())
-        TEST_DATA.addSomeShared( cameraRoll.map())
-        # add item.height for collection-repeat
-
-
-
-        _.each cameraRoll.map(), (e,i,l)->
-          e.originalHeight = if /^[EF]/.test(e.UUID) then 400 else 240
-          e.originalWidth = 320
-          e.dateTaken = e.date
-          e.src = TEST_DATA.lorempixel.getSrc(e.UUID, e.originalWidth, e.originalHeight, TEST_DATA)
-          return
+        angularLoad.loadScriptP("js/services/test_data.js")  
+        .then ()->
+          # TEST_DATA = window.TEST_DATA # load dynamically into global
+          # console.log "\n\n *** loading TEST_DATA: TODO: MOVE TO _LOAD_BROWSER_TOOLS ***\n\n"
+          cameraRoll.orders = TEST_DATA.orders
+          photos_ByDateUUID = TEST_DATA.cameraRoll_byDate
+          cameraRoll.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( photos_ByDateUUID ), 2
+          _photos = otgData.parsePhotosFromMoments cameraRoll.moments, 'TEST_DATA'
+          cameraRoll._mapAssetsLibrary = _.map _photos, (TEST_DATA_photo)->
+            return {UUID: TEST_DATA_photo.UUID, dateTaken: TEST_DATA_photo.date}
+          cameraRoll['iOSCollections'].mapP()
+          # add some test data for favorite and shared
+          TEST_DATA.addSomeTopPicks( cameraRoll.map())
+          TEST_DATA.addSomeFavorites( cameraRoll.map())
+          TEST_DATA.addSomeShared( cameraRoll.map())
+          # add item.height for collection-repeat
+          _.each cameraRoll.map(), (e,i,l)->
+            e.originalHeight = if /^[EF]/.test(e.UUID) then 400 else 240
+            e.originalWidth = 320
+            e.dateTaken = e.date
+            e.src = TEST_DATA.lorempixel.getSrc(e.UUID, e.originalWidth, e.originalHeight,TEST_DATA)
+            return
+          $scope.orders = TEST_DATA.orders
 
       # refactor to AppCtrl or service
 
@@ -732,7 +733,6 @@ angular
         if deviceReady.device().isBrowser
           # browser
           _LOAD_BROWSER_TOOLS() 
-          $scope.orders = TEST_DATA.orders 
       
         # promise = otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.$state.includes('app.workorders')
         promise = otgParse.checkBacklogP().then (backlog)->

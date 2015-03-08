@@ -14,8 +14,8 @@ angular.module('ionBlankApp')
   '$scope', '$rootScope', '$state', '$q', 
   '$ionicSideMenuDelegate', '$ionicScrollDelegate', '$ionicPopup', 
   'otgData', 'otgParse', 'otgWorkorderSync', 'deviceReady', 'cameraRoll'
-  '$timeout', '$filter', '$window', 'TEST_DATA', 
-  ($scope, $rootScope, $state, $q, $ionicSideMenuDelegate, $ionicScrollDelegate, $ionicPopup, otgData, otgParse, otgWorkorderSync, deviceReady, cameraRoll, $timeout, $filter, $window, TEST_DATA) ->
+  '$timeout', '$filter', '$window'
+  ($scope, $rootScope, $state, $q, $ionicSideMenuDelegate, $ionicScrollDelegate, $ionicPopup, otgData, otgParse, otgWorkorderSync, deviceReady, cameraRoll, $timeout, $filter, $window) ->
     $scope.label = {
       title: "Workorder Photos"
       header_card: 

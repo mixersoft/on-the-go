@@ -13,8 +13,8 @@ angular.module('ionBlankApp')
 #   lorempixel (for brower debug)
 # uses $q.promise to load src 
 .directive 'lazySrc', [
-  '$localStorage', 'PLUGIN_CAMERA_CONSTANTS', 'cameraRoll', 'imageCacheSvc', '$rootScope', 'TEST_DATA'
-  ($localStorage, CAMERA, cameraRoll, imageCacheSvc, $rootScope, TEST_DATA)->
+  '$localStorage', 'PLUGIN_CAMERA_CONSTANTS', 'cameraRoll', 'imageCacheSvc', '$rootScope'
+  ($localStorage, CAMERA, cameraRoll, imageCacheSvc, $rootScope)->
 
     _getAsSnappiSqThumb = (src='')->
       return src if src.indexOf('snaphappi.com/svc') == -1  # autoRender not available
@@ -105,10 +105,10 @@ angular.module('ionBlankApp')
       switch format
         when 'thumbnail'
           options = scope.options  # set by otgMoment`
-          src = TEST_DATA.lorempixel.getSrc(UUID, options.thumbnailSize, options.thumbnailSize, TEST_DATA)
+          src = TEST_DATA.lorempixel.getSrc(UUID, options.thumbnailSize, options.thumbnailSize)
         when 'preview'
           src = scope.item?.src
-          src = TEST_DATA.lorempixel.getSrc(UUID, scope.item.originalWidth, scope.item.originalHeight, TEST_DATA) if !src
+          src = TEST_DATA.lorempixel.getSrc(UUID, scope.item.originalWidth, scope.item.originalHeight) if !src
       return element.attr('src', src)  # use ng-src here???
 
 

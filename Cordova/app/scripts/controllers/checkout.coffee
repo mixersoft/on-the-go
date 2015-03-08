@@ -12,10 +12,10 @@ angular.module('ionBlankApp')
   '$scope', '$rootScope', '$state', '$q', 
   '$ionicNavBarDelegate', '$ionicHistory', '$ionicModal', '$ionicScrollDelegate'
   'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgUploader', 'otgParse', 'otgProfile'
-  'deviceReady', 'cameraRoll',  'TEST_DATA',
+  'deviceReady', 'cameraRoll'
   ($scope, $rootScope, $state, $q, $ionicNavBarDelegate, $ionicHistory, $ionicModal, $ionicScrollDelegate, 
     otgData, otgWorkorder, otgWorkorderSync, otgUploader, otgParse, otgProfile
-    deviceReady, cameraRoll, TEST_DATA) ->
+    deviceReady, cameraRoll) ->
     $scope.label = {
       title: "Checkout"
       header_card: 

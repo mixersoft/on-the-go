@@ -189,10 +189,10 @@ angular.module('ionBlankApp')
   '$timeout', '$window', '$q', '$filter', 
   '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', '$cordovaSocialSharing'
   'deviceReady', 'cameraRoll', 'otgWorkorderSync'
-  'TEST_DATA', 'imageCacheSvc', '$cordovaFile'
+  'imageCacheSvc', '$cordovaFile'
   ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, 
     $ionicPopup, $ionicModal, $ionicScrollDelegate, $cordovaSocialSharing, 
-    deviceReady, cameraRoll, otgWorkorderSync, TEST_DATA, imageCacheSvc, $cordovaFile) ->
+    deviceReady, cameraRoll, otgWorkorderSync, imageCacheSvc, $cordovaFile) ->
 
     $scope.SideMenuSwitcher.leftSide.src = 'partials/left-side-menu'
 

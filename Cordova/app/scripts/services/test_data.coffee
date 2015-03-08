@@ -2,49 +2,16 @@
 
 ###*
  # @ngdoc service
- # @name ionBlankApp.TESTDATA
+ # @name ionBlankApp.TEST_DATA
  # @description
- # # TESTDATA
- # Value in the ionBlankApp.
+ # # TEST_DATA, load dynamically, window.TEST_DATA
 ###
-angular.module('ionBlankApp')
-.factory 'appConsole', [
-  '$ionicModal', '$q'
-  ($ionicModal, $q)->
-
-    self = {
-      _modal: null
-      _message: null
-      log: (message)->
-        self._message = message if _.isString message
-        self._message = JSON.stringify message, null, 2 if _.isObject message
-      show: (message)->
-        self.log(message) if message
-        return self._modal.show() if self._modal
-        return _readyP.then ()->
-          self._modal.show()
-      hide: ()->
-        self._modal?.hide()
-        self._message = ''
-      readyP: null
-    }
-
-    _readyP = $ionicModal.fromTemplateUrl 'views/partials/modal-console.html', {
-        appConsole: self
-        animation: 'slide-in-up'
-      }
-    .then (modal)->
-        self._modal = modal
-      , (error)->
-        console.log "Error: $ionicModal.fromTemplate"
-        console.log error
-
-    return self
-]
-.value 'TEST_DATA', {
+window.TEST_DATA = {
     lorempixel:
         # helper functions for generating static lorempixel images
         # template: "http://lorempixel.com/[W]/[H]/[category]/[index]
+        _static: null
+        _dictionary: null
         shuffle: ()->
             categories = ['abstract', 'animals', 'business', 'cats', 'city', 'food', 'nightlife', 'fashion', 'people', 'nature', 'sports', 'technics', 'transport']
             lookup = []
@@ -53,8 +20,7 @@ angular.module('ionBlankApp')
             lookup = _.shuffle lookup
             result = lookup.concat(lookup, lookup, lookup, lookup)
             return result
-        getSrc: (uuidExt, W, H, TEST_DATA)->
-            return "lorempixel error" if !TEST_DATA.lorempixel
+        getSrc: (uuidExt, W, H)->
             if !TEST_DATA.lorempixel._static
                 TEST_DATA.lorempixel._static = TEST_DATA.lorempixel.shuffle()
             if !TEST_DATA.lorempixel._dictionary
@@ -13215,9 +13181,6 @@ angular.module('ionBlankApp')
             "endDate": "2014-10-11"
           }
         ]
-
-
   }
-
 
 

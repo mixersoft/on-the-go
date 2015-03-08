@@ -10,8 +10,8 @@
 angular.module('ionBlankApp')
 
 .controller 'OrdersCtrl', [
-  '$scope', '$rootScope', '$timeout', '$q', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgParse', 'otgUploader', 'cameraRoll','TEST_DATA',
-  ($scope, $rootScope, $timeout, $q, $ionicTabsDelegate, otgData, otgWorkorder, otgWorkorderSync, otgParse, otgUploader, cameraRoll, TEST_DATA) ->
+  '$scope', '$rootScope', '$timeout', '$q', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgParse', 'otgUploader', 'cameraRoll',
+  ($scope, $rootScope, $timeout, $q, $ionicTabsDelegate, otgData, otgWorkorder, otgWorkorderSync, otgParse, otgUploader, cameraRoll) ->
     $scope.label = {
       title: "Order History"
       subtitle: "Share something great today!"

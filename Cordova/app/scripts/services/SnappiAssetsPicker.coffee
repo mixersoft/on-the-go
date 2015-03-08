@@ -105,8 +105,8 @@ angular
 ]
 .factory 'cameraRoll', [
   '$q', '$timeout', '$rootScope', 'deviceReady', 'PLUGIN_CAMERA_CONSTANTS', 'snappiMessengerPluginService', 'imageCacheSvc'
-  'TEST_DATA', 'otgData', 'appConsole'
-  ($q, $timeout, $rootScope, deviceReady, CAMERA, snappiMessengerPluginService, imageCacheSvc, TEST_DATA, otgData, appConsole)->
+   'otgData', 'appConsole'
+  ($q, $timeout, $rootScope, deviceReady, CAMERA, snappiMessengerPluginService, imageCacheSvc, otgData, appConsole)->
     _getAsLocalTime = (d, asJSON=true)->
         d = new Date() if !d    # now
         d = new Date(d) if !_.isDate(d)
@@ -187,6 +187,7 @@ angular
         mapP: (force=null)->
           if !_.isEmpty(self.iOSCollections._parsed) && !force 
             return $q.when(self.iOSCollections._parsed) 
+          return if _.isEmpty window.TEST_DATA # load in _LOAD_BROWSER_TOOLS()
 
           start = new Date().getTime()
           if deviceReady.device().isBrowser
