@@ -261,6 +261,11 @@ ion-side-menu-content .item > * {
   }
 }
 
+
+.swipe-cards [collection-repeat] {
+  width: 100%;
+}
+
 .otg-cr-preview {
   $max-preview-dim: 320px;  
   $max-preview-dim-workorder: 640px; 
@@ -269,10 +274,6 @@ ion-side-menu-content .item > * {
     /* set to match .header-card padding */
     padding-left: 10px;
     padding-right: 10px;
-  }
-
-  .swipe-cards {
-    width: 100%;
   }
 
   .photo-card, .workorder-card {

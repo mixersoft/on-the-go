@@ -310,7 +310,7 @@
     return {
       restrict: 'E',
       template: '<div class="swipe-card" ng-transclude></div>',
-      require: '^swipeCards',
+      // require: '^swipeCards',
       replace: true,
       transclude: true,
       scope: {
@@ -343,7 +343,7 @@
         });
         $scope.$parent.swipeCard = swipeableCard;
 
-        swipeCards.swipeController.pushCard(swipeableCard);
+        // swipeCards.swipeController.pushCard(swipeableCard);
 
       }      
     }
@@ -356,15 +356,15 @@
       replace: true,
       transclude: true,
       scope: true,
-      controller: function($scope, $element) {
-        var swipeController = new SwipeableCardController({
-        });
-        $rootScope.$on('swipeCard.pop', function(isAnimated) {
-          swipeController.popCard(isAnimated);
-        });
+      // controller: function($scope, $element) {
+      //   var swipeController = new SwipeableCardController({
+      //   });
+      //   $rootScope.$on('swipeCard.pop', function(isAnimated) {
+      //     swipeController.popCard(isAnimated);
+      //   });
 
-        this.swipeController = swipeController;
-      }
+      //   this.swipeController = swipeController;
+      // }
     }
   }])
 
