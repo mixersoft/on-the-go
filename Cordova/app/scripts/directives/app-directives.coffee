@@ -80,13 +80,12 @@ angular.module('ionBlankApp')
             size: IMAGE_SIZE
             DestinationType : CAMERA.DestinationType.FILE_URI 
           }
-          return cameraRoll.getDataURL_P( UUID, options ).then (photo)->
+          return cameraRoll.getPhoto_P( UUID, options ).then (photo)->
               if element.attr('lazy-src') == photo.UUID
                 element.attr('src', photo.data)
-                dataType = if photo.data[0...10]=='data:image' then 'DATA_URL' else 'FILE_URI'
-                if IMAGE_SIZE == 'preview' && dataType == 'DATA_URL'
+                if IMAGE_SIZE == 'preview' && options.DestinationType == CAMERA.DestinationType.DATA_URL
                   imageCacheSvc.cordovaFile_USE_CACHED_P(element, photo.UUID, photo.data) 
-                else if dataType == 'FILE_URI'
+                else if options.DestinationType == CAMERA.DestinationType.FILE_URI
                   imageCacheSvc.stashFile(UUID, IMAGE_SIZE, photo.data, photo.dataSize) # FILE_URI
                 else 
                   'not caching DATA_URL thumbnails'

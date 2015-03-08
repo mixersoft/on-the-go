@@ -216,7 +216,7 @@ angular
               # # use this is originalWidth/Height is not autoRotated
               # p = $q.when(found).then (found)->
               #     if !found
-              #       return cameraRoll.getDataURL_P( UUID, {size: self.UPLOAD_IMAGE_SIZE}) 
+              #       return cameraRoll.getPhoto_P( UUID, {size: self.UPLOAD_IMAGE_SIZE}) 
               #     return found
               #   .then (found)->
               #     if !found 
@@ -1095,7 +1095,7 @@ angular
               noCache: true
               DestinationType: CAMERA.DestinationType.DATA_URL
             }
-            return cameraRoll.getDataURL_P( UUID, options)
+            return cameraRoll.getPhoto_P( UUID, options)
             .catch (error)->
               error = error.shift() if _.isArray(error)
               if error.message == "Base64 encoding failed"

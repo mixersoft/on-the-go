@@ -237,7 +237,7 @@ angular
         return snappiMessengerPluginService.setFavoriteP(photo)
 
 
-      loadCameraRollP: (options={}, force=true)->
+      loadCameraRollP: (options, force=true)->
         defaults = {
           size: 'thumbnail'
           type: 'favorites,moments' # defaults
@@ -245,7 +245,7 @@ angular
           # fromDate: null
           # toDate: null
         }
-        options = _.defaults options, defaults
+        options = _.defaults options || {}, defaults
         # options.fromDate = self.getDateFromLocalTime(options.fromDate) if _.isDate(options.fromDate)
         # options.toDate = self.getDateFromLocalTime(options.toDate) if _.isDate(options.toDate)
 
@@ -362,6 +362,9 @@ angular
         return previewPhotos
 
       loadPhotosP: (photos, options, delay=10)->
+        options = _.defaults options || {} , {
+          DestinationType: CAMERA.DestinationType.FILE_URI
+        }
         return $q.when('success') if _.isEmpty photos
         dfd = $q.defer()
         _fn = ()->
@@ -371,8 +374,7 @@ angular
               , options                         
               # , null  # onEach, called for cameraRoll thumbnails and favorites
               , (photo)->
-                dataType = if photo.data[0...10]=='data:image' then 'DATA_URL' else 'FILE_URI'
-                if dataType == 'FILE_URI'
+                if options.DestinationType == CAMERA.DestinationType.FILE_URI 
                   imageCacheSvc.stashFile(photo.UUID, options.size, photo.data, photo.dataSize) # FILE_URI
               , snappiMessengerPluginService.SERIES_DELAY_MS 
             )
@@ -497,143 +499,189 @@ angular
         date = _getAsLocalTime( datetime, true)
         return date.substring(0,10)  # like "2014-07-14"
 
+
+
+
+
+
+
+
+      ### #########################################################################
+      # methods for getting photos from cameraRoll, isDevice==true
+      ### #########################################################################  
+
       ### called by: 
           directive:lazySrc AFTER imgCacheSvc.isStashed_P().catch
           otgParse.uploadPhotoFileP
           otgUploader.uploader.type = 'parse'
+          NOTE: use getPhoto_P() for noCache = true, i.e. fetch but do NOT cache
       ###
       ###
-      TODO: refactor, now using by default
-      options.DestinationType = CAMERA.DestinationType.FILE_URI 
+      # @params UUID, string, iOS example: '1E7C61AB-466A-468A-A7D5-E4A526CCC012/L0/001'
+      # @params options object
+      #   size: ['thumbnail', 'preview', 'previewHD']
+      #   DestinationType : [0,1],  default CAMERA.DestinationType.FILE_URI 
+      #   noCache: boolean, default false, i.e. cache the photo using imageCacheSvc.stashFile
+      # @return photo object, {UUID: data: dataSize:, ...}
       ###
-      getDataURL_P :  (UUID, options)->
-        options = _.defaults options, {
+      getPhoto_P :  (UUID, options)->
+        options = _.defaults options || {}, {
           size: 'preview'
           noCache : false
           DestinationType : CAMERA.DestinationType.FILE_URI 
         }
 
-        found = self.getDataURL(UUID, options.size) if !options.noCache
-        return $q.when(found) if found
-        # load from cameraRoll
-        role = if deviceReady.device().isDevice then 'owner' else 'editor'
-        switch role
-          when 'owner'   # !! DEVICE, check deviceId as well
-            return snappiMessengerPluginService.getDataURLForAssets_P( 
-              [UUID], 
-              options, 
-              null  # onEach # ???: this is null
-            ).then (photos)->
-                return photos[0]   # resolve( photo )
-          when 'editor' # browser
-            # using Parse URLs instead of cameraRoll dataURLs
-            previewURL = self.getDataURL(UUID, 'preview')
-            if previewURL && /^http/.test( previewURL )
-              # should be FileURL from parse
-              return self.resampleP(previewURL, 64, 64).then (dataURL)->
-                  photo = {
-                      UUID: UUID
-                      data: dataURL
-                    }
-                  self.addDataURL('thumbnail', photo )
-                  return photo
-                , (error)->
-                  # console.log error # $$$
-                  _logOnce 'yj38d', "\n\n *** getDataURL_P: Resample.js error: just use previewURL URL for thumbnail UUID=" + UUID + "\n\n"
-                  photo = {
-                    UUID: UUID
-                    data: previewURL
-                  }
-                  self.addDataURL('thumbnail', photo )
-                  return photo
-            else 
-              $q.reject('photo not available')
+        if getFromCache = options.noCache == false # check imageCacheSvc
+          found = self.getPhoto(UUID, options) 
+        if isBrowser = deviceReady.device().isBrowser 
+          found = self.getPhoto(UUID, options) 
+        if isWorkorder = $rootScope.$state.includes('app.workorders') 
+          # HACK: for now, force workorders to get parse URLS, skip cameraRoll
+          # TODO: check cameraRoll if owner is DIY workorder
+          # i.e. workorderObj.get('devices').indexOf($rootScope.device.id) > -1
+          found = self.getPhoto(UUID, options) 
+        if found  
+          photo = {
+            UUID: UUID
+            data: found
+          }
+          return $q.when(found) 
+          
+
+        # load from cameraRoll if workorderObj.get('devices').indexOf($rootScope.device.id) > -1
+        if isDevice = !isBrowser 
+          return snappiMessengerPluginService.getDataURLForAssets_P( 
+            [UUID], 
+            options, 
+            null  # TODO: how should we merge for owner TopPicks?
+          ).then (photos)->
+              return photos[0]   # resolve( photo )
+        else 
+          console.error "ERROR: we shouldn't be here"
+          $q.reject('ERROR: getPhoto_P()')
 
 
-      ### queue photo for retrieval, put into imgCacheSvc for later access
+
+      ### getPhoto if cached, otherwise queue for retrieval, 
+          SAVE TO CACHE with imgCacheSvc or cameraRoll.dataURL
         called by: 
           directive:lazySrc
           otgUploader.uploader.type = 'parse'
-          cameraRoll.getPhoto()  ?? DEPRECATE?
       ###
-      ## @return string
-      ##    dataURL from cameraRoll.addDataURL(),
-      ##    fileURL from imageCacheSvc.cordovaFile_USE_CACHED_P, or 
-      ##      snappiMessengerPluginService.getDataURLForAssets_P([UUID], options.DestinationType=1)
-      ##    PARSE URL from workorders, photo.src
-      ##
-      getDataURL: (UUID, size='preview')->
+      ###
+      # @params UUID, string, iOS example: '1E7C61AB-466A-468A-A7D5-E4A526CCC012/L0/001'
+      # @params options object
+      #   size: ['thumbnail', 'preview', 'previewHD', 'orig'], default options.size=='preview'
+      #   DestinationType : [0,1],  default CAMERA.DestinationType.FILE_URI       
+      # @return found object { UUID: data: dataSize: }
+      #    dataURL from cameraRoll.dataURls,
+      #    fileURL from imageCacheSvc.cordovaFile_USE_CACHED_P, or 
+      #      snappiMessengerPluginService.getPhotoForAssets_P([UUID], options.DestinationType=1)
+      #    NOTE: PARSE FILE_URI from workorders, photo.src is set directly by directive:lazySrc
+      ###
+      getPhoto: (UUID, options)->
+        options = _.defaults options || {}, {
+          size: 'preview'
+          DestinationType : CAMERA.DestinationType.FILE_URI 
+          # noCache : false     # FORCE cache via queue
+        }
+        size = options.size
         if !/preview|thumbnail/.test size
           throw "ERROR: invalid dataURL size, size=" + size
-        # console.log "$$$ camera.dataURLs lookup for UUID="+UUID+', size='+size
-
-       
-
-        # ??? 2nd check cordovaFile cache, works if we save to localStorage
-        # because workorder URLs take precedence over fileURLS ??? 
         
-        found = imageCacheSvc.isStashed(UUID, size)
-        # self.dataURLs[size][UUID] = found.fileURL  if found # for localStorage
+        if options.DestinationType == CAMERA.DestinationType.FILE_URI
+          stashed = imageCacheSvc.isStashed(UUID, size)
+          if stashed
+            found = {
+              data: stashed.fileURL
+              dataSize: stashed.fileSize
+            }
+        else 
+          dataURL = self.dataURLs[size][UUID]
+          if !dataURL && UUID.length == 36
+            dataURL = _.find self.dataURLs[size], (o,key)->
+                return o if key[0...36] == UUID
+          if dataURL
+            found = {
+              data: dataURL
+              dataSize: dataURL.length
+            }
+        if found # add extended attributes
+          _.defaults found, options
+          found['UUID'] = UUID
+          return found
 
-        # console.log self.dataURLs[size][UUID]
-        # DEPRECATE if we are using DestinationType = FILE_URI
-        found = self.dataURLs[size][UUID] if !found
-        if !found && UUID.length == 36
-          found = _.find self.dataURLs[size], (o,key)->
-              return o if key[0...36] == UUID
+        # still not found, add to queue for fetch
+          # console.log "image not cached, queuePhoto(UUID)=" + UUID
+        self.queuePhoto(UUID, options)
+        return null
 
-      
-        if !found # still not found, add to queue for fetch
-          # console.log "STILL NOT FOUND queueDataURL(UUID)=" + UUID
-          self.queueDataURL(UUID, size)
-          # calls:
-           # > debounced_fetchDataURLsFromQueue 
-           #   > fetchDataURLsFromQueue 
-           #     > queue()
-           #     > getDataURLForAssetsByChunks_P()
-        return found
-
-      # called by getDataURL, but NOT getDataURL_P
-      queueDataURL : (UUID, size='preview')->
+      # fetch a photo by UUID, AND save to cache
+      # called by getPhoto(), but NOT getPhoto_P()
+      # self._queue is fetched by:
+      # > debounced_fetchPhotosFromQueue 
+      #   > fetchPhotosFromQueue 
+      #     > getPhotoForAssetsByChunks_P()      
+      queuePhoto : (UUID, options)->
         return if deviceReady.device().isBrowser
-        self._queue[UUID] = { 
-          UUID: UUID
-          size: size, 
-        }
+        item = _.defaults {UUID: UUID}, _.pick options, ['size', 'DestinationType']
+        self._queue[UUID] = item
         # # don't wait for promise
-        self.debounced_fetchDataURLsFromQueue()
-        # $rootScope.$broadcast 'cameraRoll.queuedDataURL'
+        self.debounced_fetchPhotosFromQueue()
+        # $rootScope.$broadcast 'cameraRoll.queuedPhoto'
         return
 
 
-      # called by cameraRoll.queueDataURL()
-      fetchDataURLsFromQueue : ()->
+      # called by cameraRoll.queuePhoto()
+      fetchPhotosFromQueue : ()->
         queuedAssets = self.queue()
 
-        chunks = {}
-        _.each ['preview', 'thumbnail'], (size)->
-          assets = _.filter queuedAssets, (o)->return o?.size == size
-          chunks[size] = assets if assets.length
+        chunks = _.reduce queuedAssets, (result, o)->
+            type = o.size + ':' + o.DestinationType
+            result[type].push o.UUID
+            return result
+          , {
+            'thumbnail:1': [] # Camera.DestinationType.FILE_URI ==1
+            'preview:1': []
+            'previewHD:1': []
+            'thumbnail:0': [] # DATA_URL == 0
+            'preview:0': []
+            'previewHD:0': []            
+          }
 
         promises = []
-        _.each chunks, (assets, size)->
-          # console.log "\n\n *** fetchDataURLsFromQueueP START! size=" + size + ", count=" + assets.length + "\n"
+        _.each chunks, (assets, type)->
+          # console.log "\n\n *** fetchPhotosFromQueueP START! size=" + size + ", count=" + assets.length + "\n"
+          return if assets.length == 0
+          [size, DestinationType] = type.split(':')
+          options = {
+            size: size
+            DestinationType: DestinationType
+          }
           promises.push snappiMessengerPluginService.getDataURLForAssetsByChunks_P(
-              assets, 
-              {size: size},
-              (photo)->
-                dataType = if photo.data[0...10]=='data:image' then 'DATA_URL' else 'FILE_URI'
-                if dataType == 'FILE_URI'
-                  imageCacheSvc.stashFile(photo.UUID, size, photo.data, photo.dataSize) # FILE_URI
+              assets
+              , options
+              , (photo)->
+                if options.DestinationType == CAMERA.DestinationType.FILE_URI 
+                  imageCacheSvc.stashFile(photo.UUID, options.size, photo.data, photo.dataSize) # FILE_URI
+                else 
+                  self.dataURLs[options.size][photo.UUID] = photo.data
             ).then (photos)->
               return photos 
 
         return $q.all(promises).then (o)->
-            # console.log "*** fetchDataURLsFromQueueP $q All Done! \n" 
+            # console.log "*** fetchPhotosFromQueueP $q All Done! \n" 
             return
 
-      debounced_fetchDataURLsFromQueue : ()->
+      debounced_fetchPhotosFromQueue : ()->
         return console.log "\n\n\n ***** Placeholder: add debounce on init *********"
+
+
+      ### #########################################################################
+      # END methods for getting photos from cameraRoll, isDevice==true
+      ### #########################################################################
+
+
 
       # getter, or reset queue
       queue: (clear, PREVIEW_LIMIT = 50 )->
@@ -651,9 +699,6 @@ angular
 
         # order by thumbnails then previews
         return batch
-
-
-
 
 
 
@@ -675,28 +720,6 @@ angular
           h = photo.scaledH
         return h
 
-      resampleP : (imgOrSrc, W=320, H=null)->
-        return $q.reject('Missing Image') if !imgOrSrc
-        console.log "*** resize & convert to base64 using Resample.js ******* imgOrSrc=" + imgOrSrc
-        dfd = $q.defer()
-        done = (dataURL)->
-          console.log "resampled data=" + JSON.stringify {
-            size: dataURL.length
-            data: dataURL[0..60]
-          }
-          dfd.resolve(dataURL)
-          return
-        try 
-          Resample.one()?.resample imgOrSrc
-            ,   W
-            ,   H    # targetHeight
-            ,   dfd
-            ,   "image/jpeg"
-        catch ex  
-          dfd.reject(imgOrSrc)
-        return dfd.promise
-
-
       # array of moments
       moments: []
       # orders
@@ -705,26 +728,14 @@ angular
         photos:
           sort: null
           stale: false
-    }
+    } # end cameraRoll
 
-    self.debounced_fetchDataURLsFromQueue = _.debounce self.fetchDataURLsFromQueue
+    self.debounced_fetchPhotosFromQueue = _.debounce self.fetchPhotosFromQueue
         , 1000
         , {
           leading: false
           trailing: true
           }
-
-    deviceReady.waitP().then ()->
-      if deviceReady.device().isDevice
-        # do NOT load TEST_DATA, wait for otgParse call by:
-        # workorder: otgParse.fetchWorkorderPhotosByWoIdP()
-        # top-picks: otgParse.fetchPhotosByOwnerP
-        return
-      else if $rootScope.user?.isRegistered
-        # skip
-        return
-      else  
-        return
 
     return self
 ]
@@ -926,11 +937,11 @@ angular
       ##
       getDataURLForAssets_P: (assets, options, eachPhoto)->
         # call getPhotosByIdP() with array
-        options = _.defaults options, {
+        options = _.defaults options || {} , {
           size: 'preview'
           DestinationType : CAMERA.DestinationType.FILE_URI 
         }
-        return _MessengerPLUGIN.getPhotosByIdP( assets , options).then (photos)->
+        return _MessengerPLUGIN.getPhotosByIdP(assets , options).then (photos)->
             _.each photos, (photo)->
 
               eachPhoto(photo) if _.isFunction eachPhoto
@@ -949,8 +960,7 @@ angular
 
             return photos
           , (errors)->
-            console.warn "ERROR: getDataURLForAssetsByChunks_P"
-            console.warn errors
+            console.warn "ERROR: getDataURLForAssetsByChunks_P", errors
             return $q.reject(errors)  # pass it on
 
       ##
@@ -1042,9 +1052,9 @@ angular
             autoRotate: true
             DestinationType: CAMERA.DestinationType.FILE_URI  # 1
         }
-        options = _.extend options, defaults.preview if options.size=="preview"
-        options = _.extend options, defaults.thumbnail if options.size=="thumbnail"
-        options = _.extend options, defaults.previewHD if options.size=="previewHD"
+        _.defaults options, defaults.preview if options.size=="preview"
+        _.defaults options, defaults.thumbnail if options.size=="thumbnail"
+        _.defaults options, defaults.previewHD if options.size=="previewHD"
 
         assets = [assets] if !_.isArray(assets)
         assetIds = assets
@@ -1093,9 +1103,8 @@ angular
             return 
 
           window.Messenger.getPhotoById assetIds, options, (photo)->
-              # dupe = _.clone photo
-              # dupe.data = dupe.data[0..40]
-              # console.log dupe
+              if options.DestinationType == CAMERA.DestinationType.FILE_URI && photo.dataSize == 0
+                console.warn "getPhotoById() Error, dataSize==0", _.pick photo, ['UUID', 'data', 'dataSize', 'dateTaken']
 
               # one callback for each element in assetIds
               end = new Date().getTime()
@@ -1105,10 +1114,6 @@ angular
               photo.from = 'cameraRoll'
               photo.autoRotate = options.autoRotate
               photo.orientation = _patchOrientation( photo )  # should be EXIF orientation
-
-              if (photo.autoRotate)
-                # originalHeight/Width is not swapping
-                _logOnce '4j9', "Messenger Plugin.getPhotosByIdP(): WARNING originalH/W not swapping on autoRotate" 
 
               # plugin method options              
               photo.format = options.type  # thumbnail, preview, previewHD

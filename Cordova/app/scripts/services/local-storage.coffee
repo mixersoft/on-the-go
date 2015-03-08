@@ -209,21 +209,24 @@ angular
           trailing: false
         }
 
-      # NOTE: this 'fast' version called by camera.getDataURL
-      isStashed:  (UUID, size)-> 
-        # NOTE: we don't know the extension when we check isStashed
+      # NOTE: this 'fast' version called by camera.getPhoto
+      ###
+      # @return stashed object, {fileURL:, fileSize:} or false
+      ###
+      isStashed:  (UUID, size, repo='appCache')-> 
+        stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
         hashKey = [ UUID[0...36] ,size].join(':') 
-        src = self.cacheIndex[hashKey]?.fileURL || false
-        if src
+        stashed = self[stashKey][hashKey] || false
+        if stashed
           # console.log "\n\n >>> STASH HIT !!!  file=" + src.slice(-60) 
 
           self.mostRecent.unshift(hashKey)
           self.debounced_MostRecent()
-        return src
+        return stashed
 
       isStashed_P:  (UUID, size, dataURL)->
         # NOTE: we don't know the extention when we check isStashed, so guess 'jpg'
-        # DEPRECATE
+        # DEPRECATE dataURL
         dataURL = "data:image/jpg;base64," if !dataURL
         return self.cordovaFile_CHECK_P(UUID, size, dataURL)
 
@@ -264,6 +267,7 @@ angular
             # console.log "\n %%% $cordovaFile.removeFile complete, filename=" + filename.slice(-60)
             # console.log retval # $$$
             return hashKey if defer
+            self.clearStashKey UUID, size, repo
             delete self[stashKey][ hashKey ]
             return
           , (err)->
@@ -272,10 +276,14 @@ angular
             else 
               console.warn "\n %%% $cordovaFile.removeFile error, code="+err.code +", filename=" + filename.slice(-60)
             return hashKey if defer
-            delete self[stashKey][ hashKey ]
+            self.clearStashKey UUID, size, repo
             return
       
-
+      clearStashKey:(UUID, size, repo='appCache')->
+        stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
+        hashKey = if size then hashKey = [ UUID[0...36] ,size].join(':') else UUID
+        delete self[stashKey][ hashKey ]
+        return
 
       ## @param type string, [preview|thumbnail], keep = count 
       clearStashedP: (type, keep, repo='appCache')->
@@ -308,6 +316,7 @@ angular
               self.mostRecent = self.mostRecent.slice(0,keep) if keep && repo=='appCache'
               # console.log "*** clearStashedP() END, size="+self.stashSize(repo)
           , 100
+
 
       getCacheKeyFromFilename: (filename)->
         # TODO: this will NOT work with PLUGIN FileURIs, need to persist stashFile to local storage
@@ -380,8 +389,12 @@ angular
         # console.log "\n\n >>> $ngCordovaFile.checkFile() for file=" + filePath
         return $cordovaFile.checkFile( self.CACHE_DIR + filePath )
         .catch (error)->
-          # console.log error # $$$
-          # console.log "$ngCordovaFile.checkFile() says DOES NOT EXIST, file=" + filePath + "\n\n"
+          if error instanceof FileError && error.code == 1 # file not found
+            console.warn "$ngCordovaFile.checkFile() says DOES NOT EXIST, file=", filePath 
+            cameraRoll = window.debug.cameraRoll
+            photo = _.find cameraRoll.map(), {UUID:UUID}
+            console.warn "photo=", photo
+          self.clearStashKey UUID, size
           return $q.reject(error)
         .then (file)->
           ### example {
@@ -427,8 +440,11 @@ angular
             self.stashFile UUID, size, fileURL, fileSize
             return fileURL
         .catch (error)->
-          console.warn error # $$$
-          console.warn "$ngCordovaFile.checkFile() some OTHER error, file=" + filePath + "\n\n"
+          if error instanceof FileError && error.code == 1 # file not found
+            return $q.reject(error)
+
+          console.warn 'cordovaFile_CHECK_P', error # $$$
+          console.warn "$ngCordovaFile.checkFile() some OTHER error, file=" , filePath
           return $q.reject(error)
 
 

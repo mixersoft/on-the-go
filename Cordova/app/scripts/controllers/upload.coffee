@@ -173,7 +173,7 @@ angular.module('ionBlankApp')
         if 'queue useDataURLs' 
           # preload DataURLs using cameraRoll.queue(), preloading is debounced
           _.each assetIds, (UUID)->
-            cameraRoll.getDataURL UUID, _parseFileUploader.cfg.UPLOAD_IMAGE_SIZE
+            cameraRoll.getPhoto UUID, _parseFileUploader.cfg.UPLOAD_IMAGE_SIZE
         if _parseFileUploader.isEnabled
           # same a RedButton.triggerHandler 'click'
           _parseFileUploader.enable( _parseFileUploader.isEnabled )

@@ -151,8 +151,8 @@ angular.module('ionBlankApp')
 .controller 'SettingsCtrl', [
   '$scope', '$rootScope', '$state','$timeout', 
   '$ionicHistory', '$ionicPopup', '$ionicNavBarDelegate', 
-  'otgParse', 'otgProfile', 'otgWorkorderSync', 'otgUploader', 'imageCacheSvc'
-  ($scope, $rootScope, $state, $timeout, $ionicHistory, $ionicPopup, $ionicNavBarDelegate, otgParse, otgProfile, otgWorkorderSync, otgUploader, imageCacheSvc) ->
+  'otgParse', 'otgProfile', 'otgWorkorderSync', 'otgUploader', 'imageCacheSvc', 'cameraRoll'
+  ($scope, $rootScope, $state, $timeout, $ionicHistory, $ionicPopup, $ionicNavBarDelegate, otgParse, otgProfile, otgWorkorderSync, otgUploader, imageCacheSvc, cameraRoll) ->
     $scope.label = {
       title: "Settings"
     }
@@ -180,6 +180,8 @@ angular.module('ionBlankApp')
         $scope.watch.iframeOpened[name] = 1
       clearCache: ()->
         $scope.watch.isWorking.clearAppCache = true
+        cameraRoll.dataURLs['thumbnail'] = {}
+        cameraRoll.dataURLs['preview'] = {}
         imageCacheSvc.clearStashedP(null, null, 'appCache').then ()->
           _.extend $scope.watch.imgCache, imageCacheSvc.stashStats('appCache')
           $scope.watch.isWorking.clearAppCache = false
