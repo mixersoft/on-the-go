@@ -661,7 +661,7 @@ angular
         if !IMAGE_WIDTH
           MAX_WIDTH = if deviceReady.device().isDevice then 320 else 640
           IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, MAX_WIDTH)
-        if !photo.scaledH > 0
+        if !photo.scaledH || IMAGE_WIDTH != photo.scaledW
           if photo.originalWidth && photo.originalHeight
             aspectRatio = photo.originalHeight/photo.originalWidth 
             # console.log "index="+index+", UUID="+photo.UUID+", origW="+photo.originalWidth + " origH="+photo.originalHeight
