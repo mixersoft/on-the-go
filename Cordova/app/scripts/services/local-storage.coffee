@@ -181,7 +181,7 @@ angular
         MAX_PREVIEW: 500
         MOST_RECENT: 1000 # apply _.unique on reaching limit
       isDataURL : (src)->
-        throw "isDataURL() ERROR: expecting string" if typeof src != 'string'
+        return false if typeof src != 'string'
         return /^data:image/.test( src )
 
       getDataURLExt: (dataURL)->
@@ -191,7 +191,7 @@ angular
         return 'png' if /png/i.test(mimeType)
         return 
 
-      getFilename: (UUID, size, dataURL)->
+      getFilenameFromDataURL: (UUID, size, dataURL)->
         # TODO: need to lookup from localStorage
         ext = self.getDataURLExt(dataURL)
         return false if !ext || !UUID
@@ -224,11 +224,12 @@ angular
           self.debounced_MostRecent()
         return stashed
 
-      isStashed_P:  (UUID, size, dataURL)->
-        # NOTE: we don't know the extention when we check isStashed, so guess 'jpg'
-        # DEPRECATE dataURL
-        dataURL = "data:image/jpg;base64," if !dataURL
-        return self.cordovaFile_CHECK_P(UUID, size, dataURL)
+      isStashed_P:  (UUID, size)->
+        stashed = self.isStashed UUID, size
+        return $q.when (stashed) if stashed        
+        return $q.reject('WARN: isStashed_P() unable to guess valid filePath for ' + [UUID,size].join(':') ) 
+        # TODO: cordovaFile_CHECK_P() when we can guess filePath for FILE_URIs
+        return self.cordovaFile_CHECK_P(UUID, size, null)
 
       stashFile: (UUID, size, fileURL, fileSize, repo='appCache')->
         console.warn "stashFile with no SIZE, UUID="+UUID if !size
@@ -378,19 +379,17 @@ angular
 
 
       cordovaFile_CHECK_P: (UUID, size, dataURL)->
-        filePath = self.isStashed UUID, size
-        return $q.when (filePath) if filePath
+        # TODO: currently we cannot guess filenames for DestinationType==FILE_URI
+        filePath = self.getFilenameFromDataURL(UUID, size, dataURL)
+        if !filePath 
+          promise = $q.reject('ERROR: cordovaFile_CHECK_P() unable to get valid Filename for ' + [UUID,size].join(':') ) 
+        else 
+          promise = $cordovaFile.checkFile( self.CACHE_DIR + filePath )
 
-
-        filePath = self.getFilename(UUID, size, dataURL)
-        return $q.reject('ERROR: unable to get valid Filename') if !filePath
-
-        # filePath = result['target']['localURL']
-        # console.log "\n\n >>> $ngCordovaFile.checkFile() for file=" + filePath
-        return $cordovaFile.checkFile( self.CACHE_DIR + filePath )
-        .catch (error)->
+        return promise.catch (error)->
           if error instanceof FileError && error.code == 1 # file not found
             console.warn "$ngCordovaFile.checkFile() says DOES NOT EXIST, file=", filePath 
+            # debug
             cameraRoll = window.debug.cameraRoll
             photo = _.find cameraRoll.map(), {UUID:UUID}
             console.warn "photo=", photo
@@ -443,13 +442,12 @@ angular
           if error instanceof FileError && error.code == 1 # file not found
             return $q.reject(error)
 
-          console.warn 'cordovaFile_CHECK_P', error # $$$
-          console.warn "$ngCordovaFile.checkFile() some OTHER error, file=" , filePath
+          console.warn 'cordovaFile_CHECK_P', error 
           return $q.reject(error)
 
 
       cordovaFile_WRITE_P: (UUID, size, dataURL)->
-        filePath = self.getFilename(UUID, size, dataURL)
+        filePath = self.getFilenameFromDataURL(UUID, size, dataURL)
         return $q.reject('ERROR: unable to get valid Filename') if !filePath
         
         try
@@ -500,12 +498,13 @@ angular
           console.warn error   # $$$
           return $q.reject(error)
 
-      # use dataURL for now, but stash to FileURL and replace when ready
+      # use dataURL immediately, but stash to FileURL and replace when ready
       cordovaFile_USE_CACHED_P: ($target, UUID, dataURL)->
         IMAGE_SIZE = $target.attr('format') if $target
         UUID = $target.attr('UUID') if !UUID
         dataURL = $target.attr('src') if !dataURL
         throw "ERROR: cannot get format from image" if !IMAGE_SIZE
+        throw "ERROR: missing dataURL" if !dataURL
 
         self.cordovaFile_CHECK_P(UUID, IMAGE_SIZE, dataURL)
         .catch ()->

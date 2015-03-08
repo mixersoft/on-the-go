@@ -67,35 +67,37 @@ angular.module('ionBlankApp')
         return _useLoremPixel(element, UUID, format)
 
 
-      return imageCacheSvc.isStashed_P(UUID, format)
-      .then (fileURL)->
-        # 1. use isStashed FileURL
-        element.attr('src', fileURL)
-        return 
+      promise = imageCacheSvc.isStashed_P(UUID, format)
+      .then (stashed)->
+        element.attr('src', stashed.fileURL)
+        return
       .catch (error)->
-        # console.log "\nlazySrc reports notCached in cameraRoll.dataURLs for format=" + format + ", UUID="+UUID
-        if isDevice 
-          # get with promise
-          options = {
-            size: IMAGE_SIZE
-            DestinationType : CAMERA.DestinationType.FILE_URI 
-          }
-          return cameraRoll.getPhoto_P( UUID, options ).then (photo)->
-              if element.attr('lazy-src') == photo.UUID
-                element.attr('src', photo.data)
-                if IMAGE_SIZE == 'preview' && options.DestinationType == CAMERA.DestinationType.DATA_URL
-                  imageCacheSvc.cordovaFile_USE_CACHED_P(element, photo.UUID, photo.data) 
-                else if options.DestinationType == CAMERA.DestinationType.FILE_URI
-                  imageCacheSvc.stashFile(UUID, IMAGE_SIZE, photo.data, photo.dataSize) # FILE_URI
-                else 
-                  'not caching DATA_URL thumbnails'
-              else
-                'skip'
-                # console.warn "\n\n*** WARNING: did collection repeat change the element before getDataUR
-              return
-          .catch (error)->
-            console.error "_setLazySrc"
-            console.error error # $$$
+        # console.log "\nlazySrc reports notCached for format=" + format + ", UUID="+UUID
+        if isBrowser
+          throw "_setLazySrc() img.src not found for isBrowser==true and " + [UUID, format].join(':')
+
+        # isDevice so check CameraRoll with promise
+        options = {
+          size: IMAGE_SIZE
+          DestinationType : CAMERA.DestinationType.FILE_URI 
+        }
+        return cameraRoll.getPhoto_P( UUID, options )
+        .then (photo)->
+          if options.DestinationType == CAMERA.DestinationType.FILE_URI
+            imageCacheSvc.stashFile(UUID, IMAGE_SIZE, photo.data, photo.dataSize) # FILE_URI
+          else if options.DestinationType == CAMERA.DestinationType.DATA_URL && IMAGE_SIZE == 'preview'
+            imageCacheSvc.cordovaFile_USE_CACHED_P(element, photo.UUID, photo.data) 
+          else 
+            'not caching DATA_URL thumbnails'
+
+          if element.attr('lazy-src') != photo.UUID
+            throw '_setLazySrc(): collection-repeat changed IMG[lazySrc] before cameraRoll image returned'
+          else 
+            element.attr('src', photo.data)
+          return
+      .catch (error)->
+        return console.warn "_setLazySrc():", error
+      return
         
 
     _useLoremPixel = (element, UUID, format)->

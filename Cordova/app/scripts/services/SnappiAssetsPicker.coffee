@@ -523,6 +523,7 @@ angular
       #   DestinationType : [0,1],  default CAMERA.DestinationType.FILE_URI 
       #   noCache: boolean, default false, i.e. cache the photo using imageCacheSvc.stashFile
       # @return photo object, {UUID: data: dataSize:, ...}
+      # @throw error if photo.dataSize == 0
       ###
       getPhoto_P :  (UUID, options)->
         options = _.defaults options || {}, {
@@ -555,10 +556,18 @@ angular
             options, 
             null  # TODO: how should we merge for owner TopPicks?
           ).then (photos)->
-              return photos[0]   # resolve( photo )
+              photo = photos[0]   # resolve( photo )
+              if photo.dataSize == 0
+                return $q.reject {
+                  message: "error: dataSize==0"
+                  UUID: UUID
+                  size: options.size
+                }
+              return photo
         else 
-          console.error "ERROR: we shouldn't be here"
-          $q.reject('ERROR: getPhoto_P()')
+          return $q.reject {
+            message: 'ERROR: getPhoto_P()'
+          }
 
 
 
