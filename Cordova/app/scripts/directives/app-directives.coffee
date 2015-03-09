@@ -373,22 +373,35 @@ angular.module('ionBlankApp')
 # ############################
 
 # 
-# apply ng-class for upload status indicators
-#   CURRENTLY UNUSED. see $scope.watch.ngClass_uploadStatus() instead  
+# apply ng-bind & ng-class for workorder status indicators 
 # 
 
-.directive 'uploadStatus', [
+.directive 'workorderStatus', [
   ()->
     return {
       restrict: 'A'
       link: (scope, element, attrs) ->
-        scope.ngClass_UploadStatus =  (order, prefix='badge')->
+        THRESHOLD = {
+          WORKING: 0.9
+          COMPLETE: 0.9
+        }
+        scope.ngClass_WorkStatus = (order, prefix='badge')->
+          return if !order
+          return prefix + '-energized' if /^(new|rejected)/.test order.status
+          return prefix + '-balanced' if /^(ready|working)/.test order.status
+          return prefix + '-positive' if order.status == 'complete' 
+          return prefix + '-royal' if order.status == 'closed'     
+        scope.ngClass_CompleteButton = (order, prefix='badge')->
+          return if !order
+          isAlmostDone = (1 - order.progress.todo/order.count_expected) > THRESHOLD.COMPLETE
+          return prefix + '-balanced' if isAlmostDone && order.status=='working'
+          return prefix + '-energized disabled' 
+        scope.ngClass_UploadStatus = (order, prefix='badge')->
           return if !order
           return prefix + '-balanced' if order.count_expected == (order.count_received + order.count_duplicate)
           return prefix + '-energized'
-
         scope.ngBind_UploadStatus = (order)->
-          return 'unknown' if !order
+          return if !order
           return 'ready' if order.count_expected == (order.count_received + order.count_duplicate)  
           return 'pending'
         return

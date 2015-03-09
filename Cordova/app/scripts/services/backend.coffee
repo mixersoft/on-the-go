@@ -107,6 +107,18 @@ angular
         .then (workorderColl)->
             self._workorderColl[role] = workorderColl
             # console.log "\n *** fetchWorkordersP from backend.coffee, role=" + role
+
+            # initialize if necessary
+            workorderColl.each (wo)->
+              woProgress = wo.get('progress')
+              return if !_.isEmpty woProgress
+              woProgress = {
+                picks: 0
+                todo: wo.get('count_expected')
+              }
+              wo.set('progress', woProgress)
+              return
+
             return workorderColl
           , (err)->
             console.warn "\n *** fetchWorkordersP catch, role=" + role
@@ -255,6 +267,7 @@ angular
             return $q.when sync
         .then (sync)->
           # upload/remove parseFiles, using either JS API or bkg-uploader
+          return sync if deviceReady.device().isBrowser
           return self.queueDateRangeFilesP( sync ).then (resp)->
             # console.log "\n\n *** syncWorkorderPhotosP: sync complete for dataRange="+JSON.stringify( _.omit dateRange, 'workorderObj' )
             return sync
@@ -476,32 +489,38 @@ angular
 
                 promises = []
                 $rootScope.counts['orders'] = openOrders = 0
+                isBrowser = !isDevice =  deviceReady.device().isDevice
                 workorderColl.each (workorderObj)->
-                  return if workorderObj.get('status') == 'complete'
+
+                  # isComplete = /^(complete|closed)/.test workorderObj.get('status')
+                  # if scope.$state.includes('app.orders.complete')
+                  #   return if !isComplete
+                  # else 
+                  #   return if isComplete
+                  return if isDevice && workorderObj.get('devices').indexOf($rootScope.device.id) == -1 
+
                   openOrders++
+                  p = self.fetchWorkorderPhotosP(workorderObj, options, force )
+                  .then (photosColl)->
 
-                  if workorderObj.get('devices').indexOf($rootScope.device.id) > -1 
-                    p = self.fetchWorkorderPhotosP(workorderObj, options, force )
-                    .then (photosColl)->
+                    # see also: otgParse._patchParsePhotos()
+                    if PATCH_ParsePhotoObjKeys
+                      # save CameraRoll attrs to PARSE
+                      self._PATCH_WorkorderAssets( photosColl , PATCH_ParsePhotoObjKeys)
 
-                      # see also: otgParse._patchParsePhotos()
-                      if PATCH_ParsePhotoObjKeys
-                        # save CameraRoll attrs to PARSE
-                        self._PATCH_WorkorderAssets( photosColl , PATCH_ParsePhotoObjKeys)
-
-                      return self.syncWorkorderPhotosP( workorderObj, photosColl, 'owner' )
-                    .then (sync)->
-                        # console.log "\n\n *** SYNC_ORDERS: woid=" + workorderObj.id
-                        # console.log "sync=" + JSON.stringify sync
-                        self.updateWorkorderCounts(workorderObj, sync)
-                        return sync
-                    .then (resp)->
-                        # console.log "fetchWorkordersP done"
-                        return 
-                      , (err)->
-                        console.warn(err) 
-                        return $q.when(err)
-                    promises.push p
+                    return self.syncWorkorderPhotosP( workorderObj, photosColl, 'owner' )
+                  .then (sync)->
+                      # console.log "\n\n *** SYNC_ORDERS: woid=" + workorderObj.id
+                      # console.log "sync=" + JSON.stringify sync
+                      self.updateWorkorderCounts(workorderObj, sync)
+                      return sync
+                  .then (resp)->
+                      # console.log "fetchWorkordersP done"
+                      return 
+                    , (err)->
+                      console.warn(err) 
+                      return $q.when(err)
+                  promises.push p
 
 
                   $rootScope.counts['orders'] = openOrders || 0
@@ -535,7 +554,11 @@ angular
                 promises = []
                 openOrders = 0
                 workorderColl.each (workorderObj)->
-                  return if workorderObj.get('status') == 'complete'
+                  isComplete = /^(complete|closed)/.test workorderObj.get('status')
+                  if scope.$state.includes('app.workorders.open')
+                    return if isComplete
+                  if scope.$state.includes('app.workorders.complete')
+                    return if !isComplete
 
                   openOrders++
                   photosColl = null
@@ -915,6 +938,12 @@ angular
         query = new Parse.Query(parseClass.WorkorderObj)
         query.equalTo('objectId', woid)
         return query.first()  
+
+      updateWorkorderP: (woObj, data, pick)->
+        return $q.reject('updateWorkorderP: workorderObj not found ') if !woObj
+        update = _.pick data, pick
+        return $q.reject('updateWorkorderP: nothing to update') if _.isEmpty update
+        return woObj.save(update) 
 
       fetchWorkorderPhotosByWoIdP : (options)-> 
         query = new Parse.Query(parseClass.PhotoObj)

@@ -37,7 +37,7 @@ ng-class="{'no-view-headers':config['no-view-headers']}">
           <i class="icon ion-calendar positive"></i>
           Choose Your Days
         </ion-item>
-        <ion-item class="item-icon-left item-icon-right" nav-clear menu-close ui-sref="app.orders">
+        <ion-item class="item-icon-left item-icon-right" nav-clear menu-close ui-sref="app.orders.open">
           <i class="icon ion-archive positive"></i>
           My Orders
           <span class="badge badge-balanced" ng-show="$root.counts.orders"
@@ -62,7 +62,7 @@ ng-class="{'no-view-headers':config['no-view-headers']}">
         <ion-item class="item-divider">
           (for Editors only)
         </ion-item>
-        <ion-item class="item-icon-left item-assertive" nav-clear menu-close ui-sref="app.workorders.all"
+        <ion-item class="item-icon-left item-assertive" nav-clear menu-close ui-sref="app.workorders.open"
         ng-click="app.menu('editor')">
           <i class="icon ion-archive icon-assertive"></i>
           Workorders

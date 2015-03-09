@@ -240,8 +240,14 @@ angular.module('ionBlankApp')
                 todo: 0
                 picks: 0 
               }
+            update = {
+              progress: woProgress
+            }
+            if /^(ready|rejected)/.test workorderObj.get('status')
+              update['status'] = 'working'
+            promise = workorderObj.save(update).then (workorderObj)->
+              _.extend $scope.workorderAttr,  workorderObj.toJSON()
 
-            workorderObj.save({progress: woProgress})
             $scope.on.reloadDataSet() 
             _force = false
             return

@@ -33,13 +33,6 @@ angular.module('ionBlankApp')
     $scope.watch = _watch = {
       isOffline: ()->
         return $scope.deviceReady.isOnline() == false
-      ngClass_UploadStatus: (order, prefix='badge')->
-        return prefix + '-balanced' if order.count_expected == (order.count_received + order.count_duplicate)
-        return prefix + '-energized'
-      ngBind_UploadStatus: (order)->
-        return 'ready' if order.count_expected == (order.count_received + order.count_duplicate)  
-        return 'pending'
-
     }        
 
     $scope.on = {

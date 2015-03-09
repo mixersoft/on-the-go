@@ -206,9 +206,9 @@ angular
         }
       }
     })
-
     .state('app.orders', {
       url: "/orders",
+      abstract: true
       views: {
         'menuContent' : {
           templateUrl: "views/orders.html"
@@ -216,6 +216,12 @@ angular
         }
       }
     })
+    .state('app.orders.open', {
+      url: "/open",
+    })
+    .state('app.orders.complete', {
+      url: "/complete",
+    })    
     .state('app.orders.detail', {
       url: "/:oid",
       views: {
@@ -348,15 +354,33 @@ angular
           templateUrl: "views/workorders/workorder-partials.html"  
       }
     })
-    .state('app.workorders.all', {
-      url: "/all",
+    # .state('app.workorders.all', {
+    #   url: "/all",
+    #   views: {
+    #     'workorderContent' : {
+    #       templateUrl: "views/workorders/workorders.html"
+    #       controller: 'WorkordersCtrl'
+    #     }
+    #   }
+    # })   
+    .state('app.workorders.open', {
+      url: "/open",
       views: {
         'workorderContent' : {
           templateUrl: "views/workorders/workorders.html"
           controller: 'WorkordersCtrl'
         }
-      }
+      }      
     })
+    .state('app.workorders.complete', {
+      url: "/complete",
+      views: {
+        'workorderContent' : {
+          templateUrl: "views/workorders/workorders.html"
+          controller: 'WorkordersCtrl'
+        }
+      }      
+    })    
     .state('app.workorders.detail', {
       url: "/:woid",
       views: {

@@ -1,7 +1,7 @@
 <ion-tabs class="tabs-assertive tabs-icon-top">
 
 
-  <ion-tab ui-sref='app.workorders.all'
+  <ion-tab ui-sref='app.workorders.open'
   icon="ion-gear-b"
   title="Open"
   >
@@ -22,7 +22,7 @@
 
 
       <div ng-repeat="order in filteredOrders = (workorders | filter:filterStatusNotComplete )">
-        <div ng-include="'partials/workorders/workorder-card'"></div>
+        <div ng-include="'views/partials/workorders/workorder-card.html'"></div>
       </div>
       <div class="empty-list" ng-if="!filteredOrders.length"> 
         <div class="card empty-list" >
@@ -45,7 +45,7 @@
 
 
 
-  <ion-tab ui-sref="app.workorders.all.complete"
+  <ion-tab ui-sref="app.workorders.complete"
   icon="ion-checkmark-circled"
   title="Complete"
   >
@@ -56,8 +56,8 @@
     </ion-nav-buttons>
     <ion-content class="has-header ">
 
-      <div ng-repeat="order in filteredOrders = (orders | filter:{status:'complete'} )">
-        <div ng-include="'partials/order-card'"></div>
+      <div ng-repeat="order in filteredOrders = (workorders | filter:{status:'complete'} )">
+        <div ng-include="'views/partials/workorders/workorder-card.html'"></div>
       </div>
       <div class="empty-list" ng-if="!filteredOrders.length"> 
         <div class="card empty-list" >
@@ -84,93 +84,7 @@
 
 </ion-tabs>
 
-
-
-<script type="text/ng-template" id="partials/workorders/workorder-card">
-  <div class="list card workorder-card" >
-    <div class="item item-divider item-assertive">
-    <i class="icon ion-gear-b"> {{order.fromDate | date}} - {{order.toDate | date}}</i>
-    </div>
-
-
-    <div class="item item-text-wrap item-icon-left">
-      <i class="icon ion-clipboard"></i>
-      <div>Order ID: {{order.objectId }}</div>
-      <div>Order Date: {{order.createdAt | date }}</div>
-      <div>Plan: <span ng-if="order.checkout.count.photos">{{order.count_expected}} Photos in </span>{{order.count_days}} Days
-      </div>
-      <div>Total: {{order.servicePlan.total | currency:$}}
-        <div class="assertive service-plans"
-        ng-if="order.servicePlan.plans.length==1">
-          Based on: {{order.servicePlan.plans[0]}}</div>
-          <div class="assertive" ng-if="order.servicePlan.plans.length>1">
-          Based on:
-          <ul class="padding-left" ng-repeat="plan in order.servicePlan.plans">
-            <li class="assertive" ng-bind="plan"></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-
-    <div class="item item-text-wrap item-icon-left">
-      <i class="icon ion-person"></i>
-      <div>Owner: {{order.owner.objectId}}</div>
-    </div>
-
-
-    <div class="item item-text-wrap item-icon-left">
-      <i class="icon ion-clock"></i>
-      <div>Status: {{order.status}}</div>
-      <div>Photos: 
-        <span class="badge" 
-        ng-class="watch.ngClass_UploadStatus(order)" 
-        ng-bind="watch.ngBind_UploadStatus(order)" ></span>
-
-        <ul class="padding text-center"><li class="badge badge-positive">Expected: {{ order.count_expected }}</li>
-        <li class="badge badge-positive">Received: {{ order.count_received }}</li>
-        <li class="badge badge-positive">Duplicates: {{ order.count_duplicate}}</li></ul>
-
-      </div>
-    </div>
-
-    <div class="item item-text-wrap item-icon-left">
-      <i class="icon ion-ios-gear ion-spin"></i>
-      <div>Work: 
-        <ul class="padding-horizontal">
-        <li class="badge badge-light">Total: {{order.count_expected }} </li>
-        <li class="badge badge-light">ToDo: {{order.progress.todo ||  order.count_expected  }} </li>
-        <li class="badge badge-light">TopPicks: {{order.progress.picks ||  0 }} </li>
-        </ul>
-      </div>
-      <button class="button button-full"
-        ng-class="watch.ngClass_UploadStatus(order, 'button')" 
-        ui-sref="app.workorders.photos.all({woid:order.objectId})">Open
-      </button>
-    </div>
-
-
-    <div class="item item-complex" ng-if="order.count_expected">
-      <otg-moment-date-range otg-model="order.workorderMoment"></otg-moment-date-range>
-    </div>
-
-
-
-    <div class="item item-text-wrap item-icon-left padding">
-        <button class="button button-assertive button-block" ng-click="on.confirmReUploadPhotos(order)">
-          <i class="icon ion-ios-cloud-upload"></i> 
-          &nbsp;Re-queue Uploaded Photos
-        </button>
-    </div>
-
-
-    <div class="item item-divider item-assertive">
-    <!-- footer  -->
-    </div>
-
-
-  </div><!--  end workorder-card  -->
-</script> 
+ 
  
 
 

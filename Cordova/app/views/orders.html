@@ -1,7 +1,7 @@
 <ion-tabs class="tabs-assertive tabs-icon-top">
 
 
-  <ion-tab ui-sref='app.orders'
+  <ion-tab ui-sref='app.orders.open'
   icon="ion-gear-b"
   title="Open"
   >
@@ -22,7 +22,7 @@
 
 
       <div ng-repeat="order in filteredOrders = (workorders = $root.orders | filter:filterStatusNotComplete )">
-        <div ng-include="'partials/workorder-card'"></div>
+        <div ng-include="'views/partials/order-card.html'"></div>
       </div>
       <div class="empty-list" ng-if="!filteredOrders.length"> 
         <div class="card empty-list" >
@@ -68,7 +68,7 @@
     <ion-content class="has-header ">
 
       <div ng-repeat="order in filteredOrders = (orders = $root.orders | filter:{status:'complete'} )">
-        <div ng-include="'partials/order-card-TEST_DATA'"></div>
+        <div ng-include="'views/partials/order-card.html'"></div>
       </div>
       <div class="empty-list" ng-if="!filteredOrders.length"> 
         <div class="card empty-list" >
@@ -108,96 +108,10 @@
 
 
 
-<script type="text/ng-template" id="partials/workorder-card">
-  <ng-include 
-    ng-if="order.status=='standby'"
-    src="'views/partials/order-standby.html'"></ng-include>
-  <div class="list card workorder-card" >
-    <div class="item item-divider item-assertive">
-    <i class="icon ion-gear-b"> {{order.fromDate | date}} - {{order.toDate | date}}</i>
-    </div>
-
-    <div class="item item-text-wrap item-icon-left">
-      <i class="icon ion-clipboard"></i>
-      <div>Order Date: {{order.createdAt | date }}</div>
-      <div>Plan: <span ng-if="order.checkout.count.photos">{{order.count_expected}} Photos in </span>{{order.count_days}} Days
-      </div>
-      <div>Total: {{order.servicePlan.total | currency:$}}
-        <div class="assertive service-plans"
-        ng-if="order.servicePlan.plans.length==1">
-          Based on: {{order.servicePlan.plans[0]}}</div>
-          <div class="assertive" ng-if="order.servicePlan.plans.length>1">
-          Based on:
-          <ul class="padding-left" ng-repeat="plan in order.servicePlan.plans">
-            <li class="assertive" ng-bind="plan"></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <div class="item item-text-wrap item-icon-left">
-      <i class="icon ion-clock"></i>
-      <div>Status: {{order.status}}</div>
-      <div>Photos: 
-        <span class="badge" 
-        ng-class="watch.ngClass_UploadStatus(order)" 
-        ng-bind="watch.ngBind_UploadStatus(order)" ></span>
-
-        <ul class="padding text-center"><li class="badge badge-positive">Expected: {{ order.count_expected }}</li>
-        <li class="badge badge-positive">Received: {{ order.count_received }}</li>
-        <li class="badge badge-positive">Duplicates: {{ order.count_duplicate}}</li></ul>
-
-      </div>
-    </div>
-
-    <div class="item item-complex" 
-    ng-if="order.count_expected">
-      <otg-moment-date-range otg-model="order.workorderMoment"></otg-moment-date-range>
-    </div>
-    <div class="item item-divider item-assertive">
-    <!-- footer  -->
-    </div>
-  </div><!--  end workorder-card  -->
-</script> 
+ 
 
 
-<script type="text/ng-template" id="partials/order-card-TEST_DATA">
-  <div class="list card workorder-card" >
-    <div class="item item-divider item-assertive">
-    <i class="icon ion-gear-b"> {{order.checkout.dateRange.from | date}} - {{order.checkout.dateRange.to | date}}</i>
-    </div>
 
-    <div class="item item-text-wrap item-icon-left">
-      <i class="icon ion-clipboard"></i>
-      <div>Order Date: {{order.datetime | date }}</div>
-      <div>Plan: <span ng-if="order.checkout.count.photos">{{order.checkout.count.photos}} Photos in </span>{{order.checkout.count.days}} Days
-      </div>
-      <div>Total: {{order.servicePlan.total | currency:$}}
-        <div class="assertive service-plans"
-        ng-if="order.servicePlan.plans.length==1">
-          Based on: {{order.servicePlan.plans[0]}}</div>
-          <div class="assertive" ng-if="order.servicePlan.plans.length>1">
-          Based on:
-          <ul class="padding-left" ng-repeat="plan in order.servicePlan.plans">
-            <li class="assertive" ng-bind="plan"></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-    <div class="item item-text-wrap item-icon-left">
-      <i class="icon ion-clock"></i>
-      <div>Status: {{order.status}}</div>
-      <div>Photos Received: {{ order.received || order.checkout.count.photos}}</div>
-    </div>
-    <div class="item item-complex" 
-    ng-if="order.checkout.count.photos">
-      <otg-moment-date-range otg-model="order.checkout.workorderMoment"></otg-moment-date-range>
-    </div>
-    <div class="item item-divider item-assertive">
-    <!-- footer  -->
-    </div>
-  </div><!--  end workorder-card  -->
-</script>  
 
 
 

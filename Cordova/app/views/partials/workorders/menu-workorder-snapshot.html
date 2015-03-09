@@ -37,9 +37,13 @@
 
     <div class="item item-text-wrap item-icon-left">
       <i class="icon ion-clock"></i>
-      <div>Status: {{order.status}}</div>
+      <div>Status:
+        <span class="badge" workorder-status 
+        ng-class="ngClass_WorkStatus(order, 'badge')" 
+        ng-bind="order.status" ></span>
+      </div>
       <div>Photos: 
-        <span class="badge" upload-status 
+        <span class="badge" workorder-status 
         ng-class="ngClass_UploadStatus(order)" 
         ng-bind="ngBind_UploadStatus(order)"
         ></span>

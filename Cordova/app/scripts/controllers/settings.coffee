@@ -226,7 +226,7 @@ angular.module('ionBlankApp')
       return otgProfile.signInP().then ()->
           otgProfile.errorMessage = ''
           target = 'app.settings.main'
-          target = 'app.workorders.all' if /workorders/.test($scope.SideMenuSwitcher?.leftSide.src)
+          target = 'app.workorders.open' if /workorders/.test($scope.SideMenuSwitcher?.leftSide.src)
           $ionicHistory.nextViewOptions({
             historyRoot: true
           })

@@ -28,9 +28,11 @@ angular.module('ionBlankApp')
       $ionicTabsDelegate.select(index)
 
     $scope.filterStatusNotComplete = (o)->
-      return o if o.status? && o.status !='complete'
-      if o.className == 'WorkorderObj'
-        return o if o.get('status') !='complete'
+      status = 
+        if o.className == 'WorkorderObj'
+        then o.get('status') 
+        else o.status
+      return o if /^(complete|closed)/.test( status ) == false
 
     $scope.on = {
       refresh: ()->
@@ -41,6 +43,40 @@ angular.module('ionBlankApp')
         resp = window.confirm(msg)
         this.reUploadPhotos(order) if resp 
         return
+
+      ###
+      # @params status String: [new, ready, working, complete, rejected, closed]
+      ###
+      setStatus: (order, status)->
+        THRESHOLD = {
+          WORKING: 0.9
+          COMPLETE: 0.9
+        }
+
+        return false if status == 'new'  
+        oldStatus = order.status
+        switch status
+          when 'working'
+            return false if order.count_received/order.count_expected < THRESHOLD.WORKING
+          when 'complete'
+            return false if order.status != 'working'
+            return false if (1 - order.progress.todo/order.count_expected) < THRESHOLD.COMPLETE
+          when 'reject'
+            return false if order.status != 'complete'
+          when 'closed'
+            return false if order.status != 'complete'
+        woObj = otgWorkorderSync._workorderColl['editor'].get( order.objectId )
+        promise = otgParse.updateWorkorderP(woObj, {status:status}, ['status'])
+        .then (woObj)->
+            order.status = woObj.get('status')
+            $scope.$apply()
+          , (err)->
+            order.status = oldStatus # rollback
+            $scope.$apply()
+            throw err
+        return true
+
+
 
       reUploadPhotos: (order)->
         # console.log order.objectId
@@ -65,15 +101,7 @@ angular.module('ionBlankApp')
 
 
     }
-    $scope.watch = _watch = {
-      ngClass_UploadStatus: (order, prefix='badge')->
-        return prefix + '-balanced' if order.count_expected == (order.count_received + order.count_duplicate)
-        return prefix + '-energized'
-      ngBind_UploadStatus: (order)->
-        return 'ready' if order.count_expected == (order.count_received + order.count_duplicate)  
-        return 'pending'
-
-    }
+    $scope.watch = _watch = {}
     $scope.workorders = []
     $scope.workorder = null
 
