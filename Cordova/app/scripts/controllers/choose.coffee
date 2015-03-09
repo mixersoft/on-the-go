@@ -388,7 +388,7 @@ angular.module('ionBlankApp')
         return true
 
       refresh: ()->
-        cameraRoll.loadCameraRollP({type:'moments'}, 'force')
+        cameraRoll.loadCameraRollP({type:'moments'}, 'merge')
         .then ()->
           # done on 'cameraRoll.loadPhotosComplete'
           return

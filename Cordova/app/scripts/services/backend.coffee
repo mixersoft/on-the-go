@@ -412,7 +412,7 @@ angular
       # connect to Settings > Advanced button
       _PATCH_DeviceIds_AllWorkorders_P : ()->
         onlyLocal = []
-        return cameraRoll.mapP({},'force')
+        return cameraRoll.mapP({},'replace')
         .then (mapped)->
           # only localPhotos, nothing from DB
           _.each mapped, (o)->

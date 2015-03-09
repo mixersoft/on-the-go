@@ -476,7 +476,7 @@ angular
       sync: 
         cameraRoll_Orders: ()-> 
           # console.log ">>> SYNC_cameraRoll_Orders"
-          cameraRoll.loadCameraRollP(null, 'force').finally ()->
+          cameraRoll.loadCameraRollP(null, 'merge').finally ()->
             if !$scope.deviceReady.isOnline()
               $rootScope.$broadcast('sync.debounceComplete')
               return 
@@ -574,7 +574,7 @@ angular
         uploaderRemaining: 0
         orders: 0
       }
-      cameraRoll.loadCameraRollP(null, 'force')
+      cameraRoll.loadCameraRollP(null, 'replace')
       return
 
     $scope.$on 'sync.cameraRollComplete', (args)->

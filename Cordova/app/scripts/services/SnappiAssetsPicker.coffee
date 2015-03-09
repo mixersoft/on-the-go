@@ -215,14 +215,40 @@ angular
           if _.isEmpty self._mapAssetsLibrary
             self._mapAssetsLibrary = mapped 
             $rootScope.$broadcast('sync.cameraRollComplete', {changed:true})
-          else if force
+          else if force == 'merge'
             # refresh cameraRoll should not reset PARSE photos. only do so on clearPhotos_PARSE
-            mapped = mapped.concat( self.filterParseOnly() )
+            # MERGE into existing map() to avoid topPicks flash
+            added = _.difference _.pluck(mapped, 'UUID'), _.pluck(self._mapAssetsLibrary, 'UUID')
+            removed = _.difference _.pluck(self.filterDeviceOnly(), 'UUID'), _.pluck(mapped, 'UUID') 
+            changed = false
+            if removed.length
+              self._mapAssetsLibrary = _.filter self._mapAssetsLibrary, (o)->
+                return removed.indexOf(o.UUID) == -1
+            if added.length
+              addedObjs = _.filter mapped, (o)->
+                return added.indexOf(o.UUID) > -1
+              self._mapAssetsLibrary = self._mapAssetsLibrary.concat addedObjs
+
+            # reset favorites
+            favorites = {}
+            _.each mapped, (o)->
+              favorites[o.UUID] = !!o.favorites
+              return
+            _.each self._mapAssetsLibrary, (o)->
+              return if o.favorites == favorites[o.UUID]
+              o.favorites = favorites[o.UUID]
+              changed = true
+              return
+
+            changed = changed || removed.length || added.length
+            $rootScope.$broadcast('sync.cameraRollComplete', {changed:true}) if changed
+          else if force=='replace'
+            # mapped = mapped.concat( self.filterParseOnly() )
             self._mapAssetsLibrary = mapped 
             $rootScope.$broadcast('sync.cameraRollComplete', {changed:true})
           else
             'not updated'
-          return mapped
+          return self._mapAssetsLibrary
 
       filterDeviceOnly: (photos)->
         photos = photos || self.map()
@@ -237,7 +263,7 @@ angular
         return snappiMessengerPluginService.setFavoriteP(photo)
 
 
-      loadCameraRollP: (options, force=true)->
+      loadCameraRollP: (options, force='merge')->
         defaults = {
           size: 'thumbnail'
           type: 'favorites,moments' # defaults
