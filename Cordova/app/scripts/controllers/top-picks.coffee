@@ -238,8 +238,8 @@ angular.module('ionBlankApp')
         IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, 320)
         h = cameraRoll.getCollectionRepeatHeight(item, IMAGE_WIDTH)
         h += ( 2 * 6 ) # paddingV
-        h += 90 if $scope.on.showInfo()
-        # console.log "\n\n >>> height=" + h + "\n\n"
+        h += 68 if $scope.on.showInfo()
+        # console.log ">>> height=" + h
         return h
       showInfo: (value)->
         return $scope.watch.info if `value==null`

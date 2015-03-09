@@ -83,7 +83,7 @@ angular.module('ionBlankApp')
         scaledDim = cameraRoll.getCollectionRepeatHeight(item, IMAGE_WIDTH)
         h = item.scaledH
         h += ( 2 * 6 ) # paddingV
-        h += 90 if $scope.on.showInfo()
+        h += 68 if $scope.on.showInfo()
         # console.log "\n\n >>> height=" + h + "\n\n"
         return h
 

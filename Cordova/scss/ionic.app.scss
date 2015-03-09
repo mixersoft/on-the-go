@@ -266,6 +266,14 @@ ion-side-menu-content .item > * {
   width: 100%;
 }
 
+.scroll .ion-scroll-bottom-spacer-hack {
+  &.scroll-has-tabs {
+    height: 49px;
+    width: 100%;
+    background-color: transparent;
+  }
+}
+
 .otg-cr-preview {
   $max-preview-dim: 320px;  
   $max-preview-dim-workorder: 640px; 
@@ -274,6 +282,15 @@ ion-side-menu-content .item > * {
     /* set to match .header-card padding */
     padding-left: 10px;
     padding-right: 10px;
+    .item {
+      font-size:14px;
+      &.tabs.tabs-secondary {
+        height: 33px;
+        .tab-item .icon, .tab-item .icon:before { 
+          line-height: 32px;
+        }
+      }
+    }
   }
 
   .photo-card, .workorder-card {
