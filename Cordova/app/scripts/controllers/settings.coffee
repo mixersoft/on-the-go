@@ -230,9 +230,8 @@ angular.module('ionBlankApp')
           $ionicHistory.nextViewOptions({
             historyRoot: true
           })
-          # refresh everything, including topPicks
-          otgWorkorderSync.clear()
-          $state.transitionTo(target)
+
+          $state.transitionTo(target)  
 
         , (error)->
           _.extend $scope.user, $rootScope.user
@@ -246,6 +245,16 @@ angular.module('ionBlankApp')
               message = i18n.tr('error-codes','app.settings')[10] # "Sign-in unsucessful. Please try again."
           otgProfile.errorMessage = message
           return 
+        .then ()->
+          # refresh everything, including topPicks
+          otgWorkorderSync.clear()
+          cameraRoll.clearPhotos_PARSE()  
+          if $scope.deviceReady.device().isBrowser            
+            cameraRoll.clearPhotos_CameraRoll()           
+          if otgParse.isAnonymousUser() == false
+            window.TEST_DATA = null 
+
+
 
     $scope.submit = (ev)->
       ev.preventDefault()

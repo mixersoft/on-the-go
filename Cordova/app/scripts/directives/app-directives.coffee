@@ -62,8 +62,12 @@ angular.module('ionBlankApp')
       if isWorkorder # preview
         return element.attr('src', photo.src) 
 
+      if isBrowser && photo.from == 'PARSE' 
+        # user sign-in viewing topPicks from browser
+        return element.attr('src', photo.src) 
+
       # return if isBrowser && !photo # digest cycle not ready yet  
-      if !isWorkorder && isBrowser # DEMO mode
+      if !isWorkorder && isBrowser && window.TEST_DATA # DEMO mode
         return _useLoremPixel(element, UUID, format)
 
 

@@ -598,7 +598,9 @@ angular
         uploaderRemaining: 0
         orders: 0
       }
-      cameraRoll.loadCameraRollP(null, 'replace')
+      cameraRoll.loadCameraRollP(null, 'replace').then ()->
+        $scope.app.localStorageSnapshot()
+        return
       return
 
     $scope.$on 'sync.cameraRollComplete', (args)->
@@ -638,33 +640,38 @@ angular
 
 
     _LOAD_BROWSER_TOOLS = ()->
+      # skip if user signed in
+      return if otgParse.isAnonymousUser() == false
+      return if otgParse.isAnonymousUser() && cameraRoll.filterParseOnly().length
+
       # load TEST_DATA
-      if $rootScope.user?.role == 'editor'
-        'skip'
-      else
-        angularLoad.loadScriptP("js/services/test_data.js")  
-        .then ()->
-          # TEST_DATA = window.TEST_DATA # load dynamically into global
-          # console.log "\n\n *** loading TEST_DATA: TODO: MOVE TO _LOAD_BROWSER_TOOLS ***\n\n"
-          cameraRoll.orders = TEST_DATA.orders
-          photos_ByDateUUID = TEST_DATA.cameraRoll_byDate
-          cameraRoll.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( photos_ByDateUUID ), 2
-          _photos = otgData.parsePhotosFromMoments cameraRoll.moments, 'TEST_DATA'
-          cameraRoll._mapAssetsLibrary = _.map _photos, (TEST_DATA_photo)->
-            return {UUID: TEST_DATA_photo.UUID, dateTaken: TEST_DATA_photo.date}
-          cameraRoll['iOSCollections'].mapP()
-          # add some test data for favorite and shared
-          TEST_DATA.addSomeTopPicks( cameraRoll.map())
-          TEST_DATA.addSomeFavorites( cameraRoll.map())
-          TEST_DATA.addSomeShared( cameraRoll.map())
-          # add item.height for collection-repeat
-          _.each cameraRoll.map(), (e,i,l)->
-            e.originalHeight = if /^[EF]/.test(e.UUID) then 400 else 240
-            e.originalWidth = 320
-            e.dateTaken = e.date
-            e.src = TEST_DATA.lorempixel.getSrc(e.UUID, e.originalWidth, e.originalHeight,TEST_DATA)
-            return
-          $scope.orders = TEST_DATA.orders
+      angularLoad.loadScriptP("js/services/test_data.js")  
+      .then ()->
+        return if !window.TEST_DATA
+        TEST_DATA = window.TEST_DATA
+        # TEST_DATA = window.TEST_DATA # load dynamically into global
+        # console.log "\n\n *** loading TEST_DATA: TODO: MOVE TO _LOAD_BROWSER_TOOLS ***\n\n"
+        cameraRoll.orders = TEST_DATA.orders
+        photos_ByDateUUID = TEST_DATA.cameraRoll_byDate
+        cameraRoll.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( photos_ByDateUUID ), 2
+        _photos = otgData.parsePhotosFromMoments cameraRoll.moments, 'TEST_DATA'
+        cameraRoll._mapAssetsLibrary = _.map _photos, (TEST_DATA_photo)->
+          return {UUID: TEST_DATA_photo.UUID, dateTaken: TEST_DATA_photo.date}
+        cameraRoll['iOSCollections'].mapP()
+        # add some test data for favorite and shared
+        TEST_DATA.addSomeTopPicks( cameraRoll.map())
+        TEST_DATA.addSomeFavorites( cameraRoll.map())
+        TEST_DATA.addSomeShared( cameraRoll.map())
+        # add item.height for collection-repeat
+        _.each cameraRoll.map(), (e,i,l)->
+          e.originalHeight = if /^[EF]/.test(e.UUID) then 400 else 240
+          e.originalWidth = 320
+          e.dateTaken = e.date
+          e.src = TEST_DATA.lorempixel.getSrc(e.UUID, e.originalWidth, e.originalHeight,TEST_DATA)
+          return
+        $scope.orders = TEST_DATA.orders
+        $scope.app.sync.cameraRoll_Orders()
+        # $rootScope.$broadcast('sync.TEST_DATA')
 
       # refactor to AppCtrl or service
 

@@ -306,6 +306,7 @@ angular
           console.warn "ERROR: loadCameraRollP, error="+JSON.stringify( error )[0..100]
           # appConsole.show( error)
           if error == "ERROR: window.Messenger Plugin not available" && deviceReady.device().isBrowser
+            self._mapAssetsLibrary = [] if force=='replace' && !window.TEST_DATA
             $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', {type:'moments'}
             $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', {type:'favorites'}
             return true
@@ -478,7 +479,11 @@ angular
 
       clearPhotos_PARSE : ()->
         # on logout
-        self.photos = self.filterDeviceOnly(self.photos)
+        self._mapAssetsLibrary = self.filterDeviceOnly()
+
+      clearPhotos_CameraRoll : ()->
+        # on logout
+        self._mapAssetsLibrary = self.filterParseOnly()      
 
       isDataURL : (src)->
         throw "isDataURL() ERROR: expecting string" if typeof src != 'string'
