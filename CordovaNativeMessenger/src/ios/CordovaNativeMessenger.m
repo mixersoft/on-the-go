@@ -349,7 +349,7 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
         }
         
         __block NSUInteger requestsLeft = identifiers.count;
-        
+
         PHFetchOptions *fetchOptions = [PHFetchOptions new];
         fetchOptions.includeAllBurstAssets = YES;
         fetchOptions.includeHiddenAssets = YES;
@@ -389,7 +389,9 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
         
         PHImageRequestOptions *requestOptions = [PHImageRequestOptions new];
         requestOptions.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
+        [requestOptions setVersion:PHImageRequestOptionsVersionCurrent];
         requestOptions.resizeMode = PHImageRequestOptionsResizeModeExact;
+        [requestOptions setSynchronous:YES];
         
         PHImageContentMode resizeMode;
         if([resizeModeString isEqualToString:@"aspectFit"]) {
