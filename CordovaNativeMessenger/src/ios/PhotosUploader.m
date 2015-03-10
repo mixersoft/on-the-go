@@ -311,6 +311,8 @@ static CGFloat defaultCompressionQuality = 0.7;
     
     PHFetchOptions *fetchOptions = [PHFetchOptions new];
     fetchOptions.includeAllBurstAssets = YES;
+    fetchOptions.includeHiddenAssets = YES;
+
     
     PHFetchResult *assets = [PHAsset fetchAssetsWithLocalIdentifiers:localPHAssetIdentifiers options:fetchOptions];
     if(assets.count != localPHAssetIdentifiers.count) {
@@ -336,6 +338,7 @@ static CGFloat defaultCompressionQuality = 0.7;
         }
         
         //get image
+        
         PHImageRequestOptions *opts = [PHImageRequestOptions new];
         [opts setDeliveryMode:PHImageRequestOptionsDeliveryModeHighQualityFormat];
         [opts setVersion:PHImageRequestOptionsVersionCurrent];
@@ -350,7 +353,7 @@ static CGFloat defaultCompressionQuality = 0.7;
         if (maxWidth && maxWidth.floatValue > 0 && obj.pixelWidth > maxWidth.floatValue) {
             CGFloat scale = (maxWidth.floatValue / obj.pixelWidth);
             originalImageSize = CGSizeApplyAffineTransform(originalImageSize, CGAffineTransformMakeScale(scale, scale));
-            CGFloat side = round(obj.pixelWidth * scale);
+            CGFloat side = round(obj.pixelHeight * scale);
             originalImageSize = CGSizeMake(side,side);
         }
         
@@ -391,11 +394,7 @@ static CGFloat defaultCompressionQuality = 0.7;
                     info.asset = obj.localIdentifier;
                     [self addSessionTaskInfo:info];
                     
-                    NSURLSessionUploadTask *task = [self parseUplaodTaskForFilePath:fullPath additinalHeaderKeys:@{
-                            @"X-Image-Identifier":obj.localIdentifier,
-                            @"X-Container-Identifier":options[@"container"]
-                            }
-                                                    ];
+                    NSURLSessionUploadTask *task = [self parseUplaodTaskForFilePath:fullPath additinalHeaderKeys:@{@"X-Image-Identifier":obj.localIdentifier}];
                     [task resume];
                     [scheduledTasks addObject:task];
                     
@@ -414,7 +413,7 @@ static CGFloat defaultCompressionQuality = 0.7;
 }
 
 -(NSURLSessionUploadTask *)parseUplaodTaskForFilePath:(NSString *)filePath additinalHeaderKeys:(NSDictionary *)additionalKeys {
-    NSString *path = [NSString stringWithFormat:@"http://app.snaphappi.com:8765/api/containers/%@/upload", additionalKeys[@"X-Container-Identifier"]];
+    NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", filePath.lastPathComponent];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60];
     [request setHTTPMethod:@"POST"];
     [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-Application-Id"];
