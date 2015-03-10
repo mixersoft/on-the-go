@@ -191,11 +191,20 @@ angular
         return 'png' if /png/i.test(mimeType)
         return 
 
-      getFilenameFromDataURL: (UUID, size, dataURL)->
+      getFilename: (UUID, size, dataURL)->
         # TODO: need to lookup from localStorage
-        ext = self.getDataURLExt(dataURL)
-        return false if !ext || !UUID
-        return filePath = UUID[0...36] + '-' + size + '.' + ext
+        filenameBase = UUID.replace('/','~')
+        SIZE_LOOKUP = {
+          'thumbnail':64
+          'preview':720
+          'previewHD':1080
+        }
+        if !dataURL
+          return filePath = filenameBase + '~' + SIZE_LOOKUP[size] + '.jpg'
+        # else
+        ext = self.getDataURLExt(dataURL) 
+        return false if !ext || !filenameBase
+        return filePath = filenameBase + '~' + SIZE_LOOKUP[size] + '.' + ext
 
       debounced_MostRecent: _.debounce ()->
           self.mostRecent = _.unique(self.mostRecent)
@@ -379,8 +388,7 @@ angular
 
 
       cordovaFile_CHECK_P: (UUID, size, dataURL)->
-        # TODO: currently we cannot guess filenames for DestinationType==FILE_URI
-        filePath = self.getFilenameFromDataURL(UUID, size, dataURL)
+        filePath = self.getFilename(UUID, size, dataURL)
         if !filePath 
           promise = $q.reject('ERROR: cordovaFile_CHECK_P() unable to get valid Filename for ' + [UUID,size].join(':') ) 
         else 
@@ -447,7 +455,7 @@ angular
 
 
       cordovaFile_WRITE_P: (UUID, size, dataURL)->
-        filePath = self.getFilenameFromDataURL(UUID, size, dataURL)
+        filePath = self.getFilename(UUID, size, dataURL)
         return $q.reject('ERROR: unable to get valid Filename') if !filePath
         
         try
