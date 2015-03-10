@@ -411,14 +411,6 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
         contentMode:resizeMode options:requestOptions resultHandler:^(UIImage *result, NSDictionary *info) {
                 
                 __block UIImage *resultImage = result;
-                
-//                NSUInteger index = [imageRequests indexOfObject:info[PHImageResultRequestIDKey]];
-//                if(index == NSNotFound) {
-//                    NSLog(@"Warning: received orphaned image request. Should not be happening.");
-//                    return;
-//                }
-                
-                //PHAsset *asset = fetchResults[index];
                 NSString *identifier = [asset localIdentifier];
                 
                 if(info[PHImageErrorKey]) {
@@ -467,7 +459,8 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                         data = withMIME;
                     }
                     else {
-                        NSString *path = [[self filesStoreDirectory] stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.jpg", [[NSUUID UUID] UUIDString]]];
+                        NSString *fileName = [identifier stringByReplacingOccurrencesOfString:@"/" withString:@"~"];
+                        NSString *path = [[self filesStoreDirectory] stringByAppendingPathComponent:[NSString stringWithFormat:@"%@~%@.jpg", fileName, width]];
                         
                         [bytes writeToFile:path atomically:YES];
                         data = path;
