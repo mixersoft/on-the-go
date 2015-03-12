@@ -68,7 +68,7 @@
         <button class="button button-full" workorder-status 
           ng-class="ngClass_UploadStatus(order, 'button')" 
           ng-click="on.setStatus(order, 'working')"
-          ui-sref="app.workorders.photos.all({woid:order.objectId})">Open
+          ui-sref="app.workorder-photos.all({woid:order.objectId})">Open
         </button>
         <button class="button button-full" workorder-status 
           ng-class="ngClass_CompleteButton(order, 'button')" 
@@ -79,7 +79,7 @@
       class="ng-repeat-filter button-bar bar-balanced" 
       >
         <button class="button button-full button-positive"
-          ui-sref="app.workorders.photos.all({woid:order.objectId})">Review
+          ui-sref="app.workorder-photos.all({woid:order.objectId})">Review
         </button>
         <button class="button button-full button-royal"
           ng-class="" 

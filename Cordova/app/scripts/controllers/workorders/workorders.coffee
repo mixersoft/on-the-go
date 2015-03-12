@@ -12,12 +12,6 @@ angular.module('ionBlankApp')
 .controller 'WorkordersCtrl', [
   '$scope', '$rootScope', '$timeout', '$q', 'SideMenuSwitcher', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'deviceReady', 'otgWorkorderSync', 'otgParse', 
   ($scope, $rootScope, $timeout, $q, SideMenuSwitcher, $ionicTabsDelegate, otgData, otgWorkorder, deviceReady, otgWorkorderSync, otgParse) ->
-    $scope.label = {
-      title: "Workorders"
-      subtitle: "Workorder Management System"
-    }
-
-
 
     $scope.gotoTab = (name)->
       switch name
@@ -101,17 +95,25 @@ angular.module('ionBlankApp')
 
 
     }
-    $scope.watch = _watch = {}
+    $scope.watch = _watch = {
+      viewTitle: i18n.tr('title')
+    }
     $scope.workorders = []
     $scope.workorder = null
 
-    $scope.DEBOUNCED_SYNC_workorders = _.debounce ()->
-      # console.log "\n\n >>> DEBOUNCED!!!"
+    _SyncWorkorders = ()->
       onComplete = ()->
         $scope.hideLoading()
         $rootScope.$broadcast('scroll.refreshComplete')
+        console.log "workorder Sync complete"
         return
+      $scope.showLoading(true)  
       otgWorkorderSync.SYNC_WORKORDERS($scope, 'editor', 'force', onComplete)
+      return
+
+    $scope.DEBOUNCED_SYNC_workorders = _.debounce ()->
+      # console.log "\n\n >>> DEBOUNCED!!!"
+      _SyncWorkorders
     , 5000 # 5*60*1000
     , {
       leading: true
@@ -120,18 +122,23 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
-      return if !$scope.deviceReady.isOnline()
-      $scope.showLoading(true)
+      $scope.SideMenuSwitcher.watch['workorder'] = null
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
-      return if !$scope.deviceReady.isOnline()
       # cached view becomes active 
       # dynamically update left side menu
-      $scope.SideMenuSwitcher.leftSide.src = 'views/partials/workorders/left-side-menu.html'
-      $scope.SideMenuSwitcher.watch['workorder'] = null
-      $scope.DEBOUNCED_SYNC_workorders()
       return
+
+
+    $scope.$on '$ionicView.enter', ()->
+      $scope.watch.viewTitle = i18n.tr('title')
+      $scope.SideMenuSwitcher.leftSide.src = 'views/partials/workorders/left-side-menu.html'
+      return if !$scope.deviceReady.isOnline()
+      $timeout ()->
+        return $scope.DEBOUNCED_SYNC_workorders() if $scope.workorders.length
+        return _SyncWorkorders()      
+      
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 

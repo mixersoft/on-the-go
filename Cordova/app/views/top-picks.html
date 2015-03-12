@@ -1,21 +1,16 @@
-<ion-view class="dark-bg" title="{{i18n.tr('title')}}" hide-back-button="true" >
+<ion-view class="dark-bg" view-title="{{watch.viewTitle}}" hide-back-button="true" >
+  <!-- <ion-nav-title>{{i18n.tr('title', null, 'app.top-picks')}}</ion-nav-title> -->
   <ion-nav-buttons side="left">
     <button menu-toggle="left"class="button button-icon icon ion-navicon"></button>
   </ion-nav-buttons>
   <ion-nav-buttons side="right">
-      <div class="buttons">
         <button class="button button-icon icon ion-ios-information-outline" 
           ng-click="on.showInfo('toggle')">
         </button>
-      </div>
   </ion-nav-buttons>
 
-<!--   <ion-header-bar class="bar-subheader">
-  </ion-header-bar>
- -->
 
-
-  <ion-content delegate-handle="collection-repeat-wrap" class="">
+  <ion-content delegate-handle="collection-repeat-wrap" class="has-header">
     <ion-refresher
       pulling-text=""
       on-refresh="on.refresh()">
@@ -102,11 +97,12 @@
     <ion-list class="otg-cr-preview" swipe-cards>
         <div
         collection-repeat="item in watch.filteredOrderedPhotos track by UUID"
-        collection-item-width="'100%'"
-        collection-item-height="on.getItemHeight(item, $index)"
+        item-height="on.getItemHeight(item, $index)"
+        item-render-buffer="3"
+        force-refresh-images="true"
         ng-style="{height: on.getItemHeight(item, $index)+'px'}"
         >
-
+          <div class="padding-horizontal">
           <swipe-card class="card photo-card"
           uuid-ext="{{item.id}}"
           on-keep="on.cardKeep(item)" 
@@ -152,7 +148,7 @@
                 'ion-ios-heart':item.favorite}"></i>
               </a>
             </div>
-          </swipe-card> <!--  end .photo-card  -->
+          </swipe-card></div> <!--  end .photo-card  -->
 
       </div>
     </ion-list>

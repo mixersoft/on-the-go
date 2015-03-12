@@ -10,12 +10,8 @@
 angular.module('ionBlankApp')
 
 .controller 'OrdersCtrl', [
-  '$scope', '$rootScope', '$timeout', '$q', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgParse', 'otgUploader', 'cameraRoll',
-  ($scope, $rootScope, $timeout, $q, $ionicTabsDelegate, otgData, otgWorkorder, otgWorkorderSync, otgParse, otgUploader, cameraRoll) ->
-    $scope.label = {
-      title: "Order History"
-      subtitle: "Share something great today!"
-    }
+  '$scope', '$rootScope', '$timeout', '$q', '$ionicTabsDelegate', '$ionicNavBarDelegate', 'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgParse', 'otgUploader', 'cameraRoll',
+  ($scope, $rootScope, $timeout, $q, $ionicTabsDelegate, $ionicNavBarDelegate, otgData, otgWorkorder, otgWorkorderSync, otgParse, otgUploader, cameraRoll) ->
 
     $scope.gotoTab = (name)->
       switch name
@@ -33,6 +29,7 @@ angular.module('ionBlankApp')
     $scope.watch = _watch = {
       isOffline: ()->
         return $scope.deviceReady.isOnline() == false
+      viewTitle: i18n.tr('title')  # HACK: view-title state transition mismatch  
     }        
 
     $scope.on = {
@@ -50,11 +47,14 @@ angular.module('ionBlankApp')
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
-      return if !$scope.deviceReady.isOnline()
-      $scope.showLoading(true)
-      $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
       return
 
+    $scope.$on '$ionicView.enter', ()->
+      $scope.watch.viewTitle = i18n.tr('title')
+      return if !$scope.deviceReady.isOnline()
+      $timeout ()->
+          $scope.showLoading(true)
+          $scope.app.sync.DEBOUNCED_cameraRoll_Orders      
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 

@@ -194,7 +194,7 @@ angular.module('ionBlankApp')
     $ionicPopup, $ionicModal, $ionicScrollDelegate, $cordovaSocialSharing, 
     deviceReady, cameraRoll, otgWorkorderSync, imageCacheSvc, $cordovaFile) ->
 
-    $scope.SideMenuSwitcher.leftSide.src = 'partials/left-side-menu'
+    $scope.SideMenuSwitcher.leftSide.src = 'views/partials/left-side-menu.html'
 
     $scope.state = { # DEPRECATE???
       showDelete: false
@@ -212,6 +212,7 @@ angular.module('ionBlankApp')
       counts: $scope.$localStorage['topPicks'].counts # init
       $state: $state
       orderCount: $rootScope.counts['orders']
+      viewTitle: i18n.tr('title')  # HACK: view-title state transition mismatch
     }
 
     # use dot notation for prototypal inheritance in child scopes
@@ -235,6 +236,7 @@ angular.module('ionBlankApp')
         $rootScope.counts['top-picks'] = _watch.counts[key] if key == 'top-picks'
 
       getItemHeight : (item, index)->
+        return 0 if !item
         IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, 320)
         h = cameraRoll.getCollectionRepeatHeight(item, IMAGE_WIDTH)
         h += ( 2 * 6 ) # paddingV
@@ -251,7 +253,9 @@ angular.module('ionBlankApp')
           else !!value
 
         if $scope.watch.info != revert
-          $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() 
+          # added custom event handler to ionic.bundle.js
+          angular.element($window).triggerHandler('resize.collection-repeat');
+          # $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() 
         return $scope.watch.info   
       addFavorite: (event, item)->
         event.preventDefault();
@@ -411,10 +415,14 @@ angular.module('ionBlankApp')
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
+      console.log '$ionicView.beforeEnter', $state.current.name
       # cached view becomes active 
       return if !$scope.deviceReady.isOnline()
       # console.log "\n\n\n %%% ionicView.beforeEnter > app.sync.DEBOUNCED_cameraRoll_Orders "
       $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
+
+    $scope.$on '$ionicView.enter', ()->
+      $scope.watch.viewTitle = i18n.tr('title')
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 

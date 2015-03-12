@@ -15,7 +15,7 @@
  -->
 
 
-  <ion-content delegate-handle="collection-repeat-wrap" class="">
+  <ion-content delegate-handle="collection-repeat-wrap" class="has-header">
     <ion-refresher
       pulling-text=""
       on-refresh="on.refresh()">
@@ -67,11 +67,10 @@
     <ion-list class="otg-cr-preview workorder" swipe-cards>
       <div 
         collection-repeat="item in watch.filteredOrderedPhotos track by UUID"
-        collection-item-width="'100%'"
-        collection-item-height="on.getItemHeight(item, $index)"
+        item-height="on.getItemHeight(item, $index)"
         ng-style="{height: on.getItemHeight(item, $index)+'px'}"
         >
-
+          <div class="padding-horizontal">
           <swipe-card class="card workorder-card"
           uuid-ext="{{item.id}}"
           on-keep="on.cardKeep(item)" 
@@ -87,7 +86,7 @@
             <!-- body -->
             <div class="item item-image">
               <div class="photo-wrap">
-                <img ng-src="{{ item.src }}" 
+                <img lazy-src="{{ item.UUID }}" 
                 format="preview"
                 orig-w="{{item.originalWidth}}"
                 orig-h="{{item.originalHeight}}"
@@ -121,7 +120,7 @@
                 'ion-ios-checkmark balanced':item.topPick===true}"></i>
               </a>
             </div>
-          </swipe-card> <!--  end .photo-card  -->
+          </swipe-card></div> <!--  end .photo-card  -->
 
       </div>
     </ion-list>

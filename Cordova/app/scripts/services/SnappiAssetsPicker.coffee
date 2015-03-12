@@ -187,10 +187,11 @@ angular
         mapP: (force=null)->
           if !_.isEmpty(self.iOSCollections._parsed) && !force 
             return $q.when(self.iOSCollections._parsed) 
-          return if _.isEmpty window.TEST_DATA # load in _LOAD_BROWSER_TOOLS()
+          
 
           start = new Date().getTime()
           if deviceReady.device().isBrowser
+            return _.isEmpty window.TEST_DATA # load in _LOAD_BROWSER_TOOLS()
             promise = $q.when(TEST_DATA.iosCollections)
           else
             promise = snappiMessengerPluginService.mapCollectionsP()
@@ -436,7 +437,7 @@ angular
 
 
       addOrUpdatePhoto_FromWorkorder: (photo)->
-        # photo could be in local cameraRoll, or if $rootScope.$state.includes('app.workorders') a workorder photo
+        # photo could be in local cameraRoll, or if $rootScope.isStateWorkorder() a workorder photo
         isLocal = (photo.deviceId == $rootScope.device.id)
         # console.log "%%% isLocal=" + (photo.deviceId == $rootScope.device.id) + ", values=" + JSON.stringify [photo.deviceId , $rootScope.device.id]
 
@@ -466,6 +467,7 @@ angular
         else if isLocal # update in map()
           _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId'] # copy Edit fields
           foundInMap.from = 'CameraRoll<PARSE' 
+          foundInMap.woSrc = photo.src
           # cameraRoll photo.favorite has priority
           # BUT, we need to listen for onChange favorite OUTSIDE app and post(?)
           # console.log "%%% isLocal, photo=" + JSON.stringify _.pick  foundInMap, ['from', 'caption', 'rating', 'xxxfavorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId']
@@ -473,7 +475,7 @@ angular
         else if !isLocal && foundInMap # update Workorder Photo from Parse
           _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot'] # copy Edit fields
           # self.dataURLs['preview'][photo.UUID] = photo.src
-          if $state.includes('app.workorders') == false
+          if deviceReady.device().isDevice && $rootScope.isStateWorkorder() == false
             console.log "%%% NOT isLocal, photo=" + JSON.stringify _.pick foundInMap, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot']
           return false
 
@@ -567,7 +569,7 @@ angular
           found = self.getPhoto(UUID, options) 
         if isBrowser = deviceReady.device().isBrowser 
           found = self.getPhoto(UUID, options) 
-        if isWorkorder = $rootScope.$state.includes('app.workorders') 
+        if isWorkorder = $rootScope.isStateWorkorder() 
           # HACK: for now, force workorders to get parse URLS, skip cameraRoll
           # TODO: check cameraRoll if owner is DIY workorder
           # i.e. workorderObj.get('devices').indexOf($rootScope.device.id) > -1

@@ -1,4 +1,4 @@
-<ion-view title="Settings" hide-back-button="false" >
+<ion-view view-title="Settings" hide-back-button="false" >
   <ion-nav-buttons side="right"> 
     <button  class="button button-icon icon ion-help-circled" ng-click="app.toggleHelp()"></button>
   </ion-nav-buttons>
@@ -121,7 +121,8 @@
       <li class="item">
       Saved Photos: <span ng-bind="watch.archive.count"></span> Photos, <span ng-bind="watch.archive.size"></span> MB
       <button class="button button-assertive button-full" ng-class="{disabled:!watch.archive.count}">
-        <i class="icon" ng-class="watch.isWorking.clearArchive ? 'ion-loading-b' : 'ion-ios-trash' "></i>
+        <ion-spinner ng-if='watch.isWorking.clearArchive' class="spinner-light"></ion-spinner>
+        <i class="icon ion-ios-trash" ng-if="!watch.isWorking.clearArchive"></i>
         Remove Saved Photos
       </button>
       </li>
@@ -129,7 +130,8 @@
       App Cache: <span ng-bind="watch.imgCache.count"></span> Files, <span ng-bind="watch.imgCache.size"></span>
       <button class="button button-assertive button-full" ng-class="{disabled: !watch.imgCache.count}"
       ng-click="on.clearCache()">
-        <i class="icon" ng-class="watch.isWorking.clearAppCache ? 'ion-loading-b' : 'ion-ios-trash' "></i> 
+        <ion-spinner ng-if='watch.isWorking.clearAppCache' class="spinner-light"></ion-spinner>
+        <i class="icon ion-ios-trash" ng-if="!watch.isWorking.clearAppCache"></i> 
         Clear App Cache
       </button>
       </li>
@@ -155,7 +157,8 @@
         <li class="item">
         <button class="button button-assertive button-full"
         ng-click="on.resetDeviceId()" ng-class="{disabled: deviceReady.device().isBrowser}">
-        <i class="icon" ng-class="watch.isWorking.resetDeviceId ? 'ion-loading-b' : 'ion-settings' "></i>
+        <ion-spinner ng-if='watch.isWorking.resetDeviceId' class="spinner-light"></ion-spinner>
+        <i class="icon ion-settings" ng-if='!watch.isWorking.resetDeviceId'></i>
            Reset DeviceId
         </button>
         <p class='fine text-stable' >

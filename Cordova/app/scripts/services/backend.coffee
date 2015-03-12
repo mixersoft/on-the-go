@@ -294,7 +294,7 @@ angular
           'errors': []
         }
         parsePhotos = photosColl?.toJSON?() || []
-        checkDeviceId = deviceReady.device().isDevice && $rootScope.$state.includes('app.workorders') == false
+        checkDeviceId = deviceReady.device().isDevice && $rootScope.isStateWorkorder() == false
         if checkDeviceId == false
           promise = $q.when()
           # add, remove = [] for workorder syncs...

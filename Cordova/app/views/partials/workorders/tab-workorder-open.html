@@ -1,0 +1,22 @@
+<!-- tab-workorder-open.html -->
+<ion-view view-title="{{watch.viewTitle}}"  hide-back-button="true">
+  <ion-content class="has-header">
+    <ion-refresher
+      pulling-text=""
+      on-refresh="on.refresh()">
+    </ion-refresher>
+
+    <div ng-repeat="order in filteredOrders = (workorders | filter:filterStatusNotComplete )">
+      <div ng-include="'views/partials/workorders/workorder-card.html'"></div>
+    </div>
+    <div class="empty-list" ng-if="!filteredOrders.length"> 
+      <div class="card empty-list" >
+        <div class="item item-text-wrap">
+          <div class="text-center">
+            <h2>There are no open workorders.</h2>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ion-content>
+</ion-view> 

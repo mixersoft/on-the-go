@@ -1,4 +1,4 @@
-<ion-view title="{{label.title}}" hide-back-button="true" >
+<ion-view view-title="{{watch.viewTitle}}" hide-back-button="true" >
   <ion-nav-buttons side="left">
     <button menu-toggle="left"class="button button-icon icon ion-navicon"></button>
   </ion-nav-buttons>
@@ -30,7 +30,7 @@
       <div class="fine warning" ng-bind="watch.warnings"></div>
       <div class="list list-positive" ng-show="watch.isScheduling">
         <div class="warn-scheduling item-icon-left" >
-          <i class="icon icon-large energized ion-loading-b"></i>
+          <ion-spinner class="icon spinner-energized"></ion-spinner>
           <div class="fine energized">Please wait until scheduling is complete.</div>
         </div>
       </div>

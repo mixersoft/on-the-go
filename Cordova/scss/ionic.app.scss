@@ -26,23 +26,11 @@ $royal:                           #8a6de9 !default;
 $dark:                            #444 !default;
 
 // The path for our ionicons font files, relative to the built CSS in www/css
-/** 
- * Patch ionic beta14 to use ionicons 2.0
- *
- * 
-// 1) in angular.module().config 
-$ionicConfigProvider.backButton.text('Back').icon('ion-ios-arrow-back');
+$ionicons-font-path: "../lib/ionic/fonts" !default;
 
-// 2) edit js/lib/ionic/scss/ionic.scss to set path to ionicons 2.0: // Ionicons
- "../../../components/ionicons/scss/ionicons.scss",
-
-// 3) @import "www/lib/ionic/scss/ionicons/ionicons-animation";
- *
- */
-$ionicons-font-path: "../components/ionicons/fonts" !default;
 // Include all of Ionic
 @import "www/lib/ionic/scss/ionic";
-@import "www/lib/ionic/scss/ionicons/ionicons-animation";
+
 
 /**
  * Responsive mixin. The media breakpoints are as defined
@@ -113,6 +101,10 @@ $ionicons-font-path: "../components/ionicons/fonts" !default;
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+.button .spinner svg {
+  vertical-align: sub;
 }
 
 .menu-left {
@@ -279,9 +271,9 @@ ion-side-menu-content .item > * {
   $max-preview-dim-workorder: 640px; 
 
   .list {
-    /* set to match .header-card padding */
-    padding-left: 10px;
-    padding-right: 10px;
+    /* set to match .header-card padding REMOVED for collection-repeat vRC.0 */
+/*    padding-left: 10px;
+    padding-right: 10px;*/
     .item {
       font-size:14px;
       &.tabs.tabs-secondary {
@@ -294,7 +286,7 @@ ion-side-menu-content .item > * {
   }
 
   .photo-card, .workorder-card {
-    margin: 6px auto;
+    margin: 6px auto;  /*add gutter to set collection-repeat vRC.0 width correctly*/
     padding: 0;
 
     .caption {

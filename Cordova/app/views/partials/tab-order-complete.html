@@ -1,0 +1,43 @@
+<!-- tab-order-complete.html -->
+    <ion-view view-title="{{watch.viewTitle}}" hide-back-button="true" >
+      <ion-nav-buttons side="left">
+        <button menu-toggle="left"class="button button-icon icon ion-navicon"></button>
+      </ion-nav-buttons>
+      <ion-content class="has-header ">
+
+        <div ng-repeat="order in filteredOrders = (orders = $root.orders | filter:{status:'complete'} )">
+          <div ng-include="'views/partials/order-card.html'"></div>
+        </div>
+        <div class="empty-list" ng-if="!filteredOrders.length"> 
+          <div class="card empty-list" >
+            <div class="item item-text-wrap">
+              <div class="text-center">
+                <h2>You have no complete orders.</h2>
+                <div ng-show="orders.length">
+                  <div class="text-left">
+                    But there is something on the stove...
+                  </div>
+                  <br />
+                  <div>
+                    <button class="button button-assertive button-large" style="white-space: nowrap;"
+                    ng-click="gotoTab('open')">Show Me What's Cooking</button> 
+                  </div>
+                </div>
+                <div ng-show="!orders.length">
+                  <div class="text-left">
+                    Why don't you start with some old vacation photos?
+                  </div>
+                  <br />
+                  <div>
+                    <button class="button button-balanced button-large" style="white-space: nowrap;"
+                    ui-sref="app.choose.camera-roll">Choose Your Days</button> 
+                  </div>
+                </div>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </ion-content>
+    </ion-view>

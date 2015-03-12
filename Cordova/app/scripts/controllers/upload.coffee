@@ -732,6 +732,7 @@ angular.module('ionBlankApp')
       warnings: null
       isScheduling: false
       isUnscheduling: false
+      viewTitle: i18n.tr('title')  # HACK: view-title state transition mismatch      
     }
 
     $scope.on = {
@@ -787,6 +788,9 @@ angular.module('ionBlankApp')
       $scope.on.fetchWarningsP()
       return if !$scope.deviceReady.isOnline()
       return $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
+
+    $scope.$on '$ionicView.enter', ()->
+      $scope.watch.viewTitle = i18n.tr('title')
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 

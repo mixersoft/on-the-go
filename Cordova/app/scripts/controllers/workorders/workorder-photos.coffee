@@ -19,15 +19,15 @@ angular.module('ionBlankApp')
     $scope.label = {
       title: "Workorder Photos"
       header_card: 
-        'app.workorders.photos.all': 
+        'app.workorder-photos.all': 
           header: "Workorder Photos"
           body: "All photos from a customer workorder. Editors must select Top-picks from these photos. All photos must be scanned. "
           footer: ""
-        'app.workorders.photos.todo':
+        'app.workorder-photos.todo':
           header: "Favorites"
           body: "Only photos that are new and have not yet been reviewed."
           footer: ""  
-        'app.workorders.photos.picks':
+        'app.workorder-photos.picks':
           header: "Shared"
           body: "A selection of Top Picks and Favorite Shots as selected by Editors. This is what the client will see."
           footer: ""  
@@ -67,11 +67,11 @@ angular.module('ionBlankApp')
       reloadDataSet: (toState)->
         toState = $state.current if `toState==null`
         switch toState.name
-          when 'app.workorders.photos.all'
+          when 'app.workorder-photos.all'
             _watch.filter = null
-          when 'app.workorders.photos.todo'
+          when 'app.workorder-photos.todo'
             _watch.filter = {topPick:null}
-          when 'app.workorders.photos.picks'
+          when 'app.workorder-photos.picks'
             _watch.filter = {topPick:true}
         data = $scope.photos
         data = $filter('filter')(data, _watch.filter)
@@ -79,6 +79,7 @@ angular.module('ionBlankApp')
 
 
       getItemHeight : (item, index)->
+        return 0 if !item
         IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, 640)
         scaledDim = cameraRoll.getCollectionRepeatHeight(item, IMAGE_WIDTH)
         h = item.scaledH
@@ -94,7 +95,11 @@ angular.module('ionBlankApp')
           $scope.on._info = !$scope.on._info 
         else if value != null 
           $scope.on._info = value
-        $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() if $scope.on._info != revert
+        
+        if $scope.on._info != revert
+          # added custom event handler to ionic.bundle.js
+          angular.element($window).triggerHandler('resize.collection-repeat'); 
+          # $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() 
         return $scope.on._info  
 
 
@@ -115,7 +120,7 @@ angular.module('ionBlankApp')
           , (err)->
             item.topPick = revert
             console.warn "item NOT saved, err=" + JSON.stringify err
-        # if $state.current.name != 'app.workorders.photos.all'
+        # if $state.current.name != 'app.workorder-photos.all'
           # refresh on reload
           # setFilter( $state.current )
 
@@ -138,7 +143,7 @@ angular.module('ionBlankApp')
           , (err)->
             item.topPick = revert
             console.warn "item NOT saved, err=" + JSON.stringify err
-        # if  $state.current.name != 'app.workorders.photos'
+        # if  $state.current.name != 'app.workorder-photos'
           # refresh on reload
           # setFilter( $state.current )
 
@@ -193,7 +198,7 @@ angular.module('ionBlankApp')
 
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
-      $scope.on.reloadDataSet() if $state.includes('app.workorders.photos')
+      $scope.on.reloadDataSet() if $state.includes('app.workorder-photos')
       return
 
     $scope.$on 'sync.workordersComplete', ()->
@@ -208,12 +213,14 @@ angular.module('ionBlankApp')
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
-        # cached view becomes active 
+      return
 
+    $scope.$on '$ionicView.enter', ()->  
+        # cached view becomes active 
         woid = $state.params['woid']
         $scope.on.showInfo(true) if $scope.config['workorder.photos']?.info
         # show loading
-        _whenDoneP = (workorderColl)->
+        _whenSyncDoneP = (workorderColl)->
           workorderObj = _.findWhere workorderColl.models, { id: woid } 
           otgWorkorderSync.fetchWorkorderPhotosP(workorderObj).then (photosColl)->
 
@@ -250,17 +257,22 @@ angular.module('ionBlankApp')
 
             $scope.on.reloadDataSet() 
             _force = false
+
+            # clean up UX
+            $scope.hideLoading()
+            $rootScope.$broadcast('scroll.refreshComplete')
+            console.log "workorder-photos Sync complete"
             return
           return
 
 
-
+        $scope.showLoading(true) 
         if _force
-          # only for TESTING when we load 'app.workorders.photos' as initial state!!!
-          otgWorkorderSync.SYNC_WORKORDERS($scope, 'editor', 'force', _whenDoneP)
+          # only for TESTING when we load 'app.workorder-photos' as initial state!!!
+          otgWorkorderSync.SYNC_WORKORDERS($scope, 'editor', 'force', _whenSyncDoneP)
         else 
           workorderColl = otgWorkorderSync._workorderColl['editor']
-          _whenDoneP workorderColl
+          _whenSyncDoneP( workorderColl)
 
         return
       return 

@@ -1,0 +1,55 @@
+<!-- views/partials/order-card.html -->
+	<ng-include 
+    ng-if="order.status=='standby'"
+    src="'views/partials/order-standby.html'">
+  </ng-include>
+  <div class="list card workorder-card" >
+    <div class="item item-divider item-assertive">
+    <i class="icon ion-gear-b"> {{order.fromDate | date}} - {{order.toDate | date}}</i>
+    </div>
+
+    <div class="item item-text-wrap item-icon-left">
+      <i class="icon ion-clipboard"></i>
+      <div>Order Date: {{order.createdAt | date }}</div>
+      <div>Plan: <span ng-if="order.checkout.count.photos">{{order.count_expected}} Photos in </span>{{order.count_days}} Days
+      </div>
+      <div>Total: {{order.servicePlan.total | currency:$}}
+        <div class="assertive service-plans"
+        ng-if="order.servicePlan.plans.length==1">
+          Based on: {{order.servicePlan.plans[0]}}</div>
+          <div class="assertive" ng-if="order.servicePlan.plans.length>1">
+          Based on:
+          <ul class="padding-left" ng-repeat="plan in order.servicePlan.plans">
+            <li class="assertive" ng-bind="plan"></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="item item-text-wrap item-icon-left">
+      <i class="icon ion-clock"></i>
+      <div>Status: 
+        <span class="badge" workorder-status 
+        ng-class="ngClass_WorkStatus(order, 'badge')" 
+        ng-bind="order.status" ></span>      
+      </div>
+      <div>Photos: 
+        <span class="badge" workorder-status
+        ng-class="watch.ngClass_UploadStatus(order)" 
+        ng-bind="watch.ngBind_UploadStatus(order)" ></span>
+
+        <ul class="padding text-center"><li class="badge badge-positive">Expected: {{ order.count_expected }}</li>
+        <li class="badge badge-positive">Received: {{ order.count_received }}</li>
+        <li class="badge badge-positive">Duplicates: {{ order.count_duplicate}}</li></ul>
+
+      </div>
+    </div>
+
+    <div class="item item-complex" 
+    ng-if="order.count_expected">
+      <otg-moment-date-range otg-model="order.workorderMoment"></otg-moment-date-range>
+    </div>
+    <div class="item item-divider item-assertive">
+    <!-- footer  -->
+    </div>
+  </div><!--  end workorder-card  -->

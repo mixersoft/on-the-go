@@ -100,6 +100,7 @@ angular.module('onTheGo.i18n', [])
           """
       'app.checkout.complete': {}
       'app.orders': 
+        title: 'Order History'
         standby:
           header: 'Order Standby'
           body: """
@@ -108,8 +109,13 @@ angular.module('onTheGo.i18n', [])
             However, you may continue to upload photos for this order. 
             We will notify you when the status changes, and your order will not be charged until work begins.
           """
-      'app.orders-detail': {}
+      'app.orders.detail': {}
+      'app.orders.open': 
+        title: 'Open Orders'
+      'app.orders.complete': 
+        title: 'Complete Orders'        
       'app.uploader': 
+        title: 'Uploader'
         warning:
           offline: "Please connect to a network."
           cellular: "Upload by cellular data is disabled."
@@ -144,6 +150,10 @@ angular.module('onTheGo.i18n', [])
       'app.help.main': {}
       'app.help.welcome': {}
       'app.help.pricing': {}
+      'app.workorders.open': 
+        title: 'Open Workorders'
+      'app.workorders.complete': 
+        title: 'Complete Workorders'
   }
 
   self = {
@@ -151,11 +161,16 @@ angular.module('onTheGo.i18n', [])
     lang: (lang)->
       self._lang = lang if lang
       return self._lang
-    tr: (key, $state)->
-      stateName = $state?.current?.name || $state || null
-      stateName = $rootScope.$state?.current.name if !stateName
+    tr: (key, state=null, stateIncludes)->
+      # HACK: fix race condition when returning from workorder/left-side-menu
+      return null if stateIncludes? && !$rootScope.$state.includes(stateIncludes)
+
+      stateName = state || $rootScope.$state?.current.name
       return if !stateName
-      msg = dictionary[ self._lang ][ stateName ]?[ key ] || ['MISSING',self._lang, stateName, key].join(':')
+      msg = dictionary[ self._lang ][ stateName ]?[ key ] 
+      if !msg
+        # console.warn "i18n error, $state=" +  [$rootScope.$state.current.name, key].join(':')
+        msg = ['MISSING',self._lang, stateName, key].join(':')
       return msg
     merge: (updatedDict, lang)->
       return _.merge( dictionary[lang], updatedDict[lang]  ) if lang

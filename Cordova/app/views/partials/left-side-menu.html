@@ -1,0 +1,51 @@
+<!-- views/partials/left-side-menu.html -->
+    <header class="bar bar-header bar-positive" ng-if="!config['no-view-headers']">
+      <h1 class="title">Menu</h1>
+    </header>
+    <ion-content class="has-header">
+      <ion-list>
+        <ion-item class="item-icon-left item-icon-right" nav-clear menu-close ui-sref="app.top-picks.top-picks">
+        <i class="icon ion-images positive"></i>
+          Top Picks
+          <span class="badge badge-balanced" ng-show="$root.counts['top-picks']"
+          >{{$root.counts['top-picks']}}</span>
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close ui-sref="app.choose.camera-roll">
+          <i class="icon ion-calendar positive"></i>
+          Choose Your Days
+        </ion-item>
+        <ion-item class="item-icon-left item-icon-right" nav-clear menu-close ui-sref="app.orders.open">
+          <i class="icon ion-archive positive"></i>
+          My Orders
+          <span class="badge badge-balanced" ng-show="$root.counts.orders"
+          >{{$root.counts.orders}}</span>
+        </ion-item>
+        <ion-item class="item-icon-left  item-icon-right" nav-clear menu-close ui-sref="app.uploader">
+          <i class="icon ion-ios-cloud-upload positive"></i>
+          Uploader
+          <span class="badge badge-assertive" ng-show="$root.counts.uploaderRemaining"
+          >{{$root.counts.uploaderRemaining}}</span>
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close ui-sref="app.settings.main">
+          <i class="icon ion-gear-b positive"></i>
+          Settings
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close href="#/app/help">
+          <i class="icon ion-ios-information positive"></i>
+          Resources
+        </ion-item>
+
+      <div ng-show="user.role=='editor'">  
+        <ion-item class="item-divider">
+          (for Editors only)
+        </ion-item>
+        <ion-item class="item-icon-left item-assertive" nav-clear menu-close ui-sref="app.workorders.open"
+        ng-click="app.menu('editor')">
+          <i class="icon ion-archive icon-assertive"></i>
+          Workorders
+        </ion-item>
+      </div>
+
+
+      </ion-list>
+    </ion-content>

@@ -13,8 +13,8 @@ angular.module('ionBlankApp')
 #   lorempixel (for brower debug)
 # uses $q.promise to load src 
 .directive 'lazySrc', [
-  '$localStorage', 'PLUGIN_CAMERA_CONSTANTS', 'cameraRoll', 'imageCacheSvc', '$rootScope'
-  ($localStorage, CAMERA, cameraRoll, imageCacheSvc, $rootScope)->
+  '$localStorage', 'PLUGIN_CAMERA_CONSTANTS', 'cameraRoll', 'imageCacheSvc', '$rootScope', '$q'
+  ($localStorage, CAMERA, cameraRoll, imageCacheSvc, $rootScope, $q)->
 
     _getAsSnappiSqThumb = (src='')->
       return src if src.indexOf('snaphappi.com/svc') == -1  # autoRender not available
@@ -23,7 +23,7 @@ angular.module('ionBlankApp')
       parts.push( '.thumbs/sq~' + parts.pop() )
       return parts.join('/')
 
-
+    collectionRepeatDataURLS = {}
 
     _setLazySrc = (element, UUID, format)->
       throw "ERROR: asset is missing UUID" if !UUID
@@ -33,16 +33,22 @@ angular.module('ionBlankApp')
       scope = element.scope()
       photo = scope.item || scope.photo  # TODO: refactor in TopPicks, use scope.photo
 
-      isWorkorder = $rootScope.$state.includes('app.workorders') 
+      isWorkorder = $rootScope.isStateWorkorder() 
       isOrder = $rootScope.$state.includes('app.orders')
       isMoment = IMAGE_SIZE=='thumbnail' && (isWorkorder || isOrder)
       # WARNING: must be after $localStorage.waitP()
       isBrowser = !isDevice =  $localStorage['device'].isDevice
 
-      if isDevice
+      if isDevice 
         # get updated values from cameraRoll.map()
         mappedPhoto = _.find( cameraRoll.map(), {UUID: photo.UUID})
-        _.extend( photo, mappedPhoto) if mappedPhoto 
+        _.extend( photo, mappedPhoto) if mappedPhoto
+
+      if isDevice && IMAGE_SIZE=='preview' && previewDataURL = collectionRepeatDataURLS[photo.UUID]
+        console.log "using dataURL for collection-repeat"
+        return element.attr('src', previewDataURL) 
+
+
 
       if isMoment && isOrder
         if isOrder && photo.src?.indexOf('file:') == 0
@@ -54,13 +60,14 @@ angular.module('ionBlankApp')
           return if !isLocal
         # else continue to bottom to check isStashed
 
+
       if isMoment && isWorkorder # try to use /sq~ images from autoRender
-        thumbSrc = _getAsSnappiSqThumb(photo.src)
+        thumbSrc = _getAsSnappiSqThumb(photo.src || photo.woSrc)
         return element.attr('src', thumbSrc)
 
 
       if isWorkorder # preview
-        return element.attr('src', photo.src) 
+        return element.attr('src', photo.src || photo.woSrc) 
 
       if isBrowser && photo.from == 'PARSE' 
         # user sign-in viewing topPicks from browser
@@ -70,8 +77,8 @@ angular.module('ionBlankApp')
       if !isWorkorder && isBrowser && window.TEST_DATA # DEMO mode
         return _useLoremPixel(element, UUID, format)
 
-
       promise = imageCacheSvc.isStashed_P(UUID, format)
+      # promise = $q.reject("force DestinationType='DATA_URL' for collection-repeat")
       .then (stashed)->
         element.attr('src', stashed.fileURL)
         return
@@ -85,19 +92,21 @@ angular.module('ionBlankApp')
           size: IMAGE_SIZE
           DestinationType : CAMERA.DestinationType.FILE_URI 
         }
+        # options.DestinationType = CAMERA.DestinationType.DATA_URL if IMAGE_SIZE=='preview'
         return cameraRoll.getPhoto_P( UUID, options )
-        .then (photo)->
+        .then (resp)->
           if options.DestinationType == CAMERA.DestinationType.FILE_URI
-            imageCacheSvc.stashFile(UUID, IMAGE_SIZE, photo.data, photo.dataSize) # FILE_URI
+            imageCacheSvc.stashFile(UUID, IMAGE_SIZE, resp.data, resp.dataSize) # FILE_URI
           else if options.DestinationType == CAMERA.DestinationType.DATA_URL && IMAGE_SIZE == 'preview'
-            imageCacheSvc.cordovaFile_USE_CACHED_P(element, photo.UUID, photo.data) 
+            "do NOT cache DATA_URL" || imageCacheSvc.cordovaFile_USE_CACHED_P(element, resp.UUID, resp.data) 
+            collectionRepeatDataURLS[resp.UUID] = resp.data
           else 
             'not caching DATA_URL thumbnails'
 
-          if element.attr('lazy-src') != photo.UUID
+          if element.attr('lazy-src') != resp.UUID
             throw '_setLazySrc(): collection-repeat changed IMG[lazySrc] before cameraRoll image returned'
           else 
-            element.attr('src', photo.data)
+            element.attr('src', resp.data)
           return
       .catch (error)->
         return console.warn "_setLazySrc():", error
@@ -190,6 +199,7 @@ angular.module('ionBlankApp')
         return photo
 
     _getMomentHeight = (moment, index)->
+      return 0 if !moment
       days = moment.value.length
       paddingTop = 10
       padding = 16+1

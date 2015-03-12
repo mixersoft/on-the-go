@@ -39,10 +39,6 @@ angular
     Parse.initialize( PARSE_CREDENTIALS.APP_ID, PARSE_CREDENTIALS.JS_KEY )
     $rootScope.sessionUser = Parse.User.current()
 
-    # deprecate?
-    $rootScope.$state = $state;
-    $rootScope.$stateParams = $stateParams;  
-
     _alreadyLogged = {}
     window._logOnce = (id, message)->
       return if _alreadyLogged[id]
@@ -206,31 +202,7 @@ angular
         }
       }
     })
-    .state('app.orders', {
-      url: "/orders",
-      abstract: true
-      views: {
-        'menuContent' : {
-          templateUrl: "views/orders.html"
-          controller: 'OrdersCtrl'
-        }
-      }
-    })
-    .state('app.orders.open', {
-      url: "/open",
-    })
-    .state('app.orders.complete', {
-      url: "/complete",
-    })    
-    .state('app.orders.detail', {
-      url: "/:oid",
-      views: {
-        'menuContent' : {
-          templateUrl: "views/orders.html"
-          controller: 'OrdersCtrl'
-        }
-      }
-    })
+
 
     .state('app.uploader', {
       url: "/uploader",
@@ -248,7 +220,7 @@ angular
       abstract: true
       views: {
         'menuContent' : {
-          template: '<ion-view title="Settngs"><ion-nav-view name="settingsContent" animation="slide-left-right"></ion-nav-view></ion-view>'
+          template: '<ion-view view-title="Settngs"><ion-nav-view name="settingsContent" animation="slide-left-right"></ion-nav-view></ion-view>'
           controller: 'SettingsCtrl'
         }
       }
@@ -314,7 +286,7 @@ angular
       abstract: true
       views:
         'menuContent':
-          template: '<ion-view title="Help" hide-back-button="true" ><ion-nav-view  id="help" name="helpContent" animation="slide-left-right"></ion-nav-view></ion-view>'
+          template: '<ion-view view-title="Help" hide-back-button="true" ><ion-nav-view  id="help" name="helpContent" animation="slide-left-right"></ion-nav-view></ion-view>'
           controller: 'HelpCtrl'
     })
     .state('app.help.main', {
@@ -340,46 +312,71 @@ angular
           templateUrl: "views/partials/help-about.html"
         }
       }
-    })   
+    }) 
+    # user view of orders
+    .state('app.orders', {
+      url: "/orders",
+      abstract: true
+      views: {
+        'menuContent' : {
+          templateUrl: "views/orders.html"
+          controller: 'OrdersCtrl'
+        }
+      }
+    })
+    .state('app.orders.open', {
+      url: "/open",
+      views: {
+        'open-tab' : {
+          templateUrl: "views/partials/tab-order-open.html"
+        }
+      }      
+    })
+    .state('app.orders.complete', {
+      url: "/complete",
+      views: {
+        'complete-tab' : {
+          templateUrl: "views/partials/tab-order-complete.html"
+        }
+      }      
+    })    
+    .state('app.orders.detail', {
+      url: "/:oid",
+      views: {
+        'menuContent' : {
+          templateUrl: "views/orders.html"
+          controller: 'OrdersCtrl'
+        }
+      }
+    })      
     #
     # Workorder Management System
     #
     .state('app.workorders', {
       url: "/workorders",
+      abstract: true
       views: {
         'menuContent': {
-          template: '<ion-view title="Workorders" xxxhide-back-button="true" ><ion-nav-view  id="workorder" name="workorderContent" animation="slide-left-right"></ion-nav-view></ion-view>'
-        }
-        'workorderPartials':
-          templateUrl: "views/workorders/workorder-partials.html"  
-      }
-    })
-    # .state('app.workorders.all', {
-    #   url: "/all",
-    #   views: {
-    #     'workorderContent' : {
-    #       templateUrl: "views/workorders/workorders.html"
-    #       controller: 'WorkordersCtrl'
-    #     }
-    #   }
-    # })   
-    .state('app.workorders.open', {
-      url: "/open",
-      views: {
-        'workorderContent' : {
           templateUrl: "views/workorders/workorders.html"
           controller: 'WorkordersCtrl'
         }
-      }      
+      }
+    })
+    .state('app.workorders.open', {
+      url: "/open",
+      views: {
+        'workorder-tab-open' : {
+          templateUrl: "views/partials/workorders/tab-workorder-open.html"
+        }
+      }     
     })
     .state('app.workorders.complete', {
       url: "/complete",
       views: {
-        'workorderContent' : {
-          templateUrl: "views/workorders/workorders.html"
-          controller: 'WorkordersCtrl'
+        'workorder-tab-complete' : {
+          templateUrl: "views/partials/workorders/tab-workorder-complete.html"
         }
-      }      
+      }     
     })    
     .state('app.workorders.detail', {
       url: "/:woid",
@@ -390,23 +387,23 @@ angular
         }
       }
     })
-    .state('app.workorders.photos', {
-      url: "/:woid/photos",
+    .state('app.workorder-photos', {
+      url: "/workorders/:woid/photos",
       abstract: true
       views: {
-        'workorderContent' : {
+        'menuContent' : {
           templateUrl: "views/workorders/workorder-photos.html"
           controller: 'WorkorderPhotosCtrl'
         }
       }
     })
-    .state('app.workorders.photos.all', {
+    .state('app.workorder-photos.all', {
       url: "/all",
     })
-    .state('app.workorders.photos.todo', {
+    .state('app.workorder-photos.todo', {
       url: "/todo",
     })
-    .state('app.workorders.photos.picks', {
+    .state('app.workorder-photos.picks', {
       url: "/picks",
     })    
   # if none of the above states are matched, use this as the fallback
@@ -415,7 +412,7 @@ angular
 
 ]
 .controller 'AppCtrl', [
-  '$scope', '$rootScope', '$timeout', '$q', 'angularLoad'
+  '$scope', '$rootScope', '$state', '$timeout', '$q', 'angularLoad'
   '$ionicPlatform', '$ionicModal', '$ionicLoading'
   '$localStorage', 'otgLocalStorage'
   'SideMenuSwitcher', '$ionicSideMenuDelegate', 
@@ -423,7 +420,7 @@ angular
   'snappiMessengerPluginService', 'i18n',
   'deviceReady', 'cameraRoll'
   'otgData', 'imageCacheSvc', 'appConsole'
-  ($scope, $rootScope, $timeout, $q, angularLoad
+  ($scope, $rootScope, $state, $timeout, $q, angularLoad
     $ionicPlatform, $ionicModal, $ionicLoading,
     $localStorage, otgLocalStorage
     SideMenuSwitcher, $ionicSideMenuDelegate, 
@@ -436,7 +433,7 @@ angular
 
     # dynamically update left side menu
     $scope.SideMenuSwitcher = SideMenuSwitcher  
-    SideMenuSwitcher.leftSide.src = 'partials/left-side-menu'
+    SideMenuSwitcher.leftSide.src = 'views/partials/left-side-menu.html'
 
 
     # 
@@ -446,7 +443,7 @@ angular
     $scope.showLoading = (value = true, timeout=5000)-> 
       return $ionicLoading.hide() if !value
       $ionicLoading.show({
-        template: '<i class="icon ion-loading-b"></i>'
+        template: '<ion-spinner class="spinner-light" icon="lines"></ion-spinner>'
         duration: timeout
       })
     $scope.hideLoading = (delay=0)->
@@ -481,7 +478,7 @@ angular
       menu: (type='owner')->
         switch type
           when 'owner'
-            SideMenuSwitcher.leftSide.src='partials/left-side-menu'
+            SideMenuSwitcher.leftSide.src='views/partials/left-side-menu.html'
           when 'editor'
             SideMenuSwitcher.leftSide.src='views/partials/workorders/left-side-menu.html'
         $ionicSideMenuDelegate.toggleLeft()
@@ -573,8 +570,20 @@ angular
       }
     }
 
+    # copy these to $rootScope scope, i.e. need access from directives, services, etc.
+    ADD_TO_ROOT_SCOPE = {
+      $state: $state
+      user:  $scope.user = otgParse.mergeSessionUser()
+      config: null
+      counts: null
+      device: null
+      isStateWorkorder: ()->
+        return true if $state.includes('app.workorders')
+        return true if $state.includes('app.workorder-photos')
+        return false      
+    }
+    _.extend $rootScope, ADD_TO_ROOT_SCOPE
 
-    $rootScope.user = $scope.user = otgParse.mergeSessionUser()
 
     $scope.$watch 'user.tosAgree', (newVal, oldVal)->
       return if newVal == oldVal
@@ -765,7 +774,7 @@ angular
           # browser
           _LOAD_BROWSER_TOOLS() 
       
-        # promise = otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.$state.includes('app.workorders')
+        # promise = otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.isStateWorkorder()
         promise = otgParse.checkBacklogP().then (backlog)->
           $scope.config.system['order-standby'] = backlog.get('status') == 'standby'
         return  # end $ionicPlatform.ready
