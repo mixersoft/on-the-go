@@ -394,7 +394,11 @@ static CGFloat defaultCompressionQuality = 0.7;
                     info.asset = obj.localIdentifier;
                     [self addSessionTaskInfo:info];
                     
-                    NSURLSessionUploadTask *task = [self parseUplaodTaskForFilePath:fullPath additinalHeaderKeys:@{@"X-Image-Identifier":obj.localIdentifier}];
+//                    NSURLSessionUploadTask *task = [self parseUplaodTaskForFilePath:fullPath additinalHeaderKeys:@{@"X-Image-Identifier":obj.localIdentifier}];
+                    NSURLSessionUploadTask *task = [self parseUplaodTaskForFilePath:fullPath additinalHeaderKeys:@{
+                       @"X-Image-Identifier":obj.localIdentifier,
+                       @"X-Container-Identifier":options[@"container"]
+                       }];
                     [task resume];
                     [scheduledTasks addObject:task];
                     
@@ -413,7 +417,9 @@ static CGFloat defaultCompressionQuality = 0.7;
 }
 
 -(NSURLSessionUploadTask *)parseUplaodTaskForFilePath:(NSString *)filePath additinalHeaderKeys:(NSDictionary *)additionalKeys {
-    NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", filePath.lastPathComponent];
+//    NSString *path = [NSString stringWithFormat:@"https://api.parse.com/1/files/%@", filePath.lastPathComponent];
+    NSString *path = [NSString stringWithFormat:@"http://app.snaphappi.com:8765/api/containers/%@/upload", additionalKeys[@"X-Container-Identifier"]];
+
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60];
     [request setHTTPMethod:@"POST"];
     [request addValue:parseApplicationID forHTTPHeaderField:@"X-Parse-Application-Id"];
