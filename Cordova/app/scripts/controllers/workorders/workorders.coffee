@@ -101,6 +101,10 @@ angular.module('ionBlankApp')
     $scope.workorders = []
     $scope.workorder = null
 
+    $scope.$on 'user:sign-out', (args)->
+      $scope.workorders = []
+      $scope.workorder = null
+
     _SyncWorkorders = ()->
       onComplete = ()->
         $scope.hideLoading()

@@ -205,6 +205,9 @@ angular.module('ionBlankApp')
       console.log '@@@ sync.workordersComplete'
 
 
+    $scope.$on 'user:sign-out', (args)->
+      $scope.photosColl = []
+      $scope.photos = []
 
     _force = false   
     $scope.$on '$ionicView.loaded', ()->
