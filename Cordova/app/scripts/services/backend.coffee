@@ -103,7 +103,10 @@ angular
 
         return otgParse.checkSessionUserP()
         .then ()->
-          return otgParse.fetchWorkordersByOwnerP(options)
+          if options.acl
+            return otgParse.fetchWorkordersByACLP(options)
+          else 
+            return otgParse.fetchWorkordersByOwnerP(options)
         .then (workorderColl)->
             self._workorderColl[role] = workorderColl
             # console.log "\n *** fetchWorkordersP from backend.coffee, role=" + role
@@ -122,20 +125,17 @@ angular
             return workorderColl
           , (err)->
             console.warn "\n *** fetchWorkordersP catch, role=" + role
-            console.warn error
+            console.warn err
 
       fetchWorkorderPhotosP : (workorderObj,  options={}, force)->
-        options = {owner: true} if _.isEmpty options
+        options.owner == true if $rootScope.user.role == 'owner'
 
         cached = self._workorderPhotosColl[ workorderObj.id ] 
         return $q.when( cached ) if cached && !force
 
         return otgParse.checkSessionUserP()
         .then ()->
-          options = {
-            workorder: workorderObj
-            owner: true
-          }
+          options.workorder = workorderObj
           return otgParse.fetchWorkorderPhotosByWoIdP(options)
         .then (photosColl)->
             self._workorderPhotosColl[ workorderObj.id ] 
@@ -544,6 +544,7 @@ angular
         options = {
           role: 'editor'
           editor: true
+          acl : true
           workorder: true
         }
 
@@ -890,10 +891,18 @@ angular
           approvedAt: null
           lastActionAt: null
           elapsed: 0
+          acl: null
         }
+
         workorderObj = new parseClass.WorkorderObj(parseData)
         workorderObj.relation('accessors').add($rootScope.sessionUser)
         workorderObj.relation('contributors').add($rootScope.sessionUser)
+
+        # set default ACL, owner:rw, Curator:rw
+        woACL = new Parse.ACL(owner)
+        woACL.setRoleReadAccess('Curator', true)
+        woACL.setRoleWriteAccess('Curator', true)
+        workorderObj.setACL(woACL)
         return workorderObj.save().then null, (error)->
           console.error "parse WorkorderObj save error, msg=" + JSON.stringify error
           throw error
@@ -922,6 +931,7 @@ angular
         return 
 
 
+
       fetchWorkordersByOwnerP : (options={})->
         query = new Parse.Query(parseClass.WorkorderObj)
         query.equalTo('owner', $rootScope.sessionUser)
@@ -933,6 +943,20 @@ angular
         collection.comparator = (o)->
           return o.get('toDate')
         return collection.fetch()
+
+      fetchWorkordersByACLP : (options={})->
+        query = new Parse.Query(parseClass.WorkorderObj)
+        if false && 'use query.include()'
+          # query.include('owner') # does not work with collections
+          # query.addDescending('createdAt')
+          # return query.find()
+        else 
+          query.addDescending('createdAt')
+          collection = query.collection()
+          # collection.comparator = (o)->
+          #   return o.get('toDate')
+          return collection.fetch()
+
 
       getWorkorderByIdP : (woid)->
         query = new Parse.Query(parseClass.WorkorderObj)
@@ -958,12 +982,16 @@ angular
           })
 
         query.equalTo('workorder', workorderObj) 
-        query.equalTo('owner', $rootScope.sessionUser) if options.owner
-        query.notEqualTo('remove', true) if options.owner
-        if options.editor
-          options.editor = $rootScope.sessionUser if options.editor == true
-          # console.warn "\n\n ***  WARNING: using workorder.owner as a proxy for workorder.editor for the moment\n"
-          query.equalTo('owner', options.editor) 
+        query.notEqualTo('remove', true)
+        if options.acl
+          angular.noop()
+        else 
+          if options.owner
+            query.equalTo('owner', $rootScope.sessionUser) 
+          else if options.editor
+            options.editor = $rootScope.sessionUser if options.editor == true
+            # console.warn "\n\n ***  WARNING: using workorder.owner as a proxy for workorder.editor for the moment\n"
+            query.equalTo('owner', options.editor) 
 
         query.limit(1000)  # parse limit, use query.skip() to continue
         collection = query.collection()
@@ -1096,6 +1124,11 @@ angular
             , extendedAttrs # , classDefaults
 
           photoObj = new parseClass.PhotoObj parseData , {initClass: false }
+          # set default ACL, owner:rw, Curator:rw
+          photoACL = new Parse.ACL(parseData.owner)
+          photoACL.setRoleReadAccess('Curator', true)
+          photoACL.setRoleWriteAccess('Curator', true)
+          photoObj.setACL (photoACL)
           return photoObj.save()
         .then (o)->
             # console.log "photoObj.save() complete: " + JSON.stringify o.attributes 
@@ -1152,6 +1185,10 @@ angular
     return self
 ]
 
+
+# # test cloudCode with js debugger
+window.cloud = { 
+}
 
 
 
