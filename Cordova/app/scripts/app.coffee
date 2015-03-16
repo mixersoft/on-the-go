@@ -753,7 +753,7 @@ angular
       deviceReady.waitP()
       .then ()->
         $scope.config['no-view-headers'] = deviceReady.device().isDevice && false
-        $rootScope.device.id = deviceReady.deviceId()
+        $rootScope.device.id = deviceReady.device().id
         # console.log "\n\n>>> deviceId="+$rootScope.device.id
       .then ()->
         return if deviceReady.device().isBrowser

@@ -441,7 +441,7 @@ angular.module('ionBlankApp')
           $scope.showLoading(true)
           $scope.app.sync.DEBOUNCED_cameraRoll_Orders()  # first time only
         else 
-          # WARNING: lazySrc bug, uses lorempixel before deviceReady.isWebView(0)
+          # WARNING: lazySrc bug, uses lorempixel before 'deviceReady' fired
           $scope.on.reloadDataSet() # restored from localStorage
 
         # $scope.on.cameraRollUpdated()

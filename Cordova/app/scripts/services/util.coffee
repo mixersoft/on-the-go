@@ -8,7 +8,66 @@
 ###
 
 
-angular.module 'snappi.util', []
+angular.module 'snappi.util', ['ionic', 'ngCordova', 'ngStorage']
+.factory 'deviceReady', [
+  '$q', '$timeout',  '$ionicPlatform', '$cordovaNetwork', '$localStorage'
+  ($q, $timeout, $ionicPlatform, $cordovaNetwork, $localStorage)->
+
+    _promise = null
+    _timeout = 2000
+    _contentWidth = null 
+    _device = {}
+    _device = 
+      if $localStorage['device']?
+      then angular.copy( $localStorage['device'] )
+      else {    # initialize
+        id: '00000000000'
+        platform: {}
+        isDevice: null
+        isBrowser: null
+      }
+
+    self = {
+
+      device: ()->
+        return _device
+
+      contentWidth: (force)->
+        return _contentWidth if _contentWidth && !force
+        return _contentWidth = document.getElementsByTagName('ion-side-menu-content')[0]?.clientWidth
+          
+      waitP: ()->
+        return _promise if _promise
+        deferred = $q.defer()
+        _cancel = $timeout ()->
+            # console.warn "$ionicPlatform.ready TIMEOUT!!!"
+            return deferred.reject("ERROR: ionicPlatform.ready does not respond")
+          , _timeout
+        $ionicPlatform.ready ()->
+          $timeout.cancel _cancel
+          platform = _.defaults ionic.Platform.device(), {
+            available: false
+            cordova: false
+            platform: 'browser'
+            uuid: 'browser'
+          }
+          $localStorage['device'] = {
+            id: platform.uuid
+            platform : platform
+            isDevice: ionic.Platform.isWebView()
+            isBrowser: ionic.Platform.isWebView() == false
+           }
+          _device = angular.copy $localStorage['device']
+          # console.log "$ionicPlatform reports deviceReady, device.id=" + $localStorage['device'].id
+          return deferred.resolve( _device )
+        return _promise = deferred.promise
+
+      isOnline: ()->
+        return true if $localStorage['device'].isBrowser
+        return !$cordovaNetwork.isOffline()
+    }
+    return self
+]
 .service 'snappiTemplate', [
   '$q', '$http', '$templateCache'
   ($q, $http, $templateCache)->

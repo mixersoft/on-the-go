@@ -13,8 +13,8 @@ angular.module('ionBlankApp')
 #   lorempixel (for brower debug)
 # uses $q.promise to load src 
 .directive 'lazySrc', [
-  '$localStorage', 'PLUGIN_CAMERA_CONSTANTS', 'cameraRoll', 'imageCacheSvc', '$rootScope', '$q'
-  ($localStorage, CAMERA, cameraRoll, imageCacheSvc, $rootScope, $q)->
+  'deviceReady', 'PLUGIN_CAMERA_CONSTANTS', 'cameraRoll', 'imageCacheSvc', '$rootScope', '$q'
+  (deviceReady, CAMERA, cameraRoll, imageCacheSvc, $rootScope, $q)->
 
     _getAsSnappiSqThumb = (src='')->
       return src if src.indexOf('snaphappi.com/svc') == -1  # autoRender not available
@@ -36,8 +36,7 @@ angular.module('ionBlankApp')
       isWorkorder = $rootScope.isStateWorkorder() 
       isOrder = $rootScope.$state.includes('app.orders')
       isMoment = IMAGE_SIZE=='thumbnail' && (isWorkorder || isOrder)
-      # WARNING: must be after $localStorage.waitP()
-      isBrowser = !isDevice =  $localStorage['device'].isDevice
+      isBrowser = !isDevice =  deviceReady.device().isDevice
 
       if isDevice 
         # get updated values from cameraRoll.map()
@@ -114,7 +113,7 @@ angular.module('ionBlankApp')
         
 
     _useLoremPixel = (element, UUID, format)->
-      console.error "ERROR: using lorempixel from device" if $localStorage['device'].isDevice
+      console.error "ERROR: using lorempixel from device" if deviceReady.device().isDevice
       scope = element.scope()
       switch format
         when 'thumbnail'
@@ -133,11 +132,10 @@ angular.module('ionBlankApp')
         format = attrs.format
 
         attrs.$observe 'lazySrc', (UUID)->
-          # UUID = UUID[0...36] # localStorage might balk at '/' in pathname
           # console.log "\n\n $$$ attrs.$observe 'lazySrc', UUID+" + UUID
           element.attr('uuid', UUID)
           src = _setLazySrc(element, UUID, format) 
-          console.error "ERROR: using lazySrc BEFORE deviceReady.waitP()" if $localStorage['device'].isDevice==null
+          console.error "ERROR: using lazySrc BEFORE deviceReady.waitP()" if deviceReady.device().isDevice==null
           return src
 
         return

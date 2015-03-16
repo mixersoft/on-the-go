@@ -45,64 +45,6 @@ angular
     archive: 'dataDirectory' 
 }
 
-.factory 'deviceReady', [
-  '$q', '$timeout',  '$ionicPlatform', '$cordovaNetwork', '$localStorage', 'otgLocalStorage'
-  ($q, $timeout, $ionicPlatform, $cordovaNetwork, $localStorage, otgLocalStorage)->
-
-    otgLocalStorage.loadDefaultsIfEmpty('device')
-
-    _promise = null
-    _timeout = 2000
-    _contentWidth = null 
-    _device = {}    # read only
-
-    self = {
-
-      deviceId: ()->  # DEPRECATE
-        return $localStorage['device'].id
-
-      isWebView: ()-> # DEPRECATE
-        return $localStorage['device'].isDevice
-
-      device: ()->
-        return _device
-
-      contentWidth: (force)->
-        return _contentWidth if _contentWidth && !force
-        return _contentWidth = document.getElementsByTagName('ion-side-menu-content')[0]?.clientWidth
-          
-      waitP: ()->
-        return _promise if _promise
-        deferred = $q.defer()
-        _cancel = $timeout ()->
-            # console.warn "$ionicPlatform.ready TIMEOUT!!!"
-            return deferred.reject("ERROR: ionicPlatform.ready does not respond")
-          , _timeout
-        $ionicPlatform.ready ()->
-          $timeout.cancel _cancel
-          platform = _.defaults ionic.Platform.device(), {
-            available: false
-            cordova: false
-            platform: 'browser'
-            uuid: 'browser'
-          }
-          $localStorage['device'] = {
-            id: platform.uuid
-            platform : platform
-            isDevice: ionic.Platform.isWebView()
-            isBrowser: ionic.Platform.isWebView() == false
-           }
-          _device = angular.copy $localStorage['device']
-          # console.log "$ionicPlatform reports deviceReady, device.id=" + $localStorage['device'].id
-          return deferred.resolve( _device )
-        return _promise = deferred.promise
-
-      isOnline: ()->
-        return true if $localStorage['device'].isBrowser
-        return !$cordovaNetwork.isOffline()
-    }
-    return self
-]
 .factory 'cameraRoll', [
   '$q', '$timeout', '$rootScope', 'deviceReady', 'PLUGIN_CAMERA_CONSTANTS', 'snappiMessengerPluginService', 'imageCacheSvc'
    'otgData', 'appConsole'
