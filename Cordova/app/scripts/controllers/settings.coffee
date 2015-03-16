@@ -253,6 +253,9 @@ angular.module('ionBlankApp')
             cameraRoll.clearPhotos_CameraRoll()           
           if otgParse.isAnonymousUser() == false
             window.TEST_DATA = null 
+          $rootScope.$broadcast 'sync.cameraRollComplete'
+          return
+
 
 
 
