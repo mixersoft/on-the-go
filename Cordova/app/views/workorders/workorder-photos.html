@@ -21,14 +21,14 @@
       on-refresh="on.refresh()">
     </ion-refresher>
     <div class="ng-repeat-filter button-bar bar-balanced">
-      <button class="button" ui-sref="app.workorders.photos.all({oid:wo.objectId})" ui-sref-active="active">
+      <button class="button" ui-sref="app.workorder-photos.all({oid:wo.objectId})" ui-sref-active="active">
         <i class="icon ion-ios-cloud-upload"></i> All 
         <span class="badge badge-dark">{{workorderAttr.count_expected}}</span> 
         </button>
-      <button class="button" ui-sref="app.workorders.photos.todo({oid:wo.objectId})"  ui-sref-active="active">  <i class="icon ion-ios-gear ion-spin"></i> To-Do 
+      <button class="button" ui-sref="app.workorder-photos.todo({oid:wo.objectId})"  ui-sref-active="active">  <i class="icon ion-ios-gear ion-spin"></i> To-Do 
       <span class="badge badge-dark">{{workorderAttr.progress.todo || '&mdash;'}}</span> 
       </button>
-      <button class="button" ui-sref="app.workorders.photos.picks({oid:wo.objectId})"  ui-sref-active="active">
+      <button class="button" ui-sref="app.workorder-photos.picks({oid:wo.objectId})"  ui-sref-active="active">
         <i class="icon ion-ios-checkmark"></i> Picks
         <span class="badge badge-dark">{{workorderAttr.progress.picks}}</span> 
         </button>
