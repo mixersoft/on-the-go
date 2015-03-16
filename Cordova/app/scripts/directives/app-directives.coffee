@@ -378,6 +378,23 @@ angular.module('ionBlankApp')
       }
 ]
 
+.directive 'notify', ['notifyService'
+  (notifyService)->
+    return {
+      restrict: 'A'
+      scope: true
+      templateUrl: 'views/template/notify.html'
+      link: (scope, element, attrs)->
+        scope.notify = notifyService
+
+        if notifyService._cfg.debug
+          window.debug.notify = notifyService        
+        return
+    }
+
+]
+
+
 
 
 # ############################

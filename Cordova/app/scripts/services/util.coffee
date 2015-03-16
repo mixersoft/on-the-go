@@ -135,3 +135,88 @@ angular.module 'snappi.util', ['ionic', 'ngCordova', 'ngStorage']
       return promises[src]
     return
 ]
+# notify DOM element to show a notification message in app with 
+# timeout and close
+# TODO: make a controller for directive:notify
+.service 'notifyService', [
+  '$timeout'
+  ($timeout)->
+    CFG = {
+      debug: true
+      timeout: 5000 
+      messageTimeout: 5000  
+    }
+    ###
+    template:
+      <div id="notify" class="notify overlay">
+          <alert ng-repeat="alert in notify.alert()" 
+          type="alert.type" 
+          close="notify.close(alert.key)"
+          ><div ng-bind-html="alert.msg"></div></alert>
+        </div>
+        <div id="message" class="notify inline">
+          <alert ng-repeat="alert in notify.message()" 
+          type="alert.type" 
+          close="notify.close(alert.key)"
+          >
+            <div ng-if="!alert.template" ng-bind-html="alert.msg"></div>
+            <ng-include ng-if="alert.template" src="alert.template || null"></ng-include>
+          </alert>
+        </div>      
+    ###
+    this._cfg = CFG
+    this.alerts = {}
+    this.messages = {}
+    this.timeouts = []
+
+    this.alert = (msg=null, type='info', timeout)->
+      return this.alerts if !CFG.debug || CFG.debug=='off'
+      if msg? 
+        timeout = timeout || CFG.timeout
+        now = new Date().getTime()
+        `while (this.alerts[now]) {
+          now += 0.1;
+        }`
+        this.alerts[now] = {msg: msg, type:type, key:now} if msg?
+        this.timeouts.push({key: now, value: timeout})
+      else 
+        # start timeouts on ng-repeat
+        this.timerStart()
+      return this.alerts
+    # same as alert, but always show, ignore CFG.debug  
+    this.message = (msg=null, type='info', timeout)->
+      if msg? 
+        timeout = timeout || CFG.messageTimeout
+        now = new Date().getTime()
+        `while (this.alerts[now]) {
+          now += 0.1;
+        }`
+        notification = {type:type, key:now} 
+        if _.isObject(msg)
+          if msg.template?
+            notification['template'] = msg.template
+          else if msg.title?
+            notification['msg'] = "<h4>"+msg.title+"</h4><p>"+msg.message+"</p>"
+          else 
+            notification['msg'] = msg.message
+
+        this.messages[now] = notification
+        this.timeouts.push({key: now, value: timeout})
+      else 
+        # start timeouts on ng-repeat
+        this.timerStart()
+      return this.messages
+    this.clearMessages = ()->
+      this.messages = {}
+    this.close = (key)->
+      delete this.alerts[key] if this.alerts[key]
+      delete this.messages[key] if this.messages[key]
+    this.timerStart = ()->
+      _.each this.timeouts, (o)=>
+        $timeout (()=>
+          delete this.alerts[o.key] if this.alerts[o.key]
+          delete this.messages[o.key] if this.messages[o.key]
+        ), o.value
+      this.timeouts = []
+    return  
+]

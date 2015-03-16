@@ -1001,3 +1001,39 @@ otg-gallery {
     } 
   }
 }
+
+div[notify] {
+  position: absolute;
+  width: 100%;
+  top: 25px;
+  z-index: 1000;
+  background: transparent;
+
+  .notify {
+    &.overlay .alert {
+      display: block;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.7);
+      color: $light;
+      margin-bottom: 10px;
+    }
+    &.inline {
+      position: relative;
+      margin: 0 auto;
+      z-index: 100;
+      .alert{
+        margin-top: 10px;
+        margin-bottom: 0;
+        background-color: $dark;
+        color: $light;
+        h4 {
+          text-align: center;
+        }
+        .close {
+          color: $light;
+          opacity: 1;
+        }
+      }
+    }
+  }
+}
