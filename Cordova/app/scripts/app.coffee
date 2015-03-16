@@ -21,6 +21,7 @@ angular
   'angular-datepicker'
   'ngStorage'
   'onthego.templates'
+  'snappi.localNotification'
 ])
 .config ['$ionicConfigProvider', 
   ($ionicConfigProvider)->
@@ -420,6 +421,7 @@ angular
   'snappiMessengerPluginService', 'i18n',
   'deviceReady', 'cameraRoll'
   'otgData', 'imageCacheSvc', 'appConsole'
+  'localNotificationPluginSvc'
   ($scope, $rootScope, $state, $timeout, $q, angularLoad
     $ionicPlatform, $ionicModal, $ionicLoading,
     $localStorage, otgLocalStorage
@@ -429,6 +431,7 @@ angular
     deviceReady, cameraRoll,
     # debug/browser only
     otgData, imageCacheSvc, appConsole  
+    localNotificationPluginSvc
     )->
 
     # dynamically update left side menu

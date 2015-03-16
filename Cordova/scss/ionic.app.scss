@@ -1020,13 +1020,16 @@ div[notify] {
     &.inline {
       position: relative;
       margin: 0 auto;
-      z-index: 100;
+      z-index: 1000;
       .alert{
-        margin-top: 10px;
-        margin-bottom: 0;
-        background-color: $dark;
+        display: block;
+        border-radius: 4px;
+        margin-top: 0;
+        margin-bottom: 10px;
+        background-color: rgba(0,0,0,0.7);
         color: $light;
         h4 {
+          color: $light;
           text-align: center;
         }
         .close {

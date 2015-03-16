@@ -13,9 +13,9 @@
   </alert>
 </div>
 <div id="message" class="notify inline padding-horizontal">
-  <alert ng-repeat="alert in notify.message()" 
+  <alert ng-repeat="alert in notify.message()" class="alert padding"
   type="alert.type" 
-  close="notify.close(alert.key)"
+  ng-click="notify.close(alert.key)"
   >
     <div ng-if="!alert.template" ng-bind-html="alert.msg"></div>
     <ng-include ng-if="alert.template" src="alert.template || null"></ng-include>

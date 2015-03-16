@@ -36,6 +36,7 @@
     "com.ionic.keyboard",
     "me.apla.cordova.app-preferences",
     "https://github.com/EddyVerbruggen/SocialSharing-PhoneGap-Plugin.git",
-    "org.apache.cordova.network-information"
+    "org.apache.cordova.network-information",
+    "de.appplant.cordova.plugin.local-notification"
   ]
 }
