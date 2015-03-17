@@ -80,6 +80,44 @@ angular.module 'snappi.util', ['ionic', 'ngCordova', 'ngStorage']
     return
 
 ]
+
+.filter 'timeago', [
+  ()->
+    return (time, local, raw)->
+      return '' if !time
+
+      time = new Date(time) if _.isString time
+      time = time.getTime() if _.isDate time
+
+      local = Date.now() if `local==null`
+      local = local.getTime() if _.isDate local
+
+      return '' if !_.isNumber(time) || !_.isNumber(local) 
+
+      offset = Math.abs((local - time) / 1000)
+      span = []
+      MINUTE = 60
+      HOUR = 3600
+      DAY = 86400
+      WEEK = 604800
+      MONTH = 2629744
+      YEAR = 31556926
+      DECADE = 315569260
+
+      timeSpan = {
+        'days ': Math.floor( offset/DAY )
+        'h': Math.floor( (offset % DAY)/HOUR )
+        'm': Math.floor( (offset % HOUR)/MINUTE )
+        # 's': timeSpan.push Math.floor( (offset % MINUTE) )
+      }
+      timeSpan = _.reduce timeSpan, (result, v,k)->
+          result += v+k if v
+          return result
+        , ""
+      return if time <= local then timeSpan + ' ago' else 'in ' + timeSpan
+
+
+]
 .factory 'appConsole', [
   '$ionicModal', '$q'
   ($ionicModal, $q)->

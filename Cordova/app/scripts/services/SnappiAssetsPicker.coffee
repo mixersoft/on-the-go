@@ -416,7 +416,7 @@ angular
           return true # triggers $broadcast cameraRoll.updated for topPicks refresh
         else if !isLocal && foundInMap # update Workorder Photo from Parse
           _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot'] # copy Edit fields
-          # self.dataURLs['preview'][photo.UUID] = photo.src
+          self.dataURLs['preview'][photo.UUID] = photo.src if !photo.src
           if deviceReady.device().isDevice && $rootScope.isStateWorkorder() == false
             console.log "%%% NOT isLocal, photo=" + JSON.stringify _.pick foundInMap, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot']
           return false

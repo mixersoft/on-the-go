@@ -29,6 +29,48 @@ angular.module('ionBlankApp')
       return o if /^(complete|closed)/.test( status ) == false
 
     $scope.on = {
+      selectTab: (status)->
+        return 'done in SYNC_WORKORDERS()'
+
+        # load photos for otgMoment thumbnails, if not already done
+        promises = []
+        workorderColl = 
+          if $rootScope.user.role == 'owner' 
+          then otgWorkorderSync._workorderColl['owner']
+          else otgWorkorderSync._workorderColl['editor']
+        return if _.isEmpty workorderColl
+        workorderColl.each (workorderObj)->
+          isComplete = /^(complete|closed)/.test workorderObj.get('status')
+          if status=='open'
+            return if isComplete
+          if status='complete'
+            return if !isComplete
+
+          # return if workorderObj.get('workorderMoment')
+
+          photosColl = null
+          options = {
+            workorder: true
+          }
+          if $rootScope.user.role == 'curator'
+            options.acl = true 
+          else 
+            option.role = $rootScope.user.role
+
+          p = otgWorkorderSync.fetchWorkorderPhotosP(workorderObj, options, 'force' )
+          .then (resp)->
+            photosColl = resp
+            # ???: is there a 'sync' for workorders, should be on browser...
+            # just need counts
+            return otgWorkorderSync.syncWorkorderPhotosP( workorderObj, photosColl, 'editor' )
+          .then (sync)->
+            otgWorkorderSync.updateWorkorderCounts(workorderObj, sync)  # expect workorderObj.workorderMoment to be set
+             
+            return photosColl
+          promises.push p
+          return            
+
+
       refresh: ()->
         $scope.DEBOUNCED_SYNC_workorders()
 

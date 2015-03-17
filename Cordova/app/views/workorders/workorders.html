@@ -1,6 +1,7 @@
   <ion-tabs class="tabs-assertive tabs-icon-top">
     <ion-tab ui-sref='app.workorders.open'
     icon="ion-gear-b"
+    on-select="on.selectTab('open')"
     title="Open"
     >
       <ion-nav-view name="workorder-tab-open"></ion-nav-view>
@@ -8,6 +9,7 @@
 
     <ion-tab ui-sref="app.workorders.complete"
     icon="ion-checkmark-circled"
+    on-select="on.selectTab('complete')"
     title="Complete"
     >
       <ion-nav-view name="workorder-tab-complete"></ion-nav-view>

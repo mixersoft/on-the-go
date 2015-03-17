@@ -321,7 +321,10 @@ angular
               return true if parseSync['remove'].indexOf(o.UUID) == -1
               return false
 
+          lastUploadDate = ''
           _.each parsePhotos, (o)->
+            lastUploadDate = o.createdAt if o.createdAt > lastUploadDate
+
             parseSync['complete'].push( o.UUID ) if o.src[0...4] == 'http'
             parseSync['queued'].push( o.UUID ) if o.src == 'queued'
             # parse photoObj.src errors
@@ -329,6 +332,8 @@ angular
             # getPhotoById errors
             parseSync['errors'].push( o.UUID ) if o.src[0...6] == 'Base64' 
             parseSync['errors'].push( o.UUID ) if o.src == "Not found!"
+            return 
+          parseSync['lastUploadDate'] = lastUploadDate
           return parseSync
 
 
@@ -556,10 +561,14 @@ angular
                 openOrders = 0
                 workorderColl.each (workorderObj)->
                   isComplete = /^(complete|closed)/.test workorderObj.get('status')
-                  if scope.$state.includes('app.workorders.open')
-                    return if isComplete
-                  if scope.$state.includes('app.workorders.complete')
-                    return if !isComplete
+
+                  ## WARN: if we don't get photos for all workorders now
+                  ##  then otgMoment.summarize() photos are not found in cameraRoll.map()
+                  if false && 'skip'
+                    if scope.$state.includes('app.workorders.open')
+                      return if isComplete
+                    if scope.$state.includes('app.workorders.complete')
+                      return if !isComplete
 
                   openOrders++
                   photosColl = null
@@ -592,14 +601,19 @@ angular
           # 'complete':
           # 'queued':
           # 'errors':
+          # 'lastUploadDate':
         return console.warn "ERROR: updateWorkorderCounts, sync is null" if !sync?
         updates = {
           'count_received': sync['complete'].length
           'count_expected': sync['complete'].length + sync['queued'].length + sync['errors'].length
           'count_errors': sync['errors'].length
         }
+        updates['lastUploadAt'] = sync['lastUploadDate'] if sync['lastUploadDate']
         return if _.isEmpty updates
-        return woObj.save( updates ) 
+        return woObj.save( updates ).then (resp)->
+            angular.noop()
+          , (err)->
+            console.warn "updateWorkorderCounts() save error", err
     }
     return self
 

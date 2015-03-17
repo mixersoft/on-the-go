@@ -1,10 +1,38 @@
 <!-- workorder-card.html -->
   <div class="list card workorder-card" >
-    <div class="item item-divider item-assertive">
-    <i class="icon ion-gear-b"> {{order.fromDate | date}} - {{order.toDate | date}}</i>
+    <div class="item item-divider item-assertive"
+    ng-click='item.detail = !item.detail'>
+      <i class="icon ion-gear-b"></i>
+      {{order.fromDate | date}} - {{order.count_days}}d
     </div>
+<!-- summary view  -->    
+<div ng-show='!item.detail' class='workorder-summary'>
+  <div class="item item-text-wrap item-icon-left">
+    <div>Order: {{order.objectId }} - {{order.owner.objectId}}
+      <span class="badge badge-dark pull-right">{{order.lastUploadAt | timeago }}</span>
+    </div>
+    <div>Status: 
+      <span class="badge" workorder-status 
+      ng-class="ngClass_WorkStatus(order, 'badge')" 
+      ng-bind="order.status" ></span>
+    </div>    
+    <div>Photos: 
+      <span class="badge" workorder-status 
+      ng-class="ngClass_UploadStatus(order)" 
+      ng-bind="ngBind_UploadStatus(order)" ></span>
+
+      <ul class="padding text-center inline nowrap">
+        <li class="badge badge-positive">Expected: {{ order.count_expected }}</li>
+        <li class="badge badge-positive">Received: {{ order.count_received }}</li>
+        <li class="badge badge-positive">Duplicates: {{ order.count_duplicate}}</li>
+      </ul>
+      </div>    
+  </div>
+</div>
 
 
+<!-- detail view  -->  
+<div ng-show='item.detail' class='workorder-detail'>
     <div class="item item-text-wrap item-icon-left">
       <i class="icon ion-clipboard"></i>
       <div>Order ID: {{order.objectId }}</div>
@@ -92,14 +120,15 @@
       </div>   
 
     </div>
-
+</div> <!--  /detail -->
 
     <div class="item item-complex" ng-if="order.count_expected">
       <otg-moment-date-range otg-model="order.workorderMoment"></otg-moment-date-range>
     </div>
 
 
-
+<!-- detail view  -->  
+<div ng-show='item.detail' class='workorder-detail'>
     <div class="item item-text-wrap item-icon-left padding"
     ng-hide="order.status=='complete'"
     >
@@ -112,10 +141,10 @@
         </button>
     </div>
 
-
     <div class="item item-divider item-assertive">
     <!-- footer  -->
     </div>
+</div> <!--  /detail -->
 
 
-  </div><!--  end workorder-card  -->
+  </div><!--  end workorder-card -->
