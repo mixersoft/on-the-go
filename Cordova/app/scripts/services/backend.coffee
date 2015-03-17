@@ -739,12 +739,12 @@ angular
           }
         return dfd.promise
 
+      ###
+      # @params userCred object, keys {username:, password:}
+      #     or array of keys
+      ###
       loginP: (userCred)->
-        if _.isArray(userCred)
-          userCred = {
-            username: $rootScope.user[userCred[0]] || ''
-            password: $rootScope.user[userCred[1]] || ''
-          }
+        userCred = _.pick userCred, ['username', 'password']
         return deviceReady.waitP().then ()->
           return Parse.User.logIn( userCred.username.trim().toLowerCase(), userCred.password )
         .then (user)->  
@@ -784,20 +784,20 @@ angular
               return dfd.reject( error )
         return dfd.promise
 
-      checkSessionUserP: ()-> 
+      checkSessionUserP: (userCred)-> 
         if !deviceReady.isOnline()
           return $q.reject("Error: Network unavailable") 
 
         if _.isEmpty($rootScope.sessionUser)
-          if $rootScope.user?.username? && $rootScope.user.password?
-            authPromise = self.loginP($rootScope.user).then null
+          if userCred? && userCred.username? && userCred.password?
+            authPromise = self.loginP(userCred).then null
                 , (error)->
                   userCred = error
-                  return self.signUpP($rootScope.user)
+                  return self.signUpP(userCred)
           else 
             authPromise = self.anonSignUpP()
           authPromise.then ()->
-              return self.checkSessionUserP() # check again
+              return self.checkSessionUserP(null) # check again
             , (error)->
               throw error # end of line
 
@@ -817,17 +817,19 @@ angular
           _.extend $rootScope.user, userCred
           return $q.when(userCred)
 
-      saveSessionUserP : (updateKeys)->
+      saveSessionUserP : (updateKeys, userCred)->
         # update or create
         if _.isEmpty($rootScope.sessionUser)
           # create
-          promise = self.signUpP($rootScope.user)
+          promise = self.signUpP(userCred)
         else 
           # update
-          promise = self.checkSessionUserP().then ()->
+          promise = self.checkSessionUserP(null).then ()->
             _.each updateKeys, (key)->
-                $rootScope.sessionUser.set(key, $rootScope.user[key])
-            return $rootScope.sessionUser.save().then null, (error)->
+                $rootScope.sessionUser.set(key, userCred[key])
+            return $rootScope.sessionUser.save().then ()->
+                angular.noop()
+              , (error)->
                 $rootScope.sessionUser = null
                 $rootScope.user.username = ''
                 $rootScope.user.password = ''

@@ -28,14 +28,6 @@ angular.module('ionBlankApp')
           body: "Bon voyage! Have a great trip! It's so exciting to be On-The-Go - don't forget to snap a lot of photos.
           We'll keep an eye out for anything photos you take on these days: "
           footer: ""
-        # 'payment':
-        #   header: "Payment"
-        #   body: ""
-        #   footer: ""  
-        # 'sign-up':
-        #   header: "Sign-up"
-        # 'terms-of-service':
-        #   header: "Terms of Service"
         'submit':
           header: "Review"
           body: "Please review your order below"
@@ -58,8 +50,8 @@ angular.module('ionBlankApp')
 
       
       validateSteps: ()->
-        _wizard.steps.splice(_wizard.steps.indexOf('sign-up'), 1) if !!$scope.user.username && _wizard.steps.indexOf('sign-up')>-1
-        _wizard.steps.splice(_wizard.steps.indexOf('terms-of-service'), 1) if !!$scope.user.tos && _wizard.steps.indexOf('terms-of-service')>-1
+        _wizard.steps.splice(_wizard.steps.indexOf('sign-up'), 1) if !!$rootScope.user.username && _wizard.steps.indexOf('sign-up')>-1
+        _wizard.steps.splice(_wizard.steps.indexOf('terms-of-service'), 1) if !!$rootScope.user.tosAgree && _wizard.steps.indexOf('terms-of-service')>-1
         return _wizard.steps
 
       goto : (dir, params=null)->
@@ -118,29 +110,44 @@ angular.module('ionBlankApp')
         switch $state.current.name
           when 'app.checkout.sign-up'
             # return false on error by promise
-            if $scope.otgProfile.dirty
-              return $scope.otgProfile.submitP()
-              .then ()->
-                otgProfile.errorMessage = ''
-                return true
-              .catch (error)->
-                # reset
-                _.extend $scope.user, $rootScope.user
-                otgProfile.password.passwordAgainModel = ''
-                switch error.code 
-                  when 101
-                    message = "The Username and Password combination was not found. Please try again."
-                  when 202
-                    message = "That Username was already taken. Please try again."
-                  when 203
-                    message = "That Email address was already taken. Please try again."  
-                  else
-                    message = "Sign-up unsucessful. Please try again."
-                $scope.otgProfile.errorMessage = message
-                return $q.reject(false)  
+            # either sign-up or sign-in, 
+            switch $scope.watch.userProfileView.split('/').pop()
+              when 'sign-up'
+                return true if !otgProfile.dirty()  # continue as anonymous
+                # see also: settings.coffee:on.submit()
+                return otgProfile.submitP()
+                .then ()->
+                  otgProfile.errorMessage = ''
+                  return $q.when(true)
+                .catch (error)->
+                  # reset
+                  otgProfile.userModel( {} )
+                  otgProfile.password.passwordAgainModel = ''
+                  switch error.code 
+                    when 101, 102, 103
+                      message = i18n.tr('error-codes', 'app.settings')[error.code]
+                    else
+                      message = "Sign-up unsucessful. Please try again."
+                  otgProfile.errorMessage = message
+                  return $q.reject(false)               
+              when 'sign-in'
+                # see also: settings.coffee:on.signIn()
+                # assume $rootScope.sessionUser = null 
+                userCred = _.pick otgProfile.userModel(), ['username', 'password']
+                return otgProfile.signInP(userCred).then ()->
+                    otgProfile.errorMessage = ''
+                    # otgWorkorderSync.clear()
+                    # cameraRoll.clearPhotos_PARSE() 
+                    # $rootScope.$broadcast 'sync.cameraRollComplete'
+                    return $q.when(true)
+                  , (error)->
+                    otgProfile.userModel( {} )
+                    otgProfile.errorMessage =  i18n.tr('error-codes', 'app.settings')['101']
+                    return $q.reject(false)
+
 
           when 'app.checkout.payment'
-            if !$scope.user.tosAgree
+            if !$rootScope.user.tosAgree
               # TODO: notify TOS must be checked
               el = document.getElementById('tos-checkbox')
               angular.element(el).addClass('item-assertive').removeClass('item-calm')
@@ -179,6 +186,8 @@ angular.module('ionBlankApp')
         return true
       afterNextStep: ()->
         switch $state.current.name
+          when 'app.checkout.sign-up'
+            $scope.userProfileView = 'partials/checkout/sign-up'
           when 'app.checkout.payment'
             servicePlan = $scope.watch.servicePlan
             promoCodes = i18n.tr('promoCodes')
@@ -207,6 +216,12 @@ angular.module('ionBlankApp')
         # put on on $rootScope.$on '$stateChangeSuccess'
         # switch $state.current.name
         return true
+      toggleUserProfileView: ()->
+        if $scope.watch.userProfileView == 'partials/checkout/sign-in'
+          $scope.watch.userProfileView = 'partials/checkout/sign-up'
+        else 
+          $scope.watch.userProfileView = 'partials/checkout/sign-in'
+
       getPromoCode: (ev, swipeCard)->
         total = _applyPromoCode($scope.watch.promoCode, $scope.watch.servicePlan)
         el = ev.currentTarget
@@ -216,7 +231,7 @@ angular.module('ionBlankApp')
         return true
 
       tosClick: (ev)->
-        if $scope.user.tos 
+        if $rootScope.user.tosAgree 
           el = ev.currentTarget
           # el = document.getElementById('tos-checkbox')
           angular.element(el).addClass('item-calm').removeClass('item-assertive')
@@ -250,6 +265,7 @@ angular.module('ionBlankApp')
     $scope.watch = {
       promoCode: ''
       servicePlan: null
+      userProfileView : 'partials/checkout/sign-up'
     }
 
     $scope.getItemHeight = (moment, index)->
@@ -356,6 +372,7 @@ angular.module('ionBlankApp')
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams)->
       if /^app.checkout/.test(toState.name) && /^app.checkout/.test(fromState.name)
         $scope.headerCard = $scope.on.getHeaderCard()
+        otgProfile.userModel( _.pick $rootScope.user, ['username', 'password', 'email', 'emailVerified'])
       if /^app.checkout/.test(toState.name)
         $scope.on.afterNextStep()
 

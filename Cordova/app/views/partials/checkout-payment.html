@@ -14,7 +14,7 @@
           {{i18n.tr('legal-card').tos}}
         </div>
         <ion-checkbox id='tos-checkbox' class="item-calm checkbox-balanced" 
-        ng-model="user.tosAgree" 
+        ng-model="$root.user.tosAgree" 
         ng-click="on.tosClick($event)">
           {{i18n.tr('tos-agree', 'app.settings.legal')}}
         </ion-checkbox>

@@ -9,7 +9,7 @@
       <div class="item item-divider item-energized">
         <i class="icon ion-person"> {{i18n.tr('aaa')['sign-up']}}</i>
         <span class="pull-right"
-        ng-click="signOut($event)"
+        ng-click="on.signOut($event)"
         >{{i18n.tr('aaa')['sign-in']}} <i class="icon ion-log-in icon-large"></i>
         </span>
       </div>
@@ -21,7 +21,7 @@
         <input type="submit" class="button button-block button-energized" 
           value="{{i18n.tr('aaa')['submit']}}"
           ng-class="otgProfile.ngClassSubmit()"
-          ng-click="submit($event)"
+          ng-click="on.submit($event)"
           >
         </input>
       </div>   
@@ -34,15 +34,15 @@
 
 <div ng-if="!otgProfile.isAnonymous()">
     <div class="padding">
-      <p class="text-center"><span class="username badge badge-positive capitalize padding"><i class="icon ion-person"> {{user.username}}</i></span></p>
-      <p>Hello <span class="capitalize">{{user.username}}</span>. You can manage your account information below.</p>
+      <p class="text-center"><span class="username badge badge-positive capitalize padding"><i class="icon ion-person"> {{otgProfile.userModel().username}}</i></span></p>
+      <p>Hello <span class="capitalize">{{otgProfile.userModel().username}}</span>. You can manage your account information below.</p>
     </div>
     <!-- header card : named user  -->
     <div class="list card header-card" >
       <div class="item item-divider item-energized">
         <i class="icon ion-person"> {{i18n.tr('aaa')['profile']}}</i>
         <span class="pull-right"
-        ng-click="signOut($event)"
+        ng-click="on.signOut($event)"
         >{{i18n.tr('aaa')['sign-out']}} <i class="icon ion-log-in icon-large"></i>
         </span>
       </div>
@@ -53,7 +53,7 @@
       <div class="item item-text-wrap item-icon-left padding">
         <button class="button button-block button-assertive" 
         ng-if="!otgProfile.isAnonymous()"
-        ng-show="!otgProfile.email.dirty && !user.emailVerified"
+        ng-show="!otgProfile.email.dirty() && !otgProfile.userModel().emailVerified"
         ui-sref="app.settings.main">
         {{i18n.tr('aaa')['email-verify']}}
         </button>
@@ -61,7 +61,7 @@
         <input type="submit" class="button button-block button-energized"  tabindex="10"
           value="{{i18n.tr('aaa')['submit']}}"
           ng-class="otgProfile.ngClass{{i18n.tr('aaa')['submit']}}()"
-          ng-click="submit($event)"
+          ng-click="on.submit($event)"
           >
         </input>  
       </div>  

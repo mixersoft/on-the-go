@@ -121,8 +121,8 @@ angular.module('onTheGo.i18n', [])
           cellular: "Upload by cellular data is disabled."
       'app.settings':
         'error-codes':
-          '101': "The Username and Password combination was not found. Please try again."
-          '202': "That Username was already taken. Please try again."
+          '101': "Sorry, we didn't recognize that username and password. Please try again."
+          '202': "That username was already taken. Please try again."
           '203': "That Email address was already taken. Please try again."
           '10': "Sign-in unsucessful. Please try again."
           '11': "Sign-up unsucessful. Please try again."

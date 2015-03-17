@@ -3,17 +3,8 @@
 
 <div ng-if="on.currentState()=='app.checkout.sign-up'">
   <div ng-include="'views/partials/anonymous-signup.html'"></div> 
-  <div class="list card header-card" >
-    <div class="item item-divider item-royal">
-      {{headerCard.header}}
-    </div>
+  <div ng-include="watch.userProfileView"></div> 
 
-    <div ng-include src="'views/partials/anonymous-signup-fields.html'"></div>
-
-    <div class="item item-divider item-royal">
-       {{headerCard.footer}}
-    </div>   
-  </div>
 </div>
 
 
@@ -27,7 +18,7 @@
       <div ng-include="'views/template/terms-of-service.html'"></div>
       
     </div> 
-    <ion-checkbox class="item-royal checkbox-balanced" ng-model="user.tosAgree">
+    <ion-checkbox class="item-royal checkbox-balanced" ng-model="$root.user.tosAgree">
       {{i18n.tr('tos-agree', 'app.settings.legal')}}
     </ion-checkbox>
 
@@ -36,5 +27,53 @@
 
 </ion-content>
 </ion-view>
+
+
+<script type="text/ng-template" id="partials/checkout/sign-up">
+  <div class="list card header-card" >
+    <div class="item item-divider item-royal">
+      <i class="icon ion-person-add"> {{i18n.tr('header-card').header}}</i>
+      <span class="pull-right"
+        ng-click="on.toggleUserProfileView()"
+        >{{i18n.tr('aaa', 'app.settings.profile')['sign-in']}} <i class="icon ion-log-in icon-large"></i>
+      </span>
+    </div>
+
+    <div ng-include src="'views/partials/anonymous-signup-fields.html'"></div>
+
+    <div class="item item-divider item-royal">
+       {{i18n.tr('header-card').footer}}
+    </div>   
+  </div>
+</script>
+
+<script type="text/ng-template" id="partials/checkout/sign-in">
+  <div class="list card header-card">
+    <div class="item item-divider item-energized">
+      <i class="icon ion-log-in"> {{i18n.tr('aaa', 'app.settings.profile')['sign-in']}} </i>
+      <span class="pull-right"
+        ng-click="on.toggleUserProfileView()"
+        >{{i18n.tr('header-card').header}}<i class="icon ion-person-add icon-large"></i>
+      </span>      
+    </div>
+
+    <div ng-show="otgProfile.errorMessage">
+      <div  class="error-message padding">{{otgProfile.errorMessage}}</div>
+    </div>
+    <label class="item item-input item-icon-right">
+      <span class="input-label">{{i18n.tr('user','app.settings.sign-in')}}</span>
+      <input type="text" ng-model="otgProfile.userModel().username" placeholder="HappiGuy" tabindex="1" >
+    </label>
+
+    <label class="item item-input item-icon-right">
+      <span class="input-label">{{i18n.tr('pass','app.settings.sign-in')}}</span>
+      <input type="password" ng-model="otgProfile.userModel().password" placeholder="Required" tabindex="2" >
+    </label>
+
+    <div class="item item-divider item-energized">
+    </div> 
+  </div>
+</script>
+
 
 

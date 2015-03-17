@@ -576,7 +576,7 @@ angular
     # copy these to $rootScope scope, i.e. need access from directives, services, etc.
     ADD_TO_ROOT_SCOPE = {
       $state: $state
-      user:  $scope.user = otgParse.mergeSessionUser()
+      user:  otgParse.mergeSessionUser()
       config: null
       counts: null
       device: null
@@ -588,7 +588,7 @@ angular
     _.extend $rootScope, ADD_TO_ROOT_SCOPE
 
 
-    $scope.$watch 'user.tosAgree', (newVal, oldVal)->
+    $rootScope.$watch 'user.tosAgree', (newVal, oldVal)->
       return if newVal == oldVal
       agreedOn = if newVal then new Date().toJSON() else null
       return if !agreedOn && !$rootScope.sessionUser

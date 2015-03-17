@@ -26,7 +26,7 @@ ng-class="isModal ? 'app-modal' : ''"
       </ion-content>
 
       <div class="bar bar-footer bar-calm">
-        <ion-checkbox class='checkbox-positive item-calm' ng-model="user.tosAgree">
+        <ion-checkbox class='checkbox-positive item-calm' ng-model="$root.user.tosAgree">
           {{i18n.tr('tos-agree', 'app.settings.legal')}}
         </ion-checkbox>
       </div>

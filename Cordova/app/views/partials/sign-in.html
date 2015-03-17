@@ -1,5 +1,5 @@
-<ion-view><ion-content class="has-header">
-    <div class="list card header-card">
+<!-- sign-in.html -->
+		<div class="list card header-card">
       <div class="item item-divider item-energized">
         <i class="icon ion-person"> Sign In</i>
       </div>
@@ -8,18 +8,18 @@
         <div  class="error-message padding">{{otgProfile.errorMessage}}</div>
       </div>
       <label class="item item-input item-icon-right">
-        <span class="input-label">{{i18n.tr('user')}}</span>
+        <span class="input-label">{{i18n.tr('user', 'app.settings.sign-in')}}</span>
         <input type="text" ng-model="otgProfile.userModel().username" placeholder="HappiGuy" tabindex="1" >
       </label>
 
       <label class="item item-input item-icon-right">
-        <span class="input-label">{{i18n.tr('pass')}}</span>
+        <span class="input-label">{{i18n.tr('pass', 'app.settings.sign-in')}}</span>
         <input type="password" ng-model="otgProfile.userModel().password" placeholder="Required" tabindex="2" >
       </label>
 
       <div class="item item-text-wrap item-icon-left padding">
         <input type="submit" class="button button-block button-energized padding-horizontal"  tabindex="3"
-          value="{{i18n.tr('submit')}}"
+          value="{{i18n.tr('submit', 'app.settings.sign-in')}}"
           ng-class="otgProfile.ngClassSignin()"
           ng-click="on.signIn($event)"
           >
@@ -30,5 +30,3 @@
       <div class="item item-divider item-energized">
       </div> 
     </div>
-</ion-content>
-</ion-view>

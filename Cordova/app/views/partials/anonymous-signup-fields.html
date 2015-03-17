@@ -5,8 +5,7 @@
 
 <label class="item item-input item-icon-right">
   <span class="input-label">Username</span>
-  <input type="text" ng-model="user.username" placeholder="HappiGuy" tabindex="1"
-  ng-change="otgProfile.username.isChanged($event)">
+  <input type="text" ng-model="otgProfile.userModel().username" placeholder="HappiGuy" tabindex="1">
   <i class="icon"  
   ng-class="otgProfile.username.ngClassValidIcon()"></i>
 </label>
@@ -15,8 +14,7 @@
 <div ng-if="otgProfile.isAnonymous()">
   <label class="item item-input item-icon-right">
     <span class="input-label">Password</span>
-    <input type="password" ng-model="user.password" placeholder="Required" tabindex="2"
-    ng-change="otgProfile.password.isChanged($event)">
+    <input type="password" ng-model="otgProfile.userModel().password" placeholder="Required" tabindex="2">
     <i class="icon"
     ng-class="otgProfile.password.ngClassValidIcon()"></i>
   </label>
@@ -26,28 +24,27 @@
 <div ng-if="!otgProfile.isAnonymous()">
   <label class="item item-input item-icon-right">
     <span class="input-label">Password</span>
-    <input type="password" ng-model="user.password" placeholder="Required"  tabindex="3"
+    <input type="password" ng-model="otgProfile.userModel().password" placeholder="Required"  tabindex="3"
     ng-click="otgProfile.password.edit($event)"
-    ng-readonly="!otgProfile.password.dirty"
+    ng-readonly="!otgProfile.password.dirty()"
     >
-    <i class="icon" tabindex=-1 ng-show="!otgProfile.password.dirty">
+    <i class="icon" tabindex=-1 ng-show="!otgProfile.password.dirty()">
       <button class="button button-small button-assertive" 
       ng-click="otgProfile.password.edit($event)">
         <i class="icon ion-edit"></i>
       </button>
     </i>
     <i class="icon"  
-    ng-show="otgProfile.password.dirty"
+    ng-show="otgProfile.password.dirty()"
     ng-class="otgProfile.password.ngClassValidIcon()"></i>
   </label>
 </div>
 
-<div ng-if="otgProfile.isAnonymous() || otgProfile.password.dirty">
+<div ng-if="otgProfile.isAnonymous() || otgProfile.password.dirty()">
   <label class="item item-input item-icon-right">
     <span class="input-label">Password</span>
     <input type="password" placeholder="(again)"  tabindex="4"
-    ng-model="otgProfile.password.passwordAgainModel" 
-    ng-change="otgProfile.password.isChanged($event)">
+    ng-model="otgProfile.password.passwordAgainModel" >
     <i class="icon"  
     ng-class="otgProfile.password.ngClassConfirmedIcon()"></i>
   </label>
@@ -56,7 +53,6 @@
 
 <div class="item item-input item-icon-right" >
   <span class="input-label">Email</span>
-  <input type="text" ng-model="user.email" placeholder="me@email.com"   tabindex="5"
-  ng-change="otgProfile.email.isChanged($event)"> 
+  <input type="text" ng-model="otgProfile.userModel().email" placeholder="me@email.com"   tabindex="5" > 
   <i class="icon"  ng-class="otgProfile.email.ngClassEmailIcon()"></i>
 </div>
