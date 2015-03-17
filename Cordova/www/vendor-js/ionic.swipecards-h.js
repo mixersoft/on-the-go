@@ -206,7 +206,7 @@
       var flyTo;
       flyTo = this.fly === 'back' ? 0 : window.innerWidth * 1.5 ; 
       this.el.style[TRANSITION] = '-webkit-transform ' + duration + 's ease-in-out';
-      self.positive = ((positive === true) || (this.x > 0))
+      self.positive = positive==null ? (this.x > 0) : positive
 
       if(self.positive) {
         // Fly right
