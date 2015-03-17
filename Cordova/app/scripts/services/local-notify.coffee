@@ -15,8 +15,10 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
   '$localStorage'
   '$ionicPlatform'
   'notifyService'
-  ($rootScope, $location, $timeout, $q, $localStorage, $ionicPlatform, notify)->
+  'deviceReady'
+  ($rootScope, $location, $timeout, $q, $localStorage, $ionicPlatform, notify, deviceReady)->
     CFG = {
+      debug: false && window.location.hostname == 'localhost' 
       longSleepTimeout: 1 * 60 # duration to trigger a long sleep
       templates: [
           {
@@ -40,6 +42,13 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
           self.loadPlugin()
           window.debug.notifyPlugin = self
           window.debug.notifyPlugin.testMsg = CFG.templates[0]
+
+
+          # send App to background event
+          if deviceReady.device().isDevice
+            $ionicPlatform.on 'pause', AppManager.prepareToResumeApp
+            $ionicPlatform.on 'resume', AppManager.wakeApp
+
         return
 
       init: ()->
@@ -61,7 +70,7 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
           # console.log.log "####### LocalNotification handlers added ##################"
           # notify.alert "localNotify, callbacks added", "success"
         else  
-          notify.alert "LocalNotification plugin is NOT available"
+          notify.alert "LocalNotification plugin is NOT available" if CFG.debug
           this._notify = false
         return this._notify
 
@@ -85,7 +94,7 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
       addByDelay: (delay=5, notification={})->
         # notify.alert "window.plugin.notification.local"+ JSON.stringify (window.plugin.notification.local ), "info", 60000
         # notify.alert "LocalNotify._notify="+ JSON.stringify (this._notify ), "warning"
-
+        return if deviceReady.device().isBrowser && CFG.debug == false
         now = new Date().getTime()
         target = new Date( now + delay*1000)
         this.addByDate target, notification
@@ -163,7 +172,7 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
                   message: "Your next reminder will be at " + nextReminder.calendar() + "."
                 })
                 
-          else # not using LocalNotification plugin
+          else if debug # not using LocalNotification plugin
             reminder.message = "EMULATED: "+reminder.message
             saved = localNotify.localStorage(reminder)
             notify.alert "localNotification EMULATED, delay="+delay
@@ -494,7 +503,7 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
           console.log "### RESUME APP WITH NOTIFICATION, trigger="+isNotificationTriggered+", date="+nextReminder.date+", reminder="+JSON.stringify nextReminder
           if true && isNotificationTriggered 
             # same as LocalNotify.onclick
-            localNotify.handleNotification()
+            localNotify.handleNotification() 
             # console.log.log "### RESUME APP COMPLETE ###"
             return
 
@@ -509,15 +518,6 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
     }
 
 
-
-
-
-    # send App to background event
-    $ionicPlatform.on 'pause', AppManager.prepareToResumeApp
-    $ionicPlatform.on 'resume', AppManager.wakeApp
-
-    # document.addEventListener("pause", AppManager.prepareToResumeApp, false);
-    # document.addEventListener("resume", AppManager.wakeApp, false);   
 
     localNotify = new LocalNotify()
     return  localNotify
