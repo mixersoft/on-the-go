@@ -43,15 +43,15 @@ angular.module('ionBlankApp')
         _password.showPasswordAgain = true
         self.userModel()['password'] = ''
 
-      isValid: ()-> # validate password
-        return self.userModel()['password']? && _password.regExp.test(self.userModel()['password'])
+      isValid: (field='password')-> # validate password or oldPassword
+        return self.userModel()[field]? && _password.regExp.test(self.userModel()[field])
 
       isConfirmed: ()-> 
         return _password.isValid() && _password['passwordAgainModel'] == self.userModel()['password']
       
-      ngClassValidIcon: ()->
+      ngClassValidIcon: (field='password')->
         return 'hide' if !_password.dirty()
-        if _password.isValid(self.userModel()['password'])
+        if _password.isValid(field)
           return 'ion-ios-checkmark balanced' 
         else 
           return 'ion-ios-close assertive'
@@ -115,9 +115,12 @@ angular.module('ionBlankApp')
         _.each ['username', 'password', 'email'], (key)->
           updateKeys.push(key) if self[key].dirty()           # if key == 'email'  # managed by parse
           return
-        return otgParse.saveSessionUserP(updateKeys, self.userModel() ).finally ()->
-          self.userModel( _.pick $rootScope.user, ['username', 'password', 'email', 'emailVerified'] )
-          return $q.when()
+        if !self.isAnonymous()
+          # confirm current password before change
+          updateKeys.push('currentPassword')
+        return otgParse.saveSessionUserP(updateKeys, self.userModel() ).then (userObj)->
+            self.userModel( _.pick $rootScope.user, ['username', 'password', 'email', 'emailVerified'] )
+            return userObj
 
       ngClassSubmit : ()->
         if (self.email.dirty() && self.email.isValid()) || (self.password.dirty() && self.password.isConfirmed() )
@@ -213,7 +216,12 @@ angular.module('ionBlankApp')
         return
 
       signOut : (ev)->
-        ev.preventDefault()    
+        ev.preventDefault() 
+        # add confirm.
+        if otgProfile.isAnonymous() && $rootScope.user.tosAgree
+          msg = "Are you sure you want to sign-out?\nYou do not have a password and cannot recover this account"
+          resp = window.confirm(msg)
+          return false if !resp 
         otgProfile.signOut()
         otgWorkorderSync.clear()
         otgUploader.uploader.clearQueueP()
@@ -267,25 +275,25 @@ angular.module('ionBlankApp')
         isCreate = if _.isEmpty($rootScope.sessionUser) then true else false
         return otgProfile.submitP()
         .then ()->
-          otgProfile.errorMessage = ''
-          if isCreate
-            $ionicHistory.nextViewOptions({
-              historyRoot: true
-            })
-            target = 'app.settings.main'
-            $state.transitionTo(target)
-          # else stay on app.settings.profile page
-        .catch (error)->
-          _.extend $scope.user, $rootScope.user
+            otgProfile.errorMessage = ''
+            if isCreate
+              $ionicHistory.nextViewOptions({
+                historyRoot: true
+              })
+              target = 'app.settings.main'
+              $state.transitionTo(target)
+            # else stay on app.settings.profile page
+        , (error)->
           otgProfile.password.passwordAgainModel = ''
           switch error.code 
-            when 202
-              message = i18n.tr('error-codes','app.settings')[error.code] # "That Username was already taken. Please try again."
-            when 203
-              message = i18n.tr('error-codes','app.settings')[error.code] # "That Email address was already taken. Please try again."
+            when 202, 203
+              message = i18n.tr('error-codes','app.settings')[error.code] # "That Username/Email was already taken. Please try again."
+            when 301
+              otgProfile.userModel _.pick $rootScope.user, ['username', 'password', 'email', 'emailVerified']
+              message = i18n.tr('error-codes','app.settings')[error.code] # no permission to make changes
             else
               message = i18n.tr('error-codes','app.settings')[11] # "Sign-up unsucessful. Please try again."
-          $scope.otgProfile.errorMessage = message
+          otgProfile.errorMessage = message
           return 
         return 
     }

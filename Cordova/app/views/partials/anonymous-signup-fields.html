@@ -50,9 +50,20 @@
   </label>
 </div>
 
-
 <div class="item item-input item-icon-right" >
   <span class="input-label">Email</span>
   <input type="text" ng-model="otgProfile.userModel().email" placeholder="me@email.com"   tabindex="5" > 
   <i class="icon"  ng-class="otgProfile.email.ngClassEmailIcon()"></i>
+</div>
+
+
+<!-- // named user only -->
+<div ng-if="!otgProfile.isAnonymous() && otgProfile.dirty()">
+  <label class="item item-input item-icon-right">
+    <span class="input-label">Confirm ID</span>
+    <input type="password" placeholder="Your CURRENT Pwd"  tabindex="6"
+    ng-model="otgProfile.userModel().currentPassword" >
+    <i class="icon"  
+    ng-class="otgProfile.password.ngClassValidIcon('currentPassword')"></i>
+  </label>
 </div>

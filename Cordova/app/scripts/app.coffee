@@ -592,9 +592,7 @@ angular
       return if newVal == oldVal
       agreedOn = if newVal then new Date().toJSON() else null
       return if !agreedOn && !$rootScope.sessionUser
-      return otgParse.updateSessionUserP({'tosAgree': agreedOn}).then (o)->
-          return check = o
-        , (error)->
+      return otgParse.updateUserProfileP({'tosAgree': agreedOn}).then null, (error)->
           console.log error
 
     # respond to changes of app.settings, BEFORE $localStorage['config'] 

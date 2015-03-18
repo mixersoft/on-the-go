@@ -101,7 +101,7 @@ angular
         cached = self._workorderColl[role]
         return $q.when( cached ) if cached.length && !force
 
-        return otgParse.checkSessionUserP()
+        return otgParse.checkSessionUserP(null, false)
         .then ()->
           if options.acl
             return otgParse.fetchWorkordersByACLP(options)
@@ -133,7 +133,7 @@ angular
         cached = self._workorderPhotosColl[ workorderObj.id ] 
         return $q.when( cached ) if cached && !force
 
-        return otgParse.checkSessionUserP()
+        return otgParse.checkSessionUserP(null, false)
         .then ()->
           options.workorder = workorderObj
           return otgParse.fetchWorkorderPhotosByWoIdP(options)
@@ -466,6 +466,7 @@ angular
 
       # wrap in timeouts 
       SYNC_ORDERS : (scope, force, DELAY=10, whenDoneP)->
+        return if !$rootScope.sessionUser
         # run AFTER cameraRoll loaded
         # return if _.isEmpty $rootScope.sessionUser
         # if deviceReady.device().isDevice && _.isEmpty cameraRoll.map()
@@ -720,30 +721,25 @@ angular
 
 
       signUpP: (userCred)->
-        dfd = $q.defer()
         user = new Parse.User();
         user.set("username", userCred.username.toLowerCase())
         user.set("password", userCred.password)
         user.set("email", userCred.email) 
-        user.signUp null, {
-            success: (user)->
-              $rootScope.sessionUser = Parse.User.current()
-              return dfd.resolve(userCred)
-            error: (user, error)->
-              $rootScope.sessionUser = null
-              $rootScope.user.username = ''
-              $rootScope.user.password = ''
-              $rootScope.user.email = ''
-              console.warn "parse User.signUp error, msg=" + JSON.stringify error
-              return dfd.reject(error)
-          }
-        return dfd.promise
+        return user.signUp().then (user)->
+            return $rootScope.sessionUser = Parse.User.current()
+          , (user, error)->
+            $rootScope.sessionUser = null
+            $rootScope.user.username = ''
+            $rootScope.user.password = ''
+            $rootScope.user.email = ''
+            console.warn "parse User.signUp error, msg=" + JSON.stringify error
+            return $q.reject(error)
 
       ###
       # @params userCred object, keys {username:, password:}
       #     or array of keys
       ###
-      loginP: (userCred)->
+      loginP: (userCred, signOutOnErr=true)->
         userCred = _.pick userCred, ['username', 'password']
         return deviceReady.waitP().then ()->
           return Parse.User.logIn( userCred.username.trim().toLowerCase(), userCred.password )
@@ -751,12 +747,12 @@ angular
             $rootScope.sessionUser = Parse.User.current()
             $rootScope.user.isRegistered = true
             $rootScope.user = self.mergeSessionUser($rootScope.user)
-
-
             return user
         , (error)->
-            $rootScope.sessionUser = null
-            console.warn "User login error. msg=" + JSON.stringify error
+            if signOutOnErr
+              $rootScope.sessionUser = null
+              $rootScope.$broadcast 'user:sign-out'
+              console.warn "User login error. msg=" + JSON.stringify error
             $q.reject(error)
 
 
@@ -767,7 +763,6 @@ angular
         return
 
       anonSignUpP: (seed)->
-        dfd = $q.defer()
         _uniqueId = (length=8) ->
           id = ""
           id += Math.random().toString(36).substr(2) while id.length < length
@@ -777,58 +772,59 @@ angular
           username: ANON_PREFIX.username + seed
           password: ANON_PREFIX.password + seed
         }
-        self.signUpP(anon).then (userCred)->
-              return dfd.resolve(userCred)
+        return self.signUpP(anon).then (userObj)->
+              return userObj
             , (userCred, error)->
               console.warn "parseUser anonSignUpP() FAILED, userCred=" + JSON.stringify userCred 
-              return dfd.reject( error )
-        return dfd.promise
+              return $q.reject( error )
 
-      checkSessionUserP: (userCred)-> 
+      # confirm userCred or create anonymous user if Parse.User.current()==null
+      checkSessionUserP: (userCred, createAnonUser=true)-> 
         if !deviceReady.isOnline()
           return $q.reject("Error: Network unavailable") 
 
-        if _.isEmpty($rootScope.sessionUser)
-          if userCred? && userCred.username? && userCred.password?
-            authPromise = self.loginP(userCred).then null
-                , (error)->
-                  userCred = error
-                  return self.signUpP(userCred)
-          else 
-            authPromise = self.anonSignUpP()
-          authPromise.then ()->
-              return self.checkSessionUserP(null) # check again
-            , (error)->
-              throw error # end of line
-
-        # # upgrade to named user
-        # if $rootScope.user.username? && $rootScope.user.username != $rootScope.sessionUser.get('username')
-        #   _.each ['username', 'password', 'email'], (key)->
-        #     $rootScope.sessionUser.set(key, $rootScope.user[key])
-        #   $rootScope.sessionUser.save().then (user)->
-        #       return $q.when(user)
-        #     , (error)->
-        #       throw error # end of line
+        if userCred # confirm userCred
+          authPromise = self.loginP(userCred, false).then null, (err)->
+              return $q.reject({
+                  message: "userCred invalid"
+                  code: 301
+                })
+        else if $rootScope.sessionUser
+          authPromise = $q.when($rootScope.sessionUser)
         else 
-          return $q.when({}) if self.isAnonymousUser()
-          # copy sessionUser to local user
-          userCred = _.pick( $rootScope.sessionUser.toJSON(), ['username', 'email', 'emailVerified'] )
-          userCred.password = 'HIDDEN'
-          _.extend $rootScope.user, userCred
-          return $q.when(userCred)
+          authPromise = $q.reject()
+
+        if createAnonUser
+          authPromise = authPromise.then (o)->
+              return o
+            , (error)->
+              return self.anonSignUpP()
+
+        return authPromise
+
 
       saveSessionUserP : (updateKeys, userCred)->
         # update or create
         if _.isEmpty($rootScope.sessionUser)
           # create
           promise = self.signUpP(userCred)
-        else 
-          # update
-          promise = self.checkSessionUserP(null).then ()->
+        else if self.isAnonymousUser()
+          promise = $q.when()
+        else  # verify userCred before updating user profile
+          reverify = {
+            username: userCred['username']
+            password: userCred['currentPassword']
+          }
+          promise = self.checkSessionUserP(reverify, false)
+          .then ()->
+            # userCred should be valid, continue with update
             _.each updateKeys, (key)->
+                if key=='username'
+                  userCred['username'] = userCred['username'].trim().toLowerCase()
                 $rootScope.sessionUser.set(key, userCred[key])
+                return
             return $rootScope.sessionUser.save().then ()->
-                angular.noop()
+                return $rootScope.user = self.mergeSessionUser($rootScope.user)
               , (error)->
                 $rootScope.sessionUser = null
                 $rootScope.user.username = ''
@@ -838,23 +834,26 @@ angular
                 return $q.reject(error)
 
         promise.then ()->
-              $rootScope.sessionUser = Parse.User.current()
-              return $q.when($rootScope.sessionUser)
-            , (error)->
-              throw error # end of line
+            $rootScope.sessionUser = Parse.User.current()
+            return $q.when($rootScope.sessionUser)
+          , (err)->
+            return $q.reject(err) # end of line
 
       checkSessionUserRoleP : (o)->
         # Placeholder: for workorders, check for role=EDITOR and Assignment
         o.role = 'EDITOR'
         return $q.when(o)
 
-      updateSessionUserP : (options)->
-        options = _.pick options, ['tosAgree', 'rememberMe']
-        return if _.isEmpty options
-        return if !$rootScope.sessionUser
-        return deviceReady.waitP().then self.checkSessionUserP() 
+      updateUserProfileP : (options)->
+        keys = ['tosAgree', 'rememberMe']
+        options = _.pick options, keys
+        return $q.when() if _.isEmpty options
+        return deviceReady.waitP().then ()->
+          return self.checkSessionUserP(null, true)
         .then ()->
-          $rootScope.sessionUser.save(options)
+            return $rootScope.sessionUser.save(options)
+          , (err)->
+            return err
 
       checkBacklogP: ()->
         return deviceReady.waitP()
@@ -1118,7 +1117,7 @@ angular
         return $q.reject("uploadPhotoMetaP: photo is empty") if !photo
         # upload photo meta BEFORE file upload from native uploader
         # photo.src == 'queued'
-        return deviceReady.waitP().then self.checkSessionUserP()
+        return deviceReady.waitP().then self.checkSessionUserP(null, false)
         .then ()-> 
           attrsForParse = [
             'dateTaken', 'originalWidth', 'originalHeight', 
@@ -1158,7 +1157,7 @@ angular
         # upload file then update PhotoObj photo.src, does not know workorder
         # return parseFile = { UUID:, url(): }
         UPLOAD_IMAGE_SIZE = size || 'preview'
-        return deviceReady.waitP().then self.checkSessionUserP() 
+        return deviceReady.waitP().then self.checkSessionUserP(null, false) 
           .then ()->
             if deviceReady.device().isBrowser
               return $q.reject( {

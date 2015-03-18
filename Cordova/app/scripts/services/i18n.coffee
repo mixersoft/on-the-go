@@ -126,6 +126,7 @@ angular.module('onTheGo.i18n', [])
           '203': "That Email address was already taken. Please try again."
           '10': "Sign-in unsucessful. Please try again."
           '11': "Sign-up unsucessful. Please try again."
+          '301': "You don't have permission to make those changes."
 
       'app.settings.main': {}
       'app.settings.profile':

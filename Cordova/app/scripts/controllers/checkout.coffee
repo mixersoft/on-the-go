@@ -346,7 +346,7 @@ angular.module('ionBlankApp')
     parse = {
       _createWorkorderP : (checkout, servicePlan)->
         backlogStatus = null
-        return otgParse.checkSessionUserP()
+        return otgParse.checkSessionUserP(null, false)
         .then otgParse.checkBacklogP
         .then (backlog)->
           backlogStatus = backlog.get('status')
@@ -393,7 +393,7 @@ angular.module('ionBlankApp')
     init = ()->
       $scope.orders = []
 
-      otgParse.checkSessionUserP() # register anonymous user/guest here(?)
+      otgParse.checkSessionUserP(null, true) # register anonymous user/guest if needed
       otgParse.checkBacklogP().then (backlog)->
         $scope.config.system['order-standby'] = backlog.get('status') == 'standby'
 
