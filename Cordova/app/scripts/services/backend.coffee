@@ -816,7 +816,8 @@ angular
             password: userCred['currentPassword']
           }
           promise = self.checkSessionUserP(reverify, false)
-          .then ()->
+
+        promise = promise.then ()->
             # userCred should be valid, continue with update
             _.each updateKeys, (key)->
                 if key=='username'
@@ -832,12 +833,11 @@ angular
                 $rootScope.user.email = ''
                 console.warn "parse User.save error, msg=" + JSON.stringify error
                 return $q.reject(error)
-
-        promise.then ()->
-            $rootScope.sessionUser = Parse.User.current()
-            return $q.when($rootScope.sessionUser)
-          , (err)->
-            return $q.reject(err) # end of line
+          .then ()->
+              $rootScope.sessionUser = Parse.User.current()
+              return $q.when($rootScope.sessionUser)
+            , (err)->
+              return $q.reject(err) # end of line
 
       checkSessionUserRoleP : (o)->
         # Placeholder: for workorders, check for role=EDITOR and Assignment
