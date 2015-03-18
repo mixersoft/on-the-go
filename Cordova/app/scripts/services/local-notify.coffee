@@ -29,6 +29,10 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
           }
         ]      
     }
+    _isValidDate = (date)->
+      return true if _.isDate(date) && _.isNaN(date.getTime())==false
+      return false
+
     _isLongSleep = (sleep)->
       return sleep > CFG.longSleepTimeout # 60*60 == 1 hour
 
@@ -58,16 +62,17 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
         return !!this._notify
 
       loadPlugin: ()->
+        self = this
         if window.plugin?.notification?.local? 
-          this._notify = window.plugin.notification.local
-          this._notify.setDefaults({ autoCancel: true })
+          self._notify = window.plugin.notification.local
+          self._notify.setDefaults({ autoCancel: true })
 
-        if this.isReady()
-          this._notify.onadd = this.onadd
-          this._notify.ontrigger = this.ontrigger
-          this._notify.onclick = this.onclick
-          this._notify.oncancel = this.oncancel
-          # console.log.log "####### LocalNotification handlers added ##################"
+        if self.isReady()
+          self._notify.on("schedule" , self.onadd )
+          self._notify.on("trigger" , self.ontrigger)
+          self._notify.on("click" , self.onclick)
+          self._notify.on("cancel" , self.oncancel)
+          # console.log "####### LocalNotification handlers added ##################"
           # notify.alert "localNotify, callbacks added", "success"
         else  
           notify.alert "LocalNotification plugin is NOT available" if CFG.debug
@@ -80,7 +85,7 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
 
       # save last(?) notification to localStorage because 'repeating' is not passed via Plugin(?)
       localStorage: (o)->
-        return $localStorage['notification'] if `o==null` # getter  
+        return $localStorage['notification'] || {} if `o==null` # getter  
 
         if o == false
           $localStorage['notification'] = {}
@@ -111,10 +116,9 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
           if _.isDate(reminderTime)
             reminderTimeAsDate = reminderTime
           else 
-            check = moment(new Date(reminderTime)) # parse date with moment.js
-            if !check.isValid() 
+            reminderTimeAsDate = new Date(reminderTime) # parse date with moment.js
+            if !_isValidDate(reminderTimeAsDate)
               throw "ERROR: reminderTime is not a valid date string, reminderTime="+reminderTime
-            reminderTimeAsDate = check.toDate()
 
           if notification['schedule'] && _.isObject(notification['schedule'])
             reminderTimeAsDate = this._getDateFromRepeat(reminderTimeAsDate, notification['schedule'])
@@ -137,12 +141,17 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
             schedule: notification['schedule'] || null
           }
           reminder['title'] = notification.title if notification.title?
-          # console.log.log "*** addByDate reminder="+JSON.stringify reminder
+          # console.log "*** addByDate reminder="+JSON.stringify reminder
 
-          # saved = localNotify.localStorage(reminder)
+          
 
           useNotificationPlugin = this.isReady()
           if useNotificationPlugin
+
+            saved = localNotify.localStorage(reminder)
+            # see: AppManager.resumeApp()
+            # TODO: use _notify.getTriggeredIds()
+
             # now format for LocalNotification plugin because add() will change reminder.date to unixtime
             reminder2 = _.pick reminder, ['id','date','message']
             reminder2['badge'] = notification.badge || 1
@@ -151,25 +160,28 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
 
           
             # only 1 reminder at a time, cancel notifications and badges
-            this.cancelAll()
+            # this.cancelAll()
 
-            this._notify.add( reminder2 )
+            this._notify.schedule( reminder2 )
             
 
-            console.log.log "localNotify.add()  AFTER message="+JSON.stringify( reminder2 )
+            console.log "localNotify.add()  AFTER message="+JSON.stringify( reminder2 )
             if delay < 60
               notify.message({
                 title: "A reminder was set to fire in "+ delay + " seconds"
                 message: "To see the notification, press the 'Home' button and close this app." 
                 })
             else 
-              nextReminder = moment(reminder.date)
-              # console.log.log " LocalNotification plugin set, date="+ reminder.date + ", nextReminder.calendar()=" + nextReminder.calendar()
-              return false if !nextReminder.isValid()
+              nextReminder = 
+                if _isValidDate(reminder.date) 
+                then reminder.date
+                else new Date(reminder.date) 
+              # console.log " LocalNotification plugin set, date="+ reminder.date + ", nextReminder.calendar()=" + nextReminder.calendar()
+              return false if !_isValidDate nextReminder
 
               notify.message( {
                   title: "A Reminder was Set"
-                  message: "Your next reminder will be at " + nextReminder.calendar() + "."
+                  message: "Your next reminder will be at " + nextReminder.toJSON() + "."
                 })
                 
           else if debug # not using LocalNotification plugin
@@ -177,11 +189,11 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
             saved = localNotify.localStorage(reminder)
             notify.alert "localNotification EMULATED, delay="+delay
             this.fakeNotify(delay, reminder)
-          # console.log.log "addByDate COMPLETE"  
+          # console.log "addByDate COMPLETE"  
           return reminder.date
         catch error
           msg = "EXCEPTION: addByDate(), error="+JSON.stringify error, null, 2
-          # console.log.log msg
+          # console.log msg
           notify.alert msg, "danger", 600000
     
       # @param except string or array of Strings
@@ -197,7 +209,7 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
           # badge plugin: https://github.com/katzer/cordova-plugin-badge.git
           window.plugin.notification.badge.clear()
         catch error
-          notify.alert "EXCEPTION: localNotify.onclick(), BADGE CLEAR error="+JSON.stringify error, "danger", 600000
+          console.warn "EXCEPTION: localNotify.onclick(), BADGE CLEAR error="+JSON.stringify error, "danger", 600000
 
       _cancelScheduled : (except)->
         self = this
@@ -214,12 +226,11 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
       #   String: 'daily', 'weekly', etc, see LocalNotification plugin docs
       # @return Date object or false if repeat == object and no days of week are enabled
       _getDateFromRepeat : (date, schedule=null)->
-        check = moment(new Date(date)) # parse date with moment.js
-        if !check.isValid() 
+        reminder = new Date(date) # parse date with moment.js
+        if !_isValidDate(reminder)
           throw "ERROR: _getDateFromRepeat(), date is not a valid date string, date="+date
 
-        reminder = check 
-        reminderTime = reminder.toDate().getTime()
+        reminderTime = reminder.getTime()
         now = new Date()
 
         if _.isObject( schedule )
@@ -270,13 +281,16 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
         return _.sample CFG.templates 
 
       handleNotification : (options)->
-        # console.log.log "*** handleNotification(), options=" + JSON.stringify options, null, 2 
+        # console.log "*** handleNotification(), options=" + JSON.stringify options, null, 2 
         # state=background
         try 
           # notify.alert "onClick state="+state+", json="+json, "success", 60000
-          this.cancelAll()
-          reminder = localNotify.localStorage()
-          # console.log.log " %%%% CONFIRM same as json, reminder=" + JSON.stringify reminder, null, 2
+          reminder = options || localNotify.localStorage()
+          if reminder.id
+            this._notify.clear(reminder.id) 
+          else
+            this.cancelAll() 
+          # console.log " %%%% CONFIRM same as json, reminder=" + JSON.stringify reminder, null, 2
           localNotify.localStorage(false) # mark as Handled before setRepeat()
           repeating = this._setRepeat(reminder)
           if repeating
@@ -284,7 +298,7 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
             # make sure it matches reminder.message, as shown in Notification Center
             notify.alert "setting NEXT reminder for " + localNotify.localStorage()['date'], "success", 60000
             # prepare for transitions
-            # console.log.log ">>>>  onlick going to " + reminder.target + " setting NEXT reminder for " + localNotify.localStorage()['date']
+            # console.log ">>>>  onlick going to " + reminder.target + " setting NEXT reminder for " + localNotify.localStorage()['date']
           $rootScope.$broadcast('localNotification.received', reminder)
           if reminder.target[0...4] == 'app.'
             $rootScope.$state.transitionTo( reminder.target ) 
@@ -294,7 +308,7 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
 
         catch error
           msg = "EXCEPTION: localNotify.onclick(), error="+JSON.stringify error, null, 2
-          # console.log.log msg
+          # console.log msg
           notify.alert msg, "danger", 600000
 
         return true     
@@ -311,12 +325,12 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
       # resume sequence of events - from trigger of notification in foreground 
       # onlick -> wakeApp -> resumeApp
       ontrigger :(id,state,json)=>
-        # console.log.log "*** 2 ***** onTRIGGER state="+state+", json="+json 
+        # console.log "*** 2 ***** onTRIGGER state="+state+", json="+json 
         this.handleNotification(json)
         return true
         # this.cancelAll()
         # reminder = localNotify.localStorage()
-        # # console.log.log " %%%% CONFIRM same as json, reminder="+JSON.stringify reminder
+        # # console.log " %%%% CONFIRM same as json, reminder="+JSON.stringify reminder
         # localNotify.localStorage(false) # mark as Handled before setRepeat()
         # repeating = this._setRepeat(reminder)
         # if repeating
@@ -324,7 +338,7 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
         #   # make sure it matches reminder.message, as shown in Notification Center
         #   notify.alert "setting NEXT reminder. repeat="+reminder.schedule+", next reminder at "+localNotify.localStorage()?['date'], "success", 60000
         # # prepare for transitions
-        # console.log.log ">>>>  onlick going to "+reminder.target
+        # console.log ">>>>  onlick going to "+reminder.target
         # $location.path(reminder.target)
         # return true 
 
@@ -333,7 +347,7 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
       # onlick -> wakeApp -> resumeApp
       # NOTE: using resumeApp to call onclick from App icon, vs Notification Center
       onclick :(id,state,json)=>
-        # console.log.log "*** 3 ***** onClick state="+state+", json="+json 
+        # console.log "*** 3 ***** onClick state="+state+", json="+json 
         this.handleNotification(json)
         return true
         # state=background
@@ -341,7 +355,7 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
         #   # notify.alert "onClick state="+state+", json="+json, "success", 60000
         #   this.cancelAll()
         #   reminder = localNotify.localStorage()
-        #   # console.log.log " %%%% CONFIRM same as json, reminder="+JSON.stringify reminder
+        #   # console.log " %%%% CONFIRM same as json, reminder="+JSON.stringify reminder
         #   localNotify.localStorage(false) # mark as Handled before setRepeat()
         #   repeating = this._setRepeat(reminder)
         #   if repeating
@@ -349,18 +363,18 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
         #     # make sure it matches reminder.message, as shown in Notification Center
         #     notify.alert "setting NEXT reminder. repeat="+reminder.schedule+", next reminder at "+localNotify.localStorage()?['date'], "success", 60000
         #   # prepare for transitions
-        #   console.log.log ">>>>  onlick going to "+reminder.target
+        #   console.log ">>>>  onlick going to "+reminder.target
         #   $location.path(reminder.target)
 
 
         # catch error
         #   msg = "EXCEPTION: localNotify.onclick(), error="+JSON.stringify error
-        #   console.log.log msg
+        #   console.log msg
         #   notify.alert msg, "danger", 600000
         # return true
 
       oncancel :(id,state,json)=>
-        # console.log.log "*** 4 ***** onCancel state="+state+", json="+json 
+        # console.log "*** 4 ***** onCancel state="+state+", json="+json 
         return true
 
         # notify.alert "CANCEL oncancel state="+state+", json="+json, "info"
@@ -468,9 +482,9 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
       
       # record resumeTime to allow calculation of pauseDuration downstream
       wakeApp  : (e)->
-        # console.log.log "*** 0 - wakeApp"
+        # console.log "*** 0 - wakeApp"
         if !window.deviceReady
-          # console.log.log "WARNING: wakeApp without window.deviceReady!!! check resolve()"
+          # console.log "WARNING: wakeApp without window.deviceReady!!! check resolve()"
           null
 
         $timeout (()=>
@@ -492,19 +506,19 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
       #       see: https://github.com/katzer/cordova-plugin-local-notifications/issues/150
       # @params o Object, expecting o.pauseDuration, o.resumeTime, o.event
       resumeApp: (o)->
-        # console.log.log "*** 1 - resumeApp, o="+JSON.stringify o
+        # console.log "*** 1 - resumeApp, o="+JSON.stringify o
         # notify.alert "App was prepared to resume, then sent to background, pauseDuration=" +o.pauseDuration
         try 
           nextReminder = localNotify.localStorage()
           #   - check for notification here in resumeApp
-          # console.log.log "### RESUME APP WITH NOTIFICATION"
+          # console.log "### RESUME APP WITH NOTIFICATION"
           now = new Date()
           isNotificationTriggered = nextReminder.date && now > new Date(nextReminder.date) || false
           console.log "### RESUME APP WITH NOTIFICATION, trigger="+isNotificationTriggered+", date="+nextReminder.date+", reminder="+JSON.stringify nextReminder
           if true && isNotificationTriggered 
             # same as LocalNotify.onclick
             localNotify.handleNotification() 
-            # console.log.log "### RESUME APP COMPLETE ###"
+            # console.log "### RESUME APP COMPLETE ###"
             return
 
         catch error
