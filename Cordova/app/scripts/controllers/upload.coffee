@@ -265,14 +265,30 @@ angular.module('ionBlankApp')
         quality: 0.7
         allowsCellularAccess: false
         container: null # use User.id 
-        CHUNKSIZE: 200
+        CHUNKSIZE: 500
       setCfg: (uploadCfg)->
         _bkgFileUploader.use720p(uploadCfg['use-720p-service'])
         _bkgFileUploader.allowsCellularAccess = uploadCfg['use-cellular-data']
+
+      setChunksizeByFreeSpace: ()->
+        return
+        use720p = $rootScope.config['upload']['use-720p-service']
+        avgSizeKb = if use720p then 100 else 2000
+        _cb = {
+          success: (sizeKb)->
+            chunksize = Math.max( Math.floor(sizeKb/avgSizeKb) , 5)
+            _bkgFileUploader.cfg.CHUNKSIZE = chunksize 
+            console.log "\n >>> cordova getFreeDiskSpace: ", JSON.stringify {free:sizeKb, CHUNKSIZE: chunksize }
+          fail: (err)->
+            console.warn "cordova.getFreeDiskSpace error: ", err
+        }
+        cordova.exec(_cb.success, _cb.fail, "File", "getFreeDiskSpace", [])
+
       use720p: (action=false)->
+        _bkgFileUploader.setChunksizeByFreeSpace()
         if action
           _bkgFileUploader.cfg.maxWidth = 720
-          _bkgFileUploader.cfg.CHUNKSIZE = 200
+          _bkgFileUploader.cfg.CHUNKSIZE = 500
         else if !action
           _bkgFileUploader.cfg.maxWidth = false 
           _bkgFileUploader.cfg.CHUNKSIZE = 5
@@ -776,6 +792,9 @@ angular.module('ionBlankApp')
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
+      if otgUploader.type=='background'
+        otgUploader.uploader.setChunksizeByFreeSpace()
+
       # cached view becomes active 
       isEnabled = otgUploader.enable()
       # init button to match otgUploader state

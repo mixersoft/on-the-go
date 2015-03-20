@@ -12,16 +12,15 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
 .factory( 'localNotificationPluginSvc', [ 
   '$rootScope', '$location'
   '$timeout', '$q'
-  '$localStorage'
   '$ionicPlatform'
   'notifyService'
   'deviceReady'
-  ($rootScope, $location, $timeout, $q, $localStorage, $ionicPlatform, notify, deviceReady)->
+  ($rootScope, $location, $timeout, $q, $ionicPlatform, notify, deviceReady)->
     CFG = {
-      debug: false && window.location.hostname == 'localhost' 
-      longSleepTimeout: 1 * 60 # duration to trigger a long sleep
+      debug: false || window.location.hostname == 'localhost' 
       templates: [
           {
+            id: 101
             title: "Bon Voyage!"
             message: "You have an order for a trip that begins today! Please make sure the Uploader is enabled."
             target: "app.uploader"
@@ -33,192 +32,147 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
       return true if _.isDate(date) && _.isNaN(date.getTime())==false
       return false
 
-    _isLongSleep = (sleep)->
-      return sleep > CFG.longSleepTimeout # 60*60 == 1 hour
-
     # wrapper class for working with the localNotification plugin
     # includes 'emulated' mode for desktop browser testing without the plugin
     class LocalNotify 
       constructor: (options)->
         self = this
         # self._notify = self.loadPlugin()
-        $ionicPlatform.ready ()->
+        deviceReady.waitP().then ()->
           self.loadPlugin()
           window.debug.notifyPlugin = self
           window.debug.notifyPlugin.testMsg = CFG.templates[0]
-
-
-          # send App to background event
-          if deviceReady.device().isDevice
-            $ionicPlatform.on 'pause', AppManager.prepareToResumeApp
-            $ionicPlatform.on 'resume', AppManager.wakeApp
-
         return
 
       init: ()->
         this.loadPlugin() if !this.isReady()
 
       isReady: ()->
-        return !!this._notify
+        return !!self._notify
 
       loadPlugin: ()->
         self = this
         if window.plugin?.notification?.local? 
           self._notify = window.plugin.notification.local
           self._notify.setDefaults({ autoCancel: true })
-
-        if self.isReady()
-          self._notify.on("schedule" , self.onadd )
-          self._notify.on("trigger" , self.ontrigger)
-          self._notify.on("click" , self.onclick)
-          self._notify.on("cancel" , self.oncancel)
+          self._notify.on("schedule" , self.handleSchedule, self )
+          self._notify.on("trigger" , self.handleTrigger, self)
+          self._notify.on("click" , self.handleClick, self)
+          self._notify.on("cancel" , self.oncancel, self)
           # console.log "####### LocalNotification handlers added ##################"
           # notify.alert "localNotify, callbacks added", "success"
+          # send App to background event
+          if deviceReady.device().isDevice
+            $ionicPlatform.on 'resume', self.checkTriggered, self
+              # check for triggered notifications
+
+
+
         else  
-          notify.alert "LocalNotification plugin is NOT available" if CFG.debug
-          this._notify = false
-        return this._notify
+          # notify.alert "LocalNotification plugin is NOT available" if CFG.debug
+          self._notify = false
+        return self._notify
 
       showDefaults: ()->
         return false if !this._notify
         notify.alert JSON.stringify(this._notify.getDefaults()), "warning", 40000
 
-      # save last(?) notification to localStorage because 'repeating' is not passed via Plugin(?)
-      localStorage: (o)->
-        return $localStorage['notification'] || {} if `o==null` # getter  
-
-        if o == false
-          $localStorage['notification'] = {}
-        else if _.isObject(o)
-          $localStorage['notification'] = o
-        else return throw "Error: $localStorage['notification'] expecting an object or false"
-        return $localStorage['notification']
-
-      isLongSleep : _isLongSleep
 
       addByDelay: (delay=5, notification={})->
-        # notify.alert "window.plugin.notification.local"+ JSON.stringify (window.plugin.notification.local ), "info", 60000
-        # notify.alert "LocalNotify._notify="+ JSON.stringify (this._notify ), "warning"
         return if deviceReady.device().isBrowser && CFG.debug == false
         now = new Date().getTime()
-        target = new Date( now + delay*1000)
-        this.addByDate target, notification
+        reminderDate = new Date( now + delay*1000)
+        this.addByDate reminderDate, notification
 
-      # @param reminderTime Date.toJSON(), only use time compoment
-      # NOTE: reminderTime will be modified to fit notification.schedule, only time component is used
-      addByDate: (reminderTime, notification={})->
+      # @param reminderDate Date
+      # NOTE: if 'repeatSchedule' is set, reminderDate will be modified to fit notification.repeatSchedule, only time component is used
+      addByDate: (reminderDate, notification={})->
         try
           # avoid circular references because we will serialize notification
-          # reminder is formatted for localNotify.localStorage(reminder)
-          if !notification.target || !notification.message
-            throw "ERROR: addByDate() param format error"
+          reminderDate = new Date(reminderDate) if _.isDate(reminderDate) == false
+          if !_isValidDate(reminderDate)
+            throw "ERROR: reminderDate is not a valid date string, reminderDate="+reminderDate
 
-          if _.isDate(reminderTime)
-            reminderTimeAsDate = reminderTime
-          else 
-            reminderTimeAsDate = new Date(reminderTime) # parse date with moment.js
-            if !_isValidDate(reminderTimeAsDate)
-              throw "ERROR: reminderTime is not a valid date string, reminderTime="+reminderTime
-
-          if notification['schedule'] && _.isObject(notification['schedule'])
-            reminderTimeAsDate = this._getDateFromRepeat(reminderTimeAsDate, notification['schedule'])
-            if reminderTimeAsDate == false
+          # use 'repeatSchedule' instead of 'every' to reschedule
+          if notification['repeatSchedule'] && _.isObject(notification['repeatSchedule'])
+            reminderDate = this._getDateFromRepeat(reminderDate, notification['repeatSchedule'])
+            if reminderDate == false
               notify.message "You must select at least one day of the week for this reminder."
               return false
 
           now = new Date()
-          if now > reminderTimeAsDate
+          if now > reminderDate
             notify.message "You are setting a reminder for a time in the past"
             return false
 
-          delay = Math.round((reminderTimeAsDate.getTime() - now.getTime())/1000)
-
           reminder = {
-            id: now.getTime()   # seems to crash on id:0 
-            date: reminderTimeAsDate
-            target: notification['target']
-            message: notification['message']
-            schedule: notification['schedule'] || null
+            id: notification['id'] || now.getTime()   # seems to crash on id:0 
+            title: notification['title'] || null
+            text: notification['message'] || null
+            every: null # in minutes, or ['second', 'minute', 'hour', 'day', 'week', 'month', 'year']
+            at: reminderDate # date or unixtime
+            badge: notification['badge'] || 0
+            sound: null # uri
+            data:
+              target: notification['target'] || null
+              repeatSchedule: notification['repeatSchedule'] || null # DayOfWeek to re-schedule
           }
-          reminder['title'] = notification.title if notification.title?
           # console.log "*** addByDate reminder="+JSON.stringify reminder
 
-          
+          if deviceReady.device().isDevice
+            this._notify.schedule( reminder )
+            # console.log "localNotify.add()  AFTER message="+JSON.stringify( reminder )
+            return reminder['at'] if !CFG.debug
 
-          useNotificationPlugin = this.isReady()
-          if useNotificationPlugin
-
-            saved = localNotify.localStorage(reminder)
-            # see: AppManager.resumeApp()
-            # TODO: use _notify.getTriggeredIds()
-
-            # now format for LocalNotification plugin because add() will change reminder.date to unixtime
-            reminder2 = _.pick reminder, ['id','date','message']
-            reminder2['badge'] = notification.badge || 1
-            reminder2['autoCancel'] = true 
-            reminder2['json'] = reminder  # passed to onclick/ontrigger json param
-
-          
-            # only 1 reminder at a time, cancel notifications and badges
-            # this.cancelAll()
-
-            this._notify.schedule( reminder2 )
-            
-
-            console.log "localNotify.add()  AFTER message="+JSON.stringify( reminder2 )
-            if delay < 60
-              notify.message({
-                title: "A reminder was set to fire in "+ delay + " seconds"
-                message: "To see the notification, press the 'Home' button and close this app." 
-                })
-            else 
-              nextReminder = 
-                if _isValidDate(reminder.date) 
-                then reminder.date
-                else new Date(reminder.date) 
-              # console.log " LocalNotification plugin set, date="+ reminder.date + ", nextReminder.calendar()=" + nextReminder.calendar()
-              return false if !_isValidDate nextReminder
-
-              notify.message( {
-                  title: "A Reminder was Set"
-                  message: "Your next reminder will be at " + nextReminder.toJSON() + "."
-                })
-                
-          else if debug # not using LocalNotification plugin
-            reminder.message = "EMULATED: "+reminder.message
-            saved = localNotify.localStorage(reminder)
+          ### 
+          # CFG.debug only
+          ###
+          delay = Math.round((reminderDate.getTime() - now.getTime())/1000)
+          if deviceReady.device().isBrowser && CFG.debug # not using LocalNotification plugin
+            reminder['message'] = "EMULATED: "+reminder['message']
             notify.alert "localNotification EMULATED, delay="+delay
             this.fakeNotify(delay, reminder)
+
+          if delay < 60
+            notify.message({
+              title: "A reminder was set to fire in "+ delay + " seconds"
+              message: "To see the notification, press the 'Home' button and close this app." 
+              })
+          else 
+            nextReminder = 
+              if _.isDate(reminder['at']) 
+              then reminder['at']
+              else new Date(reminder['at']) 
+            # console.log " LocalNotification plugin set, date="+ reminder['at'] + ", nextReminder.calendar()=" + nextReminder.calendar()
+            notify.message( {
+                title: "A Reminder was Set"
+                message: "Your next reminder will be at " + nextReminder.toJSON() + "."
+              })
+                
           # console.log "addByDate COMPLETE"  
-          return reminder.date
+          return reminder['at']
         catch error
           msg = "EXCEPTION: addByDate(), error="+JSON.stringify error, null, 2
           # console.log msg
           notify.alert msg, "danger", 600000
     
       # @param except string or array of Strings
-      cancelAll : ()=>
+      cancel : (ids)=>
         return if !this.isReady()
-        this._notify.cancelAll() 
-        this.clearBadge()
-        # localNotify.localStorage(false)
+        return this._notify.cancelAll() if ids=='all' 
+        return this._notify.cancel ids, ()->
+          return console.log "notification cancelled", ids
 
-      clearBadge : ()=>
+      clear : (ids)=>
         return if !this.isReady()
-        try # sometimes autoCancel does not reset badge
-          # badge plugin: https://github.com/katzer/cordova-plugin-badge.git
-          window.plugin.notification.badge.clear()
-        catch error
-          console.warn "EXCEPTION: localNotify.onclick(), BADGE CLEAR error="+JSON.stringify error, "danger", 600000
+        return this._notify.clearAll() if ids=='all' 
+        return this._notify.clear ids, ()->
+          return console.log "notification CLEARED", ids
+        ## see also: 
+        this._notify.getTriggeredIds (ids)->
+            return this._notify.clear(ids);
+          , this
 
-      _cancelScheduled : (except)->
-        self = this
-        except = [except] if !_.isArray(except) 
-        this._notify.getScheduledIds (ids)->
-          _.each ids, (id)->
-            return if except.indexOf(id) > -1
-            notify.alert "_cancelScheduled, id="+id, "warning", 30000
-            self._notify.cancel(id)
 
       # @param date Date object or Date.toJSON()
       #   schedule Object or String, 
@@ -261,17 +215,16 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
       # @params options Object
       #   options.schedule Object or string, 
       # options.date Date.toJSON()
-      _setRepeat : (options)->
-        # options = JSON.parse(options) if _.isString(options)
-        if !_.isEmpty(options.schedule)
+      _setRepeat : (notification)->
+        # notification = JSON.parse(notification) if _.isString(notification)
+        if !_.isEmpty(notification.data['repeatSchedule'])
 
           # get next random message for Notification Center 
           message = this.getNotificationMessage()
-          message['schedule'] = options.schedule  # copy schedule from lastReminder
+          message['repeatSchedule'] = notification.data['repeatSchedule']  # copy schedule from lastReminder
           # set new reminder
           # note addByDate will get nextReminderDate from _getDateFromRepeat()
-          lastReminderDate = new Date(options.date)
-          nextReminderDate = this.addByDate lastReminderDate, message
+          nextReminderDate = this.addByDate( notification['at'], message)
           return nextReminderDate
         else return false
 
@@ -280,257 +233,136 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
         # TODO: notification.data.target is used to route, message is set by route
         return _.sample CFG.templates 
 
-      handleNotification : (options)->
+      ###
+      # @params notification, from notification.schedule()
+      # @params string ['foreground', 'background']
+      ###
+      handleNotification : (notification, state)->
         # console.log "*** handleNotification(), options=" + JSON.stringify options, null, 2 
         # state=background
         try 
           # notify.alert "onClick state="+state+", json="+json, "success", 60000
-          reminder = options || localNotify.localStorage()
-          if reminder.id
-            this._notify.clear(reminder.id) 
+          notification = notification
+          if notification.id
+            localNotify.clear(notification.id) 
           else
-            this.cancelAll() 
-          # console.log " %%%% CONFIRM same as json, reminder=" + JSON.stringify reminder, null, 2
-          localNotify.localStorage(false) # mark as Handled before setRepeat()
-          repeating = this._setRepeat(reminder)
+            localNotify.clear('all') 
+          # console.log " %%%% CONFIRM same as json, notification=" + JSON.stringify notification, null, 2
+
+          notification['message'] = notification['text'] # for notify.alert/message()
+          notification.data = JSON.parse(notification.data) if _.isString notification.data 
+
+          repeating = this._setRepeat(notification)
           if repeating
-            # reminder.target controller will set the actual notify.message()
-            # make sure it matches reminder.message, as shown in Notification Center
-            notify.alert "setting NEXT reminder for " + localNotify.localStorage()['date'], "success", 60000
-            # prepare for transitions
-            # console.log ">>>>  onlick going to " + reminder.target + " setting NEXT reminder for " + localNotify.localStorage()['date']
-          $rootScope.$broadcast('localNotification.received', reminder)
-          if reminder.target[0...4] == 'app.'
-            $rootScope.$state.transitionTo( reminder.target ) 
-          else 
-            $location.path(reminder.target)
-          return true
+            # notification.data.target controller will set the actual notify.message()
+            # make sure it matches notification.message, as shown in Notification Center
+            notify.alert "setting NEXT notification for " + repeating, "success", 60000
+          $rootScope.$broadcast('localNotification.received', notification)
+
+          # show notification
+          notify.message(notification)
+
+          if notification.data.target?
+            if notification.data.target[0...4] == 'app.'
+              $rootScope.$state.transitionTo( notification.data.target ) 
+            else
+              $location.path(notification.data.target)
+
 
         catch error
-          msg = "EXCEPTION: localNotify.onclick(), error="+JSON.stringify error, null, 2
+          msg = "EXCEPTION: localNotify.handleClick(), error="+JSON.stringify error, null, 2
           # console.log msg
           notify.alert msg, "danger", 600000
 
         return true     
 
       # @params state = [foreground | background]
-      onadd :(id,state,json)=>
-        return true # skip this because we are using this.cancelAll()
-
-        # notify.alert "onadd state="+state+", json="+json, "info"
-        # except = id
-        # this._cancelScheduled(except)
-        # return true
+      handleSchedule :(notification,state)=>
+        return true 
 
       # resume sequence of events - from trigger of notification in foreground 
       # onlick -> wakeApp -> resumeApp
-      ontrigger :(id,state,json)=>
+      handleTrigger :(notification,state)=>
         # console.log "*** 2 ***** onTRIGGER state="+state+", json="+json 
-        this.handleNotification(json)
+        this.handleNotification(notification, state)
         return true
-        # this.cancelAll()
-        # reminder = localNotify.localStorage()
-        # # console.log " %%%% CONFIRM same as json, reminder="+JSON.stringify reminder
-        # localNotify.localStorage(false) # mark as Handled before setRepeat()
-        # repeating = this._setRepeat(reminder)
-        # if repeating
-        #   # reminder.target controller will set the actual notify.message()
-        #   # make sure it matches reminder.message, as shown in Notification Center
-        #   notify.alert "setting NEXT reminder. repeat="+reminder.schedule+", next reminder at "+localNotify.localStorage()?['date'], "success", 60000
-        # # prepare for transitions
-        # console.log ">>>>  onlick going to "+reminder.target
-        # $location.path(reminder.target)
-        # return true 
 
-      
+      checkTriggered : ()->
+        localNotify._notify.getAllTriggered (notifications)->
+            console.log 'triggered', notifications
+            _.each notifications, (notification)->
+              localNotify.handleNotification(notification, 'background')
+              return
+          , this
+
+
+      localNotify.add()  AFTER mlocalNotify.add()  AFTER mA
       # resume sequence of events - from click on item in iOS Notification Center 
       # onlick -> wakeApp -> resumeApp
-      # NOTE: using resumeApp to call onclick from App icon, vs Notification Center
-      onclick :(id,state,json)=>
+      # NOTE: using resumeApp to call handleClick from App icon, vs Notification Center
+      handleClick :(notification,state)=>
         # console.log "*** 3 ***** onClick state="+state+", json="+json 
-        this.handleNotification(json)
+        this.handleNotification(notification, state)
         return true
-        # state=background
-        # try 
-        #   # notify.alert "onClick state="+state+", json="+json, "success", 60000
-        #   this.cancelAll()
-        #   reminder = localNotify.localStorage()
-        #   # console.log " %%%% CONFIRM same as json, reminder="+JSON.stringify reminder
-        #   localNotify.localStorage(false) # mark as Handled before setRepeat()
-        #   repeating = this._setRepeat(reminder)
-        #   if repeating
-        #     # reminder.target controller will set the actual notify.message()
-        #     # make sure it matches reminder.message, as shown in Notification Center
-        #     notify.alert "setting NEXT reminder. repeat="+reminder.schedule+", next reminder at "+localNotify.localStorage()?['date'], "success", 60000
-        #   # prepare for transitions
-        #   console.log ">>>>  onlick going to "+reminder.target
-        #   $location.path(reminder.target)
 
 
-        # catch error
-        #   msg = "EXCEPTION: localNotify.onclick(), error="+JSON.stringify error
-        #   console.log msg
-        #   notify.alert msg, "danger", 600000
-        # return true
-
-      oncancel :(id,state,json)=>
+      oncancel :(notification,state)=>
         # console.log "*** 4 ***** onCancel state="+state+", json="+json 
         return true
 
-        # notify.alert "CANCEL oncancel state="+state+", json="+json, "info"
-        # # this.scheduled.slice(this.scheduled.indexOf(id),1)
-        # return true
 
       # for testing in browser WITHOUT plugin
       fakeNotify: (delay, notification)=>
-        _isAwakeWhenNotificationFired = ()->
-          return false
-          # simple Toggle
-          _isAwakeWhenNotificationFired.toggle = _isAwakeWhenNotificationFired.toggle || {}
-          _isAwakeWhenNotificationFired.toggle.value = !_isAwakeWhenNotificationFired.toggle.value 
-          return _isAwakeWhenNotificationFired.toggle.value
+        state = 'background'
+        _getState = (delay)->
+          return state if `delay==null`
+          return state = if _isLongSleep(delay) then 'background' else 'foreground'
 
         _isLongSleep = (sleep)->
           # use 4 sec just for fakeNotify testing
           LONG_SLEEP = 4 
           return sleep > LONG_SLEEP
-        #
-        # FAKE notification emulating steroids api pause/resume
-        # for testing on desktop & touch 
-        # until touch localNotification plugin works
-        #
+        
+        # FAKE notification emulating cordova pause/resume in browser
+        # expection attrs: {event:, pauseDuration:, notification:{}}
         _handleResumeOrLocalNotify = (o)->
-          notify.alert "fakeNotify: resuming with o="+JSON.stringify o
-          o.notification = localNotify.localStorage()
-          wasAlreadyAwake = _isAwakeWhenNotificationFired()
+          # notify.alert "fakeNotify: resuming with o="+JSON.stringify o
+          wasAlreadyAwake = _getState(o.pauseDuration) == 'foreground'
 
-          if wasAlreadyAwake && o.event=="LocalNotify"
+          if wasAlreadyAwake
             # just show notification as alert, do not navigate
-            context =  "<br /><p>(Pretend this notification fired while the app was already in use.)</p>" 
-            o.notification.message += context
-            notify.alert "LocalNotify fired when already awake", "warning"
+            context =  "<br /><p>(Pretend this notification fired while the app was in foreground.)</p>" 
+            o.notification['text'] += context
+            # notify.alert "LocalNotify fired when already awake", "warning"
             type = if wasAlreadyAwake then "info" else "success"
-            notify.message(o.notification, type)
+            localNotify.handleNotification( o.notification, state)
+            # notify.message(o.notification, type)
           
-          else if _isLongSleep(o.pauseDuration) 
+          else 
             # resume/localNotify from LongSleep should navigate to notification target, 
             #     i.e. active challenge, moment, or photo of the day
 
             # pick a random challenge and activate
-            notify.alert "LocalNotify RESUME detected, pauseDuration=" + o.pauseDuration, "success"
+            # notify.alert "LocalNotify RESUME detected, pauseDuration=" + o.pauseDuration, "success"
             if wasAlreadyAwake
-              context =  "<br /><p>(Pretend this notification fired while the app was already in use.)</p>" 
+              context =  "<br /><p>(Pretend this notification fired while the app was already in foreground.)</p>" 
             else 
               context =  "<br /><p><b>(Pretend you got here after clicking from the Notification Center.)</b><p>" 
-            o.notification.message += context 
+            o.notification['text'] += context 
             type = if wasAlreadyAwake then "info" else "success"
-            notify.message(o.notification, type, 20000)
-            # after LONG_SLEEP, goto:
-            $timeout (()->
-                angular.noop()
-            ), 2000
-          else if !wasAlreadyAwake
-            # resume from shortSleep should just resume, not alert
-            # localNotify from shortSleep should just show notification as alert, do not navigate
-            type = if wasAlreadyAwake then "info" else "success"
-            notify.message(o.notification, type)
-
+            localNotify.handleNotification( o.notification, state)
+            # notify.message(o.notification, type, 20000)
           return
 
-        window.deviceReady = "fake" if !window.deviceReady
-        promise = AppManager.prepareToResumeApp()
-          .then( _handleResumeOrLocalNotify )
-        $timeout (()->
-          # notify.alert "FAKE localNotification fired, delay was sec="+delay
-          AppManager.wakeApp("LocalNotify")
-        ), delay*1000
-        notify.message({message: "LocalNotify set to fire, delay="+delay}, "warning", 2000)
+        $timeout ()->
+            return _handleResumeOrLocalNotify( {
+              event: "FAKE LocalNotify"
+              pauseDuration: delay
+              notification: notification
+            })
+          , delay*1000
+        notify.message({message: "FAKE LocalNotify set to fire, delay="+delay}, "warning", 2000)
         return  
-
-
-    #
-    # Object for managing the background/resume behavior for the app
-    #
-    
-    AppManager = {  
-
-      _backgroundDeferred: null
-
-      # set up deferred BEFORE causing app to pause
-      prepareToResumeApp : (e)->
-        return notify.alert "WARNING: already paused..." if self._backgroundDeferred?
-
-        pauseTime = new Date().getTime()
-        # return if !window.deviceReady
-        notify.alert "Preparing to send App to background..." 
-        AppManager._backgroundDeferred = $q.defer()
-        promise = AppManager._backgroundDeferred.promise
-        promise.finally( 
-          # race condition? clear first, then resolve...
-          ()-> AppManager._backgroundDeferred = null
-        )
-        promise.then( (o)->
-          # calculare pauseDuration
-          o.pauseDuration = (o.resumeTime - (pauseTime || 0))/1000
-          # o.notification = notification 
-          return o
-        )
-        .then( 
-          AppManager.resumeApp 
-        )       
-        return promise
-      
-      # record resumeTime to allow calculation of pauseDuration downstream
-      wakeApp  : (e)->
-        # console.log "*** 0 - wakeApp"
-        if !window.deviceReady
-          # console.log "WARNING: wakeApp without window.deviceReady!!! check resolve()"
-          null
-
-        $timeout (()=>
-          if e == "LocalNotify" 
-            notify.alert "App was resumed from FAKE LocalNotify", "success"
-          else  
-            notify.alert "App was resumed from background"
-          o = {
-            event: e
-            resumeTime: new Date().getTime() 
-          }
-          AppManager._backgroundDeferred?.resolve( o )
-        ), 0
-        
-      # resumeApp from background, check o.pauseDuration to determine next action
-      #   possible states:
-      #     - resume from Notification Center triggers LocalNotification.onclick()
-      #     - resume by clicking App icon does NOT trigger LN.onclick()
-      #       see: https://github.com/katzer/cordova-plugin-local-notifications/issues/150
-      # @params o Object, expecting o.pauseDuration, o.resumeTime, o.event
-      resumeApp: (o)->
-        # console.log "*** 1 - resumeApp, o="+JSON.stringify o
-        # notify.alert "App was prepared to resume, then sent to background, pauseDuration=" +o.pauseDuration
-        try 
-          nextReminder = localNotify.localStorage()
-          #   - check for notification here in resumeApp
-          # console.log "### RESUME APP WITH NOTIFICATION"
-          now = new Date()
-          isNotificationTriggered = nextReminder.date && now > new Date(nextReminder.date) || false
-          console.log "### RESUME APP WITH NOTIFICATION, trigger="+isNotificationTriggered+", date="+nextReminder.date+", reminder="+JSON.stringify nextReminder
-          if true && isNotificationTriggered 
-            # same as LocalNotify.onclick
-            localNotify.handleNotification() 
-            # console.log "### RESUME APP COMPLETE ###"
-            return
-
-        catch error
-          notify.alert "EXCEPTION: resumeApp(), error="+JSON.stringify error, "danger", 600000
-
-
-        if _isLongSleep(o.pauseDuration)
-          console.log "localNotificationPluginSvc: wake from log sleep"
-
-        return  
-    }
-
 
 
     localNotify = new LocalNotify()
