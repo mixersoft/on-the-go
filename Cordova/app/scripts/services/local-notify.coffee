@@ -48,7 +48,7 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
         this.loadPlugin() if !this.isReady()
 
       isReady: ()->
-        return !!self._notify
+        return !!this._notify
 
       loadPlugin: ()->
         self = this
@@ -63,7 +63,9 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
           # notify.alert "localNotify, callbacks added", "success"
           # send App to background event
           if deviceReady.device().isDevice
-            $ionicPlatform.on 'resume', self.checkTriggered, self
+            $ionicPlatform.on 'resume', ()->
+                return self.checkTriggered.apply(self)
+              , self
               # check for triggered notifications
 
 
@@ -288,15 +290,15 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
         return true
 
       checkTriggered : ()->
-        localNotify._notify.getAllTriggered (notifications)->
+        self = this
+        self._notify.getAllTriggered (notifications)->
             console.log 'triggered', notifications
             _.each notifications, (notification)->
-              localNotify.handleNotification(notification, 'background')
+              self.handleNotification(notification, 'background')
               return
           , this
 
 
-      localNotify.add()  AFTER mlocalNotify.add()  AFTER mA
       # resume sequence of events - from click on item in iOS Notification Center 
       # onlick -> wakeApp -> resumeApp
       # NOTE: using resumeApp to call handleClick from App icon, vs Notification Center
