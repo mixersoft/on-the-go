@@ -64,7 +64,7 @@ angular.module('ionBlankApp')
       _info: true
 
       # apply filter | orderBy
-      reloadDataSet: (toState)->
+      filterByStatus: (toState)->
         toState = $state.current if `toState==null`
         switch toState.name
           when 'app.workorder-photos.all'
@@ -182,8 +182,11 @@ angular.module('ionBlankApp')
           when 'right'
             scope.swipeCard.swipeOver('right')
       refresh: ()->
-        $scope.on.reloadDataSet() 
+        if fullRefresh = true
+          return _SyncWorkorderPhotos()
+        $scope.on.filterByStatus() 
         $rootScope.$broadcast('scroll.refreshComplete')
+        return
 
     }
 
@@ -195,10 +198,70 @@ angular.module('ionBlankApp')
       }
     }
 
+    # sync photos only
+    _SyncWorkorderPhotos = (woObjOrId)->
+      woObjOrId = $state.params['woid'] if `woObjOrId==null`
+      if _.isString(woObjOrId)
+        workorderColl = otgWorkorderSync._workorderColl['editor']
+        workorderObj = _.findWhere workorderColl.models, { id: woObjOrId } 
+
+      otgWorkorderSync.fetchWorkorderPhotosP(workorderObj).then (photosColl)->
+          $scope.photosColl = photosColl
+          uploadedPhotos = _.filter photosColl.toJSON(), (photo)->
+            return photo.src[0...4] == 'http'
+          uploadedPhotoIds = _.indexBy uploadedPhotos, 'UUID'
+          $scope.photos = _.filter cameraRoll.map(), (o)->
+            # Keep only photos with src="http://snappi.snaphappi.com/..."
+            return uploadedPhotoIds[o.UUID]?
+
+          # add to sideMenu
+          $scope.workorderAttr = workorderObj.toJSON()
+          $scope.SideMenuSwitcher.watch['workorder'] = $scope.workorderAttr 
+
+          # # debug
+          # window.debug.sms = $scope.SideMenuSwitcher.watch
+          # window.debug.root = $rootScope
+
+          # update work in progress counts
+          woProgress = _.reduce $scope.photos, (result, item)->
+              result.picks += 1 if item.topPick == true
+              result.todo +=1 if !item.topPick && item.topPick != false
+              return result
+            , {
+              todo: 0
+              picks: 0 
+            }
+          update = {
+            progress: woProgress
+          }
+          if /^(ready|rejected)/.test workorderObj.get('status')
+            update['status'] = 'working'
+          promise = workorderObj.save(update).then (workorderObj)->
+            _.extend $scope.workorderAttr,  workorderObj.toJSON()
+
+          $scope.on.filterByStatus() 
+
+          # clean up UX
+          $scope.hideLoading()
+          $rootScope.$broadcast('scroll.refreshComplete')
+          console.log "workorder-photos Sync complete"
+          return
+        return
+
+    $scope.DEBOUNCED_SYNC_workorderPhotos = _.debounce ()->
+        # console.log "\n\n >>> DEBOUNCED!!!"
+        _SyncWorkorderPhotos
+      , 5000 # 5*60*1000
+      , {
+        leading: true
+        trailing: false
+      }
+
+
 
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
-      $scope.on.reloadDataSet() if $state.includes('app.workorder-photos')
+      $scope.on.filterByStatus() if $state.includes('app.workorder-photos')
       return
 
     $scope.$on 'sync.workordersComplete', ()->
@@ -209,75 +272,27 @@ angular.module('ionBlankApp')
       $scope.photosColl = []
       $scope.photos = []
 
-    _force = false   
     $scope.$on '$ionicView.loaded', ()->
       # for testing: loading 'app/workorders/[woid]/photos' directly
-      _force = !otgWorkorderSync._workorderColl['editor'].length
+      force = !otgWorkorderSync._workorderColl['editor'].length
+      if force  # set on startup, $scope.$on '$ionicView.loaded'
+          # only for TESTING when we load 'app.workorder-photos' as initial state!!!
+          otgWorkorderSync.SYNC_WORKORDERS($scope, 'editor', 'force', ()->
+            $scope.hideLoading()
+            $rootScope.$broadcast('scroll.refreshComplete')
+            console.log "workorder Sync complete"
+        )      
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
       return
 
     $scope.$on '$ionicView.enter', ()->  
-        # cached view becomes active 
-        woid = $state.params['woid']
-        $scope.on.showInfo(true) if $scope.config['workorder.photos']?.info
-        # show loading
-        _whenSyncDoneP = (workorderColl)->
-          workorderObj = _.findWhere workorderColl.models, { id: woid } 
-          otgWorkorderSync.fetchWorkorderPhotosP(workorderObj).then (photosColl)->
-
-            $scope.photosColl = photosColl
-            uploadedPhotos = _.filter photosColl.toJSON(), (photo)->
-              return photo.src[0...4] == 'http'
-            uploadedPhotoIds = _.indexBy uploadedPhotos, 'UUID'
-            $scope.photos = _.filter cameraRoll.map(), (o)->
-              return uploadedPhotoIds[o.UUID]?
-            # add to sideMenu
-            $scope.workorderAttr = workorderObj.toJSON()
-            $scope.SideMenuSwitcher.watch['workorder'] = $scope.workorderAttr 
-
-            # # debug
-            # window.debug.sms = $scope.SideMenuSwitcher.watch
-            # window.debug.root = $rootScope
-
-            # update work in progress counts
-            woProgress = _.reduce $scope.photos, (result, item)->
-                result.picks += 1 if item.topPick == true
-                result.todo +=1 if !item.topPick && item.topPick != false
-                return result
-              , {
-                todo: 0
-                picks: 0 
-              }
-            update = {
-              progress: woProgress
-            }
-            if /^(ready|rejected)/.test workorderObj.get('status')
-              update['status'] = 'working'
-            promise = workorderObj.save(update).then (workorderObj)->
-              _.extend $scope.workorderAttr,  workorderObj.toJSON()
-
-            $scope.on.reloadDataSet() 
-            _force = false
-
-            # clean up UX
-            $scope.hideLoading()
-            $rootScope.$broadcast('scroll.refreshComplete')
-            console.log "workorder-photos Sync complete"
-            return
-          return
-
-
-        $scope.showLoading(true) 
-        if _force
-          # only for TESTING when we load 'app.workorder-photos' as initial state!!!
-          otgWorkorderSync.SYNC_WORKORDERS($scope, 'editor', 'force', _whenSyncDoneP)
-        else 
-          workorderColl = otgWorkorderSync._workorderColl['editor']
-          _whenSyncDoneP( workorderColl)
-
-        return
+      # cached view becomes active 
+      $scope.on.showInfo(true) if $scope.config['workorder.photos']?.info
+      # show loading
+      $scope.showLoading(true) 
+      _SyncWorkorderPhotos()
       return 
 
 

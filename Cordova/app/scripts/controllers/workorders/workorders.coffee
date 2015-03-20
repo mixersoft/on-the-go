@@ -72,7 +72,7 @@ angular.module('ionBlankApp')
 
 
       refresh: ()->
-        $scope.DEBOUNCED_SYNC_workorders()
+        _SyncWorkorders()
 
       confirmReUploadPhotos: (order)->
         msg = "Are you sure you want to\nre-upload all photos for this order?"
@@ -157,14 +157,14 @@ angular.module('ionBlankApp')
       otgWorkorderSync.SYNC_WORKORDERS($scope, 'editor', 'force', onComplete)
       return
 
-    $scope.DEBOUNCED_SYNC_workorders = _.debounce ()->
-      # console.log "\n\n >>> DEBOUNCED!!!"
-      _SyncWorkorders
-    , 5000 # 5*60*1000
-    , {
-      leading: true
-      trailing: false
-    }
+    _DEBOUNCED_SYNC_workorders = _.debounce ()->
+          # console.log "\n\n >>> DEBOUNCED!!!"
+          _SyncWorkorders
+        , 5000 # 5*60*1000
+        , {
+          leading: true
+          trailing: false
+        }
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
@@ -182,7 +182,7 @@ angular.module('ionBlankApp')
       $scope.SideMenuSwitcher.leftSide.src = 'views/partials/workorders/left-side-menu.html'
       return if !$scope.deviceReady.isOnline()
       $timeout ()->
-        return $scope.DEBOUNCED_SYNC_workorders() if $scope.workorders.length
+        return _DEBOUNCED_SYNC_workorders() if $scope.workorders.length
         return _SyncWorkorders()      
       
 
