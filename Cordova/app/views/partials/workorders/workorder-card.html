@@ -1,9 +1,10 @@
 <!-- workorder-card.html -->
   <div class="list card workorder-card" >
-    <div class="item item-divider item-assertive"
+    <div class="item item-divider item-assertive item-icon-left item-icon-right"
     ng-click='item.detail = !item.detail'>
       <i class="icon ion-gear-b"></i>
       {{order.fromDate | date}} - {{order.count_days}}d
+      <i class="icon" ng-class="item.detail ? 'ion-arrow-up-b': 'ion-arrow-down-b'"></i>
     </div>
 <!-- summary view  -->    
 <div ng-show='!item.detail' class='workorder-summary'>
@@ -11,22 +12,27 @@
     <div>Order: {{order.objectId }} - {{order.owner.objectId}}
       <span class="badge badge-dark pull-right">{{order.lastUploadAt | timeago }}</span>
     </div>
-    <div>Status: 
-      <span class="badge" workorder-status 
-      ng-class="ngClass_WorkStatus(order, 'badge')" 
-      ng-bind="order.status" ></span>
+    <div class="inline">
+      <div class="nowrap inline">Status: 
+        <span class="badge" workorder-status 
+        ng-class="ngClass_WorkStatus(order, 'badge')" 
+        ng-bind="order.status" ></span>
+      </div>&nbsp;    
+      <div class="nowrap inline">Photos: 
+        <span class="badge" workorder-status 
+        ng-class="ngClass_UploadStatus(order)" 
+        ng-bind="ngBind_UploadStatus(order)" ></span>
+        <ul class="padding-horizontal text-center inline nowrap">
+          <li class="badge badge-positive">Expected: {{ order.count_expected }}</li>
+          <li class="badge badge-positive">Received: {{ order.count_received }}</li>
+        </ul>
+      </div>&nbsp;
+      <div class="nowrap inline" ng-if="order.progress.todo">Work: 
+        <ul class="padding-horizontal text-center inline nowrap">
+          <li class="badge badge-dark">ToDo: {{order.progress.todo }} ( {{ (order.progress.todo)/(order.count_expected||1)*100 | number:0 }}%) </li>
+        </ul>
+      </div>
     </div>    
-    <div>Photos: 
-      <span class="badge" workorder-status 
-      ng-class="ngClass_UploadStatus(order)" 
-      ng-bind="ngBind_UploadStatus(order)" ></span>
-
-      <ul class="padding text-center inline nowrap">
-        <li class="badge badge-positive">Expected: {{ order.count_expected }}</li>
-        <li class="badge badge-positive">Received: {{ order.count_received }}</li>
-        <li class="badge badge-positive">Duplicates: {{ order.count_duplicate}}</li>
-      </ul>
-      </div>    
   </div>
 </div>
 
@@ -71,7 +77,7 @@
         ng-class="ngClass_UploadStatus(order)" 
         ng-bind="ngBind_UploadStatus(order)" ></span>
 
-        <ul class="padding text-center inline nowrap">
+        <ul class="padding-horizontal text-center inline nowrap">
           <li class="badge badge-positive">Expected: {{ order.count_expected }}</li>
           <li class="badge badge-positive">Received: {{ order.count_received }}</li>
           <li class="badge badge-positive">Duplicates: {{ order.count_duplicate}}</li>
@@ -84,9 +90,9 @@
       <i class="icon ion-ios-gear ion-spin"></i>
       <div>Work: 
         <ul class="padding-horizontal inline nowrap">
-          <li class="badge badge-light">Total: {{order.count_expected }} </li>
-          <li class="badge badge-light">ToDo: {{order.progress.todo }} </li>
-          <li class="badge badge-light">TopPicks: {{order.progress.picks ||  0 }} </li>
+          <li class="badge badge-dark">Total: {{order.count_expected }} </li>
+          <li class="badge badge-dark">ToDo: {{order.progress.todo }} </li>
+          <li class="badge badge-dark">TopPicks: {{order.progress.picks ||  0 }} </li>
         </ul>
       </div>
 
