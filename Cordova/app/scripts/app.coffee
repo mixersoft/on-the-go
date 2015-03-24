@@ -23,6 +23,7 @@ angular
   'onthego.templates'
   'snappi.notification.push'
   # 'snappi.notification.local'
+  'ionic.ion.headerShrink'
 ])
 .config ['$ionicConfigProvider', 
   ($ionicConfigProvider)->
