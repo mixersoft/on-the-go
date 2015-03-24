@@ -114,7 +114,7 @@ angular.module 'snappi.notification.push', [
               "alert": "true"
           }
         return $cordovaPush.register(config).then (result)->
-            $log.debug("Register success " + result)
+            # $log.debug("Register success " + result)
             if ionic.Platform.isIOS()
               self.storeDeviceTokenP {
                   type: 'ios'
@@ -125,7 +125,7 @@ angular.module 'snappi.notification.push', [
               angular.noop()
             return true
           , (err)->
-            $log.error('register', err)
+            console.log 'ERROR pushNotify.register(), err=' + JSON.stringify err
             return $q.reject("pushNotify $cordovaPush register error")
 
 
@@ -225,10 +225,10 @@ angular.module 'snappi.notification.push', [
         return $http(xhrOptions)
           .success (data, status)->
             _localStorageDevice['pushInstall'] = _.pick data, ['objectId', 'deviceType', 'installationId', 'ownerId', 'username']
-            $log.debug("Parse installation saved", [data, status])
+            console.log "Parse installation saved" + JSON.stringify([data, status])
             return data
           .error (data, status)->
-            $log.error("Error: saving Parse installation", [data, status])
+            console.log "Error: saving Parse installation" + JSON.stringify([data, status]) 
             return $q.reject("pushNotify register error saving to Parse")
 
 

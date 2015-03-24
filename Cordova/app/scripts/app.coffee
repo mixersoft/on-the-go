@@ -22,7 +22,7 @@ angular
   'ngStorage'
   'onthego.templates'
   'snappi.notification.push'
-  'snappi.notification.local'
+  # 'snappi.notification.local'
 ])
 .config ['$ionicConfigProvider', 
   ($ionicConfigProvider)->
@@ -422,7 +422,8 @@ angular
   'snappiMessengerPluginService', 'i18n',
   'deviceReady', 'cameraRoll'
   'otgData', 'imageCacheSvc', 'appConsole'
-  'localNotificationPluginSvc', 'pushNotificationPluginSvc'
+  'pushNotificationPluginSvc'
+  # 'localNotificationPluginSvc'
   ($scope, $rootScope, $state, $timeout, $q, angularLoad
     $ionicPlatform, $ionicModal, $ionicLoading,
     $localStorage, otgLocalStorage
@@ -432,7 +433,8 @@ angular
     deviceReady, cameraRoll,
     # debug/browser only
     otgData, imageCacheSvc, appConsole  
-    localNotifyPlugin, pushNotifyPlugin
+    pushNotifyPlugin
+    # localNotifyPlugin
     )->
 
     # dynamically update left side menu
@@ -796,7 +798,7 @@ angular
       imgCache: imageCacheSvc
       ls: $localStorage
       pushNotify: pushNotifyPlugin
-      localNotify: localNotifyPlugin
+      # localNotify: localNotifyPlugin
     }
 
   ]
