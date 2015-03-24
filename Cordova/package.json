@@ -37,6 +37,8 @@
     "me.apla.cordova.app-preferences",
     "https://github.com/EddyVerbruggen/SocialSharing-PhoneGap-Plugin.git",
     "org.apache.cordova.network-information",
-    "de.appplant.cordova.plugin.local-notification"
+    "de.appplant.cordova.plugin.local-notification",
+    "https://github.com/phonegap-build/PushPlugin",
+    "org.apache.cordova.media"
   ]
 }

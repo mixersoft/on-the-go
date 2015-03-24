@@ -21,7 +21,8 @@ angular
   'angular-datepicker'
   'ngStorage'
   'onthego.templates'
-  'snappi.localNotification'
+  'snappi.notification.push'
+  'snappi.notification.local'
 ])
 .config ['$ionicConfigProvider', 
   ($ionicConfigProvider)->
@@ -421,7 +422,7 @@ angular
   'snappiMessengerPluginService', 'i18n',
   'deviceReady', 'cameraRoll'
   'otgData', 'imageCacheSvc', 'appConsole'
-  'localNotificationPluginSvc'
+  'localNotificationPluginSvc', 'pushNotificationPluginSvc'
   ($scope, $rootScope, $state, $timeout, $q, angularLoad
     $ionicPlatform, $ionicModal, $ionicLoading,
     $localStorage, otgLocalStorage
@@ -431,7 +432,7 @@ angular
     deviceReady, cameraRoll,
     # debug/browser only
     otgData, imageCacheSvc, appConsole  
-    localNotificationPluginSvc
+    localNotifyPlugin, pushNotifyPlugin
     )->
 
     # dynamically update left side menu
@@ -756,8 +757,13 @@ angular
         $scope.config['no-view-headers'] = deviceReady.device().isDevice && false
         $rootScope.device.id = deviceReady.device().id
         # console.log "\n\n>>> deviceId="+$rootScope.device.id
-      .then ()->
+      .then ()-> # Device Init
         return if deviceReady.device().isBrowser
+        # pushNotifications
+        pushNotifyPlugin.initialize( $localStorage['device'] )
+          .registerP()
+
+
         # loadMomentThumbnails on timer, cancel if done elsewhere
         # for reload cameraRoll.map() from localStorage
         _cancel = $timeout ()->
@@ -789,6 +795,8 @@ angular
       woSync: otgWorkorderSync
       imgCache: imageCacheSvc
       ls: $localStorage
+      pushNotify: pushNotifyPlugin
+      localNotify: localNotifyPlugin
     }
 
   ]

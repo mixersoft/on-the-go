@@ -8,7 +8,7 @@
 ###
 
 
-angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
+angular.module 'snappi.notification.local', ['ionic', 'snappi.util']
 .factory( 'localNotificationPluginSvc', [ 
   '$rootScope', '$location'
   '$timeout', '$q'
@@ -22,7 +22,7 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
           {
             id: 101
             title: "Bon Voyage!"
-            message: "You have an order for a trip that begins today! Please make sure the Uploader is enabled."
+            message: 'You scheduled an order for a trip that begins today. Be sure to enable the Uploader.'
             target: "app.uploader"
             schedule: null
           }
@@ -40,8 +40,7 @@ angular.module 'snappi.localNotification', ['ionic', 'ngStorage', 'snappi.util']
         # self._notify = self.loadPlugin()
         deviceReady.waitP().then ()->
           self.loadPlugin()
-          window.debug.notifyPlugin = self
-          window.debug.notifyPlugin.testMsg = CFG.templates[0]
+          self.testMsg = CFG.templates[0]  # for debug only
         return
 
       init: ()->

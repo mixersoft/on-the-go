@@ -71,7 +71,9 @@ ionic plugin add https://github.com/EddyVerbruggen/SocialSharing-PhoneGap-Plugin
 ionic plugin add org.apache.cordova.network-information
 ionic plugin add https://github.com/apache/cordova-plugin-inappbrowser.git
 ionic plugin add de.appplant.cordova.plugin.local-notification
-#ionic plugin rm com.snaphappi.native-messenger.Messenger
+# ionic plugin add https://github.com/katzer/cordova-plugin-badge.git
+ionic plugin add https://github.com/phonegap-build/PushPlugin
+ionic plugin add org.apache.cordova.media
 ionic plugin add ../CordovaNativeMessenger
 # ionic plugin add org.apache.cordova.file-transfer
 
@@ -84,10 +86,6 @@ gulp; ionic build ios;
 
 ### run, or open ./platforms/ios/ion-OnTheGo.xcodeproj
 #ionic emulate
-
-# update to ionicons 2.0
-cp ./www/components/ionicons/scss/* ./www/lib/ionic/scss/ionicons/ 
-# cp ./www/components/ionicons/fonts/* ./www/lib/ionic/fonts/ 
 
 
 # rebuild project with plugin updates

@@ -56,6 +56,7 @@ angular.module 'snappi.util', ['ionic', 'ngCordova', 'ngStorage']
             platform : platform
             isDevice: ionic.Platform.isWebView()
             isBrowser: ionic.Platform.isWebView() == false
+            pushInstall: null  # push registration
            }
           _device = angular.copy $localStorage['device']
           # console.log "$ionicPlatform reports deviceReady, device.id=" + $localStorage['device'].id
