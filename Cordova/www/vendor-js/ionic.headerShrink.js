@@ -17,7 +17,11 @@ angular.module('ionic.ion.headerShrink', [])
   return {
     restrict: 'A',
     link: function($scope, $element, $attr) {
-      var starty = $scope.$eval($attr.headerShrink) || 0;
+      if ( $attr.platform && document.body.className.indexOf($attr.platform) == -1) {
+        // check body for required platform, 'platform-browser' or 'platform-webview'
+          return
+      }
+      var starty = $scope.$eval($attr.platform) || 0;
       var shrinkAmt;
 
       var amt;
