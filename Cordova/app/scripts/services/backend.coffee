@@ -1042,7 +1042,7 @@ angular
 
       savePhotoP : (item, collection, pick)->
         photoObj = _.findWhere(collection.models, {id: item.objectId})
-        return false if !photoObj
+        return $q.reject('savePhotoP photo not found') if !photoObj
         data = _.pick item, pick
         photoObj.set(data)
         return photoObj.save()
