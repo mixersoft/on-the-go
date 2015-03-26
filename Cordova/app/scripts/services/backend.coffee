@@ -128,6 +128,7 @@ angular
             console.warn err
 
       fetchWorkorderPhotosP : (workorderObj,  options={}, force)->
+        throw "workorder is missing" if !workorderObj?
         options.owner == true if $rootScope.user.role == 'owner'
 
         cached = self._workorderPhotosColl[ workorderObj.id ] 
@@ -820,6 +821,7 @@ angular
         promise = promise.then ()->
             # userCred should be valid, continue with update
             _.each updateKeys, (key)->
+                return if key == 'currentPassword'
                 if key=='username'
                   userCred['username'] = userCred['username'].trim().toLowerCase()
                 $rootScope.sessionUser.set(key, userCred[key])
