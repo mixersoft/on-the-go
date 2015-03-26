@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+    <title></title>
+
+
+    <!-- compiled css output -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/ionic.app.css" rel="stylesheet">
+
+    <!-- ionic/angularjs js -->
+    <script src="lib/ionic/js/ionic.bundle.js"></script>
+
+  </head>
+
+  <body>
+    <style type="text/css">
+    /*@orange: #F16122;*/
+    /*@cream: #FDF9D0;*/
+    .rotate {
+        -webkit-transform: rotate(90deg);
+        -moz-transform: rotate(90deg);
+        -o-transform: rotate(90deg);
+        -ms-transform: rotate(90deg);
+        transform: rotate(90deg);
+    }
+    .fullscreen {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: rgba(0,0,0,0.6);
+    }
+    .bkg.portrait {
+        background-image: url(img/bg-img-01.jpg);
+        background-size: cover;
+        background-position-x: 55%;
+        height: 100%;
+    }
+    .bkg.landscape {
+        background-image: url(img/bg-img-03.jpg);
+        background-size: cover;
+        background-position-x: 55%;
+        height: 100%;
+        top: 0%;
+    }
+    .logo-wrap {
+        padding: 0;
+        text-align: center;
+        margin: 0 auto;
+        position: relative;
+        margin-top: 37.5%%;
+    }
+    .logo-icon {
+        width: 33%;
+        height: auto;
+    }
+
+    .logo {   
+        color: white;
+        font-family: "GeoSansLightRegular", sans-serif;  
+        font-size: 24px;
+        font-weight: bold;
+        line-height: 1.4;
+        text-shadow: 1px 1px 0 black;
+    }
+
+    .logo .cursive {
+      color: #FDF9D0;  
+      font-family: 'Homemade Apple';
+      text-shadow:  0 0 1px #F16122;
+      padding-left: 2px;
+      text-shadow: 1px 1px 0 black;
+    }
+  
+    @font-face {
+    font-family: 'GeoSansLightRegular';
+    src: url('/css/fonts/GeoSansLight/geosanslight-webfont.eot');
+    src: url('/css/fonts/GeoSansLight/geosanslight-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/css/fonts/GeoSansLight/geosanslight-webfont.woff') format('woff'),
+         url('/css/fonts/GeoSansLight/geosanslight-webfont.ttf') format('truetype'),
+         url('/css/fonts/GeoSansLight/geosanslight-webfont.svg#geosanslightregular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+    }   
+    @font-face {
+      font-family: 'Homemade Apple';
+      font-style: normal;
+      font-weight: 400;
+      src: local('Homemade Apple'), local('HomemadeApple'), url(http://themes.googleusercontent.com/static/fonts/homemadeapple/v3/yg3UMEsefgZ8IHz_ryz86Kmk7U3V72hKgu0Yds_deA8.woff) format('woff');
+    }
+    </style>
+        <div class="fullscreen bkg portrait rotate"></div>
+        <div class="fullscreen">
+            <div class="logo-wrap rotatef1">
+                <img class="logo-icon" src="img/Clothesline-01.png">
+                <div class="logo">snap<span class="cursive">happi</span></div>
+                <div class="logo">On the Go</div>
+            </div>
+        </div>
+  </body>
+</html>
