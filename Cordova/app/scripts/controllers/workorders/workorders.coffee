@@ -23,6 +23,7 @@ angular.module('ionBlankApp')
 
 
     $scope.filterStatusComplete = (o)->
+      return o if $rootScope.$state.includes('app.workorders.detail')
       status = 
         if o.className == 'WorkorderObj'
         then o.get('status') 
@@ -30,6 +31,7 @@ angular.module('ionBlankApp')
       return o if /^(complete|closed)/.test( status ) == true    
 
     $scope.filterStatusNotComplete = (o)->
+      return o if $rootScope.$state.includes('app.workorders.detail')
       status = 
         if o.className == 'WorkorderObj'
         then o.get('status') 
@@ -116,6 +118,12 @@ angular.module('ionBlankApp')
       $scope.workorders = []
       $scope.workorder = null
 
+    $scope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
+      if $rootScope.$state.includes('app.workorders.detail')
+        if _.isEmpty $rootScope.$state.params?.woid
+          $rootScope.$state.transitionTo('app.workorders.open') 
+      return   
+
     _SyncWorkorders = (woid)->
       onComplete = ()->
         $scope.hideLoading()
@@ -158,8 +166,7 @@ angular.module('ionBlankApp')
       return if !$scope.deviceReady.isOnline()
       $timeout ()->
         if $rootScope.$state.includes('app.workorders.detail')
-          woid = $rootScope.$state.params.woid
-          return _SyncWorkorders(woid)
+          return _SyncWorkorders($rootScope.$state.params.woid)
         return _DEBOUNCED_SYNC_workorders() if $scope.workorders.length
         return _SyncWorkorders()      
       

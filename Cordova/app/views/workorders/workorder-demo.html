@@ -10,15 +10,10 @@
       </div>
   </ion-nav-buttons>
 
-<!--   <ion-header-bar class="bar-subheader">
-  </ion-header-bar>
- -->
-
 
   <ion-content  
   header-shrink platform="platform-browser" 
-  delegate-handle="collection-repeat-wrap" c
-  lass="has-header">
+  delegate-handle="collection-repeat-wrap" class="has-header">
     <ion-refresher
       pulling-text=""
       on-refresh="on.refresh()">
@@ -37,7 +32,7 @@
     <div class="card header-card" >
       <div class="item item-divider item-header">
         {{i18n.tr('header-card').header}}
-        <span class="badge badge-positive">{{filteredPhotos.length}} Photos</span>
+        <span class="badge badge-positive">{{watch.filteredOrderedPhotos.length}} Photos</span>
       </div>
       <div class="item item-text-wrap">
         {{i18n.tr('header-card').body}}

@@ -104,8 +104,11 @@ angular
         cached = self._workorderColl[role]
         return $q.when( cached ) if cached.length && !force
 
-        return otgParse.checkSessionUserP(null, false)
-        .then ()->
+        promise = 
+          if options.acl == true
+          then $q.when()
+          else otgParse.checkSessionUserP(null, false)
+        return promise.then ()->
           if options.woid
             return otgParse.findWorkorderP({id: options.woid})
           else if options.acl
@@ -113,7 +116,6 @@ angular
           else 
             return otgParse.fetchWorkordersByOwnerP(options)
         .then (workorderColl)->
-          # TODO: merge?
             self._workorderColl[role] = workorderColl
             # console.log "\n *** fetchWorkordersP from backend.coffee, role=" + role
 
@@ -140,8 +142,11 @@ angular
         cached = self._workorderPhotosColl[ workorderObj.id ] 
         return $q.when( cached ) if cached && !force
 
-        return otgParse.checkSessionUserP(null, false)
-        .then ()->
+        promise = 
+          if options.acl == true
+          then $q.when()
+          else otgParse.checkSessionUserP(null, false)
+        return promise.then ()->
           options.workorder = workorderObj
           return otgParse.fetchWorkorderPhotosByWoIdP(options)
         .then (photosColl)->
@@ -551,7 +556,7 @@ angular
       # wrap in timeouts 
       SYNC_WORKORDERS : (scope, options, whenDoneP)->
         # run AFTER cameraRoll loaded
-        return if _.isEmpty $rootScope.sessionUser
+        return if _.isEmpty( $rootScope.sessionUser) && !$rootScope.$state.includes('app.demo')
         return if deviceReady.device().isDevice && _.isEmpty cameraRoll.map()
 
         options = _.defaults options, {

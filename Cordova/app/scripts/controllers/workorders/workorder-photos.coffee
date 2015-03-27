@@ -273,13 +273,18 @@ angular.module('ionBlankApp')
       $scope.photosColl = []
       $scope.photos = []
 
+    isBootstrap = null
     $scope.$on '$ionicView.loaded', ()->
       # for testing: loading 'app/workorders/[woid]/photos' directly
-      force = !otgWorkorderSync._workorderColl['editor'].length
-      if force  # set on startup, $scope.$on '$ionicView.loaded'
+      isBootstrap = !otgWorkorderSync._workorderColl['editor'].length
+      options = {force: isBootstrap}
+      options['woid'] = $rootScope.$state.params?.woid || null
+      if isBootstrap  # set on startup, $scope.$on '$ionicView.loaded'
           # only for TESTING when we load 'app.workorder-photos' as initial state!!!
-          otgWorkorderSync.SYNC_WORKORDERS($scope, {force:true}, ()->
-            _SyncWorkorderPhotos($scope.$state.params.woid)
+          
+          otgWorkorderSync.SYNC_WORKORDERS($scope, options, ()->
+            _SyncWorkorderPhotos(options.woid)
+            isBootstrap = false
             console.log "workorder Sync complete"
         )      
       return
@@ -291,8 +296,13 @@ angular.module('ionBlankApp')
       # cached view becomes active 
       $scope.on.showInfo(true) if $scope.config['workorder.photos']?.info
       # show loading
-      $scope.showLoading(true) 
-      _SyncWorkorderPhotos()
+      $scope.showLoading(true)
+      return if isBootstrap
+
+      options = {
+        woid: $rootScope.$state.params?.woid || null
+      } 
+      _SyncWorkorderPhotos(options) 
       return 
 
 
