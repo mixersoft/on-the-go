@@ -21,6 +21,14 @@ angular.module('ionBlankApp')
           index = 0
       $ionicTabsDelegate.select(index)
 
+
+    $scope.filterStatusComplete = (o)->
+      status = 
+        if o.className == 'WorkorderObj'
+        then o.get('status') 
+        else o.status
+      return o if /^(complete|closed)/.test( status ) == true    
+
     $scope.filterStatusNotComplete = (o)->
       status = 
         if o.className == 'WorkorderObj'
@@ -31,45 +39,6 @@ angular.module('ionBlankApp')
     $scope.on = {
       selectTab: (status)->
         return 'done in SYNC_WORKORDERS()'
-
-        # load photos for otgMoment thumbnails, if not already done
-        promises = []
-        workorderColl = 
-          if $rootScope.user.role == 'owner' 
-          then otgWorkorderSync._workorderColl['owner']
-          else otgWorkorderSync._workorderColl['editor']
-        return if _.isEmpty workorderColl
-        workorderColl.each (workorderObj)->
-          isComplete = /^(complete|closed)/.test workorderObj.get('status')
-          if status=='open'
-            return if isComplete
-          if status='complete'
-            return if !isComplete
-
-          # return if workorderObj.get('workorderMoment')
-
-          photosColl = null
-          options = {
-            workorder: true
-          }
-          if $rootScope.user.role == 'curator'
-            options.acl = true 
-          else 
-            option.role = $rootScope.user.role
-
-          p = otgWorkorderSync.fetchWorkorderPhotosP(workorderObj, options, 'force' )
-          .then (resp)->
-            photosColl = resp
-            # ???: is there a 'sync' for workorders, should be on browser...
-            # just need counts
-            return otgWorkorderSync.syncWorkorderPhotosP( workorderObj, photosColl, 'editor' )
-          .then (sync)->
-            otgWorkorderSync.updateWorkorderCounts(workorderObj, sync)  # expect workorderObj.workorderMoment to be set
-             
-            return photosColl
-          promises.push p
-          return            
-
 
       refresh: ()->
         _SyncWorkorders()
@@ -147,15 +116,21 @@ angular.module('ionBlankApp')
       $scope.workorders = []
       $scope.workorder = null
 
-    _SyncWorkorders = ()->
+    _SyncWorkorders = (woid)->
       onComplete = ()->
         $scope.hideLoading()
         $rootScope.$broadcast('scroll.refreshComplete')
+        if $rootScope.$state.includes('app.workorders.detail')
+          $scope.workorder = found = _.find $scope.workorders, {objectId: options.woid}
+          $scope.workorder['showDetail'] = true if found
+
         console.log "workorder Sync complete"
         return
       $scope.showLoading(true)  
-      otgWorkorderSync.SYNC_WORKORDERS($scope, 'editor', 'force', onComplete)
-      return
+      options = {force: true}
+      options['woid'] = woid if woid?
+      return otgWorkorderSync.SYNC_WORKORDERS($scope, options,  onComplete)
+
 
     _DEBOUNCED_SYNC_workorders = _.debounce ()->
           # console.log "\n\n >>> DEBOUNCED!!!"
@@ -182,6 +157,9 @@ angular.module('ionBlankApp')
       $scope.SideMenuSwitcher.leftSide.src = 'views/partials/workorders/left-side-menu.html'
       return if !$scope.deviceReady.isOnline()
       $timeout ()->
+        if $rootScope.$state.includes('app.workorders.detail')
+          woid = $rootScope.$state.params.woid
+          return _SyncWorkorders(woid)
         return _DEBOUNCED_SYNC_workorders() if $scope.workorders.length
         return _SyncWorkorders()      
       

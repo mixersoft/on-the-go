@@ -1,13 +1,13 @@
 <!-- workorder-card.html -->
   <div class="list card workorder-card" >
     <div class="item item-divider item-assertive item-icon-left item-icon-right"
-    ng-click='item.detail = !item.detail'>
+    ng-click='order.showDetail = !order.showDetail'>
       <i class="icon ion-gear-b"></i>
       {{order.fromDate | date}} - {{order.count_days}}d
-      <i class="icon" ng-class="item.detail ? 'ion-arrow-up-b': 'ion-arrow-down-b'"></i>
+      <i class="icon" ng-class="order.showDetail ? 'ion-arrow-up-b': 'ion-arrow-down-b'"></i>
     </div>
 <!-- summary view  -->    
-<div ng-show='!item.detail' class='workorder-summary'>
+<div ng-show='!order.showDetail' class='workorder-summary'>
   <div class="item item-text-wrap item-icon-left">
     <div>Order: {{order.objectId }} - {{order.owner.objectId}}
       <span class="badge badge-dark pull-right">{{order.lastUploadAt | timeago }}</span>
@@ -38,7 +38,7 @@
 
 
 <!-- detail view  -->  
-<div ng-show='item.detail' class='workorder-detail'>
+<div ng-show='order.showDetail' class='workorder-detail'>
     <div class="item item-text-wrap item-icon-left">
       <i class="icon ion-clipboard"></i>
       <div>Order ID: {{order.objectId }}</div>
@@ -134,7 +134,7 @@
 
 
 <!-- detail view  -->  
-<div ng-show='item.detail' class='workorder-detail'>
+<div ng-show='order.showDetail' class='workorder-detail'>
     <div class="item item-text-wrap item-icon-left padding"
     ng-hide="order.status=='complete'"
     >

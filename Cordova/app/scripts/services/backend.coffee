@@ -94,6 +94,9 @@ angular
             return _.find self._workorderPhotosColl, {id: id}
 
 
+      ###
+      # @params options, keys: editor:boolean, acl:boolean, woid:string
+      ###
       fetchWorkordersP : (options={}, force)->
 
         role = if options.editor then 'editor' else 'owner'
@@ -103,11 +106,14 @@ angular
 
         return otgParse.checkSessionUserP(null, false)
         .then ()->
-          if options.acl
+          if options.woid
+            return otgParse.findWorkorderP({id: options.woid})
+          else if options.acl
             return otgParse.fetchWorkordersByACLP(options)
           else 
             return otgParse.fetchWorkordersByOwnerP(options)
         .then (workorderColl)->
+          # TODO: merge?
             self._workorderColl[role] = workorderColl
             # console.log "\n *** fetchWorkordersP from backend.coffee, role=" + role
 
@@ -139,7 +145,7 @@ angular
           options.workorder = workorderObj
           return otgParse.fetchWorkorderPhotosByWoIdP(options)
         .then (photosColl)->
-            self._workorderPhotosColl[ workorderObj.id ] 
+            self._workorderPhotosColl[ workorderObj.id ] = photosColl
 
             wo = workorderObj.toJSON()
             # patch workorder.selectedMoment AFTER workorder photos fetched
@@ -543,21 +549,23 @@ angular
           , DELAY
 
       # wrap in timeouts 
-      SYNC_WORKORDERS : (scope, force, DELAY=10, whenDoneP)->
+      SYNC_WORKORDERS : (scope, options, whenDoneP)->
         # run AFTER cameraRoll loaded
         return if _.isEmpty $rootScope.sessionUser
         return if deviceReady.device().isDevice && _.isEmpty cameraRoll.map()
 
-        options = {
-          role: 'editor'
+        options = _.defaults options, {
+          DELAY: 10
+          force: false
           editor: true
+          woid: null
           acl : true
-          workorder: true
+          workorder: true  # ???: what does this option do?
         }
 
         $timeout ()->
             # console.log "\n\n*** BEGIN Workorder Sync for role=" + options.role + "\n"
-            self.fetchWorkordersP( options , force ).then (workorderColl)->
+            self.fetchWorkordersP( options , options.force ).then (workorderColl)->
 
                 promises = []
                 openOrders = 0
@@ -574,7 +582,7 @@ angular
 
                   openOrders++
                   photosColl = null
-                  p = self.fetchWorkorderPhotosP(workorderObj, options, force )
+                  p = self.fetchWorkorderPhotosP(workorderObj, options, options.force )
                   .then (resp)->
                     photosColl = resp
                     # ???: is there a 'sync' for workorders, should be on browser...
@@ -594,7 +602,7 @@ angular
                   # console.log "\n\n*** Workorder SYNC complete for role=" + options.role
                   $rootScope.$broadcast('sync.workordersComplete')
                   return whenDoneP(workorderColl) if whenDoneP
-          , DELAY
+          , options.DELAY
 
       updateWorkorderCounts: (woObj, sync)->
         # sync: # see syncDateRange_Photos_P()
@@ -874,7 +882,7 @@ angular
 
       findWorkorderP : (options)->
         query = new Parse.Query(parseClass.WorkorderObj)
-        query.equalTo('owner', $rootScope.sessionUser)
+        query.equalTo('owner', $rootScope.sessionUser) if options.owner
         # # or query on relation
         # contributors = parseClass.workorderObj.getRelation('contributors')
         # contrib = new Parse.Query(contributors)
@@ -884,7 +892,7 @@ angular
         query.equalTo('fromDate', options.fromDate) if options.fromDate
         query.equalTo('toDate', options.dateRange.to) if options.dateRange
         query.equalTo('toDate', options.toDate) if options.toDate
-        return query.find()
+        return query.collection().fetch()
 
 
       createWorkorderP : (checkout, servicePlan, status='new')->
@@ -908,7 +916,6 @@ angular
           approvedAt: null
           lastActionAt: null
           elapsed: 0
-          acl: null
         }
 
         workorderObj = new parseClass.WorkorderObj(parseData)
@@ -916,13 +923,16 @@ angular
         workorderObj.relation('contributors').add($rootScope.sessionUser)
 
         # set default ACL, owner:rw, Curator:rw
-        woACL = new Parse.ACL(owner)
+        woACL = new Parse.ACL(parseData.owner)
         woACL.setRoleReadAccess('Curator', true)
         woACL.setRoleWriteAccess('Curator', true)
-        workorderObj.setACL(woACL)
-        return workorderObj.save().then null, (error)->
-          console.error "parse WorkorderObj save error, msg=" + JSON.stringify error
-          throw error
+        wo.setACL(woACL)
+
+        return workorderObj.save().then (wo)->
+            return wo
+          , (error)->
+            console.error "parse WorkorderObj save error, msg=" + JSON.stringify error
+            throw error
 
       _patchParsePhotos : (photosColl)->
         # add/update Parse photos to cameraRoll
@@ -1204,8 +1214,9 @@ angular
 
 
 # # test cloudCode with js debugger
-window.cloud = { 
+window.cloud = {            
 }
+
 
 
 

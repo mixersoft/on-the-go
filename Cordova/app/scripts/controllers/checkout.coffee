@@ -352,15 +352,16 @@ angular.module('ionBlankApp')
           backlogStatus = backlog.get('status')
           $scope.config.system['order-standby'] =  (backlogStatus == 'standby')
           options = {
+            owner: true
             status: 'new'
             fromDate: checkout.dateRange.from
             toDate: checkout.dateRange.to
           }
           return otgParse.findWorkorderP(options)
-        .then (results)->
+        .then (workorderColl)->
             orderStatus = backlogStatus || 'new'
-            return otgParse.createWorkorderP(checkout, servicePlan, orderStatus) if _.isEmpty(results)
-            return results.shift()
+            return otgParse.createWorkorderP(checkout, servicePlan, orderStatus) if workorderColl.size() == 0
+            return workorderColl.first()
           , (error)->
             return otgParse.createWorkorderP(checkout, servicePlan)
         .then (workorderObj)->

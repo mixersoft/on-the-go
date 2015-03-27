@@ -1,0 +1,129 @@
+<ion-view class="dark-bg" title="{{i18n.tr('title', 'app.demo')}}" hide-back-button="true">
+  <ion-nav-buttons side="left">
+    <button menu-toggle="left" class="button button-icon icon ion-navicon"></button>
+  </ion-nav-buttons>
+  <ion-nav-buttons side="right">
+      <div class="buttons">
+        <button class="button button-icon icon ion-ios-information-outline" 
+          ng-click="on.showInfo('toggle')">
+        </button>
+      </div>
+  </ion-nav-buttons>
+
+<!--   <ion-header-bar class="bar-subheader">
+  </ion-header-bar>
+ -->
+
+
+  <ion-content  
+  header-shrink platform="platform-browser" 
+  delegate-handle="collection-repeat-wrap" c
+  lass="has-header">
+    <ion-refresher
+      pulling-text=""
+      on-refresh="on.refresh()">
+    </ion-refresher>
+    <div class="ng-repeat-filter button-bar bar-balanced">
+      <button class="button" ui-sref="app.demo.all({oid:wo.objectId})" ui-sref-active="active">
+        <i class="icon ion-ios-cloud-upload"></i> Before 
+        <span class="badge badge-dark">{{workorderAttr.count_expected}}</span> 
+        </button>
+      <button class="button" ui-sref="app.demo.picks({oid:wo.objectId})"  ui-sref-active="active">
+        <i class="icon ion-ios-checkmark"></i> After
+        <span class="badge badge-dark">{{workorderAttr.progress.picks}}</span> 
+        </button>
+    </div>
+    <!-- header card  -->
+    <div class="card header-card" >
+      <div class="item item-divider item-header">
+        {{i18n.tr('header-card').header}}
+        <span class="badge badge-positive">{{filteredPhotos.length}} Photos</span>
+      </div>
+      <div class="item item-text-wrap">
+        {{i18n.tr('header-card').body}}
+      </div>
+      <div class="item item-divider item-footer">
+      </div>
+    </div>
+
+    <!-- <div workorder-in-progress-card ng-model="SideMenuSwitcher.watch.workorder"></div> -->
+
+
+    <!--
+      - keep item in view on scroll.resize()
+      - swipe left/right, like tinder, add class .pick/.skip
+      - swipe up to group, or tap in corner
+      - http://codepen.io/anon/pen/AEDfa swipeable ion-list
+      - http://codepen.io/anon/pen/migzv collection-repeat version
+      - http://codepen.io/anon/pen/KwPBMO: collection-repeat with swipecard left-right
+
+    -->
+
+    <!-- collection-repeat  -->
+    <ion-list class="otg-cr-preview workorder" swipe-cards>
+      <div 
+        collection-repeat="item in watch.filteredOrderedPhotos track by UUID"
+        item-height="on.getItemHeight(item, $index)"
+        ng-style="{height: on.getItemHeight(item, $index)+'px'}"
+        >
+          <div class="padding-horizontal">
+          <swipe-card class="card workorder-card"
+          uuid-ext="{{item.id}}"
+          on-keep="on.cardKeep(item)" 
+          on-reject="on.cardReject(item)" 
+          on-card-swipe="on.cardSwiped(item)"
+          ng-click="on.cardClick(this, $event, item)">
+            <!-- header -->
+            <div class="item item-divider item-stable padding-horizontal"
+            ng-if="on.showInfo()">
+              <div class="caption capitalize" ng-bind="watch.getHeaderLabel(item, ['dim','dateTaken'])"></div>
+            </div>
+
+            <!-- body -->
+            <div class="item item-image">
+              <div class="photo-wrap">
+                <img lazy-src="{{ item.UUID }}" 
+                format="preview"
+                orig-w="{{item.originalWidth}}"
+                orig-h="{{item.originalHeight}}"
+                height="{{item.scaledH}}"
+                width="{{item.scaledW}}">
+              </div>
+            </div>
+
+            <!-- footer -->
+            <div class="item item-stable tabs tabs-secondary tabs-icon-left"
+            ng-if="on.showInfo()">
+              <a class="tab-item" href="#"
+              ng-click="on.notTopPick($event, item)">
+                <i class="icon" 
+                ng-class="{ 'ion-ios-close assertive':item.topPick===false,
+                'ion-ios-close-outline':item.topPick!==false }"></i>
+              </a>
+              
+              <a class="tab-item" href="#"
+              ng-class="{'activated tab-item-royal':item.favorite}">
+                <i class="icon"
+                ng-class="{'ion-ios-heart-outline':!item.favorite,
+                'ion-ios-heart':item.favorite}"></i>
+              </a>
+
+              <a class="tab-item" href="#"
+              ng-class="{'activated tab-item-balanced':item.topPick}"
+              ng-click="on.addTopPick($event, item)">
+                <i class="icon"
+                ng-class="{'ion-ios-checkmark-outline':item.topPick!==true, 
+                'ion-ios-checkmark balanced':item.topPick===true}"></i>
+              </a>
+            </div>
+          </swipe-card></div> <!--  end .photo-card  -->
+
+      </div>
+    </ion-list>
+
+    <div class="ion-scroll-bottom-spacer-hack scroll-has-tabs"></div>
+
+  </ion-content>
+</ion-view>
+
+

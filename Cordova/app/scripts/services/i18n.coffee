@@ -155,6 +155,20 @@ angular.module('onTheGo.i18n', [])
         title: 'Open Workorders'
       'app.workorders.complete': 
         title: 'Complete Workorders'
+      'app.workorders.detail': 
+        title: 'Workorder Detail'  
+
+      # demo only  
+      'app.demo':
+        title: 'Behind The Scenes'
+      'app.demo.all': 
+        'header-card':
+          header: 'Before'
+          body: 'This is what our Curators see when you send us a new order. The photos come straight from your Camera Roll and include every burst mode, HDR version, and even (ahem...) the mistakes'
+      'app.demo.picks':
+        'header-card':
+          header: 'After'
+          body: "Our Curators scan your photos from great shots and hide the duplicates. You get all your Top Picks at the tip of your fingers."      
   }
 
   self = {

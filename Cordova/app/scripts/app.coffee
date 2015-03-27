@@ -382,11 +382,10 @@ angular
       }     
     })    
     .state('app.workorders.detail', {
-      url: "/:woid",
+      url: "/detail/:woid",
       views: {
-        'workorderContent' : {
-          templateUrl: "views/workorders/workorders.html"
-          controller: 'WorkordersCtrl'
+        'workorder-tab-open' : {
+          templateUrl: "views/partials/workorders/tab-workorder-open.html"
         }
       }
     })
@@ -408,7 +407,24 @@ angular
     })
     .state('app.workorder-photos.picks', {
       url: "/picks",
-    })    
+    })
+    # demo only, set ACL to public
+    .state('app.demo', {
+      url: "/demo/:woid",
+      abstract: false
+      views: {
+        'menuContent' : {
+          templateUrl: "views/workorders/workorder-demo.html"
+          controller: 'WorkorderPhotosCtrl'
+        }
+      }
+    })
+    .state('app.demo.all', {
+      url: "/photos/all",
+    })
+    .state('app.demo.picks', {
+      url: "/photos/picks",
+    })
   # if none of the above states are matched, use this as the fallback
   $urlRouterProvider.otherwise('/app/top-picks/top-picks');  
   # $urlRouterProvider.otherwise('/app/settings');  

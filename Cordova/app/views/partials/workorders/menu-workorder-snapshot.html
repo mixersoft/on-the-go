@@ -3,6 +3,7 @@
   <!-- // make into directive, add watch on SideMenuSwitcher.watch.workorder, refresh -->
   
   <div class="list card menu workorder-card"
+  ui-sref="app.workorders.detail({woid:order.objectId})"
   ng-show="order">
     <div class="item item-divider item-assertive">
     <i class="icon ion-gear-b"> {{order.fromDate | date}} - {{order.toDate | date}}</i>

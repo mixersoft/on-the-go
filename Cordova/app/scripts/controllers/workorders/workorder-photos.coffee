@@ -67,11 +67,11 @@ angular.module('ionBlankApp')
       filterByStatus: (toState)->
         toState = $state.current if `toState==null`
         switch toState.name
-          when 'app.workorder-photos.all'
+          when 'app.workorder-photos.all', 'app.demo.all'
             _watch.filter = null
           when 'app.workorder-photos.todo'
             _watch.filter = {topPick:null}
-          when 'app.workorder-photos.picks'
+          when 'app.workorder-photos.picks', 'app.demo.picks'
             _watch.filter = {topPick:true}
         data = $scope.photos
         data = $filter('filter')(data, _watch.filter)
@@ -262,6 +262,7 @@ angular.module('ionBlankApp')
 
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
       $scope.on.filterByStatus() if $state.includes('app.workorder-photos')
+      $scope.on.filterByStatus() if $state.includes('app.demo')
       return
 
     $scope.$on 'sync.workordersComplete', ()->
@@ -277,9 +278,8 @@ angular.module('ionBlankApp')
       force = !otgWorkorderSync._workorderColl['editor'].length
       if force  # set on startup, $scope.$on '$ionicView.loaded'
           # only for TESTING when we load 'app.workorder-photos' as initial state!!!
-          otgWorkorderSync.SYNC_WORKORDERS($scope, 'editor', 'force', ()->
-            $scope.hideLoading()
-            $rootScope.$broadcast('scroll.refreshComplete')
+          otgWorkorderSync.SYNC_WORKORDERS($scope, {force:true}, ()->
+            _SyncWorkorderPhotos($scope.$state.params.woid)
             console.log "workorder Sync complete"
         )      
       return
