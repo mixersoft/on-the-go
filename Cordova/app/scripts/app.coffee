@@ -623,7 +623,7 @@ angular
 
     $scope.$on 'user:sign-out', (args)->
       console.log "$broadcast user:sign-out received"
-      $rootScope.counts = {
+      _.extend $rootScope.counts, {
         'top-picks': 0
         uploaderRemaining: 0
         orders: 0
