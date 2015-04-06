@@ -931,7 +931,7 @@ angular
         woACL = new Parse.ACL(parseData.owner)
         woACL.setRoleReadAccess('Curator', true)
         woACL.setRoleWriteAccess('Curator', true)
-        wo.setACL(woACL)
+        workorderObj.setACL(woACL)
 
         return workorderObj.save().then (wo)->
             return wo
