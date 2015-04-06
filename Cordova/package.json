@@ -40,5 +40,8 @@
     "de.appplant.cordova.plugin.local-notification",
     "https://github.com/phonegap-build/PushPlugin",
     "org.apache.cordova.media"
+  ],
+  "cordovaPlatforms": [
+    "ios"
   ]
 }

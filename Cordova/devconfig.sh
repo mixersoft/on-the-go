@@ -70,8 +70,8 @@ ionic plugin add me.apla.cordova.app-preferences
 ionic plugin add https://github.com/EddyVerbruggen/SocialSharing-PhoneGap-Plugin.git
 ionic plugin add org.apache.cordova.network-information
 ionic plugin add https://github.com/apache/cordova-plugin-inappbrowser.git
-ionic plugin add de.appplant.cordova.plugin.local-notification
-# ionic plugin add https://github.com/katzer/cordova-plugin-badge.git
+ionic plugin add https://github.com/katzer/cordova-plugin-local-notifications
+ionic plugin add https://github.com/katzer/cordova-plugin-badge.git
 ionic plugin add https://github.com/phonegap-build/PushPlugin
 ionic plugin add org.apache.cordova.media
 ionic plugin add ../CordovaNativeMessenger

@@ -98,8 +98,8 @@ angular.module('ionBlankApp')
         
         if $scope.on._info != revert
           # added custom event handler to ionic.bundle.js
-          angular.element($window).triggerHandler('resize.collection-repeat'); 
-          # $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() 
+          # angular.element($window).triggerHandler('resize.collection-repeat'); 
+          $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() 
         return $scope.on._info  
 
 
