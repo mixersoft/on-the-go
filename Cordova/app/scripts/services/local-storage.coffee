@@ -284,7 +284,7 @@ angular
             if err.code == 1 # NOT FOUND
               # console.log "\n %%% $cordovaFile.removeFile NOT FOUND, filename=" + filename.slice(-60)
             else 
-              console.warn "\n %%% $cordovaFile.removeFile error, code="+err.code +", filename=" + filename.slice(-60)
+              console.warn "\n %%% $cordovaFile.removeFile error: ", [err, filename.slice(-60)]
             return hashKey if defer
             self.clearStashKey UUID, size, repo
             return

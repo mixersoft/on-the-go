@@ -500,7 +500,9 @@ angular
         if PATCH_ParsePhotoObjKeys
           imageCacheSvc.clearStashedP('preview') # force cameraRoll fetch
 
-
+        if !$rootScope.device?
+          $rootScope.device = $localStorage['device'] = angular.copy deviceReady.device()
+          
         $timeout ()->
             # console.log "\n\n*** BEGIN Workorder Sync for role=" + options.role + "\n"
             self.fetchWorkordersP( options , force ).then (workorderColl)->

@@ -214,7 +214,7 @@ angular.module('ionBlankApp')
         ]) 
         return $scope.on.clearCacheP().then ()->
           if isDevice
-            msg = "You MUST close and re-launch this App!"
+            msg = "You MUST close and\nre-launch this App!"
             window.alert(msg)
           else 
             window.location.reload()
@@ -222,7 +222,7 @@ angular.module('ionBlankApp')
 
       resetDeviceId: ()->
         return if $scope.deviceReady.device().isBrowser
-        msg = "Are you sure you want to\nreset your DevideId?"
+        msg = "Are you sure you want to\nreset your DeviceId?"
         resp = window.confirm(msg)
         if resp 
           $scope.watch.isWorking.resetDeviceId = true
