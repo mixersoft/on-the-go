@@ -174,10 +174,10 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                 moment[@"startDate"] = [self.class.dateFormatter stringFromDate:momentObj.startDate];
                 moment[@"endDate"] = [self.class.dateFormatter stringFromDate:momentObj.endDate];
 
-                if (momentObj.localizedLocationNames.count) {
+                if (momentObj.localizedLocationNames.count && collection.localizedLocationNames) {
                     [moment setObject:collection.localizedLocationNames forKey:@"localizedLocationNames"];
                  }
-                 if (momentObj.localizedTitle.length) {
+                 if (momentObj.localizedTitle.length && collection.localizedTitle) {
                      [moment setObject:collection.localizedTitle forKey:@"localizedTitle"];
                  }
                  
