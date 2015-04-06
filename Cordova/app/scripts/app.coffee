@@ -439,7 +439,7 @@ angular
   'snappiMessengerPluginService', 'i18n',
   'deviceReady', 'cameraRoll'
   'otgData', 'imageCacheSvc', 'appConsole'
-  'pushNotificationPluginSvc'
+  'pushNotificationPluginSvc', 'notifyService'
   # 'localNotificationPluginSvc'
   ($scope, $rootScope, $state, $timeout, $q, angularLoad
     $ionicPlatform, $ionicModal, $ionicLoading,
@@ -450,7 +450,7 @@ angular
     deviceReady, cameraRoll,
     # debug/browser only
     otgData, imageCacheSvc, appConsole  
-    pushNotifyPlugin
+    pushNotifyPlugin, notifyService
     # localNotifyPlugin
     )->
 
@@ -492,6 +492,7 @@ angular
       '$ionicModal' : $ionicModal 
       '$ionicSideMenuDelegate' : $ionicSideMenuDelegate
       '$localStorage' : $localStorage
+      'notifyService' : notifyService
     }
     _.extend $scope, ADD_TO_APP_SCOPE
 

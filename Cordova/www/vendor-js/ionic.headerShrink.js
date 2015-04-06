@@ -1,6 +1,7 @@
-angular.module('ionic.ion.headerShrink', [])
+// (function(ionic) {
 
-.directive('headerShrink', function($document) {
+angular.module('ionic.ion.headerShrink', ['ionic'] )
+.directive('headerShrink', function() {
   var fadeAmt;
 
   var shrink = function(header, content, amt, max) {
@@ -69,5 +70,8 @@ angular.module('ionic.ion.headerShrink', [])
       $element.bind('scroll', onScroll);
     }
   }
-})
+});
+
+// })(window.ionic);
+
 

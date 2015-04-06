@@ -3,7 +3,7 @@
     ng-if="order.status=='standby'"
     src="'views/partials/order-standby.html'">
   </ng-include>
-  <div class="list card workorder-card" >
+  <div class="list card order-card" >
     <div class="item item-divider item-assertive">
     <i class="icon ion-gear-b"> {{order.fromDate | date}} - {{order.toDate | date}}</i>
     </div>
@@ -31,19 +31,48 @@
       <div>Status: 
         <span class="badge" workorder-status 
         ng-class="ngClass_WorkStatus(order, 'badge')" 
-        ng-bind="order.status" ></span>      
+        ng-bind="order.status" ></span>
       </div>
       <div>Photos: 
-        <span class="badge" workorder-status
-        ng-class="watch.ngClass_UploadStatus(order)" 
-        ng-bind="watch.ngBind_UploadStatus(order)" ></span>
+        <span class="badge" workorder-status 
+        ng-class="ngClass_UploadStatus(order)" 
+        ng-bind="ngBind_UploadStatus(order)" ></span>
 
-        <ul class="padding text-center"><li class="badge badge-positive">Expected: {{ order.count_expected }}</li>
-        <li class="badge badge-positive">Received: {{ order.count_received }}</li>
-        <li class="badge badge-positive">Duplicates: {{ order.count_duplicate}}</li></ul>
+        <ul class="padding-horizontal text-center inline nowrap">
+          <li class="badge badge-positive">Expected: {{ order.count_expected }}</li>
+          <li class="badge badge-positive">Received: {{ order.count_received }}</li>
+          <li class="badge badge-positive">Duplicates: {{ order.count_duplicate}}</li>
+        </ul>
 
       </div>
     </div>
+
+    <div class="item item-text-wrap item-icon-left">
+      <i class="icon ion-ios-gear ion-spin"></i>
+      <div>Work: 
+        <ul class="padding-horizontal inline nowrap">
+          <li class="badge badge-dark">Total: {{order.count_expected }} </li>
+          <li class="badge badge-dark">ToDo: {{order.progress.todo }} </li>
+          <li class="badge badge-dark">TopPicks: {{order.progress.picks ||  0 }} </li>
+        </ul>
+      </div>
+
+      <div ng-if="order.status=='complete' || order.status=='closed' "
+      class="ng-repeat-filter button-bar bar-balanced" 
+      >
+        <button class="button button-full button-positive disabled"
+          ng-click="on.setStatus(order, 'closed')">Accept
+        </button>
+        <button class="button button-full button-royal"
+          ng-click="on.export(order)">Export
+        </button> 
+      </div> 
+
+      <div ng-show="!!order.exportUrl" class="text-center export-url padding">
+        <a ng-href="{{order.exportUrl}}" target="_blank">{{order.exportUrl.split('?').shift()}}</a>
+      </div>  
+
+    </div>    
 
     <div class="item item-complex" 
     ng-if="order.count_expected">

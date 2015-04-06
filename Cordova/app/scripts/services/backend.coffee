@@ -1213,6 +1213,17 @@ angular
               else 
                 throw error      
 
+      getAccessTokenP: (className, objectId, options={})->
+        options['objectId'] = objectId
+        switch className
+          when 'WorkorderObj'
+            return Parse.Cloud.run( 'workorder_setAccessToken', options )
+            .then (resp)->
+              # console.log "otgParse.getAccessTokenP() ", resp
+              return resp
+          else 
+            return $q.reject(false)
+
     }
     return self
 ]
