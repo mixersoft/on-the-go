@@ -109,6 +109,9 @@ angular.module('onTheGo.i18n', [])
             However, you may continue to upload photos for this order. 
             We will notify you when the status changes, and your order will not be charged until work begins.
           """
+        'export-redirect':
+          title: "Export Photos to Zip File"
+          message: "Please sign-in from our website to export photos: http://app.snaphappi.com/on-the-go.App"
       'app.orders.detail': {}
       'app.orders.open': 
         title: 'Open Orders'

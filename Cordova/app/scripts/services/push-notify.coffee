@@ -209,8 +209,12 @@ angular.module 'snappi.notification.push', [
         }
 
         if $rootScope.sessionUser?
-          postData["ownerId"] = $rootScope.sessionUser.id || null
+          postData["owner"] = $rootScope.sessionUser
+          postData["ownerId"] = $rootScope.sessionUser.id
           postData["username"] = $rootScope.sessionUser.get('username')
+          postData["active"] = true # active installation, for multiple users on same device
+          # TODO: beforeSave set active=false for installationId==Parse._getInstallationId()
+
 
         # TODO: move to otgParse?
         xhrOptions = {
@@ -237,3 +241,55 @@ angular.module 'snappi.notification.push', [
 
 
   ])
+
+
+
+###
+  # push notification
+    curl -X POST \
+    -H "X-Parse-Application-Id: cS8RqblszHpy6GJLAuqbyQF7Lya0UIsbcxO8yKrI" \
+    -H "X-Parse-REST-API-Key: 3n5AwFGDO1n0YLEa1zLQfHwrFGpTnQUSZoRrFoD9" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "channels":[
+        "Curator"
+      ],
+      "data": {
+        "aps" : {
+          "alert": { 
+            "title": "Watch out!", 
+            "body": "A new Workorder was just created" 
+          }, 
+          "badge": 1, 
+          "sound": "default", 
+          "content-available": 1 
+        },
+        "target": "app.workorders.open" 
+      }
+    }' \
+    https://api.parse.com/1/push;
+
+  curl -X POST \
+  -H "X-Parse-Application-Id: cS8RqblszHpy6GJLAuqbyQF7Lya0UIsbcxO8yKrI" \
+  -H "X-Parse-REST-API-Key: 3n5AwFGDO1n0YLEa1zLQfHwrFGpTnQUSZoRrFoD9" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "where": {
+      "ownerId": "Y72OwE1xzA"
+    },
+    "data": {
+      "aps" : {
+        "alert": { 
+          "title": "Watch out!", 
+          "body": "A new Workorder was just created" 
+        }, 
+        "badge": 1, 
+        "sound": "default", 
+        "content-available": 1 
+      },
+      "target": "app.workorders.open" 
+    }
+  }' \
+  https://api.parse.com/1/push;
+
+###

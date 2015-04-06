@@ -36,6 +36,40 @@ angular.module('ionBlankApp')
       refresh: ()->
         $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
         return      
+      setStatus: (order, status)->
+        switch status
+          when 'closed'
+            return if order.status!='complete'
+        return
+      export: (order, filter='top-picks')->
+        if $scope.deviceReady.device().isDevice
+          msg = i18n.tr('export-redirect', 'app.orders')
+          $scope.notifyService.message msg, 'info', 5000
+          return
+        exportUrl = [
+          'http://app.snaphappi.com:8765/api'
+          'containers'
+          order.objectId
+          'downloadContainer'
+          filter
+        ]
+        woObj = otgWorkorderSync._workorderColl['owner'].get(order.objectId)
+        accessToken = woObj.get('token')
+        if accessToken
+          promise = $q.when(accessToken)
+        else 
+          promise = otgParse.getAccessTokenP('WorkorderObj', woObj.id)
+        return promise.then (token)->
+          qs = [
+            'access_token=' + token
+            'archive_name=' + $rootScope.user.username + '-' + order.fromDate
+          ]
+          exportUrl = exportUrl.join('/') + '?' + decodeURIComponent( qs.join('&') )
+          console.log "exportUrl=", exportUrl
+          # save to scope
+          order.exportUrl = exportUrl
+          return 
+        return
     }
 
     # NOTE: ng-repat = order in filteredOrders = (workorders = $root.orders | filter:filterStatusNotComplete )
@@ -54,7 +88,7 @@ angular.module('ionBlankApp')
       return if !$scope.deviceReady.isOnline()
       $timeout ()->
           $scope.showLoading(true)
-          $scope.app.sync.DEBOUNCED_cameraRoll_Orders      
+          $scope.app.sync.DEBOUNCED_cameraRoll_Orders()      
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 

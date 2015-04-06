@@ -931,7 +931,7 @@ angular
         woACL = new Parse.ACL(parseData.owner)
         woACL.setRoleReadAccess('Curator', true)
         woACL.setRoleWriteAccess('Curator', true)
-        wo.setACL(woACL)
+        workorderObj.setACL(woACL)
 
         return workorderObj.save().then (wo)->
             return wo
@@ -1212,6 +1212,17 @@ angular
                 return $q.when skipErrorFile
               else 
                 throw error      
+
+      getAccessTokenP: (className, objectId, options={})->
+        options['objectId'] = objectId
+        switch className
+          when 'WorkorderObj'
+            return Parse.Cloud.run( 'workorder_setAccessToken', options )
+            .then (resp)->
+              # console.log "otgParse.getAccessTokenP() ", resp
+              return resp
+          else 
+            return $q.reject(false)
 
     }
     return self
