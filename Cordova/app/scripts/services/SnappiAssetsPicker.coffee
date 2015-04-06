@@ -153,7 +153,7 @@ angular
         .then ( mapped )->
           _.each mapped, (o)->
             o.from = 'CameraRoll'
-            o.deviceId = $rootScope.device.id
+            o.deviceId = deviceReady.device().id
             return
           if _.isEmpty self._mapAssetsLibrary
             self._mapAssetsLibrary = mapped 
@@ -175,11 +175,12 @@ angular
             # reset favorites
             favorites = {}
             _.each mapped, (o)->
-              favorites[o.UUID] = !!o.favorites
+              favorites[o.UUID] = !!o.favorite
               return
             _.each self._mapAssetsLibrary, (o)->
-              return if o.favorites == favorites[o.UUID]
-              o.favorites = favorites[o.UUID]
+              return if favorites[o.UUID]? 
+              return if o.favorite == favorites[o.UUID]
+              o.favorite = favorites[o.UUID]
               changed = true
               return
 
@@ -380,8 +381,8 @@ angular
 
       addOrUpdatePhoto_FromWorkorder: (photo)->
         # photo could be in local cameraRoll, or if $rootScope.isStateWorkorder() a workorder photo
-        isLocal = (photo.deviceId == $rootScope.device.id)
-        # console.log "%%% isLocal=" + (photo.deviceId == $rootScope.device.id) + ", values=" + JSON.stringify [photo.deviceId , $rootScope.device.id]
+        isLocal = (photo.deviceId == deviceReady.device().id)
+        # console.log "%%% isLocal=" + (photo.deviceId == deviceReady.device().id) + ", values=" + JSON.stringify [photo.deviceId , deviceReady.device().id]
 
         foundInMap = _.find self.map(), {UUID: photo.UUID} # also putting workorder photos in map()
 
@@ -514,7 +515,7 @@ angular
         if isWorkorder = $rootScope.isStateWorkorder() 
           # HACK: for now, force workorders to get parse URLS, skip cameraRoll
           # TODO: check cameraRoll if owner is DIY workorder
-          # i.e. workorderObj.get('devices').indexOf($rootScope.device.id) > -1
+          # i.e. workorderObj.get('devices').indexOf(deviceReady.device().id) > -1
           found = self.getPhoto(UUID, options) 
         if found  
           photo = {
@@ -524,7 +525,7 @@ angular
           return $q.when(found) 
           
 
-        # load from cameraRoll if workorderObj.get('devices').indexOf($rootScope.device.id) > -1
+        # load from cameraRoll if workorderObj.get('devices').indexOf(deviceReady.device().id) > -1
         if isDevice = !isBrowser 
           return snappiMessengerPluginService.getDataURLForAssets_P( 
             [UUID], 

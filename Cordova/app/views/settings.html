@@ -129,7 +129,7 @@
       <li class="item">
       App Cache: <span ng-bind="watch.imgCache.count"></span> Files, <span ng-bind="watch.imgCache.size"></span>
       <button class="button button-assertive button-full" ng-class="{disabled: !watch.imgCache.count}"
-      ng-click="on.clearCache()">
+      ng-click="on.clearCacheP()">
         <ion-spinner ng-if='watch.isWorking.clearAppCache' class="spinner-light"></ion-spinner>
         <i class="icon ion-ios-trash" ng-if="!watch.isWorking.clearAppCache"></i> 
         Clear App Cache
@@ -155,15 +155,25 @@
       <li class="item item-divider" ng-click="on.toggleShowAdvanced()">Advanced</li>
       <div ng-class='{invisible:!watch.showAdvanced}'>
         <li class="item">
-        <button class="button button-assertive button-full"
+          <button class="button button-assertive button-full"
+          ng-click="on.resetLocalStorage()">
+          <i class="icon ion-settings"></i>
+             Reset LocalStorage
+          </button>
+          <p class='fine text-stable' >
+          Resets the image &amp; data cache on your device. Please close &amp; re-launch your App upon completion.
+          </p>
+        </li>
+        <li class="item">
+          <button class="button button-assertive button-full"
         ng-click="on.resetDeviceId()" ng-class="{disabled: deviceReady.device().isBrowser}">
-        <ion-spinner ng-if='watch.isWorking.resetDeviceId' class="spinner-light"></ion-spinner>
-        <i class="icon ion-settings" ng-if='!watch.isWorking.resetDeviceId'></i>
-           Reset DeviceId
-        </button>
-        <p class='fine text-stable' >
-        Resets the DeviceId in our DB so we know which photos are on your device.
-        </p>
+          <ion-spinner ng-if='watch.isWorking.resetDeviceId' class="spinner-light"></ion-spinner>
+          <i class="icon ion-settings" ng-if='!watch.isWorking.resetDeviceId'></i>
+             Reset DeviceId
+          </button>
+          <p class='fine text-stable' >
+          Resets the DeviceId in our DB so we know which photos are on your device.
+          </p>
         </li>
       </div>
 

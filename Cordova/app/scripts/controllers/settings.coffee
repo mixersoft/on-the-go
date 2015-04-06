@@ -104,7 +104,7 @@ angular.module('ionBlankApp')
       signInP: (userCred)->
         return otgParse.loginP(userCred).then (o)->
             self.userModel( _.pick $rootScope.user, ['username', 'password', 'email', 'emailVerified'] )
-            # $state.transitionTo('app.settings.profile')
+            # $rootScope.$state.transitionTo('app.settings.profile')
             return o
           , (err)->
             self.userModel( {} )
@@ -158,10 +158,11 @@ angular.module('ionBlankApp')
 
 ]
 .controller 'SettingsCtrl', [
-  '$scope', '$rootScope', '$state','$timeout', 
+  '$scope', '$rootScope', '$timeout'
   '$ionicHistory', '$ionicPopup', '$ionicNavBarDelegate', 
-  'otgParse', 'otgProfile', 'otgWorkorderSync', 'otgUploader', 'imageCacheSvc', 'cameraRoll'
-  ($scope, $rootScope, $state, $timeout, $ionicHistory, $ionicPopup, $ionicNavBarDelegate, otgParse, otgProfile, otgWorkorderSync, otgUploader, imageCacheSvc, cameraRoll) ->
+  'otgParse', 'otgProfile', 'otgWorkorderSync', 'otgUploader', 
+  'imageCacheSvc', 'cameraRoll', 'otgLocalStorage'
+  ($scope, $rootScope, $timeout, $ionicHistory, $ionicPopup, $ionicNavBarDelegate, otgParse, otgProfile, otgWorkorderSync, otgUploader, imageCacheSvc, cameraRoll, otgLocalStorage) ->
     $scope.label = {
       title: "Settings"
     }
@@ -187,11 +188,11 @@ angular.module('ionBlankApp')
         return if $scope.watch.iframeOpened[name]?
         $scope.showLoading(true, 3000)
         $scope.watch.iframeOpened[name] = 1
-      clearCache: ()->
+      clearCacheP: ()->
         $scope.watch.isWorking.clearAppCache = true
         cameraRoll.dataURLs['thumbnail'] = {}
         cameraRoll.dataURLs['preview'] = {}
-        imageCacheSvc.clearStashedP(null, null, 'appCache').then ()->
+        return imageCacheSvc.clearStashedP(null, null, 'appCache').then ()->
           _.extend $scope.watch.imgCache, imageCacheSvc.stashStats('appCache')
           $scope.watch.isWorking.clearAppCache = false
       clearArchive: ()->
@@ -202,6 +203,22 @@ angular.module('ionBlankApp')
           $scope.watch.isWorking.clearArchive = false
       toggleShowAdvanced: ()->
         $scope.watch.showAdvanced = !$scope.watch.showAdvanced
+
+      resetLocalStorage: ()->
+        # copied from app.coffee: _RESTORE_FROM_LOCALSTORAGE() 
+        isDevice = $scope.deviceReady.device().isDevice
+        otgLocalStorage.loadDefaults([
+          'config', 'menuCounts'
+          'topPicks'
+          'cameraRoll'
+        ]) 
+        return $scope.on.clearCacheP().then ()->
+          if isDevice
+            msg = "You MUST close and re-launch this App!"
+            window.alert(msg)
+          else 
+            window.location.reload()
+          return
 
       resetDeviceId: ()->
         return if $scope.deviceReady.device().isBrowser
@@ -226,7 +243,7 @@ angular.module('ionBlankApp')
         otgWorkorderSync.clear()
         otgUploader.uploader.clearQueueP()
         $rootScope.$broadcast 'user:sign-out' 
-        $state.transitionTo('app.settings.sign-in')
+        $rootScope.$state.transitionTo('app.settings.sign-in')
         return     
     
       signIn : (ev)->
@@ -243,11 +260,11 @@ angular.module('ionBlankApp')
               historyRoot: true
             })
 
-            $state.transitionTo(target)  
+            $rootScope.$state.transitionTo(target)  
 
           , (error)->
             otgProfile.userModel( {} )
-            $state.transitionTo('app.settings.sign-in')
+            $rootScope.$state.transitionTo('app.settings.sign-in')
             switch error.code 
               when 101
                 message = i18n.tr('error-codes','app.settings')[error.code] # "The Username and Password combination was not found. Please try again."
@@ -281,7 +298,7 @@ angular.module('ionBlankApp')
                 historyRoot: true
               })
               target = 'app.settings.main'
-              $state.transitionTo(target)
+              $rootScope.$state.transitionTo(target)
             # else stay on app.settings.profile page
         , (error)->
           otgProfile.password.passwordAgainModel = ''
