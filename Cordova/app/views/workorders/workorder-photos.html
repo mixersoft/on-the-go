@@ -1,14 +1,16 @@
-<ion-view class="dark-bg" title="{{label.title}}" hide-back-button="true">
-  <ion-nav-buttons side="left">
-    <button menu-toggle="left" class="button button-icon icon ion-navicon"></button>
-  </ion-nav-buttons>
-  <ion-nav-buttons side="right">
-      <div class="buttons">
+<ion-view class="dark-bg" view-title="{{label.title}}" hide-back-button="true">
+  <ion-nav-buttons side="secondary">
+        <button id='keyboard' class="button icon ion-ios-keypad"
+        ng-click="on.toggleKeyboard($event)"
+        ng-keydown="on.keydown($event)"
+        ng-class="watch.nav.keyboard ? 'active' : ''"
+        ></button>
         <button class="button button-icon icon ion-ios-information-outline" 
           ng-click="on.showInfo('toggle')">
         </button>
-      </div>
   </ion-nav-buttons>
+
+  
 
 <!--   <ion-header-bar class="bar-subheader">
   </ion-header-bar>
@@ -17,8 +19,7 @@
 
   <ion-content  
   header-shrink platform="platform-browser" 
-  delegate-handle="collection-repeat-wrap" c
-  lass="has-header">
+  delegate-handle="collection-repeat-wrap" class="has-header">
     <ion-refresher
       pulling-text=""
       on-refresh="on.refresh()">
@@ -78,7 +79,7 @@
           uuid-ext="{{item.id}}"
           on-keep="on.cardKeep(item)" 
           on-reject="on.cardReject(item)" 
-          on-card-swipe="on.cardSwiped(item)"
+          on-card-swipe="on.cardSwiped(item, $index)"
           ng-click="on.cardClick(this, $event, item)">
             <!-- header -->
             <div class="item item-divider item-stable padding-horizontal"

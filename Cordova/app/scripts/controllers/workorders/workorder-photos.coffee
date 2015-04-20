@@ -57,6 +57,9 @@ angular.module('ionBlankApp')
         if keys.indexOf('dim') > -1
           label.dim = [photo.originalWidth, photo.originalHeight].join('x')
         return photo.headerLabel = JSON.stringify(label).replace(/\"/g,'')
+      nav:
+        index: 0
+        keyboard: false
     }      
 
     # use dot notation for prototypal inheritance in child scopes
@@ -80,7 +83,8 @@ angular.module('ionBlankApp')
 
       getItemHeight : (item, index)->
         return 0 if !item
-        IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, 640)
+        MAX_IMAGE_WIDTH = 480 # $max-preview-dim-workorder set in ionic.app.scss
+        IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, MAX_IMAGE_WIDTH)
         scaledDim = cameraRoll.getCollectionRepeatHeight(item, IMAGE_WIDTH)
         h = item.scaledH
         h += ( 2 * 6 ) # paddingV
@@ -164,15 +168,15 @@ angular.module('ionBlankApp')
 
 
       # swipeCard methods
-      cardKeep: (item)->
+      cardKeep: (item, index)->
         return $scope.on.addTopPick(null, item)
       cardReject: (item)->
         return $scope.on.notTopPick(null, item)
-      cardSwiped: (item)->
+      cardSwiped: (item, $index)->
+        $scope.watch.nav.index = $index
         # console.log "Swipe, item.id=" + item.id
         return  
-      cardClick: (scope, ev, item)->
-        return if deviceReady.device().isDevice
+      cardClick: (scope, ev, item, $index)->
         clickSide = ev.offsetX/ev.currentTarget.clientWidth
         clickSide = 'left' if clickSide < 0.33 
         clickSide = 'right' if clickSide > 0.67  
@@ -186,6 +190,39 @@ angular.module('ionBlankApp')
           return _SyncWorkorderPhotos()
         $scope.on.filterByStatus() 
         $rootScope.$broadcast('scroll.refreshComplete')
+        return
+
+      # 
+      # keyboard shortcuts
+      #
+      toggleKeyboard: (ev)->
+        return if deviceReady.device().isDevice
+        $scope.watch.nav.keyboard = !$scope.watch.nav.keyboard
+        if $scope.watch.nav.keyboard
+          ev.target.focus()
+      keydown: (ev)->
+        return if !$scope.watch.nav.keyboard 
+        switch ev.keyCode
+          when 38 # up
+            $scope.on.nextItem(-1)
+          when 40 # down
+            $scope.on.nextItem(1)
+          when 37 # left
+            'noop'
+          when 39 # right
+            'noop'
+        # console.log "ng-keydown", ev
+      scrollToItem: (index)->
+        $isd = $ionicScrollDelegate.$getByHandle('collection-repeat-wrap')
+        $isv = $isd.$getByHandle('collection-repeat-wrap').getScrollView()
+        scrollY = $isv.options['getDimensionsForItem'](index).primaryPos
+        $isd.scrollTo(0, scrollY + $scope.watch.crOffsetY, 1)
+      nextItem:(incr)->
+        $scope.watch.nav.index += incr
+        $scope.watch.nav.index = 0 if $scope.watch.nav.index < 0
+        length = $scope.watch.filteredOrderedPhotos.length
+        $scope.watch.nav.index = length-1 if $scope.watch.nav.index >= length
+        $scope.on.scrollToItem($scope.watch.nav.index)
         return
 
     }
@@ -205,6 +242,7 @@ angular.module('ionBlankApp')
         workorderColl = otgWorkorderSync._workorderColl['editor']
         workorderObj = _.findWhere workorderColl.models, { id: woObjOrId } 
 
+      return if !workorderObj
       otgWorkorderSync.fetchWorkorderPhotosP(workorderObj).then (photosColl)->
           $scope.photosColl = photosColl
           uploadedPhotos = _.filter photosColl.toJSON(), (photo)->
@@ -295,6 +333,8 @@ angular.module('ionBlankApp')
     $scope.$on '$ionicView.enter', ()->  
       # cached view becomes active 
       $scope.on.showInfo(true) if $scope.config['workorder.photos']?.info
+      offset = ionic.DomUtil.getPositionInParent(document.getElementsByClassName('otg-cr-preview')[0])
+      $scope.watch.crOffsetY = offset?.top || 0
       # show loading
       $scope.showLoading(true)
       return if isBootstrap
