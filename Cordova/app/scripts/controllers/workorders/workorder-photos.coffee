@@ -119,8 +119,8 @@ angular.module('ionBlankApp')
         .then ()->
             $scope.workorderAttr.progress.todo -= 1 if !revert && revert != false
             $scope.workorderAttr.progress.picks -= 1 if revert==true
+            $scope.on._saveWoProgress($scope.workorderAttr)
             return $scope.$apply()
-            # don't have to save to Parse yet
           , (err)->
             item.topPick = revert
             console.warn "item NOT saved, err=" + JSON.stringify err
@@ -142,8 +142,8 @@ angular.module('ionBlankApp')
         .then ()->
             $scope.workorderAttr.progress.todo -= 1 if !revert && revert != false
             $scope.workorderAttr.progress.picks += 1 if !revert
+            $scope.on._saveWoProgress($scope.workorderAttr)
             return $scope.$apply()
-            # don't have to save to Parse yet
           , (err)->
             item.topPick = revert
             console.warn "item NOT saved, err=" + JSON.stringify err
@@ -153,6 +153,11 @@ angular.module('ionBlankApp')
 
         # scroll to next item()
         return item  
+
+      _saveWoProgress: (woAttr)->
+        wo = otgWorkorderSync._workorderColl.editor.get(woAttr.objectId)
+        wo.set('progress', woAttr.progress).save()
+        return
 
       dontShowHint : (hide, keep)->
         # check config['dont-show-again'] to see if we should hide hint card
@@ -201,16 +206,25 @@ angular.module('ionBlankApp')
         if $scope.watch.nav.keyboard
           ev.target.focus()
       keydown: (ev)->
+        _getSwipeCard = (item)->
+          img = document.querySelector('.workorder-photo-card img[UUID="' + item.UUID + '"]')
+          elem = ionic.DomUtil.getParentWithClass(img, 'workorder-photo-card')
+          return angular.element(elem)?.scope()?.swipeCard
+
         return if !$scope.watch.nav.keyboard 
         switch ev.keyCode
           when 38 # up
             $scope.on.nextItem(-1)
-          when 40 # down
+          when 40 , 32 # down, space
             $scope.on.nextItem(1)
           when 37 # left
-            'noop'
+            index = $scope.watch.nav.index
+            item = $scope.watch.filteredOrderedPhotos[index]
+            _getSwipeCard(item)?.swipeOver('left')
           when 39 # right
-            'noop'
+            index = $scope.watch.nav.index
+            item = $scope.watch.filteredOrderedPhotos[index]
+            _getSwipeCard(item)?.swipeOver('right')
         # console.log "ng-keydown", ev
       scrollToItem: (index)->
         $isd = $ionicScrollDelegate.$getByHandle('collection-repeat-wrap')
@@ -348,6 +362,7 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 
+
       return 
   ]
 

@@ -285,7 +285,7 @@ ion-side-menu-content .item > * {
     }
   }
 
-  .photo-card, .workorder-card, .order-card {
+  .photo-card, .workorder-photo-card, .order-card {
     margin: 6px auto;  /*add gutter to set collection-repeat vRC.0 width correctly*/
     padding: 0;
 
@@ -314,7 +314,7 @@ ion-side-menu-content .item > * {
       width: 100%;
     }
   }
-  .workorder-card , .order-card {
+  .workorder-photo-card , .order-card {
     max-width: $max-preview-dim-workorder;
     .photo-wrap {
       max-width: $max-preview-dim-workorder;

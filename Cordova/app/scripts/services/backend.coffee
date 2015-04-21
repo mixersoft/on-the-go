@@ -136,7 +136,7 @@ angular
             console.warn err
 
       fetchWorkorderPhotosP : (workorderObj,  options={}, force)->
-        throw "workorder is missing" if !workorderObj?
+        return $q.reject "fetchWorkorderPhotosP(), workorder is missing" if !workorderObj?
         options.owner == true if $rootScope.user.role == 'owner'
 
         cached = self._workorderPhotosColl[ workorderObj.id ] 
