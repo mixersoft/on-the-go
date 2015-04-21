@@ -110,6 +110,7 @@ angular.module('ionBlankApp')
     }
     $scope.watch = _watch = {
       viewTitle: i18n.tr('title')
+      isSyncing: false
     }
     $scope.workorders = []
     $scope.workorder = null
@@ -125,7 +126,9 @@ angular.module('ionBlankApp')
       return   
 
     _SyncWorkorders = (woid)->
+      $scope.watch.isSyncing = true
       onComplete = ()->
+        $scope.watch.isSyncing = false
         $scope.hideLoading()
         $rootScope.$broadcast('scroll.refreshComplete')
         if $rootScope.$state.includes('app.workorders.detail')

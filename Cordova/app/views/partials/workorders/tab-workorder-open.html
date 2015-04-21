@@ -9,7 +9,7 @@
     <div ng-repeat="order in filteredOrders = (workorders | filter:filterStatusNotComplete )">
       <div ng-include="'views/partials/workorders/workorder-card.html'"></div>
     </div>
-    <div class="empty-list" ng-if="!filteredOrders.length"> 
+    <div class="empty-list" ng-if="filteredOrders.length==0" ng-hide="watch.isSyncing"> 
       <div class="card empty-list" >
         <div class="item item-text-wrap">
           <div class="text-center">
