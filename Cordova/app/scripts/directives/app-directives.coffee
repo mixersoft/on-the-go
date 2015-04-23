@@ -6,15 +6,27 @@
  # @description
  # # directives
 ###
-angular.module('ionBlankApp') 
+
+
+### 
+# directive: lazy-src
 # load img.src from the following sources, in order of priority
 #   imgCacheSvc (browser/WebView FileURL)
 #   cameraRoll.dataURL[] (dataURL, FileURL or parse URL)
 #   lorempixel (for brower debug)
-# uses $q.promise to load src 
+# 
+# uses $q.promise to load src from promise if not immediately available
+#
+# attributes: 
+#   lazySrc: UUID of photo, used to fetch img.src
+#   spinner: add ion loading-c spinner, show during img.load
+#   format: [thumbnail, preview]
+# 
+###
+angular.module('ionBlankApp') 
 .directive 'lazySrc', [
-  'deviceReady', 'PLUGIN_CAMERA_CONSTANTS', 'cameraRoll', 'imageCacheSvc', '$rootScope', '$q'
-  (deviceReady, CAMERA, cameraRoll, imageCacheSvc, $rootScope, $q)->
+  'deviceReady', 'PLUGIN_CAMERA_CONSTANTS', 'cameraRoll', 'imageCacheSvc', '$rootScope', '$q', '$parse'
+  (deviceReady, CAMERA, cameraRoll, imageCacheSvc, $rootScope, $q, $parse)->
 
     _getAsSnappiSqThumb = (src='')->
       return src if src.indexOf('snaphappi.com/svc') == -1  # autoRender not available
@@ -22,8 +34,6 @@ angular.module('ionBlankApp')
       return src if parts[parts.length-1].indexOf('sq~') == 0 # already an sq~ URL
       parts.push( '.thumbs/sq~' + parts.pop() )
       return parts.join('/')
-
-    collectionRepeatDataURLS = {}
 
     _setLazySrc = (element, UUID, format)->
       throw "ERROR: asset is missing UUID" if !UUID
@@ -43,44 +53,42 @@ angular.module('ionBlankApp')
         mappedPhoto = _.find( cameraRoll.map(), {UUID: photo.UUID})
         _.extend( photo, mappedPhoto) if mappedPhoto
 
-      if isDevice && IMAGE_SIZE=='preview' && previewDataURL = collectionRepeatDataURLS[photo.UUID]
-        console.log "using dataURL for collection-repeat"
-        return element.attr('src', previewDataURL) 
-
-
 
       if isMoment && isOrder
         if isOrder && photo.src?.indexOf('file:') == 0
-          return element.attr('src', photo.src)
-        else
+          return photo.src # element.attr('src', src)
+        else if isRemote = (photo.deviceId != $rootScope.device.id)
           thumbSrc = _getAsSnappiSqThumb(photo.src)
-          element.attr('src', thumbSrc)
-          isLocal = (photo.deviceId == $rootScope.device.id)
-          return if !isLocal
-        # else continue to bottom to check isStashed
+          return thumbSrc # element.attr('src', thumbSrc)
+        # else continue to bottom to get local img
 
 
       if isMoment && isWorkorder # try to use /sq~ images from autoRender
         thumbSrc = _getAsSnappiSqThumb(photo.src || photo.woSrc)
-        return element.attr('src', thumbSrc)
+        return thumbSrc # element.attr('src', thumbSrc)
 
 
       if isWorkorder # preview
-        return element.attr('src', photo.src || photo.woSrc) 
+        return photo.src || photo.woSrc # element.attr('src', photo.src || photo.woSrc) 
 
       if isBrowser && photo.from == 'PARSE' 
         # user sign-in viewing topPicks from browser
-        return element.attr('src', photo.src) 
+        return photo.src # element.attr('src', photo.src) 
 
       # return if isBrowser && !photo # digest cycle not ready yet  
       if !isWorkorder && isBrowser && window.TEST_DATA # DEMO mode
         return _useLoremPixel(element, UUID, format)
 
+      ##
+      #
+      # NOTE: src values AFTER this point are retrieved async, update element directly
+      #
+      ##
       promise = imageCacheSvc.isStashed_P(UUID, format)
       # promise = $q.reject("force DestinationType='DATA_URL' for collection-repeat")
       .then (stashed)->
         element.attr('src', stashed.fileURL)
-        return
+        return 
       .catch (error)->
         # console.log "\nlazySrc reports notCached for format=" + format + ", UUID="+UUID
         if isBrowser
@@ -97,19 +105,19 @@ angular.module('ionBlankApp')
           if options.DestinationType == CAMERA.DestinationType.FILE_URI
             imageCacheSvc.stashFile(UUID, IMAGE_SIZE, resp.data, resp.dataSize) # FILE_URI
           else if options.DestinationType == CAMERA.DestinationType.DATA_URL && IMAGE_SIZE == 'preview'
-            "do NOT cache DATA_URL" || imageCacheSvc.cordovaFile_USE_CACHED_P(element, resp.UUID, resp.data) 
-            collectionRepeatDataURLS[resp.UUID] = resp.data
+            imageCacheSvc.cordovaFile_USE_CACHED_P(element, resp.UUID, resp.data) 
           else 
             'not caching DATA_URL thumbnails'
 
           if element.attr('lazy-src') != resp.UUID
             throw '_setLazySrc(): collection-repeat changed IMG[lazySrc] before cameraRoll image returned'
           else 
-            element.attr('src', resp.data)
+            element.attr('src', resp.data) 
           return
       .catch (error)->
-        return console.warn "_setLazySrc():", error
-      return
+        console.warn "_setLazySrc():", error
+        return 
+      return null
         
 
     _useLoremPixel = (element, UUID, format)->
@@ -122,8 +130,22 @@ angular.module('ionBlankApp')
         when 'preview'
           src = scope.item?.src
           src = TEST_DATA.lorempixel.getSrc(UUID, scope.item.originalWidth, scope.item.originalHeight) if !src
-      return element.attr('src', src)  # use ng-src here???
+      return src # element.attr('src', src) 
 
+    # from onImgLoad attrs.spinner
+    _spinnerMarkup = '<i class="icon ion-load-c ion-spin light"></i>'
+    _handleLoad = (ev)->
+      $elem = angular.element(ev.currentTarget)
+      $elem.removeClass('loading')
+      $elem.next().addClass('hide')  if $elem.attr('spinner')?
+      onImgLoad = $elem.attr('on-photo-load')
+      if onImgLoad?
+        fn = $parse(onImgLoad) 
+        scope = $elem.scope()
+        scope.$apply ()->
+          fn scope, {$event: ev}
+          return
+      return
 
     return {
       restrict: 'A'
@@ -135,12 +157,57 @@ angular.module('ionBlankApp')
           # console.log "\n\n $$$ attrs.$observe 'lazySrc', UUID+" + UUID
           element.attr('uuid', UUID)
           src = _setLazySrc(element, UUID, format) 
+          element.attr('src', src)
+          element.addClass('loading')
+          element.next().removeClass('hide') if element.attr('spinner')?
           console.error "ERROR: using lazySrc BEFORE deviceReady.waitP()" if deviceReady.device().isDevice==null
           return src
 
+        element.on 'load', _handleLoad
+        scope.$on 'destroy', ()->
+          element.off _handleLoad
+
+        element.after(_spinnerMarkup) if attrs.spinner?
         return
   }
 ]
+
+
+.directive 'onImgLoad', ['$parse' , ($parse)->
+  # add ion-animation.scss
+  spinnerMarkup = '<i class="icon ion-load-c ion-spin light"></i>'
+  _handleLoad = (ev, photo, index)->
+    $elem = angular.element(ev.currentTarget)
+    $elem.removeClass('loading')
+    $elem.next().addClass('hide')
+    onImgLoad = $elem.attr('on-photo-load')
+    fn = $parse(onImgLoad)
+    scope = $elem.scope()
+    scope.$apply ()->
+      fn scope, {$event: ev}
+      return
+    return
+
+  return {
+    restrict: 'A'
+    link: (scope, $elem, attrs)->
+
+
+      # NOTE: using collection-repeat="item in items"
+      attrs.$observe 'ng-src', ()->
+        $elem.addClass('loading')
+        $elem.next().removeClass('hide')
+        return
+
+      $elem.on 'load', _handleLoad
+      scope.$on 'destroy', ()->
+        $elem.off _handleLoad
+      $elem.after(spinnerMarkup)
+      return
+    }
+  ]
+
+
 #
 # otgMoment: a sample of thumbnails from photos taken on the same day
 #   ???: confirm sampling
