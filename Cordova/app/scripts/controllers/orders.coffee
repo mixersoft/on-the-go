@@ -34,7 +34,7 @@ angular.module('ionBlankApp')
 
     $scope.on = {
       refresh: ()->
-        $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
+        $scope.app.sync.cameraRoll_Orders()
         return      
       setStatus: (order, status)->
         switch status

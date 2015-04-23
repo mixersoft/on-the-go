@@ -235,7 +235,9 @@ angular.module('ionBlankApp')
     # call LastProgress.callback() after timeout, which is 'reset' after each call to restart()
     # used by oneProgress in case progress stops because network unavailable
     LastProgress = {
-      callback: ()->return console.log "LastProgress Timeout" # override, fires when timer fires
+      callback: ()->
+        console.log "LastProgress Timeout" # override, fires when timer fires
+        return
       delay: 10000
       _timestamp: null
       _timer: null
@@ -278,7 +280,7 @@ angular.module('ionBlankApp')
           success: (sizeKb)->
             chunksize = Math.max( Math.floor(sizeKb/avgSizeKb) , 5)
             _bkgFileUploader.cfg.CHUNKSIZE = chunksize 
-            console.log "\n >>> cordova getFreeDiskSpace: ", JSON.stringify {free:sizeKb, CHUNKSIZE: chunksize }
+            # console.log "\n >>> cordova getFreeDiskSpace: ", JSON.stringify {free:sizeKb, CHUNKSIZE: chunksize }
           fail: (err)->
             console.warn "cordova.getFreeDiskSpace error: ", err
         }
@@ -322,6 +324,9 @@ angular.module('ionBlankApp')
 
 
       # @param sync Object, sync = {queued:[], complete:[], }
+      # entrypoint: called by otgWorkorderSync.queueDateRangeFilesP
+      # called by enable() and onNetworkAccessChanged() > enable()
+      # otgWorkorderSync.queueDateRangeFilesP(sync) OR _bkgFileUploader.enable(true)
       queueP: (sync)->
         sync =_.defaults (sync || {}) , {
           'addFile':[]  # set in queueDateRangeFilesP()
@@ -330,15 +335,13 @@ angular.module('ionBlankApp')
         }
         assetIds = sync['addFile']
 
-        # entrypoint: called by otgWorkorderSync.queueDateRangeFilesP
-        # called by enable() and onNetworkAccessChanged() > enable()
-        # otgWorkorderSync.queueDateRangeFilesP(sync) OR _bkgFileUploader.enable(true)
+        
 
         # remove 'complete', 'remove' from queue
         removeFromQueue = sync['complete'].concat sync['remove']
         _bkgFileUploader._readyToSchedule = _.difference _bkgFileUploader._readyToSchedule, removeFromQueue
         _.each removeFromQueue, (UUID)->
-          _bkgFileUploader._complete[UUID] = 1
+          delete _bkgFileUploader._complete[UUID]
           delete _bkgFileUploader._scheduled[UUID]
 
         #   promise = otgUploader.queueP( sync['addFile'] )
@@ -350,6 +353,10 @@ angular.module('ionBlankApp')
             return false if _bkgFileUploader._scheduled[UUID]?
             return true
 
+          # cleanup completed uploades
+          _.each _bkgFileUploader._complete, (v,k)->
+            delete _bkgFileUploader._complete[k] if v==1
+            return
 
           _bkgFileUploader.schedule(assetIds)
           self.remaining()
@@ -363,6 +370,7 @@ angular.module('ionBlankApp')
         _.each _bkgFileUploader._scheduled, (v,k)->
           delete _bkgFileUploader._scheduled[k] if v==1
           return
+
         # DONE if uploader already fully scheduled
         scheduled = _.keys _bkgFileUploader._scheduled
         if scheduled.length > Math.min(_bkgFileUploader.cfg.CHUNKSIZE/2, 10)
@@ -509,9 +517,9 @@ angular.module('ionBlankApp')
               console.warn "ERROR: expecting task finished here. hasFinished bug?"
               return $q.reject(status)
             , (err)->
-              console.warn "\n\n %%% ERROR sessionTaskInfoForIdentifierP(): " + JSON.stringify err  
+              # console.warn "%%% ERROR sessionTaskInfoForIdentifierP(): " + JSON.stringify err  
               $q.reject(err)
-          .finally ()-> # or always()
+          .then ()-> # or always()
               PLUGIN.removeSessionTaskInfoWithIdentifierP(UUID)
 
       oneCompleteP: (resp)->
@@ -751,9 +759,19 @@ angular.module('ionBlankApp')
       viewTitle: i18n.tr('title')  # HACK: view-title state transition mismatch      
     }
 
+
+    $scope.$on 'sync.debounceComplete', ()->
+        # if otgUploader.uploader.type == 'background'
+        #   otgUploader.uploader.queueP().then (scheduledAssetIds)->
+        #     console.log "\n>>> queueP complete from refresh(), scheduled=" + JSON.stringify scheduledAssetIds
+        return
+
+
     $scope.on = {
       refresh: ()->
-        return $scope.app.sync.cameraRoll_Orders()  
+        # listen for 'sync.debounceComplete'
+        return $scope.app.sync.cameraRoll_Orders()
+
       fetchWarningsP : ()->
         return deviceReady.waitP()
         .then ()->
