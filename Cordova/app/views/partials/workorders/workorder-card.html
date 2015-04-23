@@ -96,34 +96,7 @@
         </ul>
       </div>
 
-      <div ng-if="order.status!='complete'"
-      class="ng-repeat-filter button-bar bar-balanced" 
-      >
-        <button class="button button-full" workorder-status 
-          ng-class="ngClass_UploadStatus(order, 'button')" 
-          ng-click="on.setStatus(order, 'working')"
-          ui-sref="app.workorder-photos.all({woid:order.objectId})">Open
-        </button>
-        <button class="button button-full" workorder-status 
-          ng-class="ngClass_CompleteButton(order, 'button')" 
-          ng-click="on.setStatus(order, 'complete')">Complete
-        </button>
-      </div>
-      <div ng-if="order.status=='complete'"
-      class="ng-repeat-filter button-bar bar-balanced" 
-      >
-        <button class="button button-full button-positive"
-          ui-sref="app.workorder-photos.all({woid:order.objectId})">Review
-        </button>
-        <button class="button button-full button-royal"
-          ng-class="" 
-          ng-click="on.setStatus(order, 'closed')">Close
-        </button> 
-        <button class="button button-full button-energized"
-          ng-class="" 
-          ng-click="on.setStatus(order, 'reject')">Reject
-        </button>
-      </div>   
+      <div workorder-actions model="order" do-action="on.doAction(action, workorder)"></div>   
 
     </div>
 </div> <!--  /detail -->
@@ -153,4 +126,4 @@
 </div> <!--  /detail -->
 
 
-  </div><!--  end workorder-card -->
+  </div><!--  end workorder-card --->

@@ -111,6 +111,7 @@ angular.module('ionBlankApp')
         if event
           event.preventDefault() 
           event.stopPropagation()
+        return if $scope.workorderAttr.status == 'closed'
         revert = item.topPick
         return if revert==false
         item.topPick = false
@@ -134,6 +135,7 @@ angular.module('ionBlankApp')
         if event
           event.preventDefault() 
           event.stopPropagation()
+        return if $scope.workorderAttr.status == 'closed'
         revert = item.topPick
         return if revert==true
         item.topPick = true
@@ -250,21 +252,22 @@ angular.module('ionBlankApp')
     }
 
     # sync photos only
-    _SyncWorkorderPhotos = (woObjOrId)->
-      woObjOrId = $state.params['woid'] if `woObjOrId==null`
-      if _.isString(woObjOrId)
+    _SyncWorkorderPhotos = (options)->
+      options = $rootScope.state.params if `options==null`
+      if options.woid?
         workorderColl = otgWorkorderSync._workorderColl['editor']
-        workorderObj = _.findWhere workorderColl.models, { id: woObjOrId } 
+        workorderObj = workorderColl.get(options.woid)
 
       return if !workorderObj
       otgWorkorderSync.fetchWorkorderPhotosP(workorderObj).then (photosColl)->
           $scope.photosColl = photosColl
-          uploadedPhotos = _.filter photosColl.toJSON(), (photo)->
-            return photo.src[0...4] == 'http'
-          uploadedPhotoIds = _.indexBy uploadedPhotos, 'UUID'
+
+          UUIDs = _.object(photosColl.pluck('UUID'))
           $scope.photos = _.filter cameraRoll.map(), (o)->
             # Keep only photos with src="http://snappi.snaphappi.com/..."
-            return uploadedPhotoIds[o.UUID]?
+            # TODO: just filter by woid?, must add to cameraRoll.map()
+            return UUIDs.hasOwnProperty(o.UUID) && o.src[0...4]=='http'
+            
 
           # add to sideMenu
           $scope.workorderAttr = workorderObj.toJSON()
@@ -275,22 +278,25 @@ angular.module('ionBlankApp')
           # window.debug.root = $rootScope
 
           # update work in progress counts
-          woProgress = _.reduce $scope.photos, (result, item)->
-              result.picks += 1 if item.topPick == true
-              result.todo +=1 if !item.topPick && item.topPick != false
-              return result
-            , {
-              todo: 0
-              picks: 0 
+          _updateProgressP = (workorderObj, photos)->
+            return $q.when() if /^(complete|closed)/.test workorderObj.get('status')
+            woProgress = _.reduce photos, (result, item)->
+                result.picks += 1 if item.topPick == true
+                result.todo +=1 if !item.topPick && item.topPick != false
+                return result
+              , {
+                todo: 0
+                picks: 0 
+              }
+            update = {
+              progress: woProgress
             }
-          update = {
-            progress: woProgress
-          }
-          if /^(ready|rejected)/.test workorderObj.get('status')
-            update['status'] = 'working'
-          promise = workorderObj.save(update).then (workorderObj)->
-            _.extend $scope.workorderAttr,  workorderObj.toJSON()
+            if /^(ready|rejected)/.test workorderObj.get('status')
+              update['status'] = 'working'
+            return promise = workorderObj.save(update).then (workorderObj)->
+              _.extend $scope.workorderAttr,  workorderObj.toJSON()
 
+          _updateProgressP(workorderObj, $scope.photos)
           $scope.on.filterByStatus() 
 
           # clean up UX
@@ -329,13 +335,12 @@ angular.module('ionBlankApp')
     $scope.$on '$ionicView.loaded', ()->
       # for testing: loading 'app/workorders/[woid]/photos' directly
       isBootstrap = !otgWorkorderSync._workorderColl['editor'].length
-      options = {force: isBootstrap}
-      options['woid'] = $rootScope.$state.params?.woid || null
+      options = _.defaults {force: isBootstrap}, $rootScope.$state.params
       if isBootstrap  # set on startup, $scope.$on '$ionicView.loaded'
           # only for TESTING when we load 'app.workorder-photos' as initial state!!!
           
           otgWorkorderSync.SYNC_WORKORDERS($scope, options, ()->
-            _SyncWorkorderPhotos(options.woid)
+            _SyncWorkorderPhotos(options)
             isBootstrap = false
             console.log "workorder Sync complete"
         )      
@@ -353,9 +358,7 @@ angular.module('ionBlankApp')
       $scope.showLoading(true)
       return if isBootstrap
 
-      options = {
-        woid: $rootScope.$state.params?.woid || null
-      } 
+      options = $rootScope.$state.params
       _SyncWorkorderPhotos(options) 
       return 
 

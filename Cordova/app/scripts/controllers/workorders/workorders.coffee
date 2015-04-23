@@ -72,6 +72,8 @@ angular.module('ionBlankApp')
             return false if order.status != 'complete'
           when 'closed'
             return false if order.status != 'complete'
+          else
+            return false
         woObj = otgWorkorderSync._workorderColl['editor'].get( order.objectId )
         promise = otgParse.updateWorkorderP(woObj, {status:status}, ['status'])
         .then (woObj)->
@@ -104,8 +106,22 @@ angular.module('ionBlankApp')
           $q.all(promises).then ()->
             console.log "reUploadPhotos() complete for workorder.id=" + order.objectId
 
-
-
+      # workorder actions
+      doAction: (action, workorder)->
+        # console.log 'workorder action clicked=', action
+        switch action # add ng-click
+          when 'open', 'review'
+            $scope.on.setStatus(workorder, action)
+            target = "app.workorder-photos.all"
+            $rootScope.$state.transitionTo(target, {
+              woid: workorder.objectId
+              })
+          when 'complete'
+            $scope.on.setStatus(workorder, action)
+          when 'close'
+            $scope.on.setStatus(workorder, 'closed')
+          when 'reject'
+            $scope.on.setStatus(workorder, action)
 
     }
     $scope.watch = _watch = {

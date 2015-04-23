@@ -596,6 +596,7 @@ angular
                     # just need counts
                     return self.syncWorkorderPhotosP( workorderObj, photosColl, 'editor' )
                   .then (sync)->
+                    return photosColl if isComplete
                     self.updateWorkorderCounts(workorderObj, sync)  # expect workorderObj.workorderMoment to be set
                      
                     return photosColl

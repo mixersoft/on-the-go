@@ -452,3 +452,68 @@ angular.module('ionBlankApp')
     }
     return self
 ]
+
+.directive 'workorderActions', ['$compile'
+  ($compile)->
+    THRESHOLD = {
+      WORKING: 0.9
+      COMPLETE: 0.9
+    }
+
+    colors = {
+      action:
+        'open': (wo)->
+          return 'assertive' if wo.status=='closed'
+          return 'balanced' if wo.count_expected == (wo.count_received + wo.count_duplicate)
+          return 'energized'
+        'complete': (wo)->
+          isAlmostDone = (1 - wo.progress.todo/wo.count_expected) > THRESHOLD.COMPLETE
+          return 'balanced' if isAlmostDone && wo.status=='working'
+          return 'energized disabled' 
+        'review': 'positive'
+        'close': 'royal'
+        'reject': 'assertive'
+    }
+
+    markup = {
+      bar: '<div class="button-bar"></div>'
+      button: '<button class="button button-full capitalize" ng-click="buttonClick($event)" action=""></button>'
+    }
+
+    self = {
+      restrict: 'A'
+      scope: {
+        wo: '=model'
+        doAction: '&'
+      }
+      link: (scope, $elem, attrs)->
+        scope.buttonClick = (ev)->
+          action = ev.currentTarget.getAttribute('action')
+          console.log "button clicked, action=", action
+          scope.doAction({action:action, workorder:scope.wo})
+          return
+          
+
+        switch scope.wo.status
+          when 'new', 'ready', 'working'
+            actions = ['open', 'complete']
+          when 'complete'
+            actions = ['review', 'close', 'reject']
+          when 'closed'
+            actions = ['review', 'open']
+
+        $bar = angular.element markup.bar
+        _.each actions, (action)->
+          button = angular.element markup.button
+          color = colors.action[action]
+          color = color(scope.wo) if _.isFunction color
+          button.html(action).addClass( 'button-'+color )
+            .attr('action', action)
+          $bar.append( button)
+          return
+        $elem.append $bar
+        return $compile( $elem.contents())(scope)
+    }
+    return self
+]
+
