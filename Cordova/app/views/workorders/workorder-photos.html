@@ -98,7 +98,7 @@
 
             <!-- footer -->
             <div class="item item-stable tabs card-footer"
-            ng-if="on.notTopPick()">
+            ng-if="on.showInfo()">
               <div class="tab-item icon"
               ng-click="on.addCaption($event, item)"
               ng-class="{'ion-ios-close assertive':item.topPick===false,
