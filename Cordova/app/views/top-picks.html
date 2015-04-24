@@ -101,57 +101,54 @@
         <div
         collection-repeat="item in watch.filteredOrderedPhotos track by UUID"
         item-height="on.getItemHeight(item, $index)"
+        item-width="100%"
         item-render-buffer="3"
         force-refresh-images="true"
-        ng-style="{height: on.getItemHeight(item, $index)+'px'}"
         >
-          <div class="padding-horizontal">
-          <swipe-card class="card photo-card"
-          uuid-ext="{{item.id}}"
-          on-keep="on.cardKeep(item)" 
-          on-reject="on.cardReject(item)" 
-          on-card-swipe="on.cardSwiped(item)"
-          ng-click="on.cardClick(this, $event, item)">
-            <!-- header -->
-            <div class="item item-divider item-stable padding-horizontal"
-            ng-if="on.showInfo()">
-              <div class="caption capitalize">{{item.caption || (item.dateTaken | date:'MM/dd/yyyy @ h:mma')}}</div>
-            </div>
-
-            <!-- body -->
-            <div class="item item-image">
-              <div class="photo-wrap">
-                <img lazy-src="{{ item.UUID }}" spinner
-                format="preview"
-                orig-w="{{item.originalWidth}}"
-                orig-h="{{item.originalHeight}}"
-                height="{{item.scaledH}}">
+          <div class="padding-horizontal card-wrap">
+            <swipe-card class="card photo-card"
+            uuid-ext="{{item.id}}"
+            on-keep="on.cardKeep(item)" 
+            on-reject="on.cardReject(item)" 
+            on-card-swipe="on.cardSwiped(item)"
+            ng-click="on.cardClick(this, $event, item)">
+              <!-- header -->
+              <div class="item item-divider item-stable padding-horizontal card-header"
+              ng-if="on.showInfo()">
+                <div class="caption capitalize">
+                  {{item.caption || (item.dateTaken | date:'MM/dd/yyyy @ h:mma')}}
+                </div>
               </div>
-            </div>
 
-            <!-- footer -->
-            <div class="item item-stable tabs tabs-secondary tabs-icon-left"
-            ng-if="on.showInfo()">
-              <a class="tab-item" href="#"
-              ng-click="on.addCaption($event, item)">
-                <i class="icon ion-ios-compose-outline"></i>
-              </a>
-              <a class="tab-item" href="#"
-              ng-class="{'activated tab-item-royal':item.shared}"
-              ng-click="on.addShare($event, item)">
-                <i class="icon"
-                ng-class="{'ion-ios-upload-outline':!item.shared, 
-                'ion-ios-upload':item.shared}"></i>
-              </a>
-              <a class="tab-item" href="#"
-              ng-class="{'activated tab-item-royal':item.favorite}"
-              ng-click="on.addFavorite($event, item)">
-                <i class="icon"
-                ng-class="{'ion-ios-heart-outline':!item.favorite,
-                'ion-ios-heart':item.favorite}"></i>
-              </a>
-            </div>
-          </swipe-card></div> <!--  end .photo-card  -->
+              <!-- body -->
+              <div class="item item-image">
+                <div class="photo-wrap">
+                  <img 
+                  lazy-src="{{ item.UUID }}" spinner
+                  format="preview"
+                  height="{{item.scaledH}}">
+                </div>
+              </div>
+
+              <!-- footer -->
+              <div class="item item-stable tabs card-footer "
+              ng-if="on.showInfo()">
+                <div class="tab-item icon ion-ios-compose-outline"
+                ng-click="on.addCaption($event, item)"
+                ></div>
+                <div class="tab-item royal icon"
+                ng-click="on.addShare($event, item)"
+                ng-class="{'ion-ios-upload royal':item.shared,
+                'ion-ios-upload-outline':!item.shared}"
+                ></div>
+                <div class="tab-item royal icon"
+                ng-click="on.addFavorite($event, item)"
+                ng-class="{'ion-ios-heart royal':item.favorite,
+                'ion-ios-heart-outline':!item.favorite}"
+                ></div>
+              </div>
+            </swipe-card>
+          </div> <!--  end .photo-card  -->
 
       </div>
     </ion-list>

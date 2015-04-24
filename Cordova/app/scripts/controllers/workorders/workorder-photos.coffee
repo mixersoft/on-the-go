@@ -106,7 +106,11 @@ angular.module('ionBlankApp')
           $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() 
         return $scope.on._info  
 
-
+      noop: (event)->
+        event.preventDefault()
+        event.stopPropagation()
+        return
+        
       notTopPick: (event, item)->
         if event
           event.preventDefault() 

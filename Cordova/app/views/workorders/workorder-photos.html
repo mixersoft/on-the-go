@@ -72,7 +72,6 @@
       <div 
         collection-repeat="item in watch.filteredOrderedPhotos track by UUID"
         item-height="on.getItemHeight(item, $index)"
-        ng-style="{height: on.getItemHeight(item, $index)+'px'}"
         >
           <div class="padding-horizontal">
           <swipe-card class="card workorder-photo-card"
@@ -82,7 +81,7 @@
           on-card-swipe="on.cardSwiped(item, $index)"
           ng-click="on.cardClick(this, $event, item)">
             <!-- header -->
-            <div class="item item-divider item-stable padding-horizontal"
+            <div class="item item-divider item-stable padding-horizontal card-header"
             ng-if="on.showInfo()">
               <div class="caption capitalize" ng-bind="watch.getHeaderLabel(item, ['dim','dateTaken'])"></div>
             </div>
@@ -92,37 +91,29 @@
               <div class="photo-wrap">
                 <img lazy-src="{{ item.UUID }}" spinner
                 format="preview"
-                orig-w="{{item.originalWidth}}"
-                orig-h="{{item.originalHeight}}"
                 height="{{item.scaledH}}"
                 width="{{item.scaledW}}">
               </div>
             </div>
 
             <!-- footer -->
-            <div class="item item-stable tabs tabs-secondary tabs-icon-left"
-            ng-if="on.showInfo()">
-              <a class="tab-item" href="#"
-              ng-click="on.notTopPick($event, item)">
-                <i class="icon" 
-                ng-class="{ 'ion-ios-close assertive':item.topPick===false,
-                'ion-ios-close-outline':item.topPick!==false }"></i>
-              </a>
-              
-              <a class="tab-item" href="#"
-              ng-class="{'activated tab-item-royal':item.favorite}">
-                <i class="icon"
-                ng-class="{'ion-ios-heart-outline':!item.favorite,
-                'ion-ios-heart':item.favorite}"></i>
-              </a>
-
-              <a class="tab-item" href="#"
-              ng-class="{'activated tab-item-balanced':item.topPick}"
-              ng-click="on.addTopPick($event, item)">
-                <i class="icon"
-                ng-class="{'ion-ios-checkmark-outline':item.topPick!==true, 
-                'ion-ios-checkmark balanced':item.topPick===true}"></i>
-              </a>
+            <div class="item item-stable tabs card-footer"
+            ng-if="on.notTopPick()">
+              <div class="tab-item icon"
+              ng-click="on.addCaption($event, item)"
+              ng-class="{'ion-ios-close assertive':item.topPick===false,
+              'ion-ios-close-outline':item.topPick!==false }"
+              ></div>
+              <div class="tab-item icon"
+              ng-click="on.noop($event, item)"
+              ng-class="{'ion-ios-heart royal':item.favorite,
+              'ion-ios-heart-outline':!item.favorite}"
+              ></div>
+              <div class="tab-item icon"
+              ng-click="on.addTopPick($event, item)"
+              ng-class="{'ion-ios-checkmark balanced':item.topPick===true,
+              'ion-ios-checkmark-outline':item.topPick!==true}"
+              ></div>
             </div>
           </swipe-card></div> <!--  end .photo-card  -->
 

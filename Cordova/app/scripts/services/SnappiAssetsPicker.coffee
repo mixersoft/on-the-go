@@ -495,7 +495,7 @@ angular
       ###
       # @params UUID, string, iOS example: '1E7C61AB-466A-468A-A7D5-E4A526CCC012/L0/001'
       # @params options object
-      #   size: ['thumbnail', 'preview', 'previewHD']
+      #   size: ['thumbnail', 'preview', 'preview@2x', 'previewHD']
       #   DestinationType : [0,1],  default CAMERA.DestinationType.FILE_URI 
       #   noCache: boolean, default false, i.e. cache the photo using imageCacheSvc.stashFile
       # @return photo object, {UUID: data: dataSize:, ...}
@@ -556,7 +556,7 @@ angular
       ###
       # @params UUID, string, iOS example: '1E7C61AB-466A-468A-A7D5-E4A526CCC012/L0/001'
       # @params options object
-      #   size: ['thumbnail', 'preview', 'previewHD', 'orig'], default options.size=='preview'
+      #   size: ['thumbnail', 'preview', 'preview@2x', 'previewHD', 'orig'], default options.size=='preview'
       #   DestinationType : [0,1],  default CAMERA.DestinationType.FILE_URI       
       # @return found object { UUID: data: dataSize: }
       #    dataURL from cameraRoll.dataURls,
@@ -623,16 +623,10 @@ angular
 
         chunks = _.reduce queuedAssets, (result, o)->
             type = o.size + ':' + o.DestinationType
-            result[type].push o.UUID
+            result[type] = [] if !result[type]
+            result[type].push o.UUID 
             return result
-          , {
-            'thumbnail:1': [] # Camera.DestinationType.FILE_URI ==1
-            'preview:1': []
-            'previewHD:1': []
-            'thumbnail:0': [] # DATA_URL == 0
-            'preview:0': []
-            'previewHD:0': []            
-          }
+          , {}
 
         promises = []
         _.each chunks, (assets, type)->
@@ -641,7 +635,7 @@ angular
           [size, DestinationType] = type.split(':')
           options = {
             size: size
-            DestinationType: DestinationType
+            DestinationType: parseInt(DestinationType)
           }
           promises.push snappiMessengerPluginService.getDataURLForAssetsByChunks_P(
               assets
@@ -1018,37 +1012,32 @@ angular
         options.size = options.size || 'thumbnail'
 
         defaults = {
-          preview: 
-            targetWidth: 720
-            targetHeight: 720
-            resizeMode: 'aspectFit'
-            autoRotate: true
-            DestinationType: CAMERA.DestinationType.FILE_URI  # 1
-          previewHD: 
-            targetWidth: 1080
-            targetHeight: 1080
-            resizeMode: 'aspectFit'
-            autoRotate: true
-            DestinationType: CAMERA.DestinationType.FILE_URI  # 1
           thumbnail:
             targetWidth: 64
             targetHeight: 64
             resizeMode: 'aspectFill'
-            autoRotate: true
-            DestinationType: CAMERA.DestinationType.FILE_URI  # 1
+          'preview': 
+            targetWidth: 320
+            targetHeight: 320
+          'preview@2x': 
+            targetWidth: 750
+            targetHeight: 750
+          'previewHD': 
+            targetWidth: 1080
+            targetHeight: 1080
         }
-        _.defaults options, defaults.preview if options.size=="preview"
-        _.defaults options, defaults.thumbnail if options.size=="thumbnail"
-        _.defaults options, defaults.previewHD if options.size=="previewHD"
+        _.defaults options, defaults[options.size], {
+            resizeMode: 'aspectFit'
+            autoRotate: true
+            DestinationType: CAMERA.DestinationType.FILE_URI  # 1  
+          }
 
         assets = [assets] if !_.isArray(assets)
         assetIds = assets
         assetIds = _.pluck assetIds, 'UUID' if assetIds[0].UUID
         
-
         # console.log "\n>>>>>>>>> getPhotosByIdP: assetIds=" + JSON.stringify assetIds 
         # console.log "\n>>>>>>>>> getPhotosByIdP: options=" + JSON.stringify options
-
         deviceReady.waitP().then (retval)->
           dfd = $q.defer()
           start = new Date().getTime()

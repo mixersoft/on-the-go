@@ -301,28 +301,19 @@ ion-side-menu-content .item > * {
   $max-preview-dim: 320px;  
   $max-preview-dim-workorder: 480px; 
 
-  .list {
-    /* set to match .header-card padding REMOVED for collection-repeat vRC.0 */
-/*    padding-left: 10px;
-    padding-right: 10px;*/
-    .item {
-      font-size:14px;
-      &.tabs.tabs-secondary {
-        height: 33px;
-        .tab-item .icon, .tab-item .icon:before { 
-          line-height: 32px;
-        }
-      }
-    }
-  }
-
   .photo-card, .workorder-photo-card, .order-card {
-    margin: 6px auto;  /*add gutter to set collection-repeat vRC.0 width correctly*/
+    margin: 5px auto;  
     padding: 0;
 
-    .caption {
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .card-header {
+      padding-top: 6px;
+      padding-bottom: 6px;
+      .caption {
+        height: 18px;
+        font-size: 0.8em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
     }
     
     .photo-wrap {
@@ -350,6 +341,14 @@ ion-side-menu-content .item > * {
         }
       }      
     }
+
+    .card-footer {
+      height: 33px;
+      .tab-item { 
+        line-height: 32px;
+        font-size: 1.5em;
+      }
+    }    
   }
 
   .photo-card {
@@ -357,7 +356,7 @@ ion-side-menu-content .item > * {
     .photo-wrap {
       max-width: $max-preview-dim;
       /*width: $max-preview-dim;*/
-      width: 100%;
+      /*width: 100%;*/
     }
   }
   .workorder-photo-card , .order-card {

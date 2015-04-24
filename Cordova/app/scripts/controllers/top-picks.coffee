@@ -238,9 +238,13 @@ angular.module('ionBlankApp')
       getItemHeight : (item, index)->
         return 0 if !item
         IMAGE_WIDTH = Math.min(deviceReady.contentWidth()-22, 320)
-        h = cameraRoll.getCollectionRepeatHeight(item, IMAGE_WIDTH)
-        h += ( 2 * 6 ) # paddingV
-        h += 68 if $scope.on.showInfo()
+        scaledH = cameraRoll.getCollectionRepeatHeight(item, IMAGE_WIDTH)
+        cardPaddingV = ( 2 * 5 ) # paddingV
+        h = scaledH + cardPaddingV  
+        if $scope.on.showInfo()
+          headerH = 35
+          footerH = 31
+          h += headerH + footerH
         # console.log ">>> height=" + h
         return h
       showInfo: (value)->
