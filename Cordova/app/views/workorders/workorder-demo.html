@@ -87,7 +87,7 @@
             <div class="item item-stable tabs card-footer"
             ng-if="on.showInfo()">
               <div class="tab-item icon"
-              ng-click="on.notTopPick($event, item)"
+              ng-click="on.setTopPick($event, item, false)"
               ng-class="{'ion-ios-close assertive':item.topPick===false,
               'ion-ios-close-outline':item.topPick!==false }"
               ></div>
@@ -97,7 +97,7 @@
               'ion-ios-heart-outline':!item.favorite}"
               ></div>
               <div class="tab-item icon"
-              ng-click="on.addTopPick($event, item)"
+              ng-click="on.setTopPick($event, item, true)"
               ng-class="{'ion-ios-checkmark balanced':item.topPick===true,
               'ion-ios-checkmark-outline':item.topPick!==true}"
               ></div>

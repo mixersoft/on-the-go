@@ -110,7 +110,7 @@
             uuid-ext="{{item.id}}"
             on-keep="on.cardKeep(item)" 
             on-reject="on.cardReject(item)" 
-            on-card-swipe="on.cardSwiped(item)"
+            on-card-swipe="on.cardSwiped(item, $index)"
             ng-click="on.cardClick(this, $event, item)">
               <!-- header -->
               <div class="item item-divider item-stable padding-horizontal card-header"
@@ -142,7 +142,7 @@
                 'ion-ios-upload-outline':!item.shared}"
                 ></div>
                 <div class="tab-item royal icon"
-                ng-click="on.addFavorite($event, item)"
+                ng-click="on.setFavorite($event, item, 'toggle')"
                 ng-class="{'ion-ios-heart royal':item.favorite,
                 'ion-ios-heart-outline':!item.favorite}"
                 ></div>

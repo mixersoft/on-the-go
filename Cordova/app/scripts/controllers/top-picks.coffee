@@ -261,13 +261,14 @@ angular.module('ionBlankApp')
           # angular.element($window).triggerHandler('resize.collection-repeat');
           $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() 
         return $scope.watch.info   
-      addFavorite: (event, item)->
-        event.preventDefault();
-        event.stopPropagation()
-        item.favorite = !item.favorite
+      setFavorite: (event, item, value='toggle')->
+        if event
+          event.preventDefault() 
+          event.stopPropagation()
+        item.favorite = if value=='toggle' then !item.favorite else value
         otgParse.setFavoriteP(item).then ()->
           $rootScope.$broadcast 'sync.cameraRollChanged'
-          console.log "\n\n*** Success updated favorite"
+          console.log "*** Success updated favorite=", value
         return item
       addShare: (event, item)->
         event.preventDefault();
@@ -332,17 +333,11 @@ angular.module('ionBlankApp')
         return $scope.config['dont-show-again']['top-picks']?[current]
 
       # swipeCard methods
-      cardKeep: (item)->
-        item.favorite = true
-        otgParse.setFavoriteP(item).then ()->
-          $rootScope.$broadcast 'sync.cameraRollChanged'
-          console.log "\n\n*** Success updated favorite=true"
+      cardKeep: (item, $index)->
+        return $scope.on.setFavorite(null, item, true)
       cardReject: (item)->
-        item.favorite = false
-        otgParse.setFavoriteP(item).then ()->
-          $rootScope.$broadcast 'sync.cameraRollChanged'
-          console.log "\n\n*** Success updated favorite=false"
-      cardSwiped: (item)->
+        return $scope.on.setFavorite(null, item, false)
+      cardSwiped: (item, $index)->
         # console.log "Swipe, item.UUID=" + item.UUID
         return
       cardClick: (scope, ev, item)->

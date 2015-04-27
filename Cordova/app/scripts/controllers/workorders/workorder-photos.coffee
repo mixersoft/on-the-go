@@ -111,14 +111,14 @@ angular.module('ionBlankApp')
         event.stopPropagation()
         return
         
-      notTopPick: (event, item)->
+      setTopPick: (event, item, value='toggle')->
         if event
           event.preventDefault() 
           event.stopPropagation()
         return if $scope.workorderAttr.status == 'closed'
         revert = item.topPick
-        return if revert==false
-        item.topPick = false
+        item.topPick = if value=='toggle' then !item.topPick else value
+        return if item.topPick==revert
         otgParse.savePhotoP(item, $scope.photosColl, 'topPick')
         # otgParse.updatePhotoP(item, 'topPick')
         .then ()->
@@ -130,30 +130,6 @@ angular.module('ionBlankApp')
             item.topPick = revert
             console.warn "item NOT saved, err=" + JSON.stringify err
         # if $state.current.name != 'app.workorder-photos.all'
-          # refresh on reload
-          # setFilter( $state.current )
-
-        # scroll to next item()
-        return item  
-      addTopPick: (event, item)->
-        if event
-          event.preventDefault() 
-          event.stopPropagation()
-        return if $scope.workorderAttr.status == 'closed'
-        revert = item.topPick
-        return if revert==true
-        item.topPick = true
-        otgParse.savePhotoP(item, $scope.photosColl, 'topPick')
-        # otgParse.updatePhotoP(item, 'topPick')
-        .then ()->
-            $scope.workorderAttr.progress.todo -= 1 if !revert && revert != false
-            $scope.workorderAttr.progress.picks += 1 if !revert
-            $scope.on._saveWoProgress($scope.workorderAttr)
-            return $scope.$apply()
-          , (err)->
-            item.topPick = revert
-            console.warn "item NOT saved, err=" + JSON.stringify err
-        # if  $state.current.name != 'app.workorder-photos'
           # refresh on reload
           # setFilter( $state.current )
 
@@ -180,9 +156,9 @@ angular.module('ionBlankApp')
 
       # swipeCard methods
       cardKeep: (item, index)->
-        return $scope.on.addTopPick(null, item)
+        return $scope.on.setTopPick(null, item, true)
       cardReject: (item)->
-        return $scope.on.notTopPick(null, item)
+        return $scope.on.setTopPick(null, item, false)
       cardSwiped: (item, $index)->
         $scope.watch.nav.index = $index
         # console.log "Swipe, item.id=" + item.id
@@ -257,7 +233,7 @@ angular.module('ionBlankApp')
 
     # sync photos only
     _SyncWorkorderPhotos = (options)->
-      options = $rootScope.state.params if `options==null`
+      options = $rootScope.$state.params if `options==null`
       if options.woid?
         workorderColl = otgWorkorderSync._workorderColl['editor']
         workorderObj = workorderColl.get(options.woid)

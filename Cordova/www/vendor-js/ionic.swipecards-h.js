@@ -169,7 +169,7 @@
       if (positive == null) positive = this.fly 
       if (positive === 'right') positive = true;
       if (positive === 'left') positive = false;  
-      this.transitionOut(positive, false);
+      this.transitionOut(null, positive);
     },
 
     /**
@@ -181,11 +181,16 @@
       if (dist == null) {
         dist = 50
       }
-      dir = positive === 'right' || positive > 0 ? 1 : -1;
-      flyTo = dir * dist
+      if (positive === 'right') positive = true;
+      else if (positive === 'left') positive = false;  
+      else if (isNaN(parseInt(positive)) == false) 
+      {
+        positive = positive > 0 ? true : false;
+      }
+      flyTo = positive ? dist : -1 * dist; 
       this.el.style[ionic.CSS.TRANSFORM] = 'translate3d(' + flyTo + 'px, 0, 0)';
       setTimeout(function() {
-          self.transitionOut(dir>0)
+          self.transitionOut(null, positive)
         }, duration * 1000);
     }, 
 
@@ -200,7 +205,7 @@
     /**
      * Fly the card back to original position on return=true, or right or left 
      */
-    transitionOut: function(positive) {
+    transitionOut: function(ev, positive) {
       var self = this;
       var duration = 0.2;
       var flyTo;
