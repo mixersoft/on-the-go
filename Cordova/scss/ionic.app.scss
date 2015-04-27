@@ -382,6 +382,25 @@ ion-side-menu-content .item > * {
   opacity: 0.5;
 }
 
+.shot-group-progress {
+  position: fixed;
+  margin: 4px 2px;
+  right: 0;
+  top: 90px;
+  z-index: 100;
+  .shot-item {
+    height: 40px;
+    width: 10px;
+    background-color: $positive;
+    position: relative;
+    right: 4px;
+    margin: 2px;
+    &.selected {
+      background-color: $balanced;
+    }
+  }
+}
+
 .order-card {
   .export-url {
     border: 1px solid #AAA;

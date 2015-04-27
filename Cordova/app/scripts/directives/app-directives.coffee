@@ -462,7 +462,111 @@ angular.module('ionBlankApp')
 ]
 
 
+.directive 'shotGroupProgress', [
+  '$compile'
+  ($compile)->
+    controller = {
+      shot: 
+        position: 0 # position in items
+        id: null
+        index: null
+        count: 0
+      getShotId : (item)->
+        return null if !item
+        return item.burstIdentifer || item.dateTaken  # sue a proxy for shotId
 
+      getShot : (index, items, isFirst)->
+        # NOTE: assumes items are sorted by shotId
+        count = 0
+        shotId = controller.getShotId( items[ index ] )
+        loop
+          count+=1
+          item = items[ index + count ]
+          break if shotId != controller.getShotId( item )
+        shot = {
+          position: index
+          id: shotId
+          index: 0
+          count: count
+        }  
+        if !isFirst && index > 0
+          count = 1
+          loop
+            count-=1
+            item = items[ index + count - 1 ]
+            break if shotId != controller.getShotId( item )
+          if count
+            count = -1 * count
+            shot.index += count
+            shot.count += count
+            shot.position = index - count
+        return shot
+
+      updateIndex : (cur, prev, items)->
+        shotId = controller.getShotId(items[cur])
+        curShot = controller.shot
+        if curShot.id == shotId
+          curShot.index = cur - curShot.position
+        else
+          isFirst = (prev == cur - 1) && prev > 0
+          shot = controller.getShot( cur, items, isFirst )
+          _.extend curShot, shot
+        return curShot
+
+      renderShot : ($parent, shot)->
+        if false && $parent.attr('shot-id') == shot.id
+          # update index
+          $shotItems = $parent.children()
+          $shotItems.removeClass('selected')
+          angular.element($shotItems[shot.index]).addClass('selected')
+          
+        else
+          $parent.html('').attr('shot-id', shot.id)
+          return $parent if shot.count<=1
+
+          console.log "shot=", shot
+          for i in [0...shot.count] by 1
+            console.log "> shot-item, index=", i
+            $oneEl = angular.element markup.item
+            $oneEl.addClass('selected') if i == shot.index
+            $parent.append($oneEl)
+        return $parent
+
+    }
+
+    markup = {
+      item: '<div class="shot-item"></div>'
+    }
+
+    self = {
+      restrict: 'A'
+      scope: {
+        items: '=shotGroupProgress'
+        index: '='
+        doAction: '&'
+      }
+      link: (scope, $elem, attrs)->
+        scope.itemClick = (ev)->
+          action = ev.currentTarget.getAttribute('action')
+          console.log "button clicked, action=", action
+          scope.doAction({action:action, workorder:scope.wo})
+          return
+
+        scope.$watch 'index', (newV, oldV)->
+          return if `newV==null`
+          shot = controller.updateIndex(newV, oldV, scope.items)
+          controller.renderShot($elem, shot)
+          return 
+
+        $elem.addClass('shot-group-progress')
+        
+        # return $compile( $elem.contents())(scope)
+        return
+    }
+    return self    
+
+
+]
 
 # ############################
 # workorder directives. 
@@ -470,8 +574,9 @@ angular.module('ionBlankApp')
 
 # 
 # apply ng-bind & ng-class for workorder status indicators 
+#   used by menu:badge and order-card, 
+#   NOTE: workorder-photos uses workorderActions bar intead
 # 
-
 .directive 'workorderStatus', [
   ()->
     return {
