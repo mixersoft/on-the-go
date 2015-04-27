@@ -17,25 +17,27 @@ npm install -g bower gulp cordova ionic
 
 ### clone the github repo
 #echo 'enter github user credentials'
-#git clone https://github.com/mixersoft/on-the-go.git snappi-onthego
+git clone https://github.com/mixersoft/on-the-go.git snappi-onthego
 ###
 ### prompt> provide github user/pass
 ###
 
 ### goto cordova project folder
-#cd snappi-onthego/Cordova
+cd snappi-onthego/Cordova
 
 
 ### install dependencies
 echo '{
   "directory": "bower_components"
 }' > .bowerrc
+mkdir bower_components
 ### OR, add .bowerrc to github repo
 
-bowerComponentsDir=/bower_components
-if [ ! -d "$bowerComponentsDir"]; then
-    mkdir $bowerComponentsDir
-fi
+
+bower install 
+unlink ./www/components
+ln -s ../bower_components ./www/components
+
 
 npm install
 npm list gulp-sass
@@ -43,12 +45,6 @@ echo 'confirm gulp-sass was correctly installed, may need sudo'
 ### NOTE: confirm correct install of gulp-sass, type `npm list gulp-sass`  
 ### it may need to be installed as administrator
 # sudo npm install gulp-sass
-
-bower install 
-unlink ./www/components
-ln -s ../bower_components ./www/components
-
-
 
 
 
@@ -82,7 +78,7 @@ ionic plugin add ../CordovaNativeMessenger
 ###     Once the project has been successfully configured, 
 ###     just run this build step
 ###
-gulp; ionic build ios;
+gulp; grunt html2js; ionic build ios;
 
 ### run, or open ./platforms/ios/ion-OnTheGo.xcodeproj
 #ionic emulate
