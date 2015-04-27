@@ -426,8 +426,8 @@ angular
       url: "/photos/picks",
     })
   # if none of the above states are matched, use this as the fallback
-  $urlRouterProvider.otherwise('/app/top-picks/top-picks');  
-  # $urlRouterProvider.otherwise('/app/settings');  
+  # $urlRouterProvider.otherwise('/app/top-picks/top-picks');  
+  $urlRouterProvider.otherwise('/app/settings');  
 
 ]
 .controller 'AppCtrl', [
@@ -663,26 +663,34 @@ angular
 
 
     _RESTORE_FROM_LOCALSTORAGE = ()->
-      # config values read from localstorage, set in otgLocalStorage
-      otgLocalStorage.loadDefaultsIfEmpty([
-        'config', 'device', 'menuCounts'
-        'topPicks'
-        'cameraRoll'
-      ]) 
-      # do this BEFORE any listeners are registered
-      if $localStorage['config']['upload']['auto-upload'] == false
-        $localStorage['config']['upload']['enabled'] = false # force
+      try
+        # config values read from localstorage, set in otgLocalStorage
+        otgLocalStorage.loadDefaultsIfEmpty([
+          'config', 'device', 'menuCounts'
+          'topPicks'
+          'cameraRoll'
+        ]) 
+        # do this BEFORE any listeners are registered
+        if $localStorage['config']['upload']['auto-upload'] == false
+          $localStorage['config']['upload']['enabled'] = false # force
 
-      $rootScope.config =  $scope.config = $localStorage['config']
-      $rootScope.counts = $localStorage['menuCounts']
-      $rootScope.device = $localStorage['device']
-      return
+        $rootScope.config =  $scope.config = $localStorage['config']
+        $rootScope.counts = $localStorage['menuCounts']
+        $rootScope.device = $localStorage['device']
+        return
+      catch e
+        console.error "_RESTORE_FROM_LOCALSTORAGE, err=" + JSON.stringify e
+      
+      
 
 
     # Dev/Debug tools
     _LOAD_DEBUG_TOOLS = ()->
-      $scope.MessengerPlugin = snappiMessengerPluginService
-      window.appConsole = $rootScope.appConsole = appConsole
+      try
+        $scope.MessengerPlugin = snappiMessengerPluginService
+        window.appConsole = $rootScope.appConsole = appConsole
+      catch e
+        console.error "_LOAD_DEBUG_TOOLS, err=" + JSON.stringify e
 
 
     _LOAD_BROWSER_TOOLS = ()->
@@ -750,34 +758,39 @@ angular
       return
 
     _LOAD_MODALS = ()->  
-      #
-      # app modals
-      #
-      $scope.modal = {
-        legal: null
-      }
+      try
+        # ...
+      
+        #
+        # app modals
+        #
+        $scope.modal = {
+          legal: null
+        }
 
-      $ionicModal.fromTemplateUrl('views/settings-legal.html', {
-          scope: $scope,
-          animation: 'slide-in-up'
-        }).then( (modal)-> 
-          $scope.modal.legal = self = modal
-          window.legal = $scope.modal.legal
+        $ionicModal.fromTemplateUrl('views/settings-legal.html', {
+            scope: $scope,
+            animation: 'slide-in-up'
+          }).then( (modal)-> 
+            $scope.modal.legal = self = modal
+            window.legal = $scope.modal.legal
 
-          self.scope.isModal = {
-            type: 'terms-of-service'  # [terms-of-service | privacy]
-            hide: ()->
-              self.hide()
-          }
-          self.showTab = (type)->
-            self.scope.isModal.type = type
-            self.show()
-        ) 
+            self.scope.isModal = {
+              type: 'terms-of-service'  # [terms-of-service | privacy]
+              hide: ()->
+                self.hide()
+            }
+            self.showTab = (type)->
+              self.scope.isModal.type = type
+              self.show()
+          ) 
 
-      $scope.$on('$destroy', ()->
-        $scope.modal.legal.remove();
-        delete $scope.modal.legal
-      );  
+        $scope.$on('$destroy', ()->
+          $scope.modal.legal.remove();
+          delete $scope.modal.legal
+        ); 
+      catch e
+        console.error "_LOAD_MODALS, err=" + JSON.stringify e 
 
 
     init = ()->
@@ -791,11 +804,15 @@ angular
       .then ()->
         $scope.config['no-view-headers'] = deviceReady.device().isDevice && false
         $rootScope.device.id = deviceReady.device().id
-        # console.log "\n\n>>> deviceId="+$rootScope.device.id
+        console.log ">>> deviceId="+$rootScope.device.id
       .then ()-> # Device Init
         return if deviceReady.device().isBrowser
         # pushNotifications
-        console.log "$localStorage['device']=" + JSON.stringify $localStorage['device']  
+        try 
+          console.log "$localStorage['device']=" + JSON.stringify $localStorage['device']  
+        catch e
+          console.error "Error $localStorage['device'] "
+          
         pushNotifyPlugin.initialize( $localStorage['device'] )
           .registerP()
 
@@ -821,6 +838,8 @@ angular
         promise = otgParse.checkBacklogP().then (backlog)->
           $scope.config.system['order-standby'] = backlog.get('status') == 'standby'
         return  # end $ionicPlatform.ready
+      .catch (e)->
+        console.error "init.deviceReady.waitP(), err=" + JSON.stringify e
 
     init()
 
