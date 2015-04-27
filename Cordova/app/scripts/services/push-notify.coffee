@@ -79,7 +79,7 @@ angular.module 'snappi.notification.push', [
 
         _localStorageDevice = $localStorageDevice
         self.isReady = true
-        console.log "pushNotificationPluginSvc initialized"
+        console.log "pushNotificationPluginSvc initialized", $localStorageDevice
 
         # debug only
         self['messages'] = {}
@@ -96,12 +96,17 @@ angular.module 'snappi.notification.push', [
 
         if _localStorageDevice?['pushInstall']?
           isOK = true
-          isOK = isOK && _localStorageDevice['pushInstall'].ownerId?
-          isOK = isOK && _localStorageDevice['pushInstall'].deviceId == deviceReady.device().deviceId
+          isOK = isOK && _localStorageDevice['pushInstall'].ownerId == $rootScope.sessionUser?.id 
+          isOK = isOK && _localStorageDevice['pushInstall'].deviceId == deviceReady.device().id
           isOK = isOK && _localStorageDevice['pushInstall'].installationId == Parse._getInstallationId()
           if isOK
             console.log("pushInstall OK")
-            return $q.when('done') 
+            return $q.when('done')
+        #   else
+        #     console.log "localStorage pushInstall=" + JSON.stringify _localStorageDevice['pushInstall']
+        #     console.log "compare to:" + JSON.stringify [ $rootScope.sessionUser.id, deviceReady.device().id, Parse._getInstallationId() ]
+        else
+          console.log "_localStorageDevice['pushInstall'] is EMPTY"
 
         if ionic.Platform.isAndroid()
           config = {
@@ -214,6 +219,11 @@ angular.module 'snappi.notification.push', [
           postData["username"] = $rootScope.sessionUser.get('username')
           postData["active"] = true # active installation, for multiple users on same device
           # TODO: beforeSave set active=false for installationId==Parse._getInstallationId()
+        else 
+          postData["owner"] = null
+          postData["ownerId"] = null
+          postData["username"] = 'guest'
+          postData["active"] = true # active installation, for multiple users on same device
 
 
         # TODO: move to otgParse?
@@ -228,8 +238,8 @@ angular.module 'snappi.notification.push', [
         }
         return $http(xhrOptions)
           .success (data, status)->
-            _localStorageDevice['pushInstall'] = _.pick data, ['objectId', 'deviceType', 'installationId', 'ownerId', 'username']
-            console.log "Parse installation saved" + JSON.stringify([data, status])
+            _localStorageDevice['pushInstall'] = _.pick data, ['objectId', 'deviceType', 'deviceId', 'installationId', 'ownerId', 'username']
+            console.log "Parse installation saved, data=" + JSON.stringify _localStorageDevice['pushInstall']
             return data
           .error (data, status)->
             console.log "Error: saving Parse installation" + JSON.stringify([data, status]) 

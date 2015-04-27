@@ -632,7 +632,22 @@ angular
       cameraRoll.loadCameraRollP(null, 'replace').then ()->
         $scope.app.localStorageSnapshot()
         return
+      pushNotifyPlugin.registerP()
       return
+    $scope.$on 'user:sign-in', (args)->
+      console.log "$broadcast user:sign-in received"
+      pushNotifyPlugin.registerP()
+      otgWorkorderSync.clear()
+      cameraRoll.clearPhotos_PARSE()  
+      if deviceReady.device().isBrowser            
+        cameraRoll.clearPhotos_CameraRoll()           
+        # TODO: move to cameraRoll.clearPhotos_CameraRoll()
+        $rootScope.$broadcast('sync.cameraRollComplete', {changed:true})
+      if otgParse.isAnonymousUser() == false
+        window.TEST_DATA = null 
+      
+      return
+
 
     $scope.$on 'sync.cameraRollComplete', (args)->
       $scope.app.localStorageSnapshot()
@@ -650,7 +665,7 @@ angular
     _RESTORE_FROM_LOCALSTORAGE = ()->
       # config values read from localstorage, set in otgLocalStorage
       otgLocalStorage.loadDefaultsIfEmpty([
-        'config', 'menuCounts'
+        'config', 'device', 'menuCounts'
         'topPicks'
         'cameraRoll'
       ]) 
@@ -780,6 +795,7 @@ angular
       .then ()-> # Device Init
         return if deviceReady.device().isBrowser
         # pushNotifications
+        console.log "$localStorage['device']=" + JSON.stringify $localStorage['device']  
         pushNotifyPlugin.initialize( $localStorage['device'] )
           .registerP()
 

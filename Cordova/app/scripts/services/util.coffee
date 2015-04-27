@@ -45,18 +45,24 @@ angular.module 'snappi.util', ['ionic', 'ngCordova', 'ngStorage']
           , _timeout
         $ionicPlatform.ready ()->
           $timeout.cancel _cancel
+          if $localStorage['device']?.id?
+            _device = angular.copy $localStorage['device']
+            return deferred.resolve( _device )
+
           platform = _.defaults ionic.Platform.device(), {
             available: false
             cordova: false
             platform: 'browser'
             uuid: 'browser'
+            id: 'browser'
           }
-          $localStorage['device'] = {
+          $localStorage['device'] = {} 
+          _.extend $localStorage['device'],
+           {
             id: platform.uuid
             platform : platform
             isDevice: ionic.Platform.isWebView()
             isBrowser: ionic.Platform.isWebView() == false
-            pushInstall: null  # push registration
            }
           _device = angular.copy $localStorage['device']
           # console.log "$ionicPlatform reports deviceReady, device.id=" + $localStorage['device'].id

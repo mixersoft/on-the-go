@@ -253,6 +253,7 @@ angular.module('ionBlankApp')
         otgWorkorderSync.clear()
         userCred = _.pick otgProfile.userModel(), ['username', 'password']
         return otgProfile.signInP(userCred).then ()->
+
             otgProfile.errorMessage = ''
             target = 'app.settings.main'
             target = 'app.workorders.open' if /workorders/.test($scope.SideMenuSwitcher?.leftSide.src)
@@ -261,7 +262,6 @@ angular.module('ionBlankApp')
             })
 
             $rootScope.$state.transitionTo(target)  
-
           , (error)->
             otgProfile.userModel( {} )
             $rootScope.$state.transitionTo('app.settings.sign-in')
@@ -274,13 +274,7 @@ angular.module('ionBlankApp')
             return 
           .then ()->
             # refresh everything, including topPicks
-            otgWorkorderSync.clear()
-            cameraRoll.clearPhotos_PARSE()  
-            if $scope.deviceReady.device().isBrowser            
-              cameraRoll.clearPhotos_CameraRoll()           
-            if otgParse.isAnonymousUser() == false
-              window.TEST_DATA = null 
-            $rootScope.$broadcast 'sync.cameraRollComplete'
+            $rootScope.$broadcast 'user:sign-in' 
             return
 
 

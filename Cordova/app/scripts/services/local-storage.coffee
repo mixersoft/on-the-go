@@ -21,10 +21,11 @@ angular
     self = this
     this.defaults = {
       device:
-        id: '00000000000'
+        id: null
         platform: {}
         isDevice: null
         isBrowser: null
+        pushInstall: null
       config: # default app config params
         'app-bootstrap' : true
         'no-view-headers' : false
