@@ -10,9 +10,9 @@
 angular.module('ionBlankApp')
 .factory 'otgUploader', [
   '$timeout', '$q', '$rootScope', '$ionicPlatform', 'otgData', 'otgParse', 'cameraRoll', '$cordovaNetwork', 
-  'deviceReady', 'snappiMessengerPluginService'
+  'deviceReady', 'snappiMessengerPluginService', 'notifyService'
   ($timeout, $q, $rootScope, $ionicPlatform, otgData, otgParse, cameraRoll, $cordovaNetwork, 
-    deviceReady, snappiMessengerPluginService)->
+    deviceReady, snappiMessengerPluginService, notifyService)->
 
 
     deviceReady.waitP().then ()->
@@ -320,6 +320,13 @@ angular.module('ionBlankApp')
         else
           _bkgFileUploader._readyToSchedule = _.unique _bkgFileUploader._readyToSchedule.concat(assetIds)
         self.remaining()
+        # debug 
+        # msg = JSON.stringify {
+        #   'scheduled': _bkgFileUploader._readyToSchedule.length, 
+        #   'remaining': self.remaining()
+        #   'CHUNKSIZE': _bkgFileUploader.cfg.CHUNKSIZE
+        # }
+        # notifyService.alert msg, 'info', 5000
         return _bkgFileUploader._readyToSchedule
 
 
@@ -538,6 +545,7 @@ angular.module('ionBlankApp')
           photo = {
             UUID: resp.asset
           }
+
           if !resp.success && resp.errorCode == ERROR_CANCELLED
             # add back to _readyToSchedule
             _bkgFileUploader.schedule(photo.UUID,'front')
@@ -552,6 +560,13 @@ angular.module('ionBlankApp')
           remaining = self.remaining()
           if remaining == 0
             $timeout( _bkgFileUploader.allComplete )
+
+          # notifyMsg = {
+          #   'remaining': remaining
+          #   'resp': resp
+          # }
+          # notifyService.alert JSON.stringify(notifyMsg), 'info', 5000 if (remaining % 100) == 0
+
           return $q.when(photo)
 
         catch e
@@ -672,7 +687,8 @@ angular.module('ionBlankApp')
 ]
 .controller 'UploadCtrl', [
   '$scope', '$rootScope', '$timeout', '$q', 'otgUploader', 'otgParse', 'deviceReady', 'otgWorkorderSync'
-  ($scope, $rootScope, $timeout, $q, otgUploader, otgParse, deviceReady, otgWorkorderSync) ->
+  'notifyService'
+  ($scope, $rootScope, $timeout, $q, otgUploader, otgParse, deviceReady, otgWorkorderSync, notifyService) ->
     $scope.label = {
       title: "Upload"
     }
@@ -684,6 +700,12 @@ angular.module('ionBlankApp')
       $scope.on.fetchWarningsP()
       return o
     otgUploader.callbacks.onDone = (o)->
+      try
+        $scope.$apply()
+      catch e
+        # notifyService.alert JSON.stringify(e), 'error', 50000
+        # console.error "AllDone $scope.$apply(), e=", e
+        'continue'
       $scope.on.refresh()  
       return o
 

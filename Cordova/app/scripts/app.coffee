@@ -426,8 +426,8 @@ angular
       url: "/photos/picks",
     })
   # if none of the above states are matched, use this as the fallback
-  # $urlRouterProvider.otherwise('/app/top-picks/top-picks');  
-  $urlRouterProvider.otherwise('/app/settings');  
+  $urlRouterProvider.otherwise('/app/top-picks/top-picks');  
+  # $urlRouterProvider.otherwise('/app/settings');  
 
 ]
 .controller 'AppCtrl', [
@@ -804,15 +804,11 @@ angular
       .then ()->
         $scope.config['no-view-headers'] = deviceReady.device().isDevice && false
         $rootScope.device.id = deviceReady.device().id
-        console.log ">>> deviceId="+$rootScope.device.id
+        # console.log "\n\n>>> deviceId="+$rootScope.device.id
       .then ()-> # Device Init
         return if deviceReady.device().isBrowser
         # pushNotifications
-        try 
-          console.log "$localStorage['device']=" + JSON.stringify $localStorage['device']  
-        catch e
-          console.error "Error $localStorage['device'] "
-          
+        # console.log "$localStorage['device']=" + JSON.stringify $localStorage['device']  
         pushNotifyPlugin.initialize( $localStorage['device'] )
           .registerP()
 

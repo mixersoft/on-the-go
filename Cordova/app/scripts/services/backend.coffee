@@ -495,7 +495,7 @@ angular
         #   'exif', 'orientation'
         #   "mediaType",  "mediaSubTypes", "burstIdentifier", "burstSelectionTypes", "representsBurst",
         # ] 
-        PATCH_ParsePhotoObjKeys = false # ['originalWidth', 'originalHeight', 'date']
+        PATCH_ParsePhotoObjKeys = false # ['originalWidth', 'originalHeight', 'location', 'date']
 
         if PATCH_ParsePhotoObjKeys
           imageCacheSvc.clearStashedP('preview') # force cameraRoll fetch
@@ -1141,8 +1141,8 @@ angular
         .then ()-> 
           attrsForParse = [
             'dateTaken', 'originalWidth', 'originalHeight', 
-            'rating', 'favorite', 'caption', "hidden"
-            'exif', 'orientation'
+            'rating', 'favorite', 'caption', 'hidden'
+            'exif', 'orientation', 'location'
             "mediaType",  "mediaSubTypes", "burstIdentifier", "burstSelectionTypes", "representsBurst",
           ]
           extendedAttrs = _.pick photo, attrsForParse

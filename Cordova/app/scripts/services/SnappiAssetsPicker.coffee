@@ -526,7 +526,7 @@ angular
           
 
         # load from cameraRoll if workorderObj.get('devices').indexOf(deviceReady.device().id) > -1
-        if isDevice = !isBrowser 
+        if deviceReady.device().isDevice 
           return snappiMessengerPluginService.getDataURLForAssets_P( 
             [UUID], 
             options, 
@@ -914,6 +914,7 @@ angular
       ## @param options = { DestinationType:, size: }
       ## @param eachPhoto is a callback, usually supplied by cameraRoll
       ##
+      # TODOL refactor, rename to getPhotosForAssetIds_P()
       getDataURLForAssets_P: (assets, options, eachPhoto)->
         # call getPhotosByIdP() with array
         options = _.defaults options || {} , {
@@ -1066,14 +1067,15 @@ angular
               return dfd.reject retval.errors
 
 
+          # DEBUG: photo.UIImageOrientation==1, orientation is ALWAYS 1, need value BEFORE auto-rotate
           _patchOrientation = (photo)->
             # http://cloudintouch.it/2014/04/03/exif-pain-orientation-ios/
             lookup = [1,3,6,8,2,4,5,7]
-            if photo.UIImageOrientation?
-              photo.orientation == 'unknown' 
+            if !photo.UIImageOrientation?
+              photo.orientation = 'unknown' 
             else 
               photo.orientation = lookup[ photo.UIImageOrientation ] 
-              delete photo.UIImageOrientation
+            delete photo.UIImageOrientation
             return 
 
           window.Messenger.getPhotoById assetIds, options, (photo)->
@@ -1085,9 +1087,11 @@ angular
               ## expecting photo keys: [data,UUID,dateTaken,originalWidth,originalHeight]
               ## NOTE: extended attrs from mapAssetsLibrary: UUID, dateTaken, mediaType, MediaSubTypes, hidden, favorite, originalWidth, originalHeight
               # photo.elapsed = (end-start)/1000
+              # adds photo.location, if available. [lat,lon]
+
               photo.from = 'cameraRoll'
               photo.autoRotate = options.autoRotate
-              photo.orientation = _patchOrientation( photo )  # should be EXIF orientation
+              _patchOrientation( photo )  # should be EXIF orientation
 
               # plugin method options              
               photo.format = options.type  # thumbnail, preview, previewHD
