@@ -241,6 +241,9 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
             if (asset.burstIdentifier.length) {
                 [assetDict setObject:asset.burstIdentifier forKey:@"burstIdentifier"];
             }
+            if (asset.location) {
+                [assetDict setObject:@[@(asset.location.coordinate.latitude), @(asset.location.coordinate.longitude)] forKey:@"location"];
+            }
             
             [resultArray addObject:assetDict];
         }
