@@ -487,6 +487,10 @@ NSString *kScheduleAssetsForUploadResponseValue = @"scheduleAssetsForUpload";
                         jsonResult[@"originalWidth"] = @(asset.pixelWidth);
                         jsonResult[@"originalHeight"] = @(asset.pixelHeight);
                     }
+                    if (asset.location) {
+                        jsonResult[@"location"] = @[@(asset.location.coordinate.latitude), @(asset.location.coordinate.longitude)];
+                        NSLog(@"");
+                    }
                     
                     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
                                                                   messageAsDictionary:jsonResult];
