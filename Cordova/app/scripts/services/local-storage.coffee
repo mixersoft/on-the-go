@@ -176,11 +176,26 @@ angular
       # stack for garbage collection, mostRecently used UUID on the 'top'
       # use copy and update $localStorage['fileURI_MostRecent'] in debounced method
       mostRecent : angular.copy $localStorage['fileURI_MostRecent'] 
-      CACHE_DIR : '/'  # ./Library/files/  it seems $cordovaFile requires this as root
-      cacheRoot : null
+
+      ##
+      # IMPORTANT: map $cordovaFile dir to Plugin FILE_URI dir
+      ##
+      PLUGIN_DIR: 'Library/files' # Messenger writes to this folder
+      PLUGIN_ROOT: null  # cordova.file.applicationStorageDirectory, set in $ionicPlatform.ready
+      # $cordovaFile.writeFile('/'+...) writes to ./Library/files == PLUGIN_DIR
+      CACHE_DIR : '/' # => cordova.file.applicationStorageDirectory + Library/files
+      CACHE_ROOT : null  # dirEntry, (NOT path), set in $ionicPlatform.ready
+
       LIMITS:
         MAX_PREVIEW: 500
         MOST_RECENT: 1000 # apply _.unique on reaching limit
+
+      SIZE_LOOKUP :
+        'thumbnail':64
+        'preview':320
+        'preview@2x':750
+        'previewHD':1080
+
       isDataURL : (src)->
         return false if typeof src != 'string'
         return /^data:image/.test( src )
@@ -193,19 +208,34 @@ angular
         return 
 
       getFilename: (UUID, size, dataURL)->
-        # TODO: need to lookup from localStorage
+        # Follows the naming convention of Plugin FILE_URI
         filenameBase = UUID.replace('/','~')
-        SIZE_LOOKUP = {
-          'thumbnail':64
-          'preview':720
-          'previewHD':1080
-        }
+        size = self.SIZE_LOOKUP[size] if self.SIZE_LOOKUP[size]
+        size = size || 'unknown'
         if !dataURL
-          return filePath = filenameBase + '~' + SIZE_LOOKUP[size] + '.jpg'
+          return filePath = filenameBase + '~' + size + '.jpg'
         # else
         ext = self.getDataURLExt(dataURL) 
         return false if !ext || !filenameBase
-        return filePath = filenameBase + '~' + SIZE_LOOKUP[size] + '.' + ext
+        return filePath = filenameBase + '~' + size + '.' + ext
+
+      # for parsing files written by Plugin FILE_URI, example: 
+      #     FDD10266-CE34-44E4-886F-E10A408E1483~L0~001~720.jpg
+      #     FDDFF97C-63E1-44BA-B803-59C5A0A7292A~L0~001~64.jpg
+      getHashKeyFromFilename: (filename)->
+        # the inverse of self.getFilename()
+        # TODO: this will NOT work with PLUGIN FileURIs, need to persist stashFile to local storage
+        parts = filename.split('~')
+        tail = parts.pop() # 64.jpg
+        ext = tail.split('.').pop()
+        size = if tail.length == 0 then "unknown" else tail[0]
+        UUID = parts.join('-')
+        return self.getHashKey(UUID, size)
+
+      getHashKey: (UUID,size)->
+        size = self.SIZE_LOOKUP[size] if self.SIZE_LOOKUP[size]
+        size = size || 'unknown'
+        return hashKey = [ UUID[0...36] , size].join(':') 
 
       debounced_MostRecent: _.debounce ()->
           self.mostRecent = _.unique(self.mostRecent)
@@ -224,14 +254,21 @@ angular
       # @return stashed object, {fileURL:, fileSize:} or false
       ###
       isStashed:  (UUID, size, repo='appCache')-> 
+        CACHE_ROOT = cordova.file.applicationStorageDirectory
         stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
-        hashKey = [ UUID[0...36] ,size].join(':') 
-        stashed = self[stashKey][hashKey] || false
-        if stashed
+        hashKey = self.getHashKey( UUID, size)
+        stashed = self[stashKey][hashKey] || null
+        match = self.PLUGIN_ROOT.slice(7)
+        if stashed?.fileURL.indexOf(match) == 0
           # console.log "\n\n >>> STASH HIT !!!  file=" + src.slice(-60) 
-
           self.mostRecent.unshift(hashKey)
           self.debounced_MostRecent()
+        else if stashed?.fileURL
+          console.log "\n>>> STASH hit STALE, file=" + stashed.fileURL 
+          self.clearStashKey(UUID, size)
+          stashed = false
+        else 
+          stashed = false
         return stashed
 
       isStashed_P:  (UUID, size)->
@@ -242,10 +279,12 @@ angular
         return self.cordovaFile_CHECK_P(UUID, size, null)
 
       stashFile: (UUID, size, fileURL, fileSize, repo='appCache')->
-        console.warn "stashFile with no SIZE, UUID="+UUID if !size
-
         stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
-        hashKey = [ UUID[0...36] ,size].join(':') 
+        if !size
+          filename = fileURL.split('/').pop()
+          hashkey = self.getHashKeyFromFilename(filename)
+        else 
+          hashKey = self.getHashKey( UUID, size)
         # console.log "\n\n >>> STASH file=" + hashKey + ", url=" + fileURL
         self[stashKey][hashKey] = {
           fileURL: fileURL
@@ -269,13 +308,13 @@ angular
 
       unstashFileP: (UUID, size, defer = false, repo='appCache')->
         stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
-        hashKey = if size then hashKey = [ UUID[0...36] ,size].join(':') else UUID
+        hashKey = self.getHashKey( UUID, size)
         o = self[stashKey][hashKey]
         return $q.reject("stashFile not found") if !o
         filename = self.CACHE_DIR + o.fileURL.split('/').pop()
         # console.log "remove o.fileURL="+o.fileURL.slice(-60)+", filename="+filename
         return $cordovaFile.removeFile(filename).then (retval)->
-            # console.log "\n %%% $cordovaFile.removeFile complete, filename=" + filename.slice(-60)
+            # console.log ">>> $cordovaFile.removeFile complete, filename=" + filename.slice(-60)
             # console.log retval # $$$
             return hashKey if defer
             self.clearStashKey UUID, size, repo
@@ -283,16 +322,16 @@ angular
             return
           , (err)->
             if err.code == 1 # NOT FOUND
-              # console.log "\n %%% $cordovaFile.removeFile NOT FOUND, filename=" + filename.slice(-60)
+              # console.log ">>> $cordovaFile.removeFile NOT FOUND, filename=" + filename.slice(-60)
             else 
-              console.warn "\n %%% $cordovaFile.removeFile error: ", [err, filename.slice(-60)]
+              console.warn ">>> $cordovaFile.removeFile error", [err, filename.slice(-60)]
             return hashKey if defer
             self.clearStashKey UUID, size, repo
             return
       
       clearStashKey:(UUID, size, repo='appCache')->
         stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
-        hashKey = if size then hashKey = [ UUID[0...36] ,size].join(':') else UUID
+        hashKey = self.getHashKey( UUID, size)
         delete self[stashKey][ hashKey ]
         return
 
@@ -328,24 +367,28 @@ angular
               # console.log "*** clearStashedP() END, size="+self.stashSize(repo)
           , 100
 
-
-      getCacheKeyFromFilename: (filename)->
-        # TODO: this will NOT work with PLUGIN FileURIs, need to persist stashFile to local storage
-        parts = filename.split('-')
-        tail = parts.pop()
-        size = 'preview' if tail.indexOf('preview') == 0
-        size = 'thumbnail' if tail.indexOf('thumbnail') == 0
-        console.error "WARNING: cannot parse size from fileURL, name=" + filename if !size
-        UUID = parts.join('-')
-        return [filename, 'unknown'] if !size
-        return [UUID, size]
-
+      # filter cache to remove all entries that are outside basepath
+      #   this usually occurs during app testing or re-install
+      # usage: self.filterStashed( self.PLUGIN_ROOT )
+      filterStashed: (basepath, repo='appCache')->
+        $timeout ()->
+            stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
+            match = self.PLUGIN_ROOT.slice(7)
+            _.each self[stashKey], (v,k)->
+              return if v.fileURL?.indexOf( match ) == 0
+              delete self[stashKey][k]
+              return
+            console.log "imgCacheSvc.filterStashed() complete"
+            return
+          , 5000
+        return
 
       cordovaFile_LOAD_CACHED_P : (dirEntry)->
         # cordova.file.cacheDirectory : ./Library/Caches
         # cordova.file.documentsDirectory : ./Library/Documents
+        # cordova.file.applicationStorageDirectory => ./Library
 
-        dirEntry = self.cacheRoot if !dirEntry
+        dirEntry = self.CACHE_ROOT if !dirEntry
 
         dfd = $q.defer()
         fsReader = dirEntry.createReader()
@@ -355,19 +398,17 @@ angular
             _.each entries, (file)->
               return if !file.isFile
 
-              [UUID, size] = self.getCacheKeyFromFilename(file.name)
-
               fileURL = file.nativeURL || file.toURL()
               promises.push self.getMetaData_P(file).then (meta)->
                 fileSize = meta.size
-                self.stashFile UUID, size, fileURL, fileSize
-                # console.log "\n @@@load> " + UUID + '-' + size + ' : '+ fileURL.slice(-60)
+                self.stashFile( null, null, fileURL, fileSize)
+                console.log "\n @@@load> " + UUID + '-' + size + ' : '+ fileURL.slice(-68)
                 return fileSize
 
               filenames.push file.name
               return
-            # console.log "\n\n *** cordovaFile_LOAD_CACHED_P cached. file count=" + filenames.length
-            # console.log filenames # $$$  
+            console.log "\n\n *** cordovaFile_LOAD_CACHED_P cached. file count=" + filenames.length
+            console.log filenames # $$$  
             return $q.all(promises).then (sizes)->
               return dfd.resolve(filenames)
           , (err)->
@@ -523,37 +564,36 @@ angular
           $target.attr('src', fileURL) if $target
           return fileURL
 
-
-    }
-    deviceReady.waitP()
-    .then ()->
-      # self.CACHE_DIR = cordova.file.cacheDirectory if cordova?.file
-      # self.CACHE_DIR = cordova.file.documentsDirectory if cordova?.file
-      self.CACHE_DIR = '/' # ./Library/files/  it seems $cordovaFile requires this as root
-      $cordovaFile.checkDir( self.CACHE_DIR ).then (dirEntry)->
+      cordovaFile_CHECK_DIR_P : (dirname)->
+        # NOTE: the Plugin currently copies FILE_URIs to '../Library/files'
+        dirname = dirname || self.PLUGIN_DIR
+        return $cordovaFile.checkDir( self.PLUGIN_ROOT, dirname ).then (dirEntry)->
           # console.log "$ngCordovaFile.checkDir()"
           # console.log dirEntry # $$$
-          return self.cacheRoot = dirEntry
+          return dirEntry
+
+
+    }
+
+    ##
+    #  service init
+    ##
+    deviceReady.waitP()
+    .then ()->
+      # self.CACHE_DIR = cordova.file.applicationStorageDirectory + 'Library/files'
+      self.PLUGIN_ROOT = cordova.file.applicationStorageDirectory
+      self.cordovaFile_CHECK_DIR_P( self.PLUGIN_DIR ).then (dirEntry)->
+          return self.CACHE_ROOT = dirEntry
       .then (dirEntry)->
         if _.isEmpty self.cacheIndex
-          # console.warn "@@@load imgCacheSvc.cacheIndex EMPTY, check fs with cordovaFile_LOAD_CACHED_P"
+          console.warn "@@@load imgCacheSvc.cacheIndex EMPTY, check fs with cordovaFile_LOAD_CACHED_P"
           self.cordovaFile_LOAD_CACHED_P()
         else
+          self.filterStashed( self.PLUGIN_ROOT )
           # console.log "\n @@@load imgCacheSvc.cacheIndex from $localStorage"
       .catch (error)->
-        console.warn "$ngCordovaFile.checkDir() error, file=" + self.CACHE_DIR 
+        console.warn "$ngCordovaFile.checkDir() error, file=" + self.PLUGIN_DIR
         console.warn error # $$$
-          
-      # .then ()->
-      #   return $cordovaFile.createDir( 'CACHE_DIR' )
-      # .then (dirEntry)->
-      #     console.log "$ngCordovaFile.createDir()"
-      #     console.log dirEntry # $$$
-      #     self.fs_CACHE_DIR = dirEntry
-      # .catch (error)->
-      #     console.log error # $$$
-      #     console.log "$ngCordovaFile.createDir() error, file=" + self.CACHE_DIR + "\n\n"
-
 
     return self
 ]

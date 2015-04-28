@@ -36,6 +36,7 @@ angular.module('ionBlankApp')
       return parts.join('/')
 
     _setLazySrc = (element, UUID, format)->
+      # console.log '\nsetLazySrc for UUID='+UUID
       throw "ERROR: asset is missing UUID" if !UUID
       IMAGE_SIZE = format || 'thumbnail'
 
@@ -68,7 +69,9 @@ angular.module('ionBlankApp')
         return thumbSrc # element.attr('src', thumbSrc)
 
 
-      if isWorkorder # preview
+      # TODO: confirm photo.from=='PARSE' are all photos from not in CameraRoll
+      # what about cameraRoll phtoos with an OLD deviceId?
+      if isWorkorder || photo.from=='PARSE' # preview
         return photo.src || photo.woSrc # element.attr('src', photo.src || photo.woSrc) 
 
       if isBrowser && photo.from == 'PARSE' 
@@ -90,7 +93,7 @@ angular.module('ionBlankApp')
         element.attr('src', stashed.fileURL)
         return 
       .catch (error)->
-        # console.log "\nlazySrc reports notCached for format=" + format + ", UUID="+UUID
+        # console.log "lazySrc notCached for format=" + format + ", UUID="+UUID
         if isBrowser
           throw "_setLazySrc() img.src not found for isBrowser==true and " + [UUID, format].join(':')
 
@@ -134,8 +137,13 @@ angular.module('ionBlankApp')
 
     # from onImgLoad attrs.spinner
     _spinnerMarkup = '<i class="icon ion-load-c ion-spin light"></i>'
+    _clearGif = 'img/clear.gif'  
     _handleLoad = (ev)->
       $elem = angular.element(ev.currentTarget)
+      if $elem.attr('src') == _clearGif
+        UUID = $elem.attr('lazy-src')
+        # console.log "img.src=clearGif error, UUID="+UUID
+        return 
       $elem.removeClass('loading')
       $elem.next().addClass('hide')  if $elem.attr('spinner')?
       onImgLoad = $elem.attr('on-photo-load')
@@ -147,6 +155,13 @@ angular.module('ionBlankApp')
           return
       return
 
+    _handleError = (ev)->
+      $elem = angular.element(ev.currentTarget)
+      UUID = $elem.attr('lazy-src')
+      console.error "img.onerror, UUID="+UUID+", src="+ev.currentTarget.src[-30..]
+      return
+
+
     return {
       restrict: 'A'
       scope: false
@@ -154,19 +169,26 @@ angular.module('ionBlankApp')
         format = attrs.format
 
         attrs.$observe 'lazySrc', (UUID)->
-          # console.log "\n\n $$$ attrs.$observe 'lazySrc', UUID+" + UUID
-          element.attr('uuid', UUID)
-          src = _setLazySrc(element, UUID, format) 
-          element.attr('src', src)
+          if deviceReady.device().isDevice==null
+            console.error "ERROR: using lazySrc BEFORE deviceReady.waitP()" 
+            return 
+          if !UUID
+            console.log "$$$ attrs.$observe 'lazySrc', UUID+" + UUID
+            return 
+          # element.attr('uuid', UUID)
+          src = _setLazySrc(element, UUID, format)
+          # element.attr('src', _clearGif) if !src
+          element.attr('src', src) if src
           element.addClass('loading')
           element.next().removeClass('hide') if element.attr('spinner')?
-          console.error "ERROR: using lazySrc BEFORE deviceReady.waitP()" if deviceReady.device().isDevice==null
           return src
 
         element.on 'load', _handleLoad
+        # element.on 'error', _handleError
         scope.$on 'destroy', ()->
           element.off _handleLoad
-
+          element.off _handleError
+          return
         element.after(_spinnerMarkup) if attrs.spinner?
         return
   }
@@ -176,6 +198,7 @@ angular.module('ionBlankApp')
 .directive 'onImgLoad', ['$parse' , ($parse)->
   # add ion-animation.scss
   spinnerMarkup = '<i class="icon ion-load-c ion-spin light"></i>'
+  _clearGif = 'img/clear.gif'
   _handleLoad = (ev, photo, index)->
     $elem = angular.element(ev.currentTarget)
     $elem.removeClass('loading')
@@ -187,6 +210,9 @@ angular.module('ionBlankApp')
       fn scope, {$event: ev}
       return
     return
+  _handleError = (ev)->
+    console.error "img.onerror, src="+ev.currentTarget.src
+
 
   return {
     restrict: 'A'
@@ -200,8 +226,10 @@ angular.module('ionBlankApp')
         return
 
       $elem.on 'load', _handleLoad
+      $elem.on 'error', _handleError
       scope.$on 'destroy', ()->
         $elem.off _handleLoad
+        $elem.off _handleError
       $elem.after(spinnerMarkup)
       return
     }

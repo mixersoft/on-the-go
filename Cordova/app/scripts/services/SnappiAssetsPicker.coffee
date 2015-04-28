@@ -399,12 +399,16 @@ angular
             return false 
 
           # only copy ready photos
-          self._mapAssetsLibrary.push _.pick photo, [ 'objectId'
+          # photo.from == "PARSE", see backend.coffee:_patchParsePhotos()
+          item = _.pick photo, [ 'objectId'
             'UUID', 'dateTaken', 'from', 'deviceId', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'exif'
             'originalWidth', 'originalHeight'
             "hidden", "mediaType",  "mediaSubTypes", "burstIdentifier", "burstSelectionTypes", "representsBurst",
             'src'
           ]
+          item['ownerId'] = photo['owner'].objectId
+          item['workorderId'] = photo['workorder'].objectId
+          self._mapAssetsLibrary.push item
           self.dataURLs['preview'][photo.UUID] = photo.src
           return false 
         else if isLocal # update in map()
@@ -425,10 +429,14 @@ angular
       clearPhotos_PARSE : ()->
         # on logout
         self._mapAssetsLibrary = self.filterDeviceOnly()
+        $rootScope.$broadcast('sync.cameraRollComplete', {changed:true})
+        return
 
       clearPhotos_CameraRoll : ()->
-        # on logout
-        self._mapAssetsLibrary = self.filterParseOnly()      
+        # on change user in workorder
+        self._mapAssetsLibrary = self.filterParseOnly() 
+        $rootScope.$broadcast('sync.cameraRollComplete', {changed:true})
+        return     
 
       isDataURL : (src)->
         throw "isDataURL() ERROR: expecting string" if typeof src != 'string'
