@@ -114,10 +114,12 @@
             ng-click="on.cardClick(this, $event, item)">
               <!-- header -->
               <div class="item item-divider item-stable padding-horizontal card-header"
-              ng-if="on.showInfo()">
+              ng-if="on.showInfo()"
+              ng-class="{'item-icon-right':item.from=='PARSE'}">
                 <div class="caption capitalize">
                   {{item.caption || (item.dateTaken | date:'MM/dd/yyyy @ h:mma')}}
                 </div>
+                <i class="icon ion-cloud royal" ng-show="item.from=='PARSE'"></i>
               </div>
 
               <!-- body -->

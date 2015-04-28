@@ -228,6 +228,9 @@ angular.module('ionBlankApp')
           when 'app.top-picks.shared'
             _watch.filter = {shared:true}
         data = cameraRoll.map()
+        # reject photos from different owners. 
+        # TODO: reject photos from non-participating workorders
+        data = _.reject(data, (o)-> return o.ownerId && o.ownerId != $rootScope.sessionUser.id )
         data = $filter('filter')(data, _watch.filter)
         data = $filter('orderBy')(data, _watch.orderBy.key, _watch.orderBy.reverse)
         $scope.watch.filteredOrderedPhotos = data

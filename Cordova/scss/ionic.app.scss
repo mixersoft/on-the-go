@@ -153,6 +153,7 @@ $ionicons-font-path: "../lib/ionic/fonts" !default;
 
 a.no-decoration {
   text-decoration: none !important;
+  color:inherit;
   &:hover, &:visited {
     text-decoration: none !important;
   }
@@ -175,7 +176,7 @@ i.icon.icon-snappi {
   margin-bottom: 10px;
   height: 32px;
   width: 32px;  
-  background: black url(http://app.snaphappi.com/on-the-go.App/img/Icon-40@3x.png) no-repeat scroll center;
+  background: black url(../img/Icon-40@3x.png) no-repeat scroll center;
   /*background: black url(../img/Icon-40@3x.png) no-repeat scroll center;*/
   background-size: 200%;
 }
@@ -313,6 +314,9 @@ ion-side-menu-content .item > * {
         font-size: 0.8em;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+      .icon {
+        font-size: 1.5em;
       }
     }
     
