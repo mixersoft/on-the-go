@@ -1,0 +1,30 @@
+  <div class="card has-header">
+    <div class="item item-divider text-center item-balanced">
+    Send an iMessage for Instant Help
+    </div>
+    <div class="item item-text-wrap text-left">
+      <div>
+        We know you don't have time to fuss with this. So get a direct line to Snaphappi for instant help on any of your questions. Just Click the button below to send us an iMessage.  
+      </div>
+      <button class="button button-full button-large button-balanced icon ion-chatboxes"
+      ng-click="on.helpMe($event)"
+      > 
+        &nbsp;with Snaphappi
+      </button>
+    </div>
+    <div class="item item-text-wrap text-left">
+      <div>Or connect with us online:</div>
+      <div class="text-center" style="font-size:3em;">
+        <a title="see our Facebook page" href="{{watch.links.facebook}}"
+        class="padding-horizontal" 
+        ng-click='on.openHref($event)' target="_blank"><i class="padding icon ion-social-facebook"></i></a>
+
+        <a title="see our Twitter feed" href="{{watch.links.twitter}}"
+        class="padding-horizontal"  
+        ng-click='on.openHref($event)' target="_blank"><i class="padding icon ion-social-twitter"></i></a>
+      </div>
+    </div>
+    <div class="item item-divider text-center item-balanced">
+    </div>
+  </div>
+  
