@@ -323,7 +323,8 @@ angular.module('ionBlankApp')
             _SyncWorkorderPhotos(options)
             isBootstrap = false
             console.log "workorder Sync complete"
-        )      
+          )
+          $scope.SideMenuSwitcher.leftSide.src = 'views/partials/workorders/left-side-menu.html'      
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
@@ -332,6 +333,8 @@ angular.module('ionBlankApp')
     $scope.$on '$ionicView.enter', ()->  
       # cached view becomes active 
       $scope.on.showInfo(true) if $scope.config['workorder.photos']?.info
+
+      # get offset for collection-repeat scrollToPosition()
       offset = ionic.DomUtil.getPositionInParent(document.getElementsByClassName('otg-cr-preview')[0])
       $scope.watch.crOffsetY = offset?.top || 0
       # show loading

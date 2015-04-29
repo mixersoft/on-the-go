@@ -416,7 +416,18 @@ ion-side-menu-content .item > * {
       text-decoration: none;
     }
   }
+  .item {
+    .badge+.badge {
+      margin-right: 0;
+    }
+    .inline-nowrap {
+      @include respondto(phone) {
+        margin-left: -24px;
+      }  
+    }
+  }
 }
+
 
 otg-moment {
   .item {

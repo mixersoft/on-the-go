@@ -41,7 +41,8 @@
         <ul class="padding-horizontal text-center inline nowrap">
           <li class="badge badge-positive">Expected: {{ order.count_expected }}</li>
           <li class="badge badge-positive">Received: {{ order.count_received }}</li>
-          <li class="badge badge-positive">Duplicates: {{ order.count_duplicate}}</li>
+          <li class="badge badge-positive" 
+          ng-show="order.count_duplicate">Duplicates: {{ order.count_duplicate}}</li>
         </ul>
 
       </div>

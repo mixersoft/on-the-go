@@ -10,25 +10,33 @@
           on-refresh="on.refresh()">
         </ion-refresher>
 
-        <div ng-repeat="order in filteredOrders = (workorders = $root.orders | filter:filterStatusNotComplete )">
+        <div ng-repeat="order in filteredOrders = (orders = $root.orders | filter:filterStatusNotComplete )">
           <div ng-include="'views/partials/order-card.html'"></div>
         </div>
-        <div class="empty-list" ng-if="!filteredOrders.length"> 
+        <div class="empty-list" ng-if="filteredOrders.length==0"> 
           <div class="card empty-list" ng-hide="watch.isSyncing">
             <div class="item item-text-wrap">
               <div class="text-center">
                 <h2>You have no open orders.</h2>
 
-                  <div class="energized padding-vertical" ng-show="watch.isOffline()">Warning: Your device is offline.</div>
+                <div ng-if="$root.counts.orders==0">
 
                   <div class="text-left">
-                    <div><span ng-show="workorders.length">And we miss you.</span> Why don&apos;t you send us some old vacation photos?</div>
+                    <div><span ng-show="orders.length">And we miss you.</span> Why don&apos;t you send us some old vacation photos?</div>
                   </div>
                   <br />
                   <div>
                     <button class="button button-balanced button-large" style="white-space: nowrap;"
                     ui-sref="app.choose.camera-roll">Choose Your Days</button> 
                   </div>
+                </div>
+
+                <div ng-if="$root.counts.orders > 0">
+                  <br />
+                  <button class="button button-balanced button-large" style="white-space: nowrap;"
+                    ui-sref="app.orders.complete">See Completed Orders</button> 
+                </div>
+
               </div>
             </div>
           </div>

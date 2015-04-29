@@ -5,25 +5,32 @@
       </ion-nav-buttons>
       <ion-content class="has-header ">
 
+        <ion-refresher
+          pulling-text=""
+          on-refresh="on.refresh()">
+        </ion-refresher>
+
         <div ng-repeat="order in filteredOrders = (orders = $root.orders | filter:filterStatusComplete )">
           <div ng-include="'views/partials/order-card.html'"></div>
         </div>
-        <div class="empty-list" ng-if="!filteredOrders.length"> 
+        <div class="empty-list" ng-if="filteredOrders.length==0"> 
           <div class="card empty-list" >
             <div class="item item-text-wrap">
               <div class="text-center">
                 <h2>You have no complete orders.</h2>
-                <div ng-show="orders.length">
+
+                <div ng-if="$root.counts.orders > 0">
                   <div class="text-left">
                     But there is something on the stove...
                   </div>
                   <br />
                   <div>
                     <button class="button button-assertive button-large" style="white-space: nowrap;"
-                    ng-click="gotoTab('open')">Show Me What's Cooking</button> 
+                    ui-sref="app.orders.open">Show Me What's Cooking</button> 
                   </div>
                 </div>
-                <div ng-show="!orders.length">
+
+                <div ng-if="$root.counts.orders == 0">
                   <div class="text-left">
                     Why don't you start with some old vacation photos?
                   </div>

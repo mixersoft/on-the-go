@@ -532,6 +532,11 @@ angular
           cameraRoll.loadCameraRollP(null, 'merge').finally ()->
             if !$scope.deviceReady.isOnline()
               $rootScope.$broadcast('sync.debounceComplete')
+              msg = {
+                title: "Warning: Device Offline"
+                message: "No internet connection was detected."
+              }
+              notifyService.message msg, "warning", 5000
               return 
               
             otgWorkorderSync.SYNC_ORDERS(

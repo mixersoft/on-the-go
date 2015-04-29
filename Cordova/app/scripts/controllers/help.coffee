@@ -12,9 +12,10 @@ angular.module('ionBlankApp')
   '$scope', 
   '$ionicPopup', 
   '$cordovaSocialSharing', 
+  '$cordovaInAppBrowser',
   'otgParse'
   'notifyService'
-($scope, $ionicPopup, $cordovaSocialSharing, otgParse, notifyService) ->
+($scope, $ionicPopup, $cordovaSocialSharing, $cordovaInAppBrowser, otgParse, notifyService) ->
   $scope.label = {
     title: "Resources"
   }
@@ -22,7 +23,7 @@ angular.module('ionBlankApp')
   $scope.watch = {
     links:
       'on-the-go': 'http://app.snaphappi.com/on-the-go/'
-      facebook: 'http://www.facebook.com/Snaphappi'
+      facebook: 'https://www.facebook.com/16486082015'
       twitter: 'https://twitter.com/snaphappi'
       tumblr: 'http://tumblr.snaphappi.com/post/87220736621/on-the-go-curated-family-photos-re-mixed-for-mobile'
       giving: "http://icangowithout.com/"
@@ -37,8 +38,11 @@ angular.module('ionBlankApp')
       target = $ev.currentTarget
       dest = dest || target.href
       if $scope.deviceReady.device().isDevice
-        window.open(dest,'_system', 'location=yes');  # doesn't work
-        return false
+        options = {
+          location: 'yes',
+          clearcache: 'no',
+        } 
+        return $cordovaInAppBrowser.open(dest,'_system', options)
       else if target.tagName != 'A'
         window.open(dest,'_blank', 'location=yes');
       else 
