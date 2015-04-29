@@ -695,7 +695,7 @@ angular.module('ionBlankApp')
           
 
         switch scope.wo.status
-          when 'new', 'ready', 'working'
+          when 'new', 'ready', 'working', 'reject'
             actions = ['open', 'complete']
           when 'complete'
             actions = ['review', 'close', 'reject']

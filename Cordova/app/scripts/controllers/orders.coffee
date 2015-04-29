@@ -21,10 +21,15 @@ angular.module('ionBlankApp')
           index = 0
       $ionicTabsDelegate.select(index)
 
+    $scope.filterStatusComplete = (o)->
+      status = 
+        if o.className == 'WorkorderObj'
+        then o.get('status') 
+        else o.status
+      return o if /^(complete|closed)/.test( status ) == true  
+
     $scope.filterStatusNotComplete = (o)->
-      return o if o.status? && o.status !='complete'
-      if o.className == 'WorkorderObj'
-        return o if o.get('status') !='complete'
+      return !$scope.filterStatusComplete(o)
 
     $scope.watch = _watch = {
       isOffline: ()->

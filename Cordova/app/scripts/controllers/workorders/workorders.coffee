@@ -31,12 +31,7 @@ angular.module('ionBlankApp')
       return o if /^(complete|closed)/.test( status ) == true    
 
     $scope.filterStatusNotComplete = (o)->
-      return o if $rootScope.$state.includes('app.workorders.detail')
-      status = 
-        if o.className == 'WorkorderObj'
-        then o.get('status') 
-        else o.status
-      return o if /^(complete|closed)/.test( status ) == false
+      return !$scope.filterStatusComplete(o)
 
     $scope.on = {
       selectTab: (status)->
