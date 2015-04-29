@@ -7,6 +7,7 @@
   ng-hide="on.currentState()=='app.checkout.complete'">
     <button class="button button-outline button-light" 
       ng-click="on.back()"
+      tabindex="11"
       >
       <i class="icon ion-chevron-left"></i> Back
     </button>
@@ -15,6 +16,7 @@
     <button class="button button-outline button-light pull-right" 
       ng-click="on.next()"
       ng-hide="on.currentState()=='app.checkout.submit'"
+      tabindex="10"
       >
       Next <i class="icon ion-chevron-right"></i>
     </button>
