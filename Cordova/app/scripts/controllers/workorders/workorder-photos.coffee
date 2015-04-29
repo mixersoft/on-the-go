@@ -189,7 +189,7 @@ angular.module('ionBlankApp')
           ev.target.focus()
       keydown: (ev)->
         _getSwipeCard = (item)->
-          img = document.querySelector('.workorder-photo-card img[UUID="' + item.UUID + '"]')
+          img = document.querySelector('.workorder-photo-card img[lazy-src="' + item.UUID + '"]')
           elem = ionic.DomUtil.getParentWithClass(img, 'workorder-photo-card')
           return angular.element(elem)?.scope()?.swipeCard
 

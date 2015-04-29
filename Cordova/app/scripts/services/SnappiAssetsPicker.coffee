@@ -226,7 +226,7 @@ angular
           promise = self.iOSCollections.mapP(forceCollection)
           return mapped
         .then (mapped)->
-          promise = self.loadFavoritesP(5000) if options.type.indexOf('favorites') > -1
+          promise = self.loadFavoritesP(10*1000) if options.type.indexOf('favorites') > -1
           # don't wait for promise
           return mapped
 
@@ -239,7 +239,7 @@ angular
           # don't wait for promise
           if options.type.indexOf('moments') > -1
             moments = self.loadMomentsFromCameraRoll( mapped )
-            promise = self.loadMomentThumbnailsP().then ()->
+            promise = self.loadMomentThumbnailsP(15*1000).then ()->
               # console.log "\n @@@load cameraRoll thumbnails loaded from loadCameraRollP()"
               return
 

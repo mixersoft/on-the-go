@@ -30,6 +30,7 @@ angular.module('ionBlankApp')
       isOffline: ()->
         return $scope.deviceReady.isOnline() == false
       viewTitle: i18n.tr('title')  # HACK: view-title state transition mismatch  
+      isSyncing: false
     }        
 
     $scope.on = {
@@ -72,6 +73,10 @@ angular.module('ionBlankApp')
         return
     }
 
+    $scope.$on 'sync.debounceComplete', ()->
+      $scope.watch.isSyncing = false
+      return
+
     # NOTE: ng-repat = order in filteredOrders = (workorders = $root.orders | filter:filterStatusNotComplete )
     # set by $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
     _workorders = $rootScope.orders
@@ -88,6 +93,7 @@ angular.module('ionBlankApp')
       return if !$scope.deviceReady.isOnline()
       $timeout ()->
           $scope.showLoading(true)
+          $scope.watch.isSyncing = true
           $scope.app.sync.DEBOUNCED_cameraRoll_Orders()      
 
     $scope.$on '$ionicView.leave', ()->

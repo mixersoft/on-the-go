@@ -579,8 +579,9 @@ angular
     #  service init
     ##
     deviceReady.waitP()
-    .then ()->
+    .then (device)->
       # self.CACHE_DIR = cordova.file.applicationStorageDirectory + 'Library/files'
+      return if !device.isDevice
       self.PLUGIN_ROOT = cordova.file.applicationStorageDirectory
       self.cordovaFile_CHECK_DIR_P( self.PLUGIN_DIR ).then (dirEntry)->
           return self.CACHE_ROOT = dirEntry
