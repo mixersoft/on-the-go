@@ -30,9 +30,15 @@
           <i class="icon ion-gear-b positive"></i>
           Settings
         </ion-item>
-        <ion-item class="item-icon-left" nav-clear menu-close href="#/app/help">
+        <ion-item class="item-icon-left" nav-clear menu-close ui-sref="app.help">
           <i class="icon ion-ios-information positive"></i>
           Resources
+        </ion-item>
+        <ion-item class="item-icon-left" nav-clear menu-close 
+        ui-sref="app.help.me"
+        ng-if="deviceReady.device().isDevice">
+          <i class="icon ion-chatboxes balanced"></i>
+          Help Me Now!
         </ion-item>
 
       <div ng-show="user.role=='curator' || user.role=='editor'">  

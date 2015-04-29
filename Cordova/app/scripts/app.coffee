@@ -316,6 +316,14 @@ angular
         }
       }
     }) 
+    .state('app.help.me', {
+      url: "/me",
+      views: {
+        'helpContent' : {
+          templateUrl: "views/partials/help-me.html"
+        }
+      }
+    })
     # user view of orders
     .state('app.orders', {
       url: "/orders",
