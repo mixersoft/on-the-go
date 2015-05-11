@@ -33,9 +33,9 @@ angular
   '$rootScope', '$state', '$stateParams', '$ionicPlatform', 'PARSE_CREDENTIALS'
   ($rootScope, $state, $stateParams, $ionicPlatform, PARSE_CREDENTIALS)->
     $ionicPlatform.ready ()->
-      # Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
-      # for form inputs)
-      cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true) if window.cordova?.plugins.Keyboard
+      # SHOW the accessory bar by default (remove this to show the accessory bar 
+      # above the keyboard for form inputs)
+      cordova.plugins.Keyboard.hideKeyboardAccessoryBar(false) if window.cordova?.plugins.Keyboard
       # org.apache.cordova.statusbar required
       StatusBar.styleDefault() if window.StatusBar?
 
