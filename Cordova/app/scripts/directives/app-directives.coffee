@@ -203,7 +203,7 @@ angular.module('ionBlankApp')
     $elem = angular.element(ev.currentTarget)
     $elem.removeClass('loading')
     $elem.next().addClass('hide')
-    onImgLoad = $elem.attr('on-photo-load')
+    onImgLoad = $elem.attr('on-img-load')
     fn = $parse(onImgLoad)
     scope = $elem.scope()
     scope.$apply ()->
