@@ -180,7 +180,7 @@ angular.module('ionBlankApp')
                 message: "The Checkout process from a desktop browser is for demo purposes only. Actual orders can only be created from a mobile or tablet device."
               }
               $scope.notifyService.message msg, "info", 10000
-              # return true
+              return true
             return parse._createWorkorderP( $scope.checkout, $scope.watch.servicePlan )
               .then (workorderObj)->
                 $ionicNavBarDelegate.showBackButton(false)
