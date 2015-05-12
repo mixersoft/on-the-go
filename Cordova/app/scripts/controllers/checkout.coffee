@@ -108,6 +108,29 @@ angular.module('ionBlankApp')
       beforeNextStep: ()->
         # before you leave!!!
         switch $state.current.name
+          when 'app.checkout.payment'
+            if !$rootScope.user.tosAgree
+              # TODO: notify TOS must be checked
+              el = document.getElementById('tos-checkbox')
+              angular.element(el).addClass('item-assertive').removeClass('item-calm')
+              return false 
+
+            if $scope.watch.servicePlan.total != 0
+              # offer additional coupon?
+              el = document.getElementById('promo-code-button')
+              angular.element(el).addClass('button-assertive').removeClass('button-balanced')
+              return false
+
+            # scrollBottom before moving on
+            scroll = $ionicScrollDelegate.$getByHandle('checkout')
+            h = scroll.getScrollView().options.el.children[0].clientHeight
+            bot = scroll.getScrollView().options.el.clientHeight
+            offset = scroll.getScrollPosition().top || 0
+            isBottomVisible = (bot + offset - h > - 10)
+            if isBottomVisible == false
+              scroll.scrollBottom(true) 
+              return false 
+
           when 'app.checkout.sign-up'
             # return false on error by promise
             # either sign-up or sign-in, 
@@ -146,34 +169,18 @@ angular.module('ionBlankApp')
                     return $q.reject(false)
 
 
-          when 'app.checkout.payment'
-            if !$rootScope.user.tosAgree
-              # TODO: notify TOS must be checked
-              el = document.getElementById('tos-checkbox')
-              angular.element(el).addClass('item-assertive').removeClass('item-calm')
-              return false 
-
-            if $scope.watch.servicePlan.total != 0
-              # offer additional coupon?
-              el = document.getElementById('promo-code-button')
-              angular.element(el).addClass('button-assertive').removeClass('button-balanced')
-              return false
-
-            # scrollBottom before moving on
-            scroll = $ionicScrollDelegate.$getByHandle('checkout')
-            h = scroll.getScrollView().options.el.children[0].clientHeight
-            bot = scroll.getScrollView().options.el.clientHeight
-            offset = scroll.getScrollPosition().top || 0
-            isBottomVisible = (bot + offset - h > - 10)
-            if isBottomVisible == false
-              scroll.scrollBottom(true) 
-              return false 
-
           when 'app.checkout.submit'
             # return false on error by promise
             if !deviceReady.isOnline()
               console.warn "Error: network unavilable at checkout" 
               return false
+            if deviceReady.device().isBrowser
+              msg = {
+                title: "NOTE: This Is a Only a Demo"
+                message: "The Checkout process from a desktop browser is for demo purposes only. Actual orders can only be created from a mobile or tablet device."
+              }
+              $scope.notifyService.message msg, "info", 10000
+              # return true
             return parse._createWorkorderP( $scope.checkout, $scope.watch.servicePlan )
               .then (workorderObj)->
                 $ionicNavBarDelegate.showBackButton(false)
@@ -183,11 +190,10 @@ angular.module('ionBlankApp')
           when 'app.checkout.complete'
             return true
             
+        console.log "servicePlan=", $scope.watch.servicePlan
         return true
       afterNextStep: ()->
         switch $state.current.name
-          when 'app.checkout.sign-up'
-            $scope.userProfileView = 'partials/checkout/sign-up'
           when 'app.checkout.payment'
             servicePlan = $scope.watch.servicePlan
             promoCodes = i18n.tr('promoCodes')
@@ -206,15 +212,28 @@ angular.module('ionBlankApp')
 
             $scope.watch.promoCode = promoCode
             $scope.watch.promoCodeLabel = promoCodeLabel
+            return true
+
+          when 'app.checkout.sign-up'
+            $scope.userProfileView = 'partials/checkout/sign-up'
+            console.log "AFTER signup servicePlan.plans=", $scope.watch.servicePlan.plans
+            return true
+
+          when 'app.checkout.submit'
+            console.log "AFTER submit servicePlan.plans=", $scope.watch.servicePlan.plans
+            return true
 
           when 'app.checkout.complete'
             # AFTER submit, queue photos
-            otgWorkorderSync.syncWorkorderPhotosP($scope.workorderObj, null, 'owner')
+            if $scope.workorderObj?
+              # skip for device().isBrowser
+              otgWorkorderSync.syncWorkorderPhotosP($scope.workorderObj, null, 'owner')
             $scope.showLoading(false)
 
 
         # put on on $rootScope.$on '$stateChangeSuccess'
         # switch $state.current.name
+        console.log "servicePlan=", $scope.watch.servicePlan
         return true
       toggleUserProfileView: ()->
         if $scope.watch.userProfileView == 'partials/checkout/sign-in'
@@ -399,10 +418,11 @@ angular.module('ionBlankApp')
         $scope.config.system['order-standby'] = backlog.get('status') == 'standby'
 
       # console.log "init: state="+$state.current.name
-      $scope.checkout = otgWorkorder.checkout.getSelectedAsMoments()
-      $scope.watch.servicePlan = _getTotal($scope.checkout)
-      if $scope.watch.servicePlan.total==0 && deviceReady.device().isBrowser
-        DEV.getSampleCheckout()
+      if $state.includes 'app.checkout.order-detail'
+        $scope.checkout = otgWorkorder.checkout.getSelectedAsMoments()
+        $scope.watch.servicePlan = _getTotal($scope.checkout)
+        if $scope.watch.servicePlan.total==0 && deviceReady.device().isBrowser
+          DEV.getSampleCheckout()
 
       _wizard.validateSteps()
 
