@@ -16,7 +16,7 @@ var paths = {
   views: ['./app/views/**/*.html'],
   legal: ['./app/legal/**/*.html'],
   build: ['./dist/**/*', '!./dist/components/**'],
-  jsDev: ['./www/js/**/*.js', '!./www/js/**/*.min.js', '!templates.js'],
+  jsDev: ['./www/js/**/*.js', '!./www/js/**/*.min.js', '!templates.js'], //, '!./www/js/services/test_data.js'
   html2js: ['./www/views/partials/**/*.html']
 };
 

@@ -518,7 +518,7 @@ angular
 
       localStorageSnapshot: ()->
         # cameraRoll
-        $localStorage['cameraRoll'].map = cameraRoll.map()
+        $localStorage['cameraRoll'].map = cameraRoll.rejectTestData()
         # imgCacheSvc.cacheIndex
         return
 
@@ -723,7 +723,12 @@ angular
         cameraRoll.moments = otgData.orderMomentsByDescendingKey otgData.parseMomentsFromCameraRollByDate( photos_ByDateUUID ), 2
         _photos = otgData.parsePhotosFromMoments cameraRoll.moments, 'TEST_DATA'
         cameraRoll._mapAssetsLibrary = _.map _photos, (TEST_DATA_photo)->
-          return {UUID: TEST_DATA_photo.UUID, dateTaken: TEST_DATA_photo.date}
+          return {
+            UUID: TEST_DATA_photo.UUID,
+            dateTaken: TEST_DATA_photo.date
+            from: TEST_DATA_photo.from
+          }
+        # cameraRoll._mapAssetsLibrary = _photos
         cameraRoll['iOSCollections'].mapP()
         # add some test data for favorite and shared
         TEST_DATA.addSomeTopPicks( cameraRoll.map())
@@ -738,7 +743,8 @@ angular
           return
         $scope.orders = TEST_DATA.orders
         $scope.app.sync.cameraRoll_Orders()
-        # $rootScope.$broadcast('sync.TEST_DATA')
+        $rootScope.$broadcast('sync.TEST_DATA')
+        $rootScope.$broadcast 'sync.cameraRollComplete'
 
       # refactor to AppCtrl or service
 

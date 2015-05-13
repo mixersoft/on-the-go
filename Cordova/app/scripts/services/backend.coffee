@@ -478,7 +478,7 @@ angular
 
       # wrap in timeouts 
       SYNC_ORDERS : (scope, force, DELAY=10, whenDoneP)->
-        return if !$rootScope.sessionUser
+        return  whenDoneP && whenDoneP() if !$rootScope.sessionUser
         # run AFTER cameraRoll loaded
         # return if _.isEmpty $rootScope.sessionUser
         # if deviceReady.device().isDevice && _.isEmpty cameraRoll.map()
@@ -558,8 +558,8 @@ angular
       # wrap in timeouts 
       SYNC_WORKORDERS : (scope, options, whenDoneP)->
         # run AFTER cameraRoll loaded
-        return if _.isEmpty( $rootScope.sessionUser) && !$rootScope.$state.includes('app.demo')
-        return if deviceReady.device().isDevice && _.isEmpty cameraRoll.map()
+        return whenDoneP && whenDoneP() if _.isEmpty( $rootScope.sessionUser) && !$rootScope.$state.includes('app.demo')
+        return whenDoneP && whenDoneP() if deviceReady.device().isDevice && _.isEmpty cameraRoll.map()
 
         options = _.defaults options, {
           DELAY: 10
@@ -1233,8 +1233,7 @@ angular
 
 
 # # test cloudCode with js debugger
-window.cloud = {            
-}
+window.cloud = {  }
 
 
 

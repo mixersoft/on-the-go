@@ -196,12 +196,18 @@ angular
 
       filterDeviceOnly: (photos)->
         photos = photos || self.map()
-        return _( photos ).filter( (o)->return !o.from || o.from.slice(0,5)!='PARSE' ).value()
+        return _( photos ).filter( (o)->
+            return !o.from || !/^(PARSE|TEST_DATA)/.test (o.from) 
+          ).value()
 
 
       filterParseOnly: (photos)->
         photos = photos || self.map()
         return _( photos ).filter( (o)->return o.from =='PARSE' ).value()
+
+      rejectTestData: (photos)->
+        photos = photos || self.map()
+        return _( photos ).reject( (o)->return o && o.from =='TEST_DATA' ).value()
 
       setFavoriteP: (photo)->
         return snappiMessengerPluginService.setFavoriteP(photo)
@@ -247,13 +253,15 @@ angular
           return mapped
 
         .catch (error)->
-          console.warn "ERROR: loadCameraRollP, error="+JSON.stringify( error )[0..100]
-          # appConsole.show( error)
           if error == "ERROR: window.Messenger Plugin not available" && deviceReady.device().isBrowser
             self._mapAssetsLibrary = [] if force=='replace' && !window.TEST_DATA
             $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', {type:'moments'}
             $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', {type:'favorites'}
-            return true
+            # $rootScope.$broadcast 'sync.debounceComplete'
+            return $q.when()
+          else
+            console.warn "ERROR: loadCameraRollP, error="+JSON.stringify( error )[0..100]
+
           return $q.reject(error)
         .finally ()->
           return

@@ -82,6 +82,8 @@ angular.module('ionBlankApp')
       if !isWorkorder && isBrowser && window.TEST_DATA # DEMO mode
         return _useLoremPixel(element, UUID, format)
 
+      if isBrowser
+        return # window.TEST_DATA not ready yet
       ##
       #
       # NOTE: src values AFTER this point are retrieved async, update element directly
