@@ -1092,6 +1092,13 @@ otg-gallery {
   }
 }
 
+#help-me-now ion-content {
+  background-color: $dark;
+  i.icon {
+    color: $positive;
+  }
+}
+
 div[notify] {
   position: absolute;
   width: 100%;
