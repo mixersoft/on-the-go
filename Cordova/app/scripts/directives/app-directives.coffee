@@ -625,6 +625,7 @@ angular.module('ionBlankApp')
         scope.ngClass_CompleteButton = (order, prefix='badge')->
           return if !order
           isAlmostDone = (1 - order.progress.todo/order.count_expected) > THRESHOLD.COMPLETE
+          isAlmostDone = false if new Date().toJSON()[0...10] <= order.toDate
           return prefix + '-balanced' if isAlmostDone && order.status=='working'
           return prefix + '-energized disabled' 
         scope.ngClass_UploadStatus = (order, prefix='badge')->
@@ -632,9 +633,9 @@ angular.module('ionBlankApp')
           return prefix + '-balanced' if order.count_expected == (order.count_received + order.count_duplicate)
           return prefix + '-energized'
         scope.ngBind_UploadStatus = (order)->
-          return if !order
-          return 'ready' if order.count_expected == (order.count_received + order.count_duplicate)  
-          return 'pending'
+          return 'pending' if !order || order.status == 'new'
+          return 'ready' 
+          
         return
     }
 ]

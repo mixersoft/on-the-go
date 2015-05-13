@@ -333,6 +333,8 @@ angular
               return true if parseSync['remove'].indexOf(o.UUID) == -1
               return false
 
+          # TODO: the following attrs are set in CloudCode beforeSave PhotoObj
+          #   make this is 'reset' method and  to CloudCode as well
           lastUploadDate = ''
           _.each parsePhotos, (o)->
             lastUploadDate = o.createdAt if o.createdAt > lastUploadDate
@@ -612,8 +614,10 @@ angular
                   return whenDoneP(workorderColl) if whenDoneP
           , options.DELAY
 
+      # Deprecate: see cloudCode beforeSave PhotoObj
       updateWorkorderCounts: (woObj, sync)->
         # sync: # see syncDateRange_Photos_P()
+        
           # 'add': 
           # 'remove':
           # 'complete':
@@ -622,16 +626,14 @@ angular
           # 'lastUploadDate':
         return console.warn "ERROR: updateWorkorderCounts, sync is null" if !sync?
         updates = {
+          woid: woObj.id
           'count_received': sync['complete'].length
           'count_expected': sync['complete'].length + sync['queued'].length + sync['errors'].length
           'count_errors': sync['errors'].length
         }
         updates['lastUploadAt'] = sync['lastUploadDate'] if sync['lastUploadDate']
         return if _.isEmpty updates
-        return woObj.save( updates ).then (resp)->
-            angular.noop()
-          , (err)->
-            console.warn "updateWorkorderCounts() save error", err
+        return console.log "workorder counts=", updates
     }
     return self
 
