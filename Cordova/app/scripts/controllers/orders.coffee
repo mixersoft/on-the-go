@@ -38,10 +38,9 @@ angular.module('ionBlankApp')
       isSyncing: false
       showActionBtn: (order, action)->
         switch action
-          when 'accept', 'export'
+          when 'accept', 'export', 'upload-full-res'
             return true if /^(complete|closed)/.test order.status
             return false
-
     }        
 
     $scope.on = {
@@ -56,6 +55,35 @@ angular.module('ionBlankApp')
       view : (order)->
         $rootScope.$state.transitionTo('app.top-picks.top-picks', {woid: order.objectId})
         return
+      reUploadAsFullRes : (order)->
+        # console.log order.objectId
+        return otgParse.getWorkorderByIdP(order.objectId)
+        .then (workorder)->
+          # console.log workorder
+          return otgParse.fetchWorkorderPhotosByWoIdP({workorder: workorder})
+        .then (photosColl)->
+          promises = []
+          photosColl.each (photo)->
+            
+            # p = otgParse.updatePhotoP(photo, {src:'queued'}, false) # updates all photos by UUID, incl workorderObjs 
+            if photo.get('topPick') && !photo.get('hideTopPick')
+              value = 'queued'
+            else if photo.get('favorite') && !photo.get('hideTopPick')
+              value = 'queued'  
+            else 
+              return if !photo.get('origSrc')
+              value = null
+
+            p = photo.set('origSrc', value).save().then (o)->
+                # console.log o
+                return
+              , (err)->
+                console.log "ERROR reUploadAsFullRes, err=" + JSON.stringify err
+            promises.push p
+            return
+          $q.all(promises).then ()->
+            console.log "reUploadAsFullRes() complete for workorder.id=" + order.objectId
+        return 
       export: (order, filter='top-picks')->
         if $scope.deviceReady.device().isDevice
           msg = i18n.tr('export-redirect', 'app.orders')

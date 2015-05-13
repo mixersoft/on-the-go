@@ -65,18 +65,26 @@
           ng-click="on.view(order)">View
         </button>
         <button class="button button-full button-positive"
-          ng-show="on.showActionBtn(order, 'accept')"
+          ng-show="watch.showActionBtn(order, 'accept')"
           ng-click="on.setStatus(order, 'closed')">Accept
         </button>
         <button class="button button-full button-royal"
-          ng-show="on.showActionBtn(order, 'export')"
+          ng-show="watch.showActionBtn(order, 'export')"
           ng-click="on.export(order)">Export
         </button> 
       </div> 
 
-      <div ng-show="!!order.exportUrl" class="text-center export-url padding">
+      <button class="button button-full button-positive"
+        ng-show="watch.showActionBtn(order, 'upload-full-res')"
+        ng-click="on.reUploadAsFullRes(order)">
+        Upload TopPicks in Full Resolution
+      </button> 
+
+
+      <div ng-show="!!order.exportUrl" class="text-center padding">
         <a ng-href="{{order.exportUrl}}" target="_blank">{{order.exportUrl.split('?').shift()}}</a>
-      </div>  
+      </div>
+
 
     </div>    
 
