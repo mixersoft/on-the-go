@@ -227,6 +227,8 @@ angular.module('ionBlankApp')
             _watch.filter = {favorite:true}
           when 'app.top-picks.shared'
             _watch.filter = {shared:true}
+        if $state.params.woid && $state.params.woid !='all'
+          _watch.filter['workorderId'] = $state.params.woid
         data = cameraRoll.map()
         # reject photos from different owners. 
         # TODO: reject photos from non-participating workorders
@@ -425,6 +427,9 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.enter', ()->
       $scope.watch.viewTitle = i18n.tr('title')
+      if $state.params.woid && $state.params.woid !='all'
+        $scope.watch.viewTitle += " (filtered)"
+      # $ionicNavBarDelegate.title('')
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 

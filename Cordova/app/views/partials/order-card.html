@@ -58,13 +58,18 @@
         </ul>
       </div>
 
-      <div ng-if="order.status=='complete' || order.status=='closed' "
+      <div ng-if="order.status!='new'"
       class="ng-repeat-filter button-bar bar-balanced" 
       >
-        <button class="button button-full button-positive disabled"
+        <button class="button button-full button-balanced"
+          ng-click="on.view(order)">View
+        </button>
+        <button class="button button-full button-positive"
+          ng-show="on.showActionBtn(order, 'accept')"
           ng-click="on.setStatus(order, 'closed')">Accept
         </button>
         <button class="button button-full button-royal"
+          ng-show="on.showActionBtn(order, 'export')"
           ng-click="on.export(order)">Export
         </button> 
       </div> 

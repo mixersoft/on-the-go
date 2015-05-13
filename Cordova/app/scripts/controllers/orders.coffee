@@ -36,6 +36,12 @@ angular.module('ionBlankApp')
         return $scope.deviceReady.isOnline() == false
       viewTitle: i18n.tr('title')  # HACK: view-title state transition mismatch  
       isSyncing: false
+      showActionBtn: (order, action)->
+        switch action
+          when 'accept', 'export'
+            return true if /^(complete|closed)/.test order.status
+            return false
+
     }        
 
     $scope.on = {
@@ -46,6 +52,9 @@ angular.module('ionBlankApp')
         switch status
           when 'closed'
             return if order.status!='complete'
+        return
+      view : (order)->
+        $rootScope.$state.transitionTo('app.top-picks.top-picks', {woid: order.objectId})
         return
       export: (order, filter='top-picks')->
         if $scope.deviceReady.device().isDevice

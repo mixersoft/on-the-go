@@ -98,7 +98,7 @@ angular
     # view:top-picks
     # view:camera-roll
     .state('app.top-picks', {
-      url: "/top-picks",
+      url: "/gallery/:woid",
       abstract: true
       views: {
         'menuContent' : {
@@ -434,7 +434,7 @@ angular
       url: "/photos/picks",
     })
   # if none of the above states are matched, use this as the fallback
-  $urlRouterProvider.otherwise('/app/top-picks/top-picks');  
+  $urlRouterProvider.otherwise('/app/gallery/all/top-picks');  
   # $urlRouterProvider.otherwise('/app/settings');  
 
 ]
