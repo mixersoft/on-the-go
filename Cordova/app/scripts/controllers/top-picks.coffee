@@ -265,7 +265,16 @@ angular.module('ionBlankApp')
           # added custom event handler to ionic.bundle.js
           # angular.element($window).triggerHandler('resize.collection-repeat');
           $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() 
-        return $scope.watch.info   
+        return $scope.watch.info  
+
+      hideTopPick: (event, item)->
+        if event
+          event.preventDefault() 
+          event.stopPropagation()
+        item.hideTopPick = !item.hideTopPick
+        otgParse.updatePhotoP(item, 'hideTopPick').then ()->
+          console.log "*** Success updated hideTopPick=", item.hideTopPick
+        return 
       setFavorite: (event, item, value='toggle')->
         if event
           event.preventDefault() 
@@ -352,9 +361,9 @@ angular.module('ionBlankApp')
         clickSide = 'right' if clickSide > 0.67  
         switch clickSide
           when 'left' 
-            scope.swipeCard.swipeOver('left')
+            scope.swipeCard.swipeOver?('left')
           when 'right'
-            scope.swipeCard.swipeOver('right')
+            scope.swipeCard.swipeOver?('right')
 
       refresh: ()->
         $scope.app.sync.cameraRoll_Orders()

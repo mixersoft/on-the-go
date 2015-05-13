@@ -1069,8 +1069,9 @@ angular
         photoObj.set(data)
         return photoObj.save()
 
-      updatePhotoP: (photo, pick, isDevice=true)->
+      updatePhotoP: (photo, pick, isDevice)->
         # find photoObj   
+        isDevice = deviceReady.device().isDevice if !isDevice
         update = _.pick photo, pick
         query = new Parse.Query( parseClass.PhotoObj )
         query.equalTo 'UUID', photo.UUID
@@ -1078,7 +1079,7 @@ angular
           query.equalTo('owner', $rootScope.sessionUser) 
           query.equalTo('deviceId', $rootScope.device.id) 
         return query.find().then (photos)->
-          return $q.reject("not found") if _.isEmpty photos,
+          return $q.reject("not found") if _.isEmpty photos
           promises = []
           _.each photos, (photoObj)->
               p = photoObj.save(update).then (phObj)->

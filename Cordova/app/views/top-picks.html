@@ -106,7 +106,7 @@
         force-refresh-images="true"
         >
           <div class="padding-horizontal card-wrap">
-            <swipe-card class="card photo-card"
+            <div xxx-swipe-card class="card photo-card"
             uuid-ext="{{item.id}}"
             on-keep="on.cardKeep(item)" 
             on-reject="on.cardReject(item)" 
@@ -135,8 +135,9 @@
               <!-- footer -->
               <div class="item item-stable tabs card-footer "
               ng-if="on.showInfo()">
-                <div class="tab-item icon ion-ios-compose-outline"
-                ng-click="on.addCaption($event, item)"
+                <div class="tab-item icon"
+                ng-class="{'ion-ios-checkmark balanced':!item.hideTopPick, 'ion-ios-checkmark-outline assertive':item.hideTopPick}", 
+                ng-click="on.hideTopPick($event, item)"
                 ></div>
                 <div class="tab-item royal icon"
                 ng-click="on.addShare($event, item)"
@@ -149,7 +150,7 @@
                 'ion-ios-heart-outline':!item.favorite}"
                 ></div>
               </div>
-            </swipe-card>
+            </div swipe-card>
           </div> <!--  end .photo-card  -->
 
       </div>
