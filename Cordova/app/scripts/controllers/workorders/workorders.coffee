@@ -91,6 +91,7 @@ angular.module('ionBlankApp')
         .then (photosColl)->
           promises = []
           photosColl.each (photo)->
+            return if /^(ready|true)/.test photo.get('origSrc')
             # p = otgParse.updatePhotoP(photo, {src:'queued'}, false) # updates all photos by UUID, incl workorderObjs 
             p = photo.set('src','queued').save().then (o)->
                 # console.log o

@@ -395,9 +395,12 @@ static CGFloat defaultCompressionQuality = 0.7;
                     [self addSessionTaskInfo:info];
                     
 //                    NSURLSessionUploadTask *task = [self parseUplaodTaskForFilePath:fullPath additinalHeaderKeys:@{@"X-Image-Identifier":obj.localIdentifier}];
+                    BOOL isFullRes = [maxWidth intValue]==0 || [maxWidth intValue]==9999;
                     NSURLSessionUploadTask *task = [self parseUplaodTaskForFilePath:fullPath additinalHeaderKeys:@{
                        @"X-Image-Identifier":obj.localIdentifier,
-                       @"X-Container-Identifier":options[@"container"]
+                       @"X-Container-Identifier":options[@"container"],
+                       @"X-Full-Res-Image":isFullRes ? @"true" : @"false",
+                       @"X-Target-Width":[maxWidth stringValue]
                        }];
                     [task resume];
                     [scheduledTasks addObject:task];

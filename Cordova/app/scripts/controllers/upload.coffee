@@ -165,7 +165,7 @@ angular.module('ionBlankApp')
         # queue immediately, 
         # but uploader must check isEnable before each upload
         # otgWorkorderSync.queueDateRangeFilesP(sync)
-        #   promise = otgUploader.queueP( sync['addFile'])
+        #   promise = otgUploader.queueP( _.pick sync, ['addFile'] )
 
         # NOTE: queue tracks file uploads ONLY, photoMeta should already be on parse
         _parseFileUploader._photoFileQueue = _.unique _parseFileUploader._photoFileQueue.concat(assetIds)
@@ -257,6 +257,8 @@ angular.module('ionBlankApp')
       }
 
 
+      
+
     _bkgFileUploader = { # uses snappiMessengerPluginService
       type: 'background' 
       isEnabled: false
@@ -268,6 +270,7 @@ angular.module('ionBlankApp')
         allowsCellularAccess: false
         container: null # use User.id 
         CHUNKSIZE: 500
+        FULL_RES_PREFIX: 'full-res'
       setCfg: (uploadCfg)->
         _bkgFileUploader.use720p(uploadCfg['use-720p-service'])
         _bkgFileUploader.allowsCellularAccess = uploadCfg['use-cellular-data']
@@ -335,14 +338,18 @@ angular.module('ionBlankApp')
       # called by enable() and onNetworkAccessChanged() > enable()
       # otgWorkorderSync.queueDateRangeFilesP(sync) OR _bkgFileUploader.enable(true)
       queueP: (sync)->
-        sync =_.defaults (sync || {}) , {
+        FULL_RES_PREFIX = _bkgFileUploader.cfg.FULL_RES_PREFIX 
+        sync = _.defaults (sync || {}) , {
           'addFile':[]  # set in queueDateRangeFilesP()
+          'queued-full-res':[]
           'complete':[]
           'remove':[]
         }
-        assetIds = sync['addFile']
-
-        
+        assetIds = _.clone sync['addFile']
+        # force upload as full-res using options.maxWidth=false
+        _.each sync['queued-full-res'], (UUID)->
+          assetIds.push(FULL_RES_PREFIX + UUID)
+          return
 
         # remove 'complete', 'remove' from queue
         removeFromQueue = sync['complete'].concat sync['remove']
@@ -351,7 +358,7 @@ angular.module('ionBlankApp')
           delete _bkgFileUploader._complete[UUID]
           delete _bkgFileUploader._scheduled[UUID]
 
-        #   promise = otgUploader.queueP( sync['addFile'] )
+        #   promise = otgUploader.queueP( _.pick sync, ['addFile'] )
         # add to _readyToSchedule queue if isEnabled == false
         # schedule more from _readyToSchedule if isEnabled
         if assetIds.length
@@ -362,7 +369,7 @@ angular.module('ionBlankApp')
 
           # cleanup completed uploades
           _.each _bkgFileUploader._complete, (v,k)->
-            delete _bkgFileUploader._complete[k] if v==1
+            delete _bkgFileUploader._complete[UUID] if v==1
             return
 
           _bkgFileUploader.schedule(assetIds)
@@ -402,15 +409,20 @@ angular.module('ionBlankApp')
             console.error "BUG: _scheduled items are not found in getScheduledAssets()"
             # should we just reschedule?
             _reschedule_Scheduled_Items_P = ()->
-              scheduledButNotStarted = _.filter _bkgFileUploader._scheduled, (v,k)->
-                return true if `v==null`
-              assetIds = _.keys scheduledButNotStarted
+
+              scheduledButNotStarted = []
+              _.each _.keys _bkgFileUploader._scheduled, (k)->
+                scheduledButNotStarted.push k if `_bkgFileUploader._scheduled[k]==null`
+                return
+
+              assetIds = scheduledButNotStarted
               # console.log "_reschedule_Scheduled_Items_P: " + JSON.stringify assetIds
               _.each assetIds, (UUID)->
                 delete _bkgFileUploader._scheduled[UUID]
                 _bkgFileUploader.schedule(UUID,'front')
                 return
-              return _bkgFileUploader.queueP(assetIds)
+              console.log "rescheduling assetIds, check=", {addFile:assetIds}
+              return _bkgFileUploader.queueP({'addFile':assetIds})
             return _reschedule_Scheduled_Items_P()
 
            
@@ -421,7 +433,32 @@ angular.module('ionBlankApp')
 
         options = _.pick _bkgFileUploader.cfg, ['allowsCellularAccess', 'maxWidth', 'auto-rotate', 'quality']  
         options['container'] = $rootScope.sessionUser.id
-        return PLUGIN.scheduleAssetsForUploadP(assetIds, options).then ()->
+
+        # after filtering against current queue, split into normal & full-res uploads
+        toSchedule = _.reduce assetIds, (result, UUID)->
+            if UUID[0...FULL_RES_PREFIX.length] == FULL_RES_PREFIX
+              result['fullres'].push UUID.slice(FULL_RES_PREFIX.length)
+              # ???: HOW does the oneComplete(resp) know if the uploaded photo isFullRes???
+              # xcode uploader knows maxWidth==false, sends req.headers['x-full-res-image']=='true'
+              # loopback-image-store sees req.headers['x-full-res-image']=='true'
+              # cloudCode photo_updateSrc sees request.params['isFullRes'] boolean
+              # otgUploader calls PLUGIN.sessionTaskInfoForIdentifierP(resp) for resp
+              #     check resp.name or resp.UUID?
+              #     search UUID, if not found search FULL_RES_PREFIX + UUID
+            else 
+              result['normal'].push UUID
+            return result
+          , {
+            'normal': []
+            'fullres': []
+          }
+
+        return PLUGIN.scheduleAssetsForUploadP(toSchedule['normal'], options)
+        .then ()->
+          fullresOptions = _.defaults {maxWidth:0}, options
+          # options.maxWidth=false will upload with req.headers['x-full-res-image']=='true'
+          PLUGIN.scheduleAssetsForUploadP(toSchedule['fullres'], fullresOptions)
+        .then ()->
           # console.log "\n>>> otgUploader.queueP(): scheduleAssetsForUploadP complete"
           return _.keys _bkgFileUploader._scheduled
         .catch (err)->
@@ -483,12 +520,21 @@ angular.module('ionBlankApp')
         return true
 
 
-
+      _getScheduledUUID : (UUID)->
+        # TODO: fix in plugin to pass maxWidth
+        #   what size are we dealing with? need to reference
+        #   headers['x-full-res-image']=='true'???
+        # HACK: dequeue isFullRes version 2nd if there is a question
+        FULL_RES_PREFIX = _bkgFileUploader.cfg.FULL_RES_PREFIX 
+        isFullRes = !_bkgFileUploader._scheduled.hasOwnProperty(UUID) &&
+          _bkgFileUploader._scheduled.hasOwnProperty( FULL_RES_PREFIX + UUID)
+        return scheduledUUID = if isFullRes then FULL_RES_PREFIX + UUID else UUID
 
       oneBegan: (resp)->
         try
           # console.log "\n >>> native-uploader Began: for assetId="+resp.asset
-          _bkgFileUploader._scheduled[resp.asset] = 0
+          scheduledUUID = _bkgFileUploader._getScheduledUUID(resp.asset)
+          _bkgFileUploader._scheduled[scheduledUUID] = 0
           _bkgFileUploader.isSchedulingComplete()
         catch e
         return
@@ -508,7 +554,8 @@ angular.module('ionBlankApp')
           progress = resp.totalBytesSent / resp.totalBytesExpectedToSend
           resp.progress = Math.round(progress*100)/100
           # console.log "\n >>> native-uploader Progress: " + JSON.stringify _.pick resp, ['asset', 'progress'] 
-          _bkgFileUploader._scheduled[resp.asset] = resp.progress
+          scheduledUUID = _bkgFileUploader._getScheduledUUID(resp.asset)
+          _bkgFileUploader._scheduled[scheduledUUID] = resp.progress
           LastProgress.restart()
         catch e
           # ...
@@ -530,6 +577,14 @@ angular.module('ionBlankApp')
               PLUGIN.removeSessionTaskInfoWithIdentifierP(UUID)
 
       oneCompleteP: (resp)->
+        ##
+        # NOTE: using CloudCode to infer if the asset was a full-res upload
+        # because we can't determine by url. what about name?
+        # afterHook: 
+        #   add fullres URL to photo.origSrc, 
+        # OR
+        #   replace photo.src && set photo.origSrc: 'queued' => 'full-res'
+        ##
         ERROR_CANCELLED = -999
         # resp = { asset, progress, hasFinished, success, errorCode, url, name }
           # asset: "AC072879-DA36-4A56-8A04-4D467C878877/L0/001"
@@ -538,25 +593,30 @@ angular.module('ionBlankApp')
           # name: "tfss....jpg"
           # progress: 1
           # success: 1
-          # url: "http://files.parsetfss.com/tfss....jpg"        
+          # url: "http://files.parsetfss.com/tfss....jpg"       
+          # maxWidth: false || int   TODO: update plugin!!! 
         try
           # parse PhotoObj.src handled by image-store
           _bkgFileUploader.queueP() 
           photo = {
             UUID: resp.asset
+            name: resp.name
           }
 
+
+
+          scheduledUUID = _bkgFileUploader._getScheduledUUID(photo.UUID)
           if !resp.success && resp.errorCode == ERROR_CANCELLED
             # add back to _readyToSchedule
-            _bkgFileUploader.schedule(photo.UUID,'front')
+            _bkgFileUploader.schedule(scheduledUUID,'front')
           else if !resp.success # resp.errorCode < 0
-            _bkgFileUploader._complete[photo.UUID] = resp.errorCode  || resp.message # errorCode < 0
+            _bkgFileUploader._complete[scheduledUUID] = resp.errorCode  || resp.message # errorCode < 0
             _bkgFileUploader.oneError(resp)
           else 
-            _bkgFileUploader._complete[photo.UUID] = 1
+            _bkgFileUploader._complete[scheduledUUID] = 1
             self.callbacks.onEach(resp) if self.callbacks.onEach
 
-          delete _bkgFileUploader._scheduled[photo.UUID] 
+          delete _bkgFileUploader._scheduled[scheduledUUID] 
           remaining = self.remaining()
           if remaining == 0
             $timeout( _bkgFileUploader.allComplete )
@@ -802,7 +862,7 @@ angular.module('ionBlankApp')
             networkOK = false
           else if otgUploader.isCellularNetwork() && !otgUploader.allowCellularNetwork()
             # TODO: remove this line when the native-uploader session checks for allowsCellularData
-            otgUploader.uploader.pauseQueueP()  
+            # otgUploader.uploader.pauseQueueP()  
             $scope.watch.warnings = i18n.tr('warning').cellular
             networkOK = false
           else   

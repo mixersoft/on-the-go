@@ -66,13 +66,17 @@ angular.module('ionBlankApp')
           photosColl.each (photo)->
             
             # p = otgParse.updatePhotoP(photo, {src:'queued'}, false) # updates all photos by UUID, incl workorderObjs 
+            currentVal = photo.get('origSrc')
+            # return if /^(ready|true)/.test currentVal
+
             if photo.get('topPick') && !photo.get('hideTopPick')
               value = 'queued'
             else if photo.get('favorite') && !photo.get('hideTopPick')
               value = 'queued'  
-            else 
-              return if !photo.get('origSrc')
+            else if currentVal == 'queued' # unset
               value = null
+            else 
+              return
 
             p = photo.set('origSrc', value).save().then (o)->
                 # console.log o

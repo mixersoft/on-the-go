@@ -303,6 +303,7 @@ angular
           'remove' : []
           'complete': []
           'queued': []
+          'queued-full-res': []
           'errors': []
         }
         parsePhotos = photosColl?.toJSON?() || []
@@ -340,7 +341,20 @@ angular
             lastUploadDate = o.createdAt if o.createdAt > lastUploadDate
 
             parseSync['complete'].push( o.UUID ) if o.src[0...4] == 'http'
+            
+
+            # extra: upload full-res TopPicks, if necessary
+            try 
+              if o['origSrc'] == 'queued' && 
+                $rootScope.config['upload']['use-720p-service'] == true
+                  parseSync['queued-full-res'].push( o.UUID ) 
+              # else if o.src == 'queued' # prevent duplicate upload
+              #   parseSync['queued'].push( o.UUID ) 
+            catch e
+              'noop'
+
             parseSync['queued'].push( o.UUID ) if o.src == 'queued'
+
             # parse photoObj.src errors
             parseSync['errors'].push( o.UUID ) if o.src[0...5] == 'error'
             # getPhotoById errors
@@ -357,6 +371,7 @@ angular
           # 'remove':
           # 'complete':
           # 'queued':
+          # 'queued-full-res'  <= photoObj.origSrc == true
           # 'errors':
         return otgUploader.uploader.getQueueP()
         .then (queuedAssetIds)->

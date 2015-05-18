@@ -423,6 +423,7 @@ angular
           _.extend foundInMap, _.pick photo, ['from', 'caption', 'rating', 'favorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId'] # copy Edit fields
           foundInMap.from = 'CameraRoll<PARSE' 
           foundInMap.woSrc = photo.src
+          foundInMap['workorderId'] = photo['workorder'].objectId
           # cameraRoll photo.favorite has priority
           # BUT, we need to listen for onChange favorite OUTSIDE app and post(?)
           # console.log "%%% isLocal, photo=" + JSON.stringify _.pick  foundInMap, ['from', 'caption', 'rating', 'xxxfavorite', 'topPick', 'shared', 'shotId', 'isBestshot', 'objectId']
