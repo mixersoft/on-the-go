@@ -213,6 +213,20 @@ angular.module('ionBlankApp')
       $state: $state
       orderCount: $rootScope.counts['orders']
       viewTitle: i18n.tr('title')  # HACK: view-title state transition mismatch
+      showAsTopPick: (item)->
+        return if !item
+        switch $state.current.name
+          when 'app.top-picks.top-picks'
+            return {
+              'ion-ios-checkmark balanced':!item.hideTopPick, 
+              'ion-ios-checkmark-outline assertive': item.hideTopPick
+            }
+          when 'app.top-picks.favorites', 'app.top-picks.shared'
+            return {
+              'ion-ios-checkmark balanced':item.topPick && !item.hideTopPick, 
+              'ion-ios-checkmark-outline balanced': !item.topPick 
+              'ion-ios-checkmark-outline assertive': item.topPick && item.hideTopPick
+            }
     }
 
     # use dot notation for prototypal inheritance in child scopes
@@ -267,11 +281,19 @@ angular.module('ionBlankApp')
           $ionicScrollDelegate.$getByHandle('collection-repeat-wrap').resize() 
         return $scope.watch.info  
 
-      hideTopPick: (event, item)->
+
+      hideAsTopPick: (event, item)->
         if event
           event.preventDefault() 
           event.stopPropagation()
-        item.hideTopPick = !item.hideTopPick
+        switch $state.current.name
+          when 'app.top-picks.top-picks'
+            item.hideTopPick = !item.hideTopPick    
+          when 'app.top-picks.favorites', 'app.top-picks.shared'
+            # do Nothing if not topPick
+            return if !item.topPick 
+            item.hideTopPick = !item.hideTopPick   
+        
         otgParse.updatePhotoP(item, 'hideTopPick').then ()->
           console.log "*** Success updated hideTopPick=", item.hideTopPick
         return 
@@ -366,7 +388,13 @@ angular.module('ionBlankApp')
             scope.swipeCard.swipeOver?('right')
 
       refresh: ()->
-        $scope.app.sync.cameraRoll_Orders()
+        options = null
+        if $state.includes('app.top-picks.favorites')
+          options = {
+            type: 'favorites'
+            size: 'preview'
+          } 
+        $scope.app.sync.cameraRoll_Orders(options)
         return 
 
       DEBOUNCED_cameraRollSnapshot : _.debounce ()->
@@ -418,6 +446,17 @@ angular.module('ionBlankApp')
     $rootScope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
       if $state.includes('app.top-picks')
         $scope.on.reloadDataSet() 
+      if $state.includes('app.top-picks.favorites') && 
+        $scope.deviceReady.device().isDevice &&
+        $scope.watch.favorites_initialized!=true
+          options = {
+              type: 'favorites'
+              size: 'preview'
+            } 
+          cameraRoll.loadFavoritesP() # do NOT remap cameraRoll
+          $scope.watch.favorites_initialized = true
+          markup = '<div class="text-center"><i class="icon ion-load-b ion-spin"></i>&nbsp;scanning camera roll...</div>'
+          $scope.notifyService.message markup, 'info', 2000
       return 
 
     $scope.cameraRoll = cameraRoll  # DEPRECATE???
@@ -433,6 +472,9 @@ angular.module('ionBlankApp')
       return if !$scope.deviceReady.isOnline()
       # console.log "\n\n\n %%% ionicView.beforeEnter > app.sync.DEBOUNCED_cameraRoll_Orders "
       $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
+      # see: $scope.on.cameraRollSelected(), calendarSelected()
+      
+      return 
 
     $scope.$on '$ionicView.enter', ()->
       $scope.watch.viewTitle = i18n.tr('title')
@@ -443,7 +485,6 @@ angular.module('ionBlankApp')
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 
       return      
-
     
 
     init = ()->

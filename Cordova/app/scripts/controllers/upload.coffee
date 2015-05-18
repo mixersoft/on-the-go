@@ -281,9 +281,9 @@ angular.module('ionBlankApp')
         avgSizeKb = if use720p then 100 else 2000
         _cb = {
           success: (sizeKb)->
-            chunksize = Math.max( Math.floor(sizeKb/avgSizeKb) , 5)
+            chunksize = Math.max( Math.floor(sizeKb/avgSizeKb) , 50)
             _bkgFileUploader.cfg.CHUNKSIZE = chunksize 
-            # console.log "\n >>> cordova getFreeDiskSpace: ", JSON.stringify {free:sizeKb, CHUNKSIZE: chunksize }
+            console.log "\n>>> cordova getFreeDiskSpace: ", JSON.stringify {free:sizeKb, CHUNKSIZE: chunksize }
           fail: (err)->
             console.warn "cordova.getFreeDiskSpace error: ", err
         }

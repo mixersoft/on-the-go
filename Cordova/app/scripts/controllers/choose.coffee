@@ -384,10 +384,17 @@ angular.module('ionBlankApp')
         _datepicker.deactivate()
         return
       cameraRollSelected : (value)->
-        cameraRoll.loadCameraRollP({type:'moments'}, false)
+        if $scope.watch.favorites_initialized!=true
+          $scope.watch.favorites_initialized = true
+          cameraRoll.loadCameraRollP({type:'moments'}, 'merge')
+          markup = '<div class="text-center"><i class="icon ion-load-b ion-spin"></i>&nbsp;scanning camera roll...</div>'
+          $scope.notifyService.message markup, 'info', 5000
+        else 
+          cameraRoll.loadCameraRollP({type:'moments'}, false)  
         return true
 
       refresh: ()->
+        return if $scope.deviceReady.device().isDevice == false
         cameraRoll.loadCameraRollP({type:'moments'}, 'merge')
         .then ()->
           # done on 'cameraRoll.loadPhotosComplete'

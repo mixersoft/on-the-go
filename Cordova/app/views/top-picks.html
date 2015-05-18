@@ -136,8 +136,8 @@
               <div class="item item-stable tabs card-footer "
               ng-if="on.showInfo()">
                 <div class="tab-item icon"
-                ng-class="{'ion-ios-checkmark balanced':!item.hideTopPick, 'ion-ios-checkmark-outline assertive':item.hideTopPick}", 
-                ng-click="on.hideTopPick($event, item)"
+                ng-class="watch.showAsTopPick(item)", 
+                ng-click="on.hideAsTopPick($event, item)"
                 ></div>
                 <div class="tab-item royal icon"
                 ng-click="on.addShare($event, item)"

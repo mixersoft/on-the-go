@@ -28,6 +28,17 @@ angular.module('ionBlankApp')
   'deviceReady', 'PLUGIN_CAMERA_CONSTANTS', 'cameraRoll', 'imageCacheSvc', '$rootScope', '$q', '$parse'
   (deviceReady, CAMERA, cameraRoll, imageCacheSvc, $rootScope, $q, $parse)->
 
+    _queued = {}
+    $rootScope.$on 'cameraRoll.fetchPhotosFromQueue', (ev, args)->
+      _.each args.photos, (photo)->
+        $el = _queued[photo.UUID]
+        return if !$el
+        # console.log "queue fetch, resp=" + JSON.stringify _.pick photo, ['UUID', 'data']
+        return if $el.attr('lazy-src') != photo.UUID # stale
+        $el.attr('src', photo.data) 
+        delete _queued[photo.UUID]
+        return
+
     _getAsSnappiSqThumb = (src='')->
       return src if src.indexOf('snaphappi.com/svc') == -1  # autoRender not available
       parts = src.split('/')
@@ -89,40 +100,38 @@ angular.module('ionBlankApp')
       # NOTE: src values AFTER this point are retrieved async, update element directly
       #
       ##
-      promise = imageCacheSvc.isStashed_P(UUID, format)
-      # promise = $q.reject("force DestinationType='DATA_URL' for collection-repeat")
-      .then (stashed)->
-        element.attr('src', stashed.fileURL)
-        return 
-      .catch (error)->
-        # console.log "lazySrc notCached for format=" + format + ", UUID="+UUID
-        if isBrowser
-          throw "_setLazySrc() img.src not found for isBrowser==true and " + [UUID, format].join(':')
 
-        # isDevice so check CameraRoll with promise
-        options = {
-          size: IMAGE_SIZE
-          DestinationType : CAMERA.DestinationType.FILE_URI 
-        }
-        # options.DestinationType = CAMERA.DestinationType.DATA_URL if IMAGE_SIZE=='preview'
-        return cameraRoll.getPhoto_P( UUID, options )
-        .then (resp)->
-          if options.DestinationType == CAMERA.DestinationType.FILE_URI
-            imageCacheSvc.stashFile(UUID, IMAGE_SIZE, resp.data, resp.dataSize) # FILE_URI
-          else if options.DestinationType == CAMERA.DestinationType.DATA_URL && IMAGE_SIZE == 'preview'
-            imageCacheSvc.cordovaFile_USE_CACHED_P(element, resp.UUID, resp.data) 
-          else 
-            'not caching DATA_URL thumbnails'
+      # console.log "lazySrc notCached for format=" + format + ", UUID="+UUID
+      if isBrowser
+        throw "_setLazySrc() img.src not found for isBrowser==true and " + [UUID, format].join(':')
 
-          if element.attr('lazy-src') != resp.UUID
-            throw '_setLazySrc(): collection-repeat changed IMG[lazySrc] before cameraRoll image returned'
-          else 
-            element.attr('src', resp.data) 
+      # isDevice so check CameraRoll with promise
+      options = {
+        size: IMAGE_SIZE
+        DestinationType : CAMERA.DestinationType.FILE_URI 
+      }
+      # options.DestinationType = CAMERA.DestinationType.DATA_URL if IMAGE_SIZE=='preview'
+      cameraRoll.getPhoto_P( UUID, options ).then (resp)->
+        if resp == 'queued'
+          _queued[UUID] = element
           return
+        # stashed > cameraRoll
+        if options.DestinationType == CAMERA.DestinationType.FILE_URI
+          imageCacheSvc.stashFile(UUID, IMAGE_SIZE, resp.data, resp.dataSize) # FILE_URI
+        else if options.DestinationType == CAMERA.DestinationType.DATA_URL && IMAGE_SIZE == 'preview'
+          imageCacheSvc.cordovaFile_USE_CACHED_P(element, resp.UUID, resp.data) 
+        else 
+          'not caching DATA_URL thumbnails'
+
+        if element.attr('lazy-src') != resp.UUID
+          throw '_setLazySrc(): collection-repeat changed IMG[lazySrc] before cameraRoll image returned'
+        else 
+          element.attr('src', resp.data) 
+        return
       .catch (error)->
         console.warn "_setLazySrc():", error
         return 
-      return null
+      return null # src will be set async from event='cameraRoll.fetchPhotosFromQueue'
         
 
     _useLoremPixel = (element, UUID, format)->

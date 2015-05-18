@@ -527,9 +527,9 @@ angular
         # console.log "help="+ if $scope.config.help then 'ON' else 'OFF'
 
       sync: 
-        cameraRoll_Orders: ()-> 
+        cameraRoll_Orders: (options = null)-> 
           # console.log ">>> SYNC_cameraRoll_Orders"
-          cameraRoll.loadCameraRollP(null, 'merge').finally ()->
+          cameraRoll.loadCameraRollP(options, 'merge').finally ()->
             if !$scope.deviceReady.isOnline()
               $rootScope.$broadcast('sync.debounceComplete')
               msg = {
@@ -830,18 +830,6 @@ angular
         # console.log "$localStorage['device']=" + JSON.stringify $localStorage['device']  
         pushNotifyPlugin.initialize( $localStorage['device'] )
           .registerP()
-
-
-        # loadMomentThumbnails on timer, cancel if done elsewhere
-        # for reload cameraRoll.map() from localStorage
-        _cancel = $timeout ()->
-            cameraRoll.loadCameraRollP(null, false)
-            return
-          , 3000
-        _off = $rootScope.$on 'cameraRoll.beforeLoadMomentThumbnails', (ev, cancel)->
-          $timeout.cancel _cancel 
-          _off()
-          _off = _cancel = null
         return # restore cameraRoll.map snapshot
         
       .finally ()->

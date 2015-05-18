@@ -131,7 +131,7 @@ angular
             return $q.when(self.iOSCollections._parsed) 
           
 
-          start = new Date().getTime()
+          start = Date.now()
           if deviceReady.device().isBrowser
             return _.isEmpty window.TEST_DATA # load in _LOAD_BROWSER_TOOLS()
             promise = $q.when(TEST_DATA.iosCollections)
@@ -216,7 +216,8 @@ angular
       loadCameraRollP: (options, force='merge')->
         defaults = {
           size: 'thumbnail'
-          type: 'favorites,moments' # defaults
+          type: '' # 'favorites,moments' # defaults
+          delay: 1000
           # pluck: ['favorite','mediaType', 'mediaSubTypes', 'hidden']  
           # fromDate: null
           # toDate: null
@@ -225,19 +226,20 @@ angular
         # options.fromDate = self.getDateFromLocalTime(options.fromDate) if _.isDate(options.fromDate)
         # options.toDate = self.getDateFromLocalTime(options.toDate) if _.isDate(options.toDate)
 
-        start = new Date().getTime()
+        start = Date.now()
         return self.mapP(options, force)
         .then (mapped)->
           forceCollection = $rootScope.$state.includes('app.choose.camera-roll') && force
           promise = self.iOSCollections.mapP(forceCollection)
           return mapped
         .then (mapped)->
-          promise = self.loadFavoritesP(10*1000) if options.type.indexOf('favorites') > -1
+          # options.type = 'favorites'
+          promise = self.loadFavoritesP(options.delay) if options.type.indexOf('favorites') > -1
           # don't wait for promise
           return mapped
 
         .then ( mapped )->
-
+          # options.type = 'moments'
           # end = new Date().getTime()
           # console.log "\n*** mapAssetsLibraryP() complete, elapsed=" + (end-start)/1000
           return mapped if deviceReady.device().isBrowser
@@ -245,8 +247,8 @@ angular
           # don't wait for promise
           if options.type.indexOf('moments') > -1
             moments = self.loadMomentsFromCameraRoll( mapped )
-            promise = self.loadMomentThumbnailsP(15*1000).then ()->
-              # console.log "\n @@@load cameraRoll thumbnails loaded from loadCameraRollP()"
+            promise = self.loadMomentThumbnailsP(options.delay).then ()->
+              # console.log "\n>>>loadCameraRollP(), moments=" + JSON.stringify {elapsed: Date.now() - start}
               return
 
           # cameraRoll ready
@@ -278,7 +280,7 @@ angular
             return false if imageCacheSvc.isStashed( photo.UUID, options.size ) 
             return false if self.dataURLs[options.size][photo.UUID]?
             return true
-        # console.log "\n\n\n*** preloading favorite previews for UUIDs, count=" + notCached.length 
+        console.log "\n>>>preloading favorite previews for UUIDs, count=" + notCached.length 
         # console.log notCached
         return self.loadPhotosP(notCached, options, delay)
 
@@ -314,7 +316,7 @@ angular
             return false if self.dataURLs[options.size][photo.UUID]?
             return true
         )
-        # console.log "\n\n\n*** preloading moment thumbnails for UUIDs, count=" + notCached.length 
+        console.log "\n>>>preloading moment thumbnails for UUIDs, count=" + notCached.length 
         # console.log notCached
         $rootScope.$broadcast 'cameraRoll.beforeLoadMomentThumbnails' # for cancel loading timer
         # done on 'cameraRoll.loadPhotosComplete', type=thumbnail
@@ -347,7 +349,7 @@ angular
         return $q.when('success') if _.isEmpty photos
         dfd = $q.defer()
         _fn = ()->
-            start = new Date().getTime()
+            start = Date.now()
             return snappiMessengerPluginService.getDataURLForAssetsByChunks_P( 
               photos
               , options                         
@@ -357,29 +359,12 @@ angular
                   imageCacheSvc.stashFile(photo.UUID, options.size, photo.data, photo.dataSize) # FILE_URI
               , snappiMessengerPluginService.SERIES_DELAY_MS 
             )
-            .then ()->
-              end = new Date().getTime()
-              # console.log "\n*** thumbnail preload complete, elapsed=" + (end-start)/1000
+            .then (photos)->
+              console.log "\n>>> loadPhotosP() load complete, resp=" + JSON.stringify {size: options.size, count: photos.length, elapsed: Date.now() - start}
               $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', options # for cancel loading timer
               dfd.resolve('success')
             .then ()->
               return
-              # show results in AppConsole
-              if false && "appConsole"
-                truncated = {
-                  "desc": "cameraRoll.dataURLs"
-                  photos: cameraRoll.map()[0..TEST_LIMIT]
-                  dataURLs: {}
-                }
-                if deviceReady.device().isDevice
-                  _.each cameraRoll.dataURLs[IMAGE_FORMAT], (dataURL,uuid)->
-                    truncated.dataURLs[uuid] = dataURL[0...40]
-                else 
-                  _.each photos, (v,k)->
-                    truncated.dataURLs[v.UUID] = v.data[0...40]
-                # console.log truncated # $$$
-                $scope.appConsole.show( truncated )
-                return photos 
         $timeout ()-> 
             _fn()     
           , delay  
@@ -515,8 +500,9 @@ angular
       #   size: ['thumbnail', 'preview', 'preview@2x', 'previewHD']
       #   DestinationType : [0,1],  default CAMERA.DestinationType.FILE_URI 
       #   noCache: boolean, default false, i.e. cache the photo using imageCacheSvc.stashFile
-      # @return photo object, {UUID: data: dataSize:, ...}
+      # @return photo object, {UUID: data: dataSize:, data:}
       # @throw error if photo.dataSize == 0
+      # NOTE: checks imgCacheSvc for stashed entry before loading from CameraRoll
       ###
       getPhoto_P :  (UUID, options)->
         options = _.defaults options || {}, {
@@ -534,12 +520,9 @@ angular
           # TODO: check cameraRoll if owner is DIY workorder
           # i.e. workorderObj.get('devices').indexOf(deviceReady.device().id) > -1
           found = self.getPhoto(UUID, options) 
-        if found  
-          photo = {
-            UUID: UUID
-            data: found
-          }
-          return $q.when(found) 
+         
+        found = 'queued' if !found
+        return $q.when found
           
 
         # load from cameraRoll if workorderObj.get('devices').indexOf(deviceReady.device().id) > -1
@@ -663,6 +646,7 @@ angular
                 else 
                   self.dataURLs[options.size][photo.UUID] = photo.data
             ).then (photos)->
+              $rootScope.$broadcast 'cameraRoll.fetchPhotosFromQueue', {photos:photos}
               return photos 
 
         return $q.all(promises).then (o)->
@@ -938,6 +922,7 @@ angular
           size: 'preview'
           DestinationType : CAMERA.DestinationType.FILE_URI 
         }
+        start = Date.now()
         return _MessengerPLUGIN.getPhotosByIdP(assets , options).then (photos)->
             _.each photos, (photo)->
 
@@ -955,6 +940,7 @@ angular
 
             # console.log "\n********** updated cameraRoll.dataURLs for this batch ***********\n"
 
+            console.log "\n>>>getDataURLForAssets_P resp=" + JSON.stringify { size: options.size, count: photos.length, elapsed:Date.now() - start}
             return photos
           , (errors)->
             console.warn "ERROR: getDataURLForAssetsByChunks_P", errors
@@ -1058,7 +1044,7 @@ angular
         # console.log "\n>>>>>>>>> getPhotosByIdP: options=" + JSON.stringify options
         deviceReady.waitP().then (retval)->
           dfd = $q.defer()
-          start = new Date().getTime()
+          start = Date.now()
           return $q.reject "ERROR: window.Messenger Plugin not available" if !(window.Messenger?.getPhotoById)
           remaining = assetIds.length
           retval = {

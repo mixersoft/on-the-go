@@ -274,7 +274,7 @@ angular
       isStashed_P:  (UUID, size)->
         stashed = self.isStashed UUID, size
         return $q.when (stashed) if stashed        
-        return $q.reject('WARN: isStashed_P() unable to guess valid filePath for ' + [UUID,size].join(':') ) 
+        return $q.reject('NOT STASHED') 
         # TODO: cordovaFile_CHECK_P() when we can guess filePath for FILE_URIs
         return self.cordovaFile_CHECK_P(UUID, size, null)
 
@@ -285,7 +285,7 @@ angular
           hashkey = self.getHashKeyFromFilename(filename)
         else 
           hashKey = self.getHashKey( UUID, size)
-        # console.log "\n\n >>> STASH file=" + hashKey + ", url=" + fileURL
+        # console.log ">>> STASH file=" + hashKey + ", url=" + fileURL if size > 64
         self[stashKey][hashKey] = {
           fileURL: fileURL
           fileSize: fileSize
@@ -374,13 +374,17 @@ angular
         $timeout ()->
             stashKey = if repo == 'appCache' then 'cacheIndex' else 'archiveIndex'
             match = self.PLUGIN_ROOT.slice(7)
+            results = {keep: 0, removed: 0}
             _.each self[stashKey], (v,k)->
-              return if v.fileURL?.indexOf( match ) == 0
+              if v.fileURL?.indexOf( match ) == 0
+                results.keep += 1
+                return 
               delete self[stashKey][k]
+              results.removed += 1
               return
-            console.log "imgCacheSvc.filterStashed() complete"
+            console.log "imgCacheSvc.filterStashed() complete, results=" + JSON.stringify results
             return
-          , 5000
+          , 1000
         return
 
       cordovaFile_LOAD_CACHED_P : (dirEntry)->

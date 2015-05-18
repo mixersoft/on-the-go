@@ -184,8 +184,8 @@ angular.module 'snappi.util', ['ionic', 'ngCordova', 'ngStorage']
 # timeout and close
 # TODO: make a controller for directive:notify
 .service 'notifyService', [
-  '$timeout'
-  ($timeout)->
+  '$timeout', '$rootScope'
+  ($timeout, $rootScope, $compile)->
     CFG = {
       debug: true
       timeout: 5000 
@@ -244,9 +244,13 @@ angular.module 'snappi.util', ['ionic', 'ngCordova', 'ngStorage']
             notification['msg'] = "<h4>"+msg.title+"</h4><p>"+msg.message+"</p>"
           else 
             notification['msg'] = msg.message
+        else 
+          notification['msg'] = msg
 
         this.messages[now] = notification
         this.timeouts.push({key: now, value: timeout})
+
+        $rootScope.$apply() if !$rootScope.$$phase
       else 
         # start timeouts on ng-repeat
         this.timerStart()
