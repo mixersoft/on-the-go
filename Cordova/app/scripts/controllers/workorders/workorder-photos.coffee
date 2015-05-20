@@ -122,8 +122,11 @@ angular.module('ionBlankApp')
         otgParse.savePhotoP(item, $scope.photosColl, 'topPick')
         # otgParse.updatePhotoP(item, 'topPick')
         .then ()->
-            $scope.workorderAttr.progress.todo -= 1 if !revert && revert != false
-            $scope.workorderAttr.progress.picks -= 1 if revert==true
+            $scope.workorderAttr.progress.todo -= 1 if `revert==null`
+            $scope.workorderAttr.progress.picks += 
+              if revert==true
+              then -1
+              else 1
             $scope.on._saveWoProgress($scope.workorderAttr)
             return $scope.$apply()
           , (err)->
@@ -262,7 +265,7 @@ angular.module('ionBlankApp')
             return $q.when() if /^(complete|closed)/.test workorderObj.get('status')
             woProgress = _.reduce photos, (result, item)->
                 result.picks += 1 if item.topPick == true
-                result.todo +=1 if !item.topPick && item.topPick != false
+                result.todo +=1 if `item.topPick==null`
                 return result
               , {
                 todo: 0
@@ -319,7 +322,7 @@ angular.module('ionBlankApp')
       if isBootstrap  # set on startup, $scope.$on '$ionicView.loaded'
           # only for TESTING when we load 'app.workorder-photos' as initial state!!!
           
-          otgWorkorderSync.SYNC_WORKORDERS($scope, options, ()->
+          otgWorkorderSync.SYNC_WORKORDERS(options, ()->
             _SyncWorkorderPhotos(options)
             isBootstrap = false
             console.log "workorder Sync complete"

@@ -31,7 +31,12 @@ angular.module('ionBlankApp')
       return o if /^(complete|closed)/.test( status ) == true    
 
     $scope.filterStatusNotComplete = (o)->
-      return !$scope.filterStatusComplete(o)
+      return o if $rootScope.$state.includes('app.workorders.detail')
+      status = 
+        if o.className == 'WorkorderObj'
+        then o.get('status') 
+        else o.status
+      return o if /^(complete|closed)/.test( status ) == false
 
     $scope.on = {
       selectTab: (status)->
@@ -54,7 +59,7 @@ angular.module('ionBlankApp')
           WORKING: 0.9
           COMPLETE: 0.9
         }
-
+        
         return false if status == 'new'  
         oldStatus = order.status
         switch status
@@ -70,9 +75,18 @@ angular.module('ionBlankApp')
           else
             return false
         woObj = otgWorkorderSync._workorderColl['editor'].get( order.objectId )
-        promise = otgParse.updateWorkorderP(woObj, {status:status}, ['status'])
+        updateFields = {status:status}
+        promise = otgParse.updateWorkorderP(woObj, updateFields)
         .then (woObj)->
             order.status = woObj.get('status')
+            if order.status == 'complete'
+              $timeout ()->
+                # ???: move to Cloud code?
+                  promise = otgWorkorderSync.setWorkorderMomentP(woObj, {
+                    filterPicks: true
+                    })
+                  return
+                ,1000
             $scope.$apply()
           , (err)->
             order.status = oldStatus # rollback
@@ -107,7 +121,8 @@ angular.module('ionBlankApp')
         # console.log 'workorder action clicked=', action
         switch action # add ng-click
           when 'open', 'review'
-            $scope.on.setStatus(workorder, action)
+            if action=='open' && /^(complete|closed)/.test(workorder.status) == false
+              $scope.on.setStatus(workorder, 'working')
             target = "app.workorder-photos.all"
             $rootScope.$state.transitionTo(target, {
               woid: workorder.objectId
@@ -123,15 +138,24 @@ angular.module('ionBlankApp')
     $scope.watch = _watch = {
       viewTitle: i18n.tr('title')
       isSyncing: false
+      workorders: null
+      workorder: null
     }
-    $scope.workorders = []
-    $scope.workorder = null
 
     $scope.$on 'user:sign-out', (args)->
-      $scope.workorders = []
-      $scope.workorder = null
+      otgWorkorderSync._workorderColl['editor'] = null
+      $scope.watch.workorders = []
+      $scope.watch.workorder = null
+
+    # $scope.$on '$stateChangeStart', (event, toState, toParams, fromState, fromParams, error)-> 
+    #   if $rootScope.$state.includes('app.workorders')
+    #       console.log "stateChangeStart=", $rootScope.$state.current.name
+    #       $scope.watch.startStateChange = Date.now()  
 
     $scope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
+      # if $rootScope.$state.includes('app.workorders')
+        # console.log "stateChangeSuccess elapsed=", [$rootScope.$state.current.name, Date.now() - $scope.watch.startStateChange]
+        # $scope.watch.startStateChange = null 
       if $rootScope.$state.includes('app.workorders.detail')
         if _.isEmpty $rootScope.$state.params?.woid
           $rootScope.$state.transitionTo('app.workorders.open') 
@@ -139,20 +163,23 @@ angular.module('ionBlankApp')
 
     _SyncWorkorders = (woid)->
       $scope.watch.isSyncing = true
-      onComplete = ()->
-        $scope.watch.isSyncing = false
-        $scope.hideLoading()
-        $rootScope.$broadcast('scroll.refreshComplete')
-        if $rootScope.$state.includes('app.workorders.detail')
-          $scope.workorder = found = _.find $scope.workorders, {objectId: options.woid}
-          $scope.workorder['showDetail'] = true if found
-
-        console.log "workorder Sync complete"
-        return
       $scope.showLoading(true)  
-      options = {force: true}
+      options = {
+        force: $rootScope.$state.includes('app.workorders.detail')
+        whenDone : (woColl)->
+          $scope.watch.isSyncing = false
+          $scope.hideLoading()
+          $rootScope.$broadcast('scroll.refreshComplete')
+          # ???: is it faster to merge?
+          $scope.watch.workorders = otgWorkorderSync._workorderColl['editor'].toJSON?()
+          if $rootScope.$state.includes('app.workorders.detail')
+            workorder = _.find $scope.watch.workorders, {objectId: woColl.get(woid)}
+            workorder['showDetail'] = true 
+          console.log "workorder Sync complete"
+          return
+      }
       options['woid'] = woid if woid?
-      return otgWorkorderSync.SYNC_WORKORDERS($scope, options,  onComplete)
+      return otgWorkorderSync.SYNC_WORKORDERS(options,  options.whenDone)
 
 
     _DEBOUNCED_SYNC_workorders = _.debounce ()->
@@ -171,19 +198,24 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.beforeEnter', ()->
       # cached view becomes active 
+      # console.log "workorder beforeEnter"
+      $scope.watch.workorders = otgWorkorderSync._workorderColl['editor'].toJSON?()
       # dynamically update left side menu
       return
 
 
     $scope.$on '$ionicView.enter', ()->
+      # why is this being called 2x?
+      # console.log "workorder enter"
       $scope.watch.viewTitle = i18n.tr('title')
       $scope.SideMenuSwitcher.leftSide.src = 'views/partials/workorders/left-side-menu.html'
       return if !$scope.deviceReady.isOnline()
-      $timeout ()->
-        if $rootScope.$state.includes('app.workorders.detail')
-          return _SyncWorkorders($rootScope.$state.params.woid)
-        return _DEBOUNCED_SYNC_workorders() if $scope.workorders.length
-        return _SyncWorkorders()      
+      if !$scope.watch.isSyncing
+        $timeout ()->
+          if $rootScope.$state.includes('app.workorders.detail')
+            return _SyncWorkorders($rootScope.$state.params.woid)
+          return _DEBOUNCED_SYNC_workorders() if $scope.watch.workorders?.length
+          return _SyncWorkorders()      
       
 
     $scope.$on '$ionicView.leave', ()->

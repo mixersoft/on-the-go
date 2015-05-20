@@ -112,7 +112,8 @@ angular.module('onTheGo.i18n', [])
         'export-redirect':
           title: "Export Photos to Zip File"
           message: "Please sign-in from our website to export photos: http://app.snaphappi.com/on-the-go.App"
-      'app.orders.detail': {}
+      'app.orders.detail': 
+        title: 'Order Detail'
       'app.orders.open': 
         title: 'Open Orders'
       'app.orders.complete': 

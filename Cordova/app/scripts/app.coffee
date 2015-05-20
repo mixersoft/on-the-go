@@ -352,14 +352,14 @@ angular
       }      
     })    
     .state('app.orders.detail', {
-      url: "/:oid",
+      url: "/detail/:oid",
       views: {
-        'menuContent' : {
-          templateUrl: "views/orders.html"
-          controller: 'OrdersCtrl'
+        'complete-tab' : {
+          templateUrl: "views/partials/tab-order-complete.html"
         }
       }
     })      
+
     #
     # Workorder Management System
     #
@@ -527,7 +527,7 @@ angular
         # console.log "help="+ if $scope.config.help then 'ON' else 'OFF'
 
       sync: 
-        cameraRoll_Orders: (options = null)-> 
+        cameraRoll_Orders: (options = {})-> 
           # console.log ">>> SYNC_cameraRoll_Orders"
           cameraRoll.loadCameraRollP(options, 'merge').finally ()->
             if !$scope.deviceReady.isOnline()
@@ -538,11 +538,14 @@ angular
               }
               notifyService.message msg, "warning", 5000
               return 
-              
-            otgWorkorderSync.SYNC_ORDERS(
-              $scope, 'owner', 'force'
-              , ()->
+            
+            options = _.defaults options, {
+              force: true
+              whenDoneP: null
+            }
+            otgWorkorderSync.SYNC_ORDERS( options, (woColl)->
                 $rootScope.$broadcast('sync.debounceComplete')
+                return options.whenDoneP(woColl) if _.isFunction options.whenDoneP
                 return
             )
           return
@@ -837,7 +840,6 @@ angular
           # browser
           _LOAD_BROWSER_TOOLS() 
       
-        # promise = otgWorkorderSync.SYNC_ORDERS($scope, 'owner', 'force') if !$rootScope.isStateWorkorder()
         promise = otgParse.checkBacklogP().then (backlog)->
           $scope.config.system['order-standby'] = backlog.get('status') == 'standby'
         return  # end $ionicPlatform.ready

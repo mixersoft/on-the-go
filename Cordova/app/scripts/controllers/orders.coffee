@@ -22,6 +22,7 @@ angular.module('ionBlankApp')
       $ionicTabsDelegate.select(index)
 
     $scope.filterStatusComplete = (o)->
+      return o if $rootScope.$state.includes('app.orders.detail')
       status = 
         if o.className == 'WorkorderObj'
         then o.get('status') 
@@ -29,7 +30,12 @@ angular.module('ionBlankApp')
       return o if /^(complete|closed)/.test( status ) == true  
 
     $scope.filterStatusNotComplete = (o)->
-      return !$scope.filterStatusComplete(o)
+      return o if $rootScope.$state.includes('app.orders.detail')
+      status = 
+        if o.className == 'WorkorderObj'
+        then o.get('status') 
+        else o.status
+      return o if /^(complete|closed)/.test( status ) == false
 
     $scope.watch = _watch = {
       isOffline: ()->
@@ -45,7 +51,7 @@ angular.module('ionBlankApp')
 
     $scope.on = {
       refresh: ()->
-        $scope.app.sync.cameraRoll_Orders()
+        _SyncOrders()
         return      
       setStatus: (order, status)->
         switch status
@@ -119,28 +125,55 @@ angular.module('ionBlankApp')
         return
     }
 
+    $scope.$on '$stateChangeSuccess', (event, toState, toParams, fromState, fromParams, error)->
+      # console.log '$stateChangeSuccess=', $rootScope.$state.current.name
+      if $rootScope.$state.includes('app.orders.detail')
+        if !$rootScope.$state.params?.oid
+          $rootScope.$state.transitionTo('app.orders.open') 
+        else 
+          console.log "order.detail, id=", $rootScope.$state.params 
+
+      return   
+
     $scope.$on 'sync.debounceComplete', ()->
       $scope.watch.isSyncing = false
       return
 
-    # NOTE: ng-repat = order in filteredOrders = (workorders = $root.orders | filter:filterStatusNotComplete )
-    # set by $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
-    _workorders = $rootScope.orders
+    _SyncOrders = (woid)->
+      $scope.showLoading(true)
+      $scope.watch.isSyncing = true
+      options = {
+        whenDoneP: (woColl)->
+          $scope.watch.isSyncing = false
+          $scope.hideLoading()
+          # console.log "whenDone, ", woColl.toJSON() if woColl instanceof Parse.Collection
+          $scope.watch.orders = woColl.toJSON()
+          $rootScope.$broadcast('scroll.refreshComplete')
+      }
+      $scope.app.sync.cameraRoll_Orders( options )
+      return
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
+      $scope.watch.orders = otgWorkorderSync._workorderColl['owner'].toJSON?()
       return
 
     $scope.$on '$ionicView.enter', ()->
       $scope.watch.viewTitle = i18n.tr('title')
       return if !$scope.deviceReady.isOnline()
-      $timeout ()->
-          $scope.showLoading(true)
-          $scope.watch.isSyncing = true
-          $scope.app.sync.DEBOUNCED_cameraRoll_Orders()      
+      if !$scope.watch.isSyncing
+        $timeout ()->
+          woid = 
+            if $rootScope.$state.includes('app.orders.detail')
+            then $rootScope.$state.params.oid 
+            else null
+           _SyncOrders( woid )
+          return
+
+
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 

@@ -116,8 +116,14 @@ angular
           else 
             return otgParse.fetchWorkordersByOwnerP(options)
         .then (workorderColl)->
-            self._workorderColl[role] = workorderColl
-            # console.log "\n *** fetchWorkordersP from backend.coffee, role=" + role
+            if options.woid? && self._workorderColl[role] instanceof Parse.Collection
+              coll = self._workorderColl[role]
+              old = coll.get(options.woid)
+              index = coll.indexOf old
+              coll.remove(old).add( workorderColl.get(options.woid) , {at:index})
+            else 
+              self._workorderColl[role] = workorderColl
+            # console.log "*** fetchWorkordersP from backend.js woColl=", workorderColl.toJSON()
 
             # initialize if necessary
             workorderColl.each (wo)->
@@ -151,13 +157,53 @@ angular
           return otgParse.fetchWorkorderPhotosByWoIdP(options)
         .then (photosColl)->
             self._workorderPhotosColl[ workorderObj.id ] = photosColl
+            return self.setWorkorderMomentP( workorderObj, {
+                          photosColl: photosColl
+                        })
 
-            wo = workorderObj.toJSON()
             # patch workorder.selectedMoment AFTER workorder photos fetched
             # path MANUALLY because we don't have cameraRoll.moments
             # moments normally set in snappiMessengerPluginService.mapAssetsLibraryP()
+        .then ()->
+            return self._workorderPhotosColl[ workorderObj.id ]
+          , (err)->
+            return $q.reject(err)
 
-            ### expecting:
+      setWorkorderMomentP : (woObj, options={})->
+        options = _.defaults options, {
+          photosColl: null
+          filterPicks: false
+        }
+
+        cached = self._workorderPhotosColl[ woObj.id ] 
+        if !options.photosColl && !cached
+          LIMIT = 1000
+          # workorderObj = new Parse.Object('WorkorderObj')
+          # workorderObj.id = woObj.id 
+          photoQ = new Parse.Query('PhotoObj')
+          photoQ.equalTo('workorder', woObj)
+          photoQ.notEqualTo('remove', true)
+          if options.filterPicks
+            photoQ.equalTo('topPick', true)
+            photoQ_fav = new Parse.Query('PhotoObj')
+            photoQ_fav.equalTo('workorder', woObj)
+            photoQ_fav.equalTo('favorite', true)
+            photoQ = Parse.Query.or(photoQ, photoQ_fav)
+            # TODO: something wrong with or query !!!!!!!!!!!!!!!!!!!!!!!!!
+          photoQ.limit(LIMIT);
+          promise =  photoQ.collection().fetch()
+        else 
+          photosColl = options.photosColl || cached
+          if options.filterPicks
+            picks = photosColl.filter( (o)->return o.get('topPick') || o.get('favorite'))
+            promise = $q.when(picks)
+          else 
+            promise = $q.when(photosColl)
+        
+
+        return promise.then (photosColl)->
+
+          ### expecting:
             workorderMoment = {
               type:'moment'
               key:[date]
@@ -172,28 +218,28 @@ angular
               ]
             }
             ###
-            
-            workorderMoment = {
+          UUIDs = 
+            if _.isArray photosColl
+            then photosColl
+            else _.pluck photosColl.toJSON(), 'UUID'
+          workorderMoment = {
               type:'moment'
-              key: wo.fromDate
+              key: woObj.get('fromDate')
               value: [
                 {
                   type: 'date'
-                  key: wo.fromDate
-                  value: _.pluck photosColl.toJSON(), 'UUID'
+                  key: woObj.get('fromDate')
+                  value: UUIDs
                 }
               ]
             }
-
-            workorderObj.set('workorderMoment', [ workorderMoment ] )
-
-            # console.log " \n\n 1b: &&&&& fetchWorkorderPhotosP from backend.coffee "
-            # console.log "\n\n*** inspect workorderMoment for Workorder: " 
-            # console.log workorderObj.toJSON()
-
-            return photosColl
-          , (err)->
-            return $q.reject(err)
+          $rootScope.$emit "workorder-moment.ready", {woObj: woObj}
+          return woObj.set('workorderMoment', [workorderMoment] ).save()
+          # .then (resp)->
+          #   console.log "workorderMoment saved, resp=", resp
+        .then null, (err)->
+          console.log "setWorkorderMomentP err=" + JSON.stringify err
+          return
 
 
       # replaces queueMissingPhotos
@@ -473,15 +519,21 @@ angular
           return $q.all(promises)
 
 
-
+      ###
+      # @param patchKeys array, example ['originalWidth', 'originalHeight', 'date']
+      ###
       _PATCH_WorkorderAssets:(parsePhotosColl, patchKeys)->
+        return if _.empty patchKeys
+
+        if _.intersection( patchKeys, ['originalWidth', 'originalHeight']).length
+          imageCacheSvc.clearStashedP('preview') # force cameraRoll fetch
+
         _alreadyPatched = {}
-        PATCH_KEYS =  patchKeys  # ['originalWidth', 'originalHeight', 'date']
         parsePhotosColl.each ( phObj )->
           crPhoto = _.findWhere cameraRoll.map(), { UUID: phObj.get('UUID') }
           return if !crPhoto || crPhoto.from=='PARSE'
           return if _alreadyPatched[crPhoto.UUID]
-          updateFromCameraRoll = _.pick crPhoto, PATCH_KEYS
+          updateFromCameraRoll = _.pick crPhoto, patchKeys
           return if _.isEmpty updateFromCameraRoll 
 
           phObj.save( updateFromCameraRoll ).then ()->
@@ -493,64 +545,65 @@ angular
               return
         return
 
-      # wrap in timeouts 
-      SYNC_ORDERS : (scope, force, DELAY=10, whenDoneP)->
-        return  whenDoneP && whenDoneP() if !$rootScope.sessionUser
-        # run AFTER cameraRoll loaded
-        # return if _.isEmpty $rootScope.sessionUser
-        # if deviceReady.device().isDevice && _.isEmpty cameraRoll.map()
-        #   return whenDoneP() if whenDoneP
-
-        options = {
-          role: 'owner'
-          owner: true
-        }
-
+      _patch_ParsePhotoObjs: ()->
         # PATCH_ParsePhotoObjKeys =  [
         #   'originalWidth', 'originalHeight', 
         #   'rating', 'favorite', 'caption', "hidden"
         #   'exif', 'orientation'
         #   "mediaType",  "mediaSubTypes", "burstIdentifier", "burstSelectionTypes", "representsBurst",
         # ] 
-        PATCH_ParsePhotoObjKeys = false # ['originalWidth', 'originalHeight', 'location', 'date']
+        PATCH_ParsePhotoObjKeys = [] # ['originalWidth', 'originalHeight', 'location', 'date']
+        return if _.isEmpty PATCH_ParsePhotoObjKeys then false else PATCH_ParsePhotoObjKeys
 
-        if PATCH_ParsePhotoObjKeys
-          imageCacheSvc.clearStashedP('preview') # force cameraRoll fetch
 
+      # wrap in timeouts 
+      SYNC_ORDERS : (options, whenDoneP)->
+        return  whenDoneP && whenDoneP() if !$rootScope.sessionUser
+        # run AFTER cameraRoll loaded
+        # return if _.isEmpty $rootScope.sessionUser
+        # if deviceReady.device().isDevice && _.isEmpty cameraRoll.map()
+        #   return whenDoneP() if whenDoneP
+
+        options = _.defaults options, {
+          woid: null
+          force: false
+          delay: 10
+          editor: false
+        }
+        
         if !$rootScope.device?
           $rootScope.device = $localStorage['device'] = angular.copy deviceReady.device()
           
         $timeout ()->
+            start = null
             # console.log "\n\n*** BEGIN Workorder Sync for role=" + options.role + "\n"
-            self.fetchWorkordersP( options , force ).then (workorderColl)->
-
+            self.fetchWorkordersP( options , options.force )
+            .then (workorderColl)->
+                start = Date.now()
                 promises = []
                 $rootScope.counts['orders'] = openOrders = 0
                 isBrowser = !isDevice =  deviceReady.device().isDevice
                 workorderColl.each (workorderObj)->
 
-                  # isComplete = /^(complete|closed)/.test workorderObj.get('status')
-                  # if scope.$state.includes('app.orders.complete')
-                  #   return if !isComplete
-                  # else 
-                  #   return if isComplete
+                  isComplete = /^(complete|closed)/.test workorderObj.get('status')
                   return if isDevice && workorderObj.get('devices').indexOf($rootScope.device.id) == -1 
 
-                  openOrders++
-                  p = self.fetchWorkorderPhotosP(workorderObj, options, force )
+                  openOrders++ if !isComplete
+                  p = self.fetchWorkorderPhotosP(workorderObj, options, options.force )
                   .then (photosColl)->
-
+                    return photosColl if isComplete 
                     # see also: otgParse._patchParsePhotos()
-                    if PATCH_ParsePhotoObjKeys
+                    if patchKeys = self._patch_ParsePhotoObjs()
                       # save CameraRoll attrs to PARSE
-                      self._PATCH_WorkorderAssets( photosColl , PATCH_ParsePhotoObjKeys)
-
+                      self._PATCH_WorkorderAssets( photosColl , patchKeys )
+                    return photosColl
+                  .then (photosColl)->
+                    return photosColl if isComplete
                     return self.syncWorkorderPhotosP( workorderObj, photosColl, 'owner' )
-                  .then (sync)->
-                      # console.log "\n\n *** SYNC_ORDERS: woid=" + workorderObj.id
+                    .then (sync)->
                       # console.log "sync=" + JSON.stringify sync
                       self.updateWorkorderCounts(workorderObj, sync)
-                      return sync
+                      return photosColl
                   .then (resp)->
                       # console.log "fetchWorkordersP done"
                       return 
@@ -563,17 +616,24 @@ angular
                   $rootScope.counts['orders'] = openOrders || 0
                   return # end workorderColl.each
 
-                $q.all( promises ).then (o)->
-                  $rootScope.orders = scope.workorders = workorderColl.toJSON()
+                done = $q.all( promises ).then (o)->
                   # console.log "\n\n*** ORDER SYNC complete for role=" + options.role + "\n"
                   $rootScope.$broadcast('sync.ordersComplete')
                   return whenDoneP(workorderColl) if whenDoneP
 
+                return workorderColl
+              .then (workorderColl)->
+                elapsed = Date.now() - start
+                # console.log '*** Order SYNC complete, elapsed ' + elapsed
+                $rootScope.$broadcast('sync.ordersComplete')
+                return whenDoneP?(workorderColl)
 
-          , DELAY
+
+
+          , options.delay
 
       # wrap in timeouts 
-      SYNC_WORKORDERS : (scope, options, whenDoneP)->
+      SYNC_WORKORDERS : (options, whenDoneP)->
         # run AFTER cameraRoll loaded
         return whenDoneP && whenDoneP() if _.isEmpty( $rootScope.sessionUser) && !$rootScope.$state.includes('app.demo')
         return whenDoneP && whenDoneP() if deviceReady.device().isDevice && _.isEmpty cameraRoll.map()
@@ -581,30 +641,24 @@ angular
         options = _.defaults options, {
           DELAY: 10
           force: false
-          editor: true
-          woid: null
+          editor: true    # for caching workorderColl in self._workorderColl[role]
           acl : true
-          workorder: true  # ???: what does this option do?
+          woid: null
+          workorder: null  # workorderObj, if we know it, DEPRECATE
         }
 
         $timeout ()->
+            start = null
             # console.log "\n\n*** BEGIN Workorder Sync for role=" + options.role + "\n"
-            self.fetchWorkordersP( options , options.force ).then (workorderColl)->
-
+            return self.fetchWorkordersP( options , options.force )
+            .then (workorderColl)->
+                start = Date.now()
                 promises = []
                 openOrders = 0
                 workorderColl.each (workorderObj)->
                   isComplete = /^(complete|closed)/.test workorderObj.get('status')
 
-                  ## WARN: if we don't get photos for all workorders now
-                  ##  then otgMoment.summarize() photos are not found in cameraRoll.map()
-                  if false && 'skip'
-                    if scope.$state.includes('app.workorders.open')
-                      return if isComplete
-                    if scope.$state.includes('app.workorders.complete')
-                      return if !isComplete
-
-                  openOrders++
+                  openOrders++ if !isComplete
                   photosColl = null
                   p = self.fetchWorkorderPhotosP(workorderObj, options, options.force )
                   .then (resp)->
@@ -613,21 +667,30 @@ angular
                     # just need counts
                     return self.syncWorkorderPhotosP( workorderObj, photosColl, 'editor' )
                   .then (sync)->
-                    return photosColl if isComplete
-                    self.updateWorkorderCounts(workorderObj, sync)  # expect workorderObj.workorderMoment to be set
-                     
+                    if !isComplete || $rootScope.$state.includes('app.workorders.detail')
+                      self.updateWorkorderCounts(workorderObj, sync)  # expect workorderObj.workorderMoment to be set
+                      self.updateWorkorderProgressP(workorderObj, photosColl)
                     return photosColl
 
                   $rootScope.counts['orders'] = openOrders 
                   promises.push p
                   return
 
-                $q.all( promises ).then (o)->
-                  $rootScope.orders = scope.workorders = workorderColl.toJSON() 
-                  # console.log "\n\n*** Workorder SYNC complete for role=" + options.role
-                  $rootScope.$broadcast('sync.workordersComplete')
-                  return whenDoneP(workorderColl) if whenDoneP
+                done = $q.all( promises ).then (o)->
+                  console.log "*** Workorder SYNC Photos complete"
+                return workorderColl
+              .then (workorderColl)->
+                elapsed = Date.now() - start
+                # console.log '*** Workorder SYNC complete, elapsed ' + elapsed
+                $rootScope.$broadcast('sync.workordersComplete')
+                return whenDoneP?(workorderColl)
           , options.DELAY
+
+      updateWorkorderProgressP: (woObj, photosColl)->
+        progress = woObj.get('progress')
+        progress['picks'] = photosColl.filter( (photo)->  return photo.get('topPick')).length
+        progress['todo'] = photosColl.filter( (photo)->  return `photo.get('topPick')==null`).length
+        return woObj.set('progress', progress).save()
 
       # Deprecate: see cloudCode beforeSave PhotoObj
       updateWorkorderCounts: (woObj, sync)->
@@ -648,7 +711,7 @@ angular
         }
         updates['lastUploadAt'] = sync['lastUploadDate'] if sync['lastUploadDate']
         return if _.isEmpty updates
-        return console.log "workorder counts=", updates
+        # return console.log "workorder counts=", updates
     }
     return self
 
@@ -1017,7 +1080,7 @@ angular
 
       updateWorkorderP: (woObj, data, pick)->
         return $q.reject('updateWorkorderP: workorderObj not found ') if !woObj
-        update = _.pick data, pick
+        update = if pick? then _.pick( data, pick ) else data
         return $q.reject('updateWorkorderP: nothing to update') if _.isEmpty update
         return woObj.save(update) 
 
@@ -1027,7 +1090,6 @@ angular
         if options.workorder instanceof Parse.Object
           workorderObj = options.workorder
         else 
-          # TODO: options.workorder.id or .UUID?
           # workorderObj.id == workorderObj.toJSON().objectId
           workorderObj = new Parse.Object('WorkorderObj', {
             id: options.workorder.objectId 
@@ -1052,6 +1114,7 @@ angular
         return collection.fetch().then (photosColl)->
             try
               self._patchParsePhotos(photosColl)
+              $rootScope.$emit "workorder-photos.ready", {woObj: workorderObj}
             catch e
 
             return photosColl

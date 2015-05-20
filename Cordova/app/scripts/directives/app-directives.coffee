@@ -354,8 +354,8 @@ angular.module('ionBlankApp')
 .directive 'otgMomentDateRange', [
 # renders moment as a dateRange, used in Orders or Workorders  
 # adds an end-cap not found in otgMoment
-  'otgData', 'cameraRoll'
-  (otgData, cameraRoll)->
+  'otgData', 'cameraRoll', '$rootScope'
+  (otgData, cameraRoll, $rootScope)->
 
     options = defaults = {
       breakpoint: 480
@@ -446,17 +446,34 @@ angular.module('ionBlankApp')
 
       return summary
 
+    _lookupScopeByWoId = {}
+
+    $rootScope.$on 'workorder-moment.ready', (ev, args)->
+        scope = _lookupScopeByWoId[args.woObj.id]
+        return if !scope
+        scope.moments = scope.workorder['workorderMoment'] = args.woObj.get('workorderMoment')
+        if scope.moments?.length
+          scope.summaryMoment = summarize(scope.moments, scope.options) 
+
+        # scope.$apply() if !scope.$$phase
+        return
+
     self = {
       templateUrl:  'views/partials/otg-moment-date-range.html'
       restrict: 'EA'
       scope: 
-        moments: '=otgModel'
+        workorder: '=otgModel'
+        # moments: '=otgModel'
       link: (scope, element, attrs)->
+        _lookupScopeByWoId[scope.workorder.objectId] = scope
         scope.options = _setSizes(element)
-
+        scope.moments = scope.workorder['workorderMoment']
         if scope.moments?.length
           scope.summaryMoment = summarize(scope.moments, scope.options) 
+        scope.$on 'destroy', ()->
+          delete lookupScopeByWoId[scope.workorder.objectId]
         return
+
     }
     return self
 ]

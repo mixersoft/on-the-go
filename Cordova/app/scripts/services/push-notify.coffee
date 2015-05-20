@@ -179,8 +179,8 @@ angular.module 'snappi.notification.push', [
         return if !notification.target
 
         # handle state transition
-        if notification.target[0...4] == 'app.'
-          $rootScope.$state.transitionTo( notification.target ) 
+        if notification.target.state?
+          $rootScope.$state.transitionTo( notification.target.state, notification.target.params ) 
         else
           $location.path(notification.target)  
         return       
