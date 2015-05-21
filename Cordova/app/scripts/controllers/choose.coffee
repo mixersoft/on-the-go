@@ -173,8 +173,10 @@ angular.module('ionBlankApp')
 ]
 
 .controller 'ChooseCtrl', [
-  '$scope', '$rootScope', '$state', '$stateParams', '$timeout', '$ionicModal', 'otgData', 'otgWorkorder', 'deviceReady', 'cameraRoll', 'snappiMessengerPluginService', 
-  ($scope, $rootScope, $state, $stateParams, $timeout, $ionicModal, otgData, otgWorkorder, deviceReady, cameraRoll, snappiMessengerPluginService) ->
+  '$scope', '$rootScope', '$timeout', 
+  '$ionicModal', 'PtrService', 
+  'otgData', 'otgWorkorder', 'deviceReady', 'cameraRoll', 'snappiMessengerPluginService', 
+  ($scope, $rootScope, $timeout, $ionicModal, PtrService, otgData, otgWorkorder, deviceReady, cameraRoll, snappiMessengerPluginService) ->
 
     $scope.otgWorkorder = otgWorkorder
     
@@ -303,44 +305,15 @@ angular.module('ionBlankApp')
               # return
               return otgWorkorder.on.clearSelected()
 
+    $scope.$on 'sync.cameraRollOrdersComplete', ()->
+        $rootScope.$broadcast('scroll.refreshComplete')
+        return
 
     $scope.$on 'cameraRoll.loadPhotosComplete', (ev, options)-> 
       return if options.type != 'moments'
       $rootScope.$broadcast('scroll.refreshComplete')
       # console.log "\n\n %%% watched cameraRoll.moments change, update filter %%% \n\n"
       return
-
-
-    $scope.$on '$ionicView.loaded', ()->
-      # once per controller load, setup code for view
-      if !_datepicker.instance
-        _datepicker.instance = angular.element(document.getElementById('datepicker-input')).data('pickadate')
-        window.debug.P = _datepicker.instance
-      return
-
-
-    $scope.$on '$ionicView.beforeEnter', ()->
-      # see: $scope.on.cameraRollSelected(), calendarSelected()
-      return 
-
-    $scope.$on '$ionicView.enter', ()->
-      return 
-
-
-    $scope.$on '$ionicView.beforeLeave', ()->
-      # cached view becomes in-active 
-      # _datepicker.deactivate() # deactivate in on.calendarDeselected()
-
-
-    init = ()->
-      return
-
-      # skip DEBUG
-      # switch $state.current.name
-      #   when 'app.choose.calendar'
-      #     otgWorkorder.on.clearSelected()
-      #     return otgWorkorder.on.selectByCalendar("2014-09-20", "2014-09-24")
-      # return
 
     # refactor to AppCtrl or service
     $ionicModal.fromTemplateUrl('views/partials/modal-pricing.html', {
@@ -369,7 +342,7 @@ angular.module('ionBlankApp')
           return 
         return $scope.config['dont-show-again']['choose']?[current]
       clearSelected : (ev)->
-        if $state.includes('app.choose.calendar')
+        if $rootScope.$state.includes('app.choose.calendar')
            angular.element(_datepicker.instance.$root[0].querySelectorAll('[data-clear]')).triggerHandler('click')
         else 
           otgWorkorder.on.clearSelected(ev)
@@ -386,15 +359,14 @@ angular.module('ionBlankApp')
       cameraRollSelected : (value)->
         if $scope.watch.favorites_initialized!=true
           $scope.watch.favorites_initialized = true
-          cameraRoll.loadCameraRollP({type:'moments'}, 'merge')
-          markup = '<div class="text-center"><i class="icon ion-load-b ion-spin"></i>&nbsp;scanning camera roll...</div>'
-          $scope.notifyService.message markup, 'info', 5000
+          _debounced_PullToRefresh()
         else 
           cameraRoll.loadCameraRollP({type:'moments'}, false)  
         return true
 
       refresh: ()->
-        return if $scope.deviceReady.device().isDevice == false
+        if $scope.deviceReady.device().isDevice == false
+          return $rootScope.$broadcast('sync.cameraRollOrdersComplete')
         cameraRoll.loadCameraRollP({type:'moments'}, 'merge')
         .then ()->
           # done on 'cameraRoll.loadPhotosComplete'
@@ -402,6 +374,39 @@ angular.module('ionBlankApp')
 
 
     }
+
+
+    $scope.$on '$ionicView.loaded', ()->
+      # once per controller load, setup code for view
+      if !_datepicker.instance
+        _datepicker.instance = angular.element(document.getElementById('datepicker-input')).data('pickadate')
+        window.debug.P = _datepicker.instance
+      return
+
+
+    $scope.$on '$ionicView.beforeEnter', ()->
+      # see: $scope.on.cameraRollSelected(), calendarSelected()
+      return 
+
+    _debounced_PullToRefresh = _.debounce ()->
+        $timeout ()->
+          view = "camera-roll"
+          PtrService.triggerPtr(view)
+          return
+      , 10  * 60 * 1000 # 10 mins
+      , {
+          leading: true
+          trailing: false
+        }
+
+    $scope.$on '$ionicView.enter', ()->
+      return 
+
+
+    $scope.$on '$ionicView.beforeLeave', ()->
+      # cached view becomes in-active 
+      # _datepicker.deactivate() # deactivate in on.calendarDeselected()
+
 
 
 

@@ -531,20 +531,20 @@ angular
           # console.log ">>> SYNC_cameraRoll_Orders"
           cameraRoll.loadCameraRollP(options, 'merge').finally ()->
             if !$scope.deviceReady.isOnline()
-              $rootScope.$broadcast('sync.debounceComplete')
+              $rootScope.$broadcast('sync.cameraRollOrdersComplete')
               msg = {
                 title: "Warning: Device Offline"
                 message: "No internet connection was detected."
               }
               notifyService.message msg, "warning", 5000
               return 
-            
+
             options = _.defaults options, {
               force: true
               whenDoneP: null
             }
             otgWorkorderSync.SYNC_ORDERS( options, (woColl)->
-                $rootScope.$broadcast('sync.debounceComplete')
+                $rootScope.$broadcast('sync.cameraRollOrdersComplete')
                 return options.whenDoneP(woColl) if _.isFunction options.whenDoneP
                 return
             )
@@ -668,7 +668,7 @@ angular
     $scope.$on 'sync.cameraRollComplete', (args)->
       $scope.app.localStorageSnapshot()
 
-    $scope.$on 'sync.debounceComplete', ()->
+    $scope.$on 'sync.cameraRollOrdersComplete', ()->
         $scope.hideLoading()
         $rootScope.$broadcast('scroll.refreshComplete')
         $scope.app.localStorageSnapshot()
