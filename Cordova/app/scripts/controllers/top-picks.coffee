@@ -187,11 +187,11 @@ angular.module('ionBlankApp')
 .controller 'TopPicksCtrl', [
   '$scope', '$rootScope', '$state', 'otgData', 'otgParse', 
   '$timeout', '$window', '$q', '$filter', 
-  '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', '$cordovaSocialSharing'
+  '$ionicPopup', '$ionicModal', '$ionicScrollDelegate', 'PtrService', '$cordovaSocialSharing'
   'deviceReady', 'cameraRoll', 'otgWorkorderSync'
   'imageCacheSvc', '$cordovaFile'
   ($scope, $rootScope, $state, otgData, otgParse, $timeout, $window, $q, $filter, 
-    $ionicPopup, $ionicModal, $ionicScrollDelegate, $cordovaSocialSharing, 
+    $ionicPopup, $ionicModal, $ionicScrollDelegate, PtrService, $cordovaSocialSharing, 
     deviceReady, cameraRoll, otgWorkorderSync, imageCacheSvc, $cordovaFile) ->
 
     $scope.SideMenuSwitcher.leftSide.src = 'views/partials/left-side-menu.html'
@@ -427,7 +427,7 @@ angular.module('ionBlankApp')
     cameraRollSnapshot = _.debounce ()->
 
       
-    $scope.$on 'sync.ordersComplete', ()->
+    $scope.$on 'sync.orderPhotosComplete', ()->
       if $state.includes('app.top-picks')
         # console.log '@@@ sync.ordersComplete'
         if $state.includes('app.top-picks.top-picks')
@@ -467,20 +467,29 @@ angular.module('ionBlankApp')
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
-      console.log '$ionicView.beforeEnter', $state.current.name
-      # cached view becomes active 
-      return if !$scope.deviceReady.isOnline()
-      # console.log "\n\n\n %%% ionicView.beforeEnter > app.sync.DEBOUNCED_cameraRoll_Orders "
-      $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
-      # see: $scope.on.cameraRollSelected(), calendarSelected()
-      
-      return 
-
-    $scope.$on '$ionicView.enter', ()->
+      # console.log '$ionicView.beforeEnter', $state.current.name
       $scope.watch.viewTitle = i18n.tr('title')
       if $state.params.woid && $state.params.woid !='all'
         $scope.watch.viewTitle += " (filtered)"
-      # $ionicNavBarDelegate.title('')
+      # cached view becomes active 
+      return 
+
+
+    _debounced_PullToRefresh = _.debounce ()->
+        $timeout ()->
+          view = "collection-repeat-wrap"
+          PtrService.triggerPtr(view)
+          return
+      , 10  * 60 * 1000 # 10 mins
+      , {
+          leading: true
+          trailing: false
+        }  
+
+    $scope.$on '$ionicView.enter', ()->
+      return if !$scope.deviceReady.isOnline()
+      _debounced_PullToRefresh()
+      # see: $scope.on.cameraRollSelected(), calendarSelected()
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 

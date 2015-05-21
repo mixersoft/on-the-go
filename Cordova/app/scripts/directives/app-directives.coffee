@@ -478,6 +478,42 @@ angular.module('ionBlankApp')
     return self
 ]
 
+
+
+  
+.service 'PtrService', [
+  '$timeout'
+  '$ionicScrollDelegate' 
+  ($timeout, $ionicScrollDelegate)-> 
+    ###
+     * Trigger the pull-to-refresh on a specific scroll view delegate handle.
+     * @param {string} delegateHandle - The `delegate-handle` assigned to the `ion-content` in the view.
+     * see: https://calendee.com/2015/04/25/trigger-pull-to-refresh-in-ionic-framework-apps/
+    ###
+    this.triggerPtr = (delegateHandle)->
+
+      $timeout ()->
+
+        scrollView = $ionicScrollDelegate.$getByHandle(delegateHandle).getScrollView();
+
+        return if (!scrollView)
+
+        scrollView.__publish(
+          scrollView.__scrollLeft, -scrollView.__refreshHeight,
+          scrollView.__zoomLevel, true)
+
+        scrollView.refreshStartTime = Date.now()
+
+        scrollView.__refreshActive = true
+        scrollView.__refreshHidden = false
+        scrollView.__refreshShow() if scrollView.__refreshShow
+        scrollView.__refreshActivate() if scrollView.__refreshActivate
+        scrollView.__refreshStart() if scrollView.__refreshStart
+
+    return
+        
+]
+
 # incomplete - not properly implemented
 # cache http URLs locally for workorders
 .directive 'XXXimgCache', [ 'otgImgCache'

@@ -425,9 +425,9 @@ ion-side-menu-content .item > * {
     .badge+.badge {
       margin-right: 0;
     }
-    .inline-nowrap {
+    .font-small {
       @include respondto(phone) {
-        margin-left: -24px;
+        font-size: 0.8em;
       }  
     }
   }

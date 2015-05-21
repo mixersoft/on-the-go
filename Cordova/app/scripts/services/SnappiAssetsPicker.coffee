@@ -259,7 +259,7 @@ angular
             self._mapAssetsLibrary = [] if force=='replace' && !window.TEST_DATA
             $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', {type:'moments'}
             $rootScope.$broadcast 'cameraRoll.loadPhotosComplete', {type:'favorites'}
-            # $rootScope.$broadcast 'sync.debounceComplete'
+            # $rootScope.$broadcast 'sync.cameraRollOrdersComplete'
             return $q.when()
           else
             console.warn "ERROR: loadCameraRollP, error="+JSON.stringify( error )[0..100]

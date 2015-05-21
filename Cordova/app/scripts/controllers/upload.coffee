@@ -9,9 +9,11 @@
 ###
 angular.module('ionBlankApp')
 .factory 'otgUploader', [
-  '$timeout', '$q', '$rootScope', '$ionicPlatform', 'otgData', 'otgParse', 'cameraRoll', '$cordovaNetwork', 
+  '$timeout', '$q', '$rootScope', 
+  '$ionicPlatform', 'PtrService'
+  'otgData', 'otgParse', 'cameraRoll', '$cordovaNetwork', 
   'deviceReady', 'snappiMessengerPluginService', 'notifyService'
-  ($timeout, $q, $rootScope, $ionicPlatform, otgData, otgParse, cameraRoll, $cordovaNetwork, 
+  ($timeout, $q, $rootScope, $ionicPlatform, PtrService, otgData, otgParse, cameraRoll, $cordovaNetwork, 
     deviceReady, snappiMessengerPluginService, notifyService)->
 
 
@@ -746,9 +748,11 @@ angular.module('ionBlankApp')
     return self
 ]
 .controller 'UploadCtrl', [
-  '$scope', '$rootScope', '$timeout', '$q', 'otgUploader', 'otgParse', 'deviceReady', 'otgWorkorderSync'
+  '$scope', '$rootScope', '$timeout', '$q', 
+  'PtrService' 
+  'otgUploader', 'otgParse', 'deviceReady', 'otgWorkorderSync'
   'notifyService'
-  ($scope, $rootScope, $timeout, $q, otgUploader, otgParse, deviceReady, otgWorkorderSync, notifyService) ->
+  ($scope, $rootScope, $timeout, $q, PtrService,  otgUploader, otgParse, deviceReady, otgWorkorderSync, notifyService) ->
     $scope.label = {
       title: "Upload"
     }
@@ -842,7 +846,7 @@ angular.module('ionBlankApp')
     }
 
 
-    $scope.$on 'sync.debounceComplete', ()->
+    $scope.$on 'sync.cameraRollOrdersComplete', ()->
         # if otgUploader.uploader.type == 'background'
         #   otgUploader.uploader.queueP().then (scheduledAssetIds)->
         #     console.log "\n>>> queueP complete from refresh(), scheduled=" + JSON.stringify scheduledAssetIds
@@ -851,7 +855,7 @@ angular.module('ionBlankApp')
 
     $scope.on = {
       refresh: ()->
-        # listen for 'sync.debounceComplete'
+        # listen for 'sync.cameraRollOrdersComplete'
         return $scope.app.sync.cameraRoll_Orders()
 
       fetchWarningsP : ()->
@@ -871,7 +875,16 @@ angular.module('ionBlankApp')
           return $q.when(networkOK)  
     }
 
-
+    _debounced_PullToRefresh = _.debounce ()->
+        $timeout ()->
+          view = "uploader"
+          PtrService.triggerPtr(view)
+          return
+      , 10  * 60 * 1000 # 10 mins
+      , {
+          leading: true
+          trailing: false
+        }
 
 
     $scope.$ionicPlatform.on 'offline', ()->
@@ -888,7 +901,6 @@ angular.module('ionBlankApp')
       # once per controller load, setup code for view
       
       return if !$scope.deviceReady.isOnline()
-      $scope.showLoading(true)      
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
@@ -904,12 +916,12 @@ angular.module('ionBlankApp')
       else 
         redButton.removeClass('enabled').removeClass('down')
 
-      $scope.on.fetchWarningsP()
-      return if !$scope.deviceReady.isOnline()
-      return $scope.app.sync.DEBOUNCED_cameraRoll_Orders()
 
     $scope.$on '$ionicView.enter', ()->
       $scope.watch.viewTitle = i18n.tr('title')
+      $scope.on.fetchWarningsP()
+      return if !$scope.deviceReady.isOnline()
+      _debounced_PullToRefresh()
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 

@@ -10,8 +10,10 @@
 angular.module('ionBlankApp')
 
 .controller 'OrdersCtrl', [
-  '$scope', '$rootScope', '$timeout', '$q', '$ionicTabsDelegate', '$ionicNavBarDelegate', 'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgParse', 'otgUploader', 'cameraRoll',
-  ($scope, $rootScope, $timeout, $q, $ionicTabsDelegate, $ionicNavBarDelegate, otgData, otgWorkorder, otgWorkorderSync, otgParse, otgUploader, cameraRoll) ->
+  '$scope', '$rootScope', '$timeout', '$q', 
+  '$ionicTabsDelegate', '$ionicNavBarDelegate', 'PtrService'
+  'otgData', 'otgWorkorder', 'otgWorkorderSync', 'otgParse', 'otgUploader', 'cameraRoll',
+  ($scope, $rootScope, $timeout, $q, $ionicTabsDelegate, $ionicNavBarDelegate, PtrService, otgData, otgWorkorder, otgWorkorderSync, otgParse, otgUploader, cameraRoll) ->
 
     $scope.gotoTab = (name)->
       switch name
@@ -51,7 +53,11 @@ angular.module('ionBlankApp')
 
     $scope.on = {
       refresh: ()->
-        _SyncOrders()
+        woid = 
+          if $rootScope.$state.includes('app.orders.detail')
+          then $rootScope.$state.params.oid 
+          else null
+        _SyncOrders(woid)
         return      
       setStatus: (order, status)->
         switch status
@@ -135,17 +141,28 @@ angular.module('ionBlankApp')
 
       return   
 
-    $scope.$on 'sync.debounceComplete', ()->
+    $scope.$on 'sync.cameraRollOrdersComplete', ()->
       $scope.watch.isSyncing = false
       return
 
+    _debounced_PullToRefresh = _.debounce ()->
+        $timeout ()->
+          view = "order-" + $rootScope.$state.current.name.split('.').pop()
+          PtrService.triggerPtr(view)
+          return
+      , 10  * 60 * 1000 # 10 mins
+      , {
+          leading: true
+          trailing: false
+        }
+        
+
     _SyncOrders = (woid)->
-      $scope.showLoading(true)
+      return if $scope.watch.isSyncing
       $scope.watch.isSyncing = true
       options = {
         whenDoneP: (woColl)->
           $scope.watch.isSyncing = false
-          $scope.hideLoading()
           # console.log "whenDone, ", woColl.toJSON() if woColl instanceof Parse.Collection
           $scope.watch.orders = woColl.toJSON()
           $rootScope.$broadcast('scroll.refreshComplete')
@@ -158,20 +175,16 @@ angular.module('ionBlankApp')
       return
 
     $scope.$on '$ionicView.beforeEnter', ()->
+      $scope.watch.viewTitle = i18n.tr('title')
       $scope.watch.orders = otgWorkorderSync._workorderColl['owner'].toJSON?()
       return
 
     $scope.$on '$ionicView.enter', ()->
-      $scope.watch.viewTitle = i18n.tr('title')
       return if !$scope.deviceReady.isOnline()
-      if !$scope.watch.isSyncing
-        $timeout ()->
-          woid = 
-            if $rootScope.$state.includes('app.orders.detail')
-            then $rootScope.$state.params.oid 
-            else null
-           _SyncOrders( woid )
-          return
+      _debounced_PullToRefresh() if !$scope.watch.isSyncing
+        
+        
+
 
 
 

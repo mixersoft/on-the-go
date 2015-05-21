@@ -604,7 +604,7 @@ angular
                       # console.log "sync=" + JSON.stringify sync
                       self.updateWorkorderCounts(workorderObj, sync)
                       return photosColl
-                  .then (resp)->
+                  .then (photosColl)->
                       # console.log "fetchWorkordersP done"
                       return 
                     , (err)->
@@ -618,7 +618,7 @@ angular
 
                 done = $q.all( promises ).then (o)->
                   # console.log "\n\n*** ORDER SYNC complete for role=" + options.role + "\n"
-                  $rootScope.$broadcast('sync.ordersComplete')
+                  $rootScope.$broadcast('sync.orderPhotosComplete')
                   return whenDoneP(workorderColl) if whenDoneP
 
                 return workorderColl
@@ -659,22 +659,20 @@ angular
                   isComplete = /^(complete|closed)/.test workorderObj.get('status')
 
                   openOrders++ if !isComplete
-                  photosColl = null
                   p = self.fetchWorkorderPhotosP(workorderObj, options, options.force )
-                  .then (resp)->
-                    photosColl = resp
-                    # ???: is there a 'sync' for workorders, should be on browser...
-                    # just need counts
-                    return self.syncWorkorderPhotosP( workorderObj, photosColl, 'editor' )
-                  .then (sync)->
-                    if !isComplete || $rootScope.$state.includes('app.workorders.detail')
-                      self.updateWorkorderCounts(workorderObj, sync)  # expect workorderObj.workorderMoment to be set
-                      self.updateWorkorderProgressP(workorderObj, photosColl)
+                  .then (photosColl)->
+                    if !isComplete
+                      return self.syncWorkorderPhotosP( workorderObj, photosColl, 'editor' ) 
+                      .then (sync)->
+                        if $rootScope.$state.includes('app.workorders.detail')
+                          self.updateWorkorderCounts(workorderObj, sync)  # expect workorderObj.workorderMoment to be set
+                          self.updateWorkorderProgressP(workorderObj, photosColl)
+                        return photosColl
                     return photosColl
 
                   $rootScope.counts['orders'] = openOrders 
                   promises.push p
-                  return
+                  return # end workorderColl.each
 
                 done = $q.all( promises ).then (o)->
                   console.log "*** Workorder SYNC Photos complete"

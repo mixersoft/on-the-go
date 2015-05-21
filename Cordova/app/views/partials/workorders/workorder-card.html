@@ -18,11 +18,12 @@
         ng-class="ngClass_WorkStatus(order, 'badge')" 
         ng-bind="order.status" ></span>
       </div>&nbsp;    
-      <div class="nowrap inline">Photos: 
-        <span class="badge" workorder-status 
+      <div>Photos: 
+        <span class="badge padding-right" workorder-status 
         ng-class="ngClass_UploadStatus(order)" 
         ng-bind="ngBind_UploadStatus(order)" ></span>
-        <ul class="padding-horizontal text-center inline nowrap">
+
+        <ul class="inline nowrap">
           <li class="badge badge-positive">Expected: {{ order.count_expected }}</li>
           <li class="badge badge-positive">Received: {{ order.count_received }}</li>
         </ul>

@@ -10,8 +10,11 @@
 angular.module('ionBlankApp')
 
 .controller 'WorkordersCtrl', [
-  '$scope', '$rootScope', '$timeout', '$q', 'SideMenuSwitcher', '$ionicTabsDelegate', 'otgData', 'otgWorkorder', 'deviceReady', 'otgWorkorderSync', 'otgParse', 
-  ($scope, $rootScope, $timeout, $q, SideMenuSwitcher, $ionicTabsDelegate, otgData, otgWorkorder, deviceReady, otgWorkorderSync, otgParse) ->
+  '$scope', '$rootScope', '$timeout', '$q', 
+  'SideMenuSwitcher'
+  '$ionicTabsDelegate', 'PtrService' 
+  'otgData', 'otgWorkorder', 'deviceReady', 'otgWorkorderSync', 'otgParse', 
+  ($scope, $rootScope, $timeout, $q, SideMenuSwitcher, $ionicTabsDelegate, PtrService, otgData, otgWorkorder, deviceReady, otgWorkorderSync, otgParse) ->
 
     $scope.gotoTab = (name)->
       switch name
@@ -43,7 +46,11 @@ angular.module('ionBlankApp')
         return 'done in SYNC_WORKORDERS()'
 
       refresh: ()->
-        _SyncWorkorders()
+        woid = 
+          if $rootScope.$state.includes('app.workorders.detail')
+          then $rootScope.$state.params.woid
+          else null
+        _SyncWorkorders(woid)
 
       confirmReUploadPhotos: (order)->
         msg = "Are you sure you want to\nre-upload all photos for this order?"
@@ -161,16 +168,26 @@ angular.module('ionBlankApp')
           $rootScope.$state.transitionTo('app.workorders.open') 
       return   
 
+    _debounced_PullToRefresh = _.debounce ()->
+        $timeout ()->
+          view = "workorder-" + $rootScope.$state.current.name.split('.').pop()
+          PtrService.triggerPtr(view)
+          return
+      , 10  * 60 * 1000 # 10 mins
+      , {
+          leading: true
+          trailing: false
+        }
+          
+
     _SyncWorkorders = (woid)->
+      return if $scope.watch.isSyncing
       $scope.watch.isSyncing = true
-      $scope.showLoading(true)  
       options = {
         force: $rootScope.$state.includes('app.workorders.detail')
         whenDone : (woColl)->
           $scope.watch.isSyncing = false
-          $scope.hideLoading()
           $rootScope.$broadcast('scroll.refreshComplete')
-          # ???: is it faster to merge?
           $scope.watch.workorders = otgWorkorderSync._workorderColl['editor'].toJSON?()
           if $rootScope.$state.includes('app.workorders.detail')
             workorder = _.find $scope.watch.workorders, {objectId: woColl.get(woid)}
@@ -205,18 +222,11 @@ angular.module('ionBlankApp')
 
 
     $scope.$on '$ionicView.enter', ()->
-      # why is this being called 2x?
       # console.log "workorder enter"
       $scope.watch.viewTitle = i18n.tr('title')
       $scope.SideMenuSwitcher.leftSide.src = 'views/partials/workorders/left-side-menu.html'
       return if !$scope.deviceReady.isOnline()
-      if !$scope.watch.isSyncing
-        $timeout ()->
-          if $rootScope.$state.includes('app.workorders.detail')
-            return _SyncWorkorders($rootScope.$state.params.woid)
-          return _DEBOUNCED_SYNC_workorders() if $scope.watch.workorders?.length
-          return _SyncWorkorders()      
-      
+      _debounced_PullToRefresh() if !$scope.watch.isSyncing
 
     $scope.$on '$ionicView.leave', ()->
       # cached view becomes in-active 
