@@ -147,7 +147,11 @@ angular.module('ionBlankApp')
 
     _debounced_PullToRefresh = _.debounce ()->
         $timeout ()->
-          view = "order-" + $rootScope.$state.current.name.split('.').pop()
+          switch $rootScope.$state.current.name
+            when "app.orders.complete", "app.orders.detail"
+              view = 'order-complete'
+            when "app.orders.open"
+              view = 'order-open'
           PtrService.triggerPtr(view)
           return
       , 10  * 60 * 1000 # 10 mins
@@ -167,6 +171,7 @@ angular.module('ionBlankApp')
           $scope.watch.orders = woColl.toJSON()
           $rootScope.$broadcast('scroll.refreshComplete')
       }
+      options['woid'] = woid if woid?
       $scope.app.sync.cameraRoll_Orders( options )
       return
 

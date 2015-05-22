@@ -170,7 +170,11 @@ angular.module('ionBlankApp')
 
     _debounced_PullToRefresh = _.debounce ()->
         $timeout ()->
-          view = "workorder-" + $rootScope.$state.current.name.split('.').pop()
+          switch $rootScope.$state.current.name
+            when "app.workorders.complete"
+              view = 'workorder-complete'
+            when "app.workorders.open", "app.workorders.detail"
+              view = 'workorder-open'
           PtrService.triggerPtr(view)
           return
       , 10  * 60 * 1000 # 10 mins
@@ -190,7 +194,7 @@ angular.module('ionBlankApp')
           $rootScope.$broadcast('scroll.refreshComplete')
           $scope.watch.workorders = otgWorkorderSync._workorderColl['editor'].toJSON?()
           if $rootScope.$state.includes('app.workorders.detail')
-            workorder = _.find $scope.watch.workorders, {objectId: woColl.get(woid)}
+            workorder = _.find $scope.watch.workorders, {objectId: woColl.get(woid).id}
             workorder['showDetail'] = true 
           console.log "workorder Sync complete"
           return
