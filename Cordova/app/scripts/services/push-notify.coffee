@@ -90,6 +90,8 @@ angular.module 'snappi.notification.push', [
         return self
 
       registerP: ()->
+        return self if deviceReady.device().isBrowser == true
+        
         if !self.isReady
           $log.warn("WARNING: attempted to register device before plugin intialization.") 
           return $q.reject("pushNotify plugin not initialized")
@@ -140,7 +142,7 @@ angular.module 'snappi.notification.push', [
         # for foreground here it would make a sound twice, once when 
         # received in background and upon opening it from clicking
         # the notification when this code runs (weird).
-        # $log.debug "handleIOS()", notification
+        $log.debug "handleIOS() msg= " + JSON.stringify notification
 
         # looks like: Object
         #   body: "We have your order and are ready for photos. Visit the Uploader to get started."
@@ -169,9 +171,10 @@ angular.module 'snappi.notification.push', [
         msg = {
           target : notification.target
         }
-        if notification.body?
-          msg['title'] = notification.title
-          msg['message'] = notification.body
+        body = notification.aps?.alert? || notification.body
+        if body?
+          msg['title'] = body.title
+          msg['message'] = body.body
         else 
           msg['message'] = notification.alert
         notify.message msg,'info', 10000
@@ -247,6 +250,8 @@ angular.module 'snappi.notification.push', [
 
 
     }
+    deviceReady.waitP().then ()->
+      window.debug['testIosPush'] = self.handleIOS
     return self
 
 
