@@ -67,8 +67,8 @@ angular
 
     self = {
       _workorderColl : {
-        owner: []
-        editor: []
+        owner: null   # Parse.Collection
+        editor: null  # Parse.Collection
       }
       _workorderPhotosColl: {
         # workorderObj.id: photosColl
@@ -102,7 +102,7 @@ angular
         role = if options.editor then 'editor' else 'owner'
         
         cached = self._workorderColl[role]
-        return $q.when( cached ) if cached.length && !force
+        return $q.when( cached ) if cached?.size() && !force
 
         promise = 
           if options.acl == true
@@ -146,7 +146,7 @@ angular
         options.owner == true if $rootScope.user.role == 'owner'
 
         cached = self._workorderPhotosColl[ workorderObj.id ] 
-        return $q.when( cached ) if cached && !force
+        return $q.when( cached ) if cached?.size() && !force
 
         promise = 
           if options.acl == true
@@ -352,7 +352,7 @@ angular
           'queued-full-res': []
           'errors': []
         }
-        parsePhotos = photosColl?.toJSON?() || []
+        parsePhotos = photosColl?.toJSON() || []
         checkDeviceId = deviceReady.device().isDevice && $rootScope.isStateWorkorder() == false
         if checkDeviceId == false
           promise = $q.when()
@@ -557,7 +557,7 @@ angular
 
 
       # wrap in timeouts 
-      SYNC_ORDERS : (options, whenDoneP)->
+      SYNC_ORDERS : (options, whenDoneP, whenPhotosDoneP)->
         return  whenDoneP && whenDoneP() if !$rootScope.sessionUser
         # run AFTER cameraRoll loaded
         # return if _.isEmpty $rootScope.sessionUser
@@ -605,8 +605,8 @@ angular
                       self.updateWorkorderCounts(workorderObj, sync)
                       return photosColl
                   .then (photosColl)->
-                      # console.log "fetchWorkordersP done"
-                      return 
+                      whenPhotosDoneP?(workorderColl, photosColl)
+                      return photosColl
                     , (err)->
                       console.warn(err) 
                       return $q.when(err)
@@ -619,7 +619,7 @@ angular
                 done = $q.all( promises ).then (o)->
                   # console.log "\n\n*** ORDER SYNC complete for role=" + options.role + "\n"
                   $rootScope.$broadcast('sync.orderPhotosComplete')
-                  return whenDoneP(workorderColl) if whenDoneP
+                  return whenPhotosDoneP?(workorderColl)
 
                 return workorderColl
               .then (workorderColl)->
@@ -633,7 +633,7 @@ angular
           , options.delay
 
       # wrap in timeouts 
-      SYNC_WORKORDERS : (options, whenDoneP)->
+      SYNC_WORKORDERS : (options, whenDoneP, whenPhotosDoneP)->
         # run AFTER cameraRoll loaded
         return whenDoneP && whenDoneP() if _.isEmpty( $rootScope.sessionUser) && !$rootScope.$state.includes('app.demo')
         return whenDoneP && whenDoneP() if deviceReady.device().isDevice && _.isEmpty cameraRoll.map()
@@ -669,13 +669,18 @@ angular
                           self.updateWorkorderProgressP(workorderObj, photosColl)
                         return photosColl
                     return photosColl
+                  .then (photosColl)->
+                    whenPhotosDoneP?(workorderColl, photosColl)
+                    return photosColl
 
                   $rootScope.counts['orders'] = openOrders 
                   promises.push p
                   return # end workorderColl.each
 
                 done = $q.all( promises ).then (o)->
+                  $rootScope.$broadcast('sync.workorderPhotosComplete')
                   console.log "*** Workorder SYNC Photos complete"
+                  return whenPhotosDoneP?(workorderColl)
                 return workorderColl
               .then (workorderColl)->
                 elapsed = Date.now() - start

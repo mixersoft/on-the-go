@@ -468,9 +468,7 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.beforeEnter', ()->
       # console.log '$ionicView.beforeEnter', $state.current.name
-      $scope.watch.viewTitle = i18n.tr('title')
-      if $state.params.woid && $state.params.woid !='all'
-        $scope.watch.viewTitle += " (filtered)"
+      ## NOTE: beforeEnter does not fire on direct load
       # cached view becomes active 
       return 
 
@@ -487,6 +485,9 @@ angular.module('ionBlankApp')
         }  
 
     $scope.$on '$ionicView.enter', ()->
+      $scope.watch.viewTitle = i18n.tr('title')
+      if $state.params.woid && $state.params.woid !='all'
+        $scope.watch.viewTitle += " (filtered)"
       return if !$scope.deviceReady.isOnline()
       _debounced_PullToRefresh()
       # see: $scope.on.cameraRollSelected(), calendarSelected()

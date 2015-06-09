@@ -192,25 +192,16 @@ angular.module('ionBlankApp')
         whenDone : (woColl)->
           $scope.watch.isSyncing = false
           $rootScope.$broadcast('scroll.refreshComplete')
-          $scope.watch.workorders = otgWorkorderSync._workorderColl['editor'].toJSON?()
+          $scope.watch.workorders = otgWorkorderSync._workorderColl['editor']?.toJSON()
           if $rootScope.$state.includes('app.workorders.detail')
             workorder = _.find $scope.watch.workorders, {objectId: woColl.get(woid).id}
             workorder['showDetail'] = true 
           console.log "workorder Sync complete"
           return
       }
+      options['force'] = true if otgWorkorderSync._workorderColl['editor']?.size() <= 1
       options['woid'] = woid if woid?
       return otgWorkorderSync.SYNC_WORKORDERS(options,  options.whenDone)
-
-
-    _DEBOUNCED_SYNC_workorders = _.debounce ()->
-          # console.log "\n\n >>> DEBOUNCED!!!"
-          _SyncWorkorders
-        , 5000 # 5*60*1000
-        , {
-          leading: true
-          trailing: false
-        }
 
     $scope.$on '$ionicView.loaded', ()->
       # once per controller load, setup code for view
@@ -220,7 +211,7 @@ angular.module('ionBlankApp')
     $scope.$on '$ionicView.beforeEnter', ()->
       # cached view becomes active 
       # console.log "workorder beforeEnter"
-      $scope.watch.workorders = otgWorkorderSync._workorderColl['editor'].toJSON?()
+      $scope.watch.workorders = otgWorkorderSync._workorderColl['editor']?.toJSON()
       # dynamically update left side menu
       return
 

@@ -181,7 +181,7 @@ angular.module('ionBlankApp')
 
     $scope.$on '$ionicView.beforeEnter', ()->
       $scope.watch.viewTitle = i18n.tr('title')
-      $scope.watch.orders = otgWorkorderSync._workorderColl['owner'].toJSON?()
+      $scope.watch.orders = otgWorkorderSync._workorderColl['owner']?.toJSON()
       return
 
     $scope.$on '$ionicView.enter', ()->
