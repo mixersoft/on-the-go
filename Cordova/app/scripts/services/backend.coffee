@@ -814,7 +814,7 @@ angular
         ] )
         userCred.password = 'HIDDEN'
         userCred.tosAgree = !!userCred.tosAgree # checkbox:ng-model expects a boolean
-        userCred.isRegistered = true
+        userCred.isRegistered = self.isAnonymousUser()
         return _.extend anonUser, userCred
 
 
@@ -845,7 +845,6 @@ angular
           return Parse.User.logIn( userCred.username.trim().toLowerCase(), userCred.password )
         .then (user)->  
             $rootScope.sessionUser = Parse.User.current()
-            $rootScope.user.isRegistered = true
             $rootScope.user = self.mergeSessionUser($rootScope.user)
             return user
         , (error)->
