@@ -1,11 +1,11 @@
 {
   "name": "ion-OnTheGo",
-  "app_id": "com.snaphappi.on-the-go",
+  "app_id": "424ff14e",
   "gulpStartupTasks": [
     "sass",
     "watch"
   ],
-  "documentRoot":"www",
+  "documentRoot": "www",
   "watchPatterns": [
     "www/**/*",
     "!www/lib/**/*"

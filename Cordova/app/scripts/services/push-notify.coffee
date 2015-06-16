@@ -102,8 +102,8 @@ angular.module 'snappi.notification.push', [
           isOK = isOK && _localStorageDevice['pushInstall'].deviceId == deviceReady.device().id
           isOK = isOK && _localStorageDevice['pushInstall'].installationId == Parse._getInstallationId()
           if isOK
-            console.log("pushInstall OK")
-            return $q.when('done')
+            console.log "pushInstall unchanged"
+            return $q.when('Parse installation unchanged')
         #   else
         #     console.log "localStorage pushInstall=" + JSON.stringify _localStorageDevice['pushInstall']
         #     console.log "compare to:" + JSON.stringify [ $rootScope.sessionUser.id, deviceReady.device().id, Parse._getInstallationId() ]
@@ -121,6 +121,7 @@ angular.module 'snappi.notification.push', [
               "alert": "true"
           }
         return $cordovaPush.register(config).then (result)->
+          return result if result=='Parse installation unchanged'
             # $log.debug("Register success " + result)
             if ionic.Platform.isIOS()
               self.storeDeviceTokenP {
